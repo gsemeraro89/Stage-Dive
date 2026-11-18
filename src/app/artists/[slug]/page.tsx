@@ -238,7 +238,9 @@ export default async function ArtistPage({ params, searchParams }: Props) {
                 // Native <details>: the rest is in the page for search engines and works without JavaScript.
                 <details className="bp-more" data-od="more-gigs">
                   <summary className="hm-more">
-                    SHOW MORE ({rows.length - FIRST_GIGS}) &gt;&gt;
+                    {/* One label shows at a time (CSS); the hidden one is out of the accessibility tree too. */}
+                    <span className="bp-more-closed">SHOW MORE ({rows.length - FIRST_GIGS}) &gt;&gt;</span>
+                    <span className="bp-more-open">SHOW FEWER &lt;&lt;</span>
                   </summary>
                   <GigRows concerts={rows.slice(FIRST_GIGS)} label={`More full gigs by ${artist.name}`} lead="year" name="place" />
                 </details>

@@ -1154,3 +1154,69 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+
+/* ---------- Band page: the first ten gigs, then "Show more" (a native <details>) ---------- */
+
+/* The summary: a black cut-out label, a finger tall, dead straight (you press it twice). */
+.bp-more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  margin: 18px 0 0;
+  padding: 4px 16px 0;
+  background: var(--toner);
+  color: var(--paper);
+  text-decoration: none;
+  box-shadow: var(--shadow-rest);
+  list-style: none;
+  cursor: pointer;
+}
+
+.bp-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bp-more > summary:hover {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.bp-more > summary:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.bp-more-open,
+.bp-more[open] .bp-more-closed {
+  display: none;
+}
+
+.bp-more[open] .bp-more-open {
+  display: inline;
+}
+
+/* Open: the label goes quiet (white) and the rest of the list follows straight on. */
+.bp-more[open] > summary {
+  margin-bottom: 14px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.bp-more[open] > summary:hover {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+}
+
+.bp-more .pg-rows {
+  border-top-width: 2px;
+}
+
+.bp-more[open] > summary:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
