@@ -17,8 +17,8 @@ import { formatDuration } from "@/lib/format";
 import { homeData, type HomeData } from "@/lib/home";
 import { toTrack } from "@/lib/player-types";
 import type { BandPhotoView } from "@/lib/photos/view";
-import { defaultMapArtist, getMap, mapArtistIndex, type ConcertView } from "@/lib/queries";
-import { NextBand, type NextBandOption } from "./NextBand";
+import { defaultMapArtist, getMap, type ConcertView } from "@/lib/queries";
+import { NextBand } from "./NextBand";
 import { compactNumber } from "@/lib/site";
 
 function SectionTitle({ id, children, tone = "black" }: { id: string; children: ReactNode; tone?: "black" | "pink" }) {
@@ -191,11 +191,10 @@ const DECADE_TILTS = [-2, 1.5, -1, 2, -1.5, 1, -2];
 const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 const NOISE_TONES = ["white", "black", "white", "black"] as const;
 
-export default async function HomePage({ nextBand = "a" }: { nextBand?: NextBandOption }) {
+export default async function HomePage() {
   // The wall of similar bands is an extra: if it cannot be read, the page goes out without it.
-  const [data, bands, wall] = await Promise.all([
+  const [data, wall] = await Promise.all([
     homeData(),
-    mapArtistIndex().catch(() => []),
     defaultMapArtist()
       .then((slug) => (slug ? getMap(slug) : null))
       .catch(() => null),
@@ -228,10 +227,10 @@ export default async function HomePage({ nextBand = "a" }: { nextBand?: NextBand
         ONE CLICK AND THE GIG STARTS <span>IT KEEPS PLAYING</span> WHILE YOU DIG THROUGH THE REST
       </p>
 
-      {bands.length > 0 && <NextBand option={nextBand} bands={bands} wall={wall} noise={noise} />}
+      <NextBand wall={wall} noise={noise} />
 
       {freshCards.length > 0 && (
-        <section className={bands.length > 0 ? "hm-section hm-section--cut" : "hm-section"} aria-labelledby="hm-fresh" data-od="fresh">
+        <section className="hm-section hm-section--cut" aria-labelledby="hm-fresh" data-od="fresh">
           <div className="hm-head">
             <SectionTitle id="hm-fresh">Fresh off the copier</SectionTitle>
             <Link href="/concerts" className="hm-more">

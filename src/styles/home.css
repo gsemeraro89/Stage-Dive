@@ -169,13 +169,14 @@
   white-space: nowrap;
 }
 
-/* ---------- 1b. Find your next band: the box you type into, and a scrap of the wall ---------- */
+/* ---------- 1b. Find your next band: the crossroads (NextBand.tsx) ---------- */
 
 .hm-next {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  /* The left column is as wide as the title strip, which stays on one line. */
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 30px clamp(30px, 4.5vw, 72px);
-  align-items: center;
+  align-items: start;
 }
 
 .hm-next-ask {
@@ -189,345 +190,28 @@
   margin: 0;
   max-width: 38ch;
   font-size: var(--text-body);
-  line-height: var(--leading-body, 1.6);
+  line-height: var(--leading-body);
 }
 
-/* Dead straight: you type into it and you press it. */
-.hm-next-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 14px;
-  width: 100%;
-}
-
-.hm-next-form label {
-  flex: 1 0 100%;
-  font-size: 22px;
-}
-
-.hm-next-form input {
-  flex: 1 1 220px;
-  min-width: 0;
-  height: 56px;
-  padding: 5px 14px 0;
-  border: var(--frame) solid var(--toner);
-  background: var(--sheet);
-  color: var(--toner);
-  font: 400 18px/1.2 var(--font-type);
-}
-
-.hm-next-form input::placeholder {
-  color: var(--label-grey);
-  opacity: 1;
-}
-
-/* The browser's own list arrow is not part of the zine. */
-.hm-next-form input::-webkit-calendar-picker-indicator {
-  display: none !important;
-}
-
-/* The scrap of wall: cut out along the dashed line, taped on at one corner. */
-.hm-wall {
-  position: relative;
-  padding: 22px clamp(14px, 2vw, 26px) 12px;
-  border: var(--cut);
-  rotate: 0.6deg;
-}
-
-.hm-wall-label {
-  margin: 0 0 14px;
-  text-align: right;
-}
-
-.hm .hm-wall-names {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 14px 18px;
-  padding: 4px 0 6px;
-}
-
-/* One band: a cut-out you can pick up. A finger tall, never smaller than the type allows. */
-.hm-wall-name {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  max-width: 100%;
-  padding: 7px 14px 4px;
-  background: var(--sheet);
-  color: var(--toner);
-  outline: var(--keyline) solid var(--toner);
-  outline-offset: calc(-1 * var(--keyline));
-  box-shadow: var(--shadow-rest);
-  font-family: var(--font-type);
-  font-size: 16px;
-  line-height: 1.2;
-  letter-spacing: var(--track-data);
-  text-transform: uppercase;
-  text-decoration: none;
-  rotate: var(--tilt, 0deg);
-}
-
-.hm-wall-name[data-tone="black"] {
-  background: var(--toner);
-  color: var(--paper);
-  outline: 0;
-}
-
-.hm-wall-name[data-near="2"] {
-  font-size: 19px;
-}
-
-.hm-wall-name[data-near="1"] {
-  min-height: 54px;
-  font-size: 23px;
-}
-
-/* Today's band, in the middle: the heavy hand, on black. */
-.hm-wall-centre {
-  min-height: 62px;
-  padding: 8px 18px 6px;
-  background: var(--toner);
-  color: var(--paper);
-  outline: 0;
-  font-family: var(--font-strip);
-  font-size: clamp(24px, 2.6vw, 36px);
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-}
-
-.hm-wall-name:focus-visible {
-  outline: 4px dashed var(--toner);
-  outline-offset: 4px;
-}
-
-.hm-wall-foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px 20px;
-  margin-top: 10px;
-}
-
-.hm-wall-foot .zn-marker {
-  font-size: 19px;
-}
-
-@media (max-width: 900px) {
-  .hm-next {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hm-wall {
-    rotate: none;
-  }
-
-  .hm-wall-label {
-    text-align: left;
-    padding-left: 0;
-  }
-}
-
-@media (max-width: 760px) {
-  .hm-next-form .zn-btn {
-    flex: 1 0 100%;
-  }
-
-  .hm .hm-wall-names {
-    gap: 12px 12px;
-  }
-
-  .hm-wall-name[data-near="1"] {
-    font-size: 20px;
-  }
-
-  .hm-wall-name[data-near="2"] {
-    font-size: 17px;
-  }
-}
-
-/* ----- Options on trial (/?nb=b, c, d). The default (a) is the box and the scrap above. ----- */
-
-/* b. The sticker sheet: no typing, peel a band you love. */
-.hm-next[data-option="b"] {
-  display: block;
-}
-
-.hm-pick-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 28px;
-  margin-bottom: 22px;
-}
-
-.hm-pick-head .zn-marker {
-  font-size: 22px;
-}
-
-.hm .hm-pick {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 18px;
-  padding: 22px clamp(14px, 2vw, 26px);
-  border: var(--cut);
-}
-
-.hm-sticker {
-  font-size: 18px;
-}
-
-.hm-sticker[data-hand="heavy"] {
-  min-height: 54px;
-  font-family: var(--font-strip);
-  font-size: 20px;
-  letter-spacing: -0.01em;
-  outline-width: var(--frame);
-  outline-offset: calc(-1 * var(--frame));
-}
-
-.hm-pick-foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px 30px;
-  margin-top: 16px;
-}
-
-.hm-pick-foot .hm-next-text {
-  max-width: 62ch;
-}
-
-/* c. Band of the day: a flyer with its neighbours as tear-off tabs along the foot. */
-.hm-next[data-option="c"],
-.hm-next[data-option="d"] {
-  align-items: start;
-}
-
-.hm-flyer {
-  position: relative;
-  background: var(--sheet);
-  outline: var(--keyline) solid var(--toner);
-  outline-offset: calc(-1 * var(--keyline));
-  box-shadow: var(--shadow-sheet);
-  rotate: 0.7deg;
-}
-
-.hm-flyer-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 34px clamp(16px, 2.4vw, 30px) 6px;
-}
-
-.hm-flyer-body > p {
-  margin: 0;
-}
-
-.hm-flyer-data {
-  font-size: 16px;
-}
-
-.hm-flyer-acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 24px;
-  margin-top: 6px;
-}
-
-/* Black, not pink: the gig of the week above owns the page's pink button. */
-.hm-flyer-play {
-  background: var(--toner);
-  color: var(--paper);
-}
-
-.hm-flyer-play[data-current] {
-  background: var(--pink);
-  color: var(--toner);
-}
-
-.hm-flyer-take {
-  margin: 14px 0 0;
-  padding: 0 clamp(16px, 2.4vw, 30px) 8px;
-}
-
-.hm-flyer-take .zn-marker {
-  font-size: 21px;
-}
-
-/* The tabs: cut apart with scissors, still hanging from the sheet. Typed sideways, as on a real flyer. */
-.hm .hm-tabs {
-  display: flex;
-  border-top: var(--cut);
-}
-
-.hm-tabs li {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.hm-tabs li + li {
-  border-left: var(--cut);
-}
-
-.hm-tab {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-width: var(--touch);
-  height: 230px;
-  padding: 14px 0 12px;
-  color: var(--toner);
-  text-decoration: none;
-  font: 400 16px/1.15 var(--font-type);
-  letter-spacing: var(--track-data);
-  text-transform: uppercase;
-}
-
-.hm-tab span {
-  writing-mode: vertical-rl;
-  max-height: 100%;
-  overflow-wrap: anywhere;
-}
-
-.hm-tab:hover {
-  background: var(--toner);
-  color: var(--paper);
-}
-
-.hm-tab:focus-visible {
-  outline: 4px dashed var(--toner);
-  outline-offset: -6px;
-}
-
-.hm-tab:hover:focus-visible {
-  outline-color: var(--paper);
-}
-
-/* d. The crossroads: you are here, four signs out. */
+/* The scrap the crossroads is drawn on: cut out along the dashed line. */
 .hm-cross {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  padding: 24px clamp(14px, 2vw, 26px) 16px;
+  padding: 24px clamp(12px, 2vw, 26px) 16px;
   border: var(--cut);
 }
 
+/* You are here: today's band, the heavy hand on black. */
 .hm-cross-here {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   min-height: var(--touch);
+  max-width: 100%;
   padding: 10px 22px 8px;
   background: var(--toner);
   color: var(--paper);
@@ -549,46 +233,61 @@
   text-align: center;
 }
 
-.hm .hm-cross ul {
+.hm-cross-here:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.hm-signs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 16px;
+  align-items: start;
   width: 100%;
 }
 
-/* A sign: the way on a black strip, the band on white under it. */
+/* A sign: the way on a black strip, then the bands, typed, one under the other. The sheet tilts;
+   the rows in it are plain links, a finger tall. */
 .hm-sign {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  height: 100%;
-  min-height: var(--touch);
-  padding: 0 12px 10px 0;
   background: var(--sheet);
-  color: var(--toner);
   outline: var(--keyline) solid var(--toner);
   outline-offset: calc(-1 * var(--keyline));
   box-shadow: var(--shadow-rest);
-  text-decoration: none;
   rotate: var(--tilt, 0deg);
 }
 
 .hm-sign-word {
+  display: inline-block;
+  margin: 0;
   padding: 8px 12px 5px;
   background: var(--toner);
   color: var(--paper);
   font-family: var(--font-strip);
+  font-weight: 400;
   font-size: 16px;
   line-height: 1.1;
   letter-spacing: -0.01em;
   text-transform: uppercase;
 }
 
+.hm-sign li + li {
+  border-top: 2px dashed var(--toner);
+}
+
+.hm-sign-band {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-height: 54px;
+  padding: 7px 12px 4px;
+  color: var(--toner);
+  text-decoration: none;
+}
+
 .hm-sign-name {
-  padding: 4px 0 0 12px;
   font-family: var(--font-type);
-  font-size: clamp(18px, 1.7vw, 23px);
+  font-size: 16.5px;
   line-height: 1.2;
   letter-spacing: var(--track-data);
   text-transform: uppercase;
@@ -596,15 +295,26 @@
 }
 
 .hm-sign-note {
-  padding-left: 12px;
   font-size: 13px;
   color: var(--label-grey);
 }
 
-.hm-sign:focus-visible,
-.hm-cross-here:focus-visible {
+.hm-sign-band:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-sign-band:hover .hm-sign-note {
+  color: var(--toner-soft);
+}
+
+.hm-sign-band:focus-visible {
   outline: 4px dashed var(--toner);
-  outline-offset: 4px;
+  outline-offset: -5px;
+}
+
+.hm-sign-band:hover:focus-visible {
+  outline-color: var(--paper);
 }
 
 .hm-cross-hint {
@@ -612,47 +322,24 @@
   font-size: 19px;
 }
 
+@media (max-width: 1300px) {
+  .hm-next {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
-  .hm .hm-pick {
-    gap: 12px 12px;
-    padding: 18px 12px;
+  .hm-signs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
   }
 
-  .hm-pick li:nth-child(n + 11) {
-    display: none;
-  }
-
-  .hm-sticker {
-    font-size: 16px;
-  }
-
-  .hm-sticker[data-hand="heavy"] {
-    font-size: 17px;
-  }
-
-  .hm-flyer {
-    rotate: none;
-  }
-
-  .hm-flyer-play {
-    width: 100%;
-  }
-
-  .hm-tabs li:nth-child(n + 7) {
-    display: none;
-  }
-
-  .hm-tab {
-    height: 210px;
-    font-size: 15px;
-  }
-
-  .hm .hm-cross ul {
-    gap: 14px 12px;
+  .hm-sign-band {
+    padding: 7px 10px 4px;
   }
 
   .hm-sign-name {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .hm-cross-hint {

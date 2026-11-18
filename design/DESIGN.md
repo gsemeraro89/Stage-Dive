@@ -256,7 +256,7 @@ Rules the pages add:
 - **One pink thing per page.** On a page that has its label pink in the header (Bands, Decades, Genres…), nothing else is pink at rest: data strips are black, play labels are black and turn pink only for the gig that is playing. On the concert page (no pink label in the header) the date strip is pink, as on the board.
 - **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
 - **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.
-- **Find your next band** has three ways in besides the footer: the sticker in the header, the block under the homepage's black band (`hm-next`: a box to type a band into, plus a scrap of today's wall, names only, bigger = more alike), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
+- **Find your next band** has three ways in besides the footer: the sticker in the header, the crossroads under the homepage's black band (`hm-next`, `src/app/_home/NextBand.tsx`: "you are here" on today's band, then four signs, Louder / Softer / Older / Newer, up to three bands each with their genre; every name opens the wall from that band), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
 - **Nothing is invented.** No story, quote or song note that is not stored. An empty pile says "Nothing. Not even a bootleg." and points somewhere full.
 
 ## 15. The bridge (what is left of it)

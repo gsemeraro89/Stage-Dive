@@ -25,7 +25,5 @@ export default async function Home({ searchParams }: Props) {
     for (const [k, v] of Object.entries(params)) for (const one of [v].flat()) if (one !== undefined) query.append(k, one);
     redirect(`/concerts?${query.toString()}`);
   }
-  // "Find your next band" has four layouts on trial: /?nb=b, c or d shows one of the others. Default: a.
-  const nb = [params.nb].flat()[0];
-  return <HomePage nextBand={nb === "b" || nb === "c" || nb === "d" ? nb : "a"} />;
+  return <HomePage />;
 }
