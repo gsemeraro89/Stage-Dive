@@ -658,3 +658,8 @@ export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
 export const listTours = cached("listTours", listToursUncached);
+
+/** Visible-concert lists for other modules (e.g. src/lib/home.ts): any where/order, as page-ready views. */
+export async function findConcertViews(args: { where: object; orderBy?: object | object[]; take?: number }): Promise<ConcertView[]> {
+  return (await findConcerts({ ...args, where: { AND: [VISIBLE, args.where] } })).map(toConcertView);
+}

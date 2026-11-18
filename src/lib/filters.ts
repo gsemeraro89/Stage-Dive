@@ -77,7 +77,7 @@ export const VISIBLE = {
   ...(siteSources ? { source: { in: siteSources } } : {}),
 } as const;
 
-/** The database conditions for a concert of filters. */
+/** The database conditions for a set of filters. */
 export function buildWhere(f: ConcertFilters) {
   const and: Record<string, unknown>[] = [];
   if (f.genre) and.push({ genres: { some: { genre: { slug: f.genre } } } });

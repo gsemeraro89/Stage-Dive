@@ -1,0 +1,5 @@
+{
+  "_note": "Owner picks for the homepage (src/lib/home.ts). gigOfTheWeek: a YouTube ID to pin as gig of the week (null = weekly rotation over the bands). nightThat: a TRUE story about one gig, written by the owner (headline + story, 2-4 sentences); the section stays hidden while it is null. Example: { \"youtubeId\": \"FPvUDWW5FM8\", \"headline\": \"...\", \"story\": \"...\" }",
+  "gigOfTheWeek": null,
+  "nightThat": null
+}

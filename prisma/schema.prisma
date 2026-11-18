@@ -93,6 +93,7 @@ model Artist {
   coverChosenFrom  String?                 @map("cover_chosen_from")
   credits          ConcertArtist[]
   tours            Tour[]
+  photo            BandPhoto?
   /// Artists most like this one, computed weekly by the similarity job (best first).
   similarTo        ArtistSimilarity[]      @relation("similarFrom")
   similarOf        ArtistSimilarity[]      @relation("similarTo")
@@ -460,4 +461,41 @@ model Play {
   @@index([concertId, startedAt])
   @@index([startedAt])
   @@map("plays")
+}
+
+/// A band's photo from Wikimedia Commons, photocopied (brief section 3) and stored with its credit.
+/// Only licences that allow changes are used (public domain, CC0, CC BY, CC BY-SA). Not YouTube data:
+/// YouTube thumbnails and avatars are never stored or altered here (owner decision, 18 Nov 2026).
+model BandPhoto {
+  id          Int      @id @default(autoincrement())
+  artistId    Int      @unique @map("artist_id")
+  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  /// The photocopied image (two-colour PNG).
+  image       Bytes
+  width       Int
+  height      Int
+  /// The Commons file ("File:...") and its page, where author and licence are shown.
+  sourceTitle String   @map("source_title")
+  sourcePage  String   @map("source_page")
+  author      String
+  license     String
+  licenseUrl  String?  @map("license_url")
+  /// When the Commons file and licence were last read.
+  checkedAt   DateTime @default(now()) @map("checked_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("band_photos")
+}
+
+/// Bands looked up for a photo, found or not, so a band without a usable photo is not asked about
+/// every run (looked at again after 90 days).
+model BandPhotoCheck {
+  artistId   Int      @id @map("artist_id")
+  wikidataId String?  @map("wikidata_id")
+  /// Why there is no photo ("no image on Wikidata", "licence does not allow changes (CC BY-NC 2.0)"...).
+  skipped    String?
+  checkedAt  DateTime @default(now()) @map("checked_at")
+
+  @@map("band_photo_checks")
 }

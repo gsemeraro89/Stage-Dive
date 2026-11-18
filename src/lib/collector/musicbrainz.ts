@@ -148,6 +148,24 @@ interface UrlRelation {
   url?: { resource?: string };
 }
 
+/** The artist's Wikidata item (e.g. "Q15920"), from their MusicBrainz links, or null. */
+export async function artistWikidataId(mbid: string, fetchFn: typeof fetch = fetch): Promise<string | null> {
+  const res = await politeFetch(`${API}/artist/${mbid}?inc=url-rels&fmt=json`, fetchFn);
+  if (!res.ok) throw new Error(`MusicBrainz links failed: ${res.status}`);
+  const data = (await res.json()) as { relations?: UrlRelation[] };
+  return wikidataIdFromRelations(data.relations);
+}
+
+/** The first current Wikidata link among an artist's MusicBrainz links. Pure, for tests. */
+export function wikidataIdFromRelations(relations: UrlRelation[] | undefined): string | null {
+  for (const rel of relations ?? []) {
+    if (rel.ended || !rel.url?.resource) continue;
+    const m = /wikidata\.org\/(?:wiki|entity)\/(Q\d+)/.exec(rel.url.resource);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 /** The first current YouTube channel link among an artist's MusicBrainz links. Pure, for tests. */
 export function youtubeRefFromRelations(relations: UrlRelation[] | undefined): YouTubeRef | null {
   for (const rel of relations ?? []) {

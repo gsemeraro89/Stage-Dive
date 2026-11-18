@@ -26,7 +26,8 @@
     "artist-images": "tsx scripts/artist-images.ts",
     "artist-lane": "tsx scripts/artist-lane.ts",
     "admin-ops": "tsx scripts/admin-ops.ts",
-    "seed-check": "tsx scripts/seed-check.ts"
+    "seed-check": "tsx scripts/seed-check.ts",
+    "band-photos": "tsx scripts/band-photos.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -37,6 +38,7 @@
     "prisma": "^7.10.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },

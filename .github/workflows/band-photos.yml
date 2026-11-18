@@ -1,0 +1,37 @@
+# Band photos from Wikimedia Commons, photocopied and stored with their credit (src/lib/photos).
+# Monthly, or by hand. No YouTube quota, no Claude. Licences that allow changes only.
+name: Band photos
+
+on:
+  schedule:
+    - cron: "17 4 3 * *" # the 3rd of each month, 04:17 UTC
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Most bands to look up this run"
+        default: "50"
+      force:
+        description: "Look again at every band, also those checked in the last 90 days"
+        type: boolean
+        default: false
+
+concurrency:
+  group: database-jobs
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run band-photos -- --limit "${{ inputs.limit || '50' }}" ${{ inputs.force && '--force' || '' }}
