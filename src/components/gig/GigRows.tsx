@@ -21,15 +21,19 @@ type Props = {
   compact?: boolean;
 };
 
-function rowData(c: ConcertView, name: "band" | "place", lead: Props["lead"]): string {
+/** The typed facts, and the view count apart from them (phones leave the count out to keep one line). */
+function rowData(c: ConcertView, name: "band" | "place", lead: Props["lead"]): { facts: string; views: string | null } {
   const views = c.viewCount > 0 ? `${compactNumber(c.viewCount)} views on YouTube` : null;
   if (name === "place") {
     const day = lead === "year" ? (c.performedOn ? playedOn(c) : null) : playedOn(c);
-    return [day, c.tour?.name, kindWord(c.venueKind), views].filter(Boolean).join(" /// ");
+    return { facts: [day, c.tour?.name, kindWord(c.venueKind)].filter(Boolean).join(" /// "), views };
   }
   const where = lead === "year" ? [c.venue?.name, c.city].filter(Boolean).join(", ") : placeYear(c);
-  return [where, views].filter(Boolean).join(" /// ");
+  return { facts: where, views };
 }
+
+/** YouTube's own 16:9 file of the video (320x180, always there): the picture alone, no bars baked in. */
+const wideThumb = (youtubeId: string) => `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`;
 
 export function GigRows({ concerts, label, lead = "none", name = "band", compact }: Props) {
   return (
@@ -37,23 +41,34 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
       <ol className="pg-rows" aria-label={label} data-compact={compact || undefined} data-od="concert-list">
         {concerts.map((c, i) => {
           const track = toTrack(c);
-          const t = c.thumbnail;
           const title = name === "band" ? c.credits : [c.venue?.name, c.city].filter(Boolean).join(", ") || c.title;
+          const { facts, views } = rowData(c, name, lead);
+          const line = [facts, views].filter(Boolean).join(" /// ");
           return (
             <li key={c.id} className="pg-row" data-od="concert-tile">
               {/* The picture is a play button; nothing is drawn on it. */}
               <PlayButton track={track} className="pg-row-pic">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={t.src} srcSet={t.srcSet} sizes="112px" width={t.width} height={t.height} alt="" loading="lazy" decoding="async" />
+                <img src={wideThumb(c.youtubeId)} width={320} height={180} alt="" loading="lazy" decoding="async" />
               </PlayButton>
               {lead !== "none" && (
                 <span className="pg-row-lead" aria-hidden={lead === "rank" || undefined}>
                   {lead === "year" ? (c.performedYear ?? "?") : i + 1}
                 </span>
               )}
-              <Link href={`/concerts/${c.slug}`} className="pg-row-text">
+              {/* Name and facts are kept to one line each and cut with "…"; the full text stays in the
+                  link (screen readers read all of it) and in its title (shown on hover). */}
+              <Link href={`/concerts/${c.slug}`} className="pg-row-text" title={`${title} /// ${line}`}>
                 <span className="pg-row-name">{title}</span>
-                <span className="zn-data pg-row-data">{rowData(c, name, lead)}</span>
+                <span className="zn-data pg-row-data">
+                  {facts}
+                  {views && (
+                    <span className="pg-row-views">
+                      {facts ? " /// " : ""}
+                      {views}
+                    </span>
+                  )}
+                </span>
               </Link>
               <PlayButton track={track} className="pg-row-play">
                 <PlayGlyph />
