@@ -44,7 +44,7 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
               {/* The picture is a play button; nothing is drawn on it. */}
               <PlayButton track={track} className="pg-row-pic">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={t.src} srcSet={t.srcSet} sizes="150px" width={t.width} height={t.height} alt="" loading="lazy" decoding="async" />
+                <img src={t.src} srcSet={t.srcSet} sizes="112px" width={t.width} height={t.height} alt="" loading="lazy" decoding="async" />
               </PlayButton>
               {lead !== "none" && (
                 <span className="pg-row-lead" aria-hidden={lead === "rank" || undefined}>

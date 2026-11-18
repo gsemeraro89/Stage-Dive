@@ -147,8 +147,9 @@
 .pg-row {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 13px 6px;
+  gap: 18px;
+  /* Tight rows (owner, 18 Nov 2026): the picture sets the height, the padding is just air. */
+  padding: 7px 6px;
   border-bottom: var(--cut);
 }
 
@@ -156,7 +157,7 @@
 .pg-row-pic {
   flex: none;
   display: block;
-  width: 150px;
+  width: 112px;
   padding: 0;
   border: 3px solid var(--toner);
   background: var(--toner);
@@ -177,7 +178,7 @@
   flex: none;
   min-width: 2.7em;
   font-family: var(--font-strip);
-  font-size: clamp(34px, 3.4vw, 50px);
+  font-size: clamp(30px, 2.8vw, 40px);
   line-height: 1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -199,7 +200,7 @@
 
 .pg-row-name {
   font-family: var(--font-strip);
-  font-size: clamp(18px, 1.7vw, 24px);
+  font-size: clamp(17px, 1.5vw, 21px);
   line-height: 1.1;
   letter-spacing: -0.01em;
   text-transform: uppercase;
@@ -213,8 +214,9 @@
 }
 
 .pg-row-data {
-  margin-top: 7px;
-  font-size: 15px;
+  margin-top: 4px;
+  font-size: 14.5px;
+  line-height: 1.35;
 }
 
 /* The length on a black label: press it and the gig plays. Pink while it is the one playing. */
@@ -246,7 +248,7 @@
 }
 
 .pg-rows[data-compact] .pg-row-pic {
-  width: 118px;
+  width: 104px;
 }
 
 .pg-rows-credit,
@@ -1025,32 +1027,57 @@
     font-size: 13.5px;
   }
 
+  /* Phones: picture on the left; the year (or rank) and the play label on one line beside it, the
+     name and the facts under them. Nothing wraps onto a line of its own. */
   .pg-row {
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    padding: 10px 0;
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "pic lead play"
+      "pic text text";
+    align-items: start;
+    gap: 2px 12px;
+    padding: 8px 0;
+  }
+
+  .pg-row:not(:has(.pg-row-lead)) {
+    grid-template-areas:
+      "pic text play"
+      "pic text play";
   }
 
   .pg-row-pic,
   .pg-rows[data-compact] .pg-row-pic {
-    width: 96px;
+    grid-area: pic;
+    width: 88px;
   }
 
   .pg-row-lead {
+    grid-area: lead;
+    align-self: center;
     min-width: 0;
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .pg-row-text {
-    flex-basis: 120px;
+    grid-area: text;
+    justify-content: flex-start;
+    min-height: var(--touch);
+  }
+
+  .pg-row-name {
+    font-size: 16px;
   }
 
   .pg-row-data {
-    font-size: 13.5px;
+    margin-top: 2px;
+    font-size: 13px;
   }
 
   .pg-row-play {
-    margin-left: auto;
+    grid-area: play;
+    padding: 3px 10px 0;
+    font-size: 14px;
   }
 
   .pg-leaders a {
@@ -1162,7 +1189,7 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);
-  margin: 18px 0 0;
+  margin: 14px 0 0;
   padding: 4px 16px 0;
   background: var(--toner);
   color: var(--paper);
