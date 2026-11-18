@@ -2,7 +2,7 @@
 // every row is matched on a stable key (slug, name or YouTube ID) and updated, never duplicated.
 
 import type { PrismaClient } from "../../generated/prisma/client";
-import { GENRES, SETTINGS, SITE_GENRES } from "../catalogue";
+import { GENRES, VENUE_KINDS, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 import type { NormalizedSeed } from "./normalize";
 
@@ -12,13 +12,13 @@ export interface ImportSummary {
   venues: number;
   channels: number;
   genres: number;
-  settings: number;
+  venueKinds: number;
 }
 
 export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promise<ImportSummary> {
   return db.$transaction(
     async (tx) => {
-      // Fixed lists: genres and settings, in the order of the brief.
+      // Fixed lists: genres and venueKinds, in the order of the brief.
       const genreIds = new Map<string, number>();
       for (const [i, name] of GENRES.entries()) {
         const row = await tx.genre.upsert({
@@ -28,26 +28,27 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
         });
         genreIds.set(name, row.id);
       }
-      // Genres no longer on the list are removed, with their links to concerts. Artist-only genres are
-      // created by the collector on first use and kept.
+      // Genres no longer on the list are removed, with their links to concerts.
       await tx.genre.deleteMany({ where: { name: { notIn: [...SITE_GENRES] } } });
+      await tx.venueKind.deleteMany({ where: { name: { notIn: [...VENUE_KINDS] }, concerts: { none: {} } } });
 
-      const settingIds = new Map<string, number>();
-      for (const [i, name] of SETTINGS.entries()) {
-        const row = await tx.setting.upsert({
+      const venueKindIds = new Map<string, number>();
+      for (const [i, name] of VENUE_KINDS.entries()) {
+        const row = await tx.venueKind.upsert({
           where: { slug: slugify(name) },
           create: { slug: slugify(name), name, sortOrder: i },
           update: {},
         });
-        settingIds.set(name, row.id);
+        venueKindIds.set(name, row.id);
       }
 
       const channelIds = new Map<string, number>();
       for (const channel of seed.channels) {
+        const ids = channel.youtubeChannelId ? { youtubeChannelId: channel.youtubeChannelId } : {};
         const row = await tx.channel.upsert({
           where: { name: channel.name },
-          create: { name: channel.name, isOfficial: channel.isOfficial },
-          update: { isOfficial: channel.isOfficial },
+          create: { name: channel.name, isOfficial: channel.isOfficial, ...ids },
+          update: { isOfficial: channel.isOfficial, ...ids },
         });
         channelIds.set(channel.name, row.id);
       }
@@ -64,6 +65,7 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
       }
 
       const artistIds = new Map<string, number>();
+      const tourIds = new Map<string, number>();
       for (const artist of seed.artists) {
         // Artists without a profile in the seed (collaborators) keep whatever is already stored.
         const profile = artist.profile ?? {};
@@ -75,6 +77,12 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
         artistIds.set(artist.slug, row.id);
       }
 
+      for (const tour of seed.tours) {
+        const data = { name: tour.name, artistId: artistIds.get(tour.artistSlug) ?? null };
+        const row = await tx.tour.upsert({ where: { slug: tour.slug }, create: { slug: tour.slug, ...data }, update: data });
+        tourIds.set(tour.slug, row.id);
+      }
+
       for (const concert of seed.concerts) {
         const data = {
           slug: concert.slug,
@@ -82,9 +90,10 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
           durationSeconds: concert.durationSeconds,
           viewCount: concert.viewCount,
           publishedAt: concert.publishedAt,
+          performedYear: concert.performedYear,
+          performedOn: concert.performedOn,
           city: concert.city,
           country: concert.country,
-          liveAct: concert.liveAct,
           writeUp: concert.writeUp,
           embeddable: true,
           privacyStatus: "public",
@@ -92,9 +101,10 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
           ytRefreshedAt: concert.checkedAt,
           channelId: channelIds.get(concert.channelName)!,
           venueId: concert.venueSlug ? venueIds.get(concert.venueSlug)! : null,
-          settingId: settingIds.get(concert.setting)!,
+          venueKindId: venueKindIds.get(concert.venueKind)!,
+          tourId: concert.tourSlug ? tourIds.get(concert.tourSlug)! : null,
         };
-        // status and curated are only concert on first import, so later edits by the owner survive a re-run.
+        // status and curated are only set on first import, so later edits by the owner survive a re-run.
         const row = await tx.concert.upsert({
           where: { youtubeId: concert.youtubeId },
           create: { youtubeId: concert.youtubeId, source: "SEED", curated: true, status: "PUBLISHED", ...data },
@@ -123,7 +133,7 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
         venues: seed.venues.length,
         channels: seed.channels.length,
         genres: GENRES.length,
-        settings: SETTINGS.length,
+        venueKinds: VENUE_KINDS.length,
       };
     },
     { timeout: 60_000 },

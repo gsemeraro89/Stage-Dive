@@ -185,7 +185,7 @@ export default async function ConcertPage({ params }: Props) {
             </div>
             {concert.venue && (
               <div>
-                <dt className="meta">{concert.setting?.name === "Festival" ? "Festival" : "Venue"}</dt>
+                <dt className="meta">{concert.venueKind?.name === "Festival" ? "Festival" : "Venue"}</dt>
                 <dd>
                   <Link href={`/venues/${concert.venue.slug}`} className="od-inline">
                     {concert.venue.name}
@@ -210,13 +210,12 @@ export default async function ConcertPage({ params }: Props) {
                     </Link>
                   </span>
                 ))}
-                {concert.liveAct && `${concert.genres.length ? " · " : ""}Live act`}
               </dd>
             </div>
-            {concert.setting && (
+            {concert.venueKind && (
               <div>
-                <dt className="meta">Setting</dt>
-                <dd>{concert.setting.name}</dd>
+                <dt className="meta">VenueKind</dt>
+                <dd>{concert.venueKind.name}</dd>
               </div>
             )}
             <div>

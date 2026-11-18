@@ -9,14 +9,14 @@ import { buildQueue, relatedByGenre, type QueueCandidate } from "../src/lib/upne
 describe("parseFilters", () => {
   it("defaults to newest with no filters", () => {
     const f = parseFilters({});
-    expect(f).toEqual({ q: null, genre: null, artist: null, venue: null, setting: null, sort: "newest" });
+    expect(f).toEqual({ q: null, genre: null, artist: null, venue: null, venueKind: null, sort: "newest" });
     expect(hasActiveFilters(f)).toBe(false);
   });
   it("reads valid values", () => {
-    const f = parseFilters({ q: "  nto   cercle ", genre: "melodic-techno", sort: "longest", setting: "Festival" });
+    const f = parseFilters({ q: "  nto   cercle ", genre: "melodic-techno", sort: "longest", venueKind: "Festival" });
     expect(f.q).toBe("nto cercle");
     expect(f.genre).toBe("melodic-techno");
-    expect(f.setting).toBe("festival");
+    expect(f.venueKind).toBe("festival");
     expect(f.sort).toBe("longest");
     expect(hasActiveFilters(f)).toBe(true);
   });

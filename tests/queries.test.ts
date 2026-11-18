@@ -19,9 +19,9 @@ describe.skipIf(!url)("page queries (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, concert_genres, concert_artists, concerts, artists, venues, genres, venue_kinds, tours, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"))));
     q = await import("../src/lib/queries");
     filters = await import("../src/lib/filters");
   });
@@ -35,14 +35,14 @@ describe.skipIf(!url)("page queries (database)", () => {
     expect(concerts[0].youtubeId).toBe("NEjcnAJ7Sls"); // NTO at HÖR, 21 Oct 2026
   });
 
-  it("filters by artist, genre, venue and setting", async () => {
+  it("filters by artist, genre, venue and venueKind", async () => {
     expect((await list({ artist: "nto" })).total).toBe(14);
     expect((await list({ artist: "sofiane-pamart" })).total).toBe(1); // collaborators count too
     expect((await list({ genre: "deep-house" })).total).toBe(1);
     expect((await list({ genre: "disco" })).total).toBe(0); // genre taken off the list
     expect((await list({ venue: "sonar-lisboa" })).total).toBe(1);
-    expect((await list({ setting: "club" })).total).toBe(3);
-    expect((await list({ artist: "nto", setting: "festival" })).total).toBe(3);
+    expect((await list({ venueKind: "club" })).total).toBe(3);
+    expect((await list({ artist: "nto", venueKind: "festival" })).total).toBe(3);
   });
 
   it("searches titles, artists (including other spellings), venues and places", async () => {
@@ -111,11 +111,11 @@ describe.skipIf(!url)("page queries (database)", () => {
   it("the Festivals index lists only places with a festival concert", async () => {
     const festivals = await q.listVenues();
     expect(festivals.length).toBeGreaterThan(0);
-    const all = await db.venue.findMany({ include: { concerts: { include: { setting: true } } } });
+    const all = await db.venue.findMany({ include: { concerts: { include: { venueKind: true } } } });
     for (const f of festivals) {
-      expect(all.find((v) => v.slug === f.slug)!.concerts.some((s) => s.setting?.slug === "festival")).toBe(true);
+      expect(all.find((v) => v.slug === f.slug)!.concerts.some((s) => s.venueKind?.slug === "festival")).toBe(true);
     }
-    const nonFestival = all.filter((v) => v.concerts.length > 0 && !v.concerts.some((s) => s.setting?.slug === "festival"));
+    const nonFestival = all.filter((v) => v.concerts.length > 0 && !v.concerts.some((s) => s.venueKind?.slug === "festival"));
     expect(nonFestival.length).toBeGreaterThan(0);
     for (const v of nonFestival) expect(festivals.map((f) => f.slug)).not.toContain(v.slug);
   });

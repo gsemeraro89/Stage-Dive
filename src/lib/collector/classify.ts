@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { GENRES, SETTINGS } from "../catalogue";
+import { GENRES, VENUE_KINDS } from "../catalogue";
 import type { Classification } from "./rules";
 import type { YouTubeVideo } from "./youtube";
 
@@ -30,7 +30,7 @@ export const ClassificationSchema = z.object({
   venue: z.string().describe("Festival, club, or place where it was played, without the city. Empty if unknown."),
   city: z.string().describe("City, or empty if unknown."),
   country: z.string().describe("Country in English, or empty if unknown."),
-  setting: z.enum([...SETTINGS, "Unknown"]),
+  venueKind: z.enum([...VENUE_KINDS, "Unknown"]),
   genres: z.array(z.enum(GENRES)).describe("One to three genres from the allowed list, most fitting first. Empty if none fits."),
   liveAct: z.boolean().describe("True for a live act played on instruments/controllers rather than a DJ concert."),
   uploaderIsOfficial: z
@@ -48,7 +48,7 @@ export type FullClassification = z.infer<typeof ClassificationSchema>;
 const SYSTEM = `You classify YouTube videos for OpenDecks, a catalogue of full-length electronic DJ concerts and live acts.
 
 Allowed genres: ${GENRES.join(", ")}.
-Allowed settings: ${SETTINGS.join(", ")}.
+Allowed venueKinds: ${VENUE_KINDS.join(", ")}.
 
 Rules:
 - A full concert is one artist (or one billed duo/b2b) playing a complete DJ concert or live act, normally 40 minutes or more. Not full concerts: clips, single tracks, trailers, aftermovies, interviews, documentaries, compilations or playlists of several artists, radio shows with several guests.

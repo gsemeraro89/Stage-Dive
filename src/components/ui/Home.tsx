@@ -51,7 +51,7 @@ export function Plate({
             <span>{kicker.label}</span>
           )
         ) : (
-          <span>{rest || concert.setting?.name}</span>
+          <span>{rest || concert.venueKind?.name}</span>
         )}
         <span>{compactNumber(concert.viewCount)} views</span>
       </p>
@@ -81,7 +81,7 @@ export function LatestStrip({ newest, concerts, artists }: { newest?: ConcertVie
   );
 }
 
-/** One picture of the reel: the concert, and the setting it stands for (a link to that setting's concerts). */
+/** One picture of the reel: the concert, and the venueKind it stands for (a link to that venueKind's concerts). */
 export interface ReelFrame {
   concert: ConcertView;
   kicker: { label: string; href: string };
@@ -89,14 +89,14 @@ export interface ReelFrame {
 
 /**
  * Reel: the band of pictures at the top of the home page. Every frame has the same format and
- * size (16:9), a 2px seam between them, and its caption under it, on the ground: the setting
+ * size (16:9), a 2px seam between them, and its caption under it, on the ground: the venueKind
  * with its count (a link), the place, the artist. The picture opens the concert page. Arrows and
  * swipe: see `Reel`.
  */
 export function PlaceReel({ frames }: { frames: ReelFrame[] }) {
   if (frames.length === 0) return null;
   return (
-    <Reel label="Concerts by setting">
+    <Reel label="Concerts by venueKind">
       {frames.map(({ concert, kicker }, i) => (
         <li key={concert.id}>
           <article className="od-reel-frame" data-od="plate">

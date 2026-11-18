@@ -4,7 +4,7 @@
 import { GENRES, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 
-// ---------- Settings that control the rules ----------
+// ---------- Venue kinds that control the rules ----------
 
 export interface CollectorConfig {
   /** Minimum length of a concert, in seconds. Product rule: a full concert is normally at least 40 minutes. */
@@ -110,38 +110,53 @@ export function worthRemembering(failures: RuleFailure[]): boolean {
 
 /** Extra spellings people use for our genres. Matched as whole words, case-insensitive. */
 const GENRE_SPELLINGS: Record<(typeof GENRES)[number], string[]> = {
-  "Techno": ["techno"],
-  "Melodic Techno": ["melodic techno"],
-  "Melodic House": ["melodic house"],
-  "Progressive House": ["progressive house", "prog house"],
-  "Progressive": ["progressive"],
-  "Deep House": ["deep house", "deephouse"],
-  "Tech House": ["tech house", "tech-house", "techhouse"],
-  "Afro House": ["afro house", "afrohouse", "afro-house"],
-  "Electronica": ["electronica"],
+  "classic rock": ["classic rock"],
+  "hard rock": ["hard rock"],
+  "punk": ["punk", "punk rock", "hardcore punk"],
+  "post-punk": ["post-punk", "post punk", "postpunk"],
+  "new wave / synth": ["new wave", "synth-pop", "synthpop", "synth pop", "darkwave"],
+  "indie": ["indie", "indie rock"],
+  "alternative": ["alternative rock", "alt-rock", "alt rock"],
+  "grunge": ["grunge"],
+  "metal": ["metal", "heavy metal", "thrash metal", "nu metal", "nu-metal"],
+  "garage": ["garage rock", "garage punk"],
+  "shoegaze": ["shoegaze", "dream pop"],
+  "stoner": ["stoner rock", "stoner metal", "desert rock"],
+  "emo / post-hardcore": ["emo", "post-hardcore", "post hardcore", "screamo"],
 };
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const wordPattern = (spellings: string[], flags = "i") =>
+  new RegExp(`(^|[^a-z0-9])(${spellings.map(escapeRegExp).join("|")})($|[^a-z0-9])`, flags);
+
 const GENRE_PATTERNS = Object.entries(GENRE_SPELLINGS).map(([genre, spellings]) => ({
   genre,
-  pattern: new RegExp(`(^|[^a-z0-9])(${spellings.map(escapeRegExp).join("|")})($|[^a-z0-9])`, "i"),
+  pattern: wordPattern(spellings),
 }));
 
-/** Genres off our list that contain one of ours as a word ("hard techno" is not Techno). */
-const NOT_OURS = /(^|[^a-z0-9])(hard ?techno|industrial techno|acid techno)($|[^a-z0-9])/gi;
+/**
+ * Phrases that contain one of our genre words but mean something else, blanked out before matching:
+ * "post-punk" is not punk (it is matched on its own first), "pop punk" is not on our list,
+ * "Hard Rock Cafe" is a venue.
+ */
+const NOT_OURS = wordPattern(
+  ["post-punk", "post punk", "postpunk", "pop punk", "pop-punk", "hard rock cafe", "hard rock hotel"],
+  "gi",
+);
 
-/** Our genres named in a video's title, description or tags (hashtags included). */
+/** Our genres named in a video's title, description or tags (hashtags included), in list order. */
 export function genresInText(...texts: (string | string[] | null | undefined)[]): string[] {
-  const text = texts
-    .flat()
-    .filter(Boolean)
-    .join(" \n ")
-    .replace(/#/g, " ")
-    .replace(NOT_OURS, " ");
-  return GENRE_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ genre }) => genre);
+  const text = texts.flat().filter(Boolean).join(" \n ").replace(/#/g, " ");
+  const found = new Set<string>();
+  if (GENRE_PATTERNS.find((g) => g.genre === "post-punk")!.pattern.test(text)) found.add("post-punk");
+  const rest = text.replace(NOT_OURS, " ");
+  for (const { genre, pattern } of GENRE_PATTERNS) {
+    if (genre !== "post-punk" && pattern.test(rest)) found.add(genre);
+  }
+  return GENRES.filter((g) => found.has(g));
 }
 
 // ---------- 3. Is an artist electronic, according to MusicBrainz genres? ----------

@@ -1,6 +1,6 @@
 // Database side of the collector: find duplicates, save accepted concerts, record decisions, refresh.
 import type { PrismaClient } from "../../generated/prisma/client";
-import { SETTINGS, SITE_GENRES } from "../catalogue";
+import { VENUE_KINDS, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 import { thumbnailUrl, type ThumbnailName } from "../thumbnails";
 import type { FullClassification } from "./classify";
@@ -94,9 +94,9 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         })
       : null;
 
-    const setting =
-      c.setting !== "Unknown" && (SETTINGS as readonly string[]).includes(c.setting)
-        ? await tx.setting.findUnique({ where: { slug: slugify(c.setting) } })
+    const venueKind =
+      c.venueKind !== "Unknown" && (VENUE_KINDS as readonly string[]).includes(c.venueKind)
+        ? await tx.venueKind.findUnique({ where: { slug: slugify(c.venueKind) } })
         : null;
 
     const credits: { artistId: number; role: "MAIN" | "WITH"; creditNote: string | null; position: number }[] = [];
@@ -135,7 +135,6 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         publishedAt: new Date(Date.UTC(v.publishedAt.getUTCFullYear(), v.publishedAt.getUTCMonth(), v.publishedAt.getUTCDate())),
         city: c.city || null,
         country: c.country || null,
-        liveAct: c.liveAct,
         writeUp: c.writeUp || null,
         thumbnailUrl: n.thumbnail ? thumbnailUrl(v.youtubeId, n.thumbnail) : null,
         source: "COLLECTOR",
@@ -148,7 +147,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         ytRefreshedAt: now,
         channelId: channel.id,
         venueId: venue?.id ?? null,
-        settingId: setting?.id ?? null,
+        venueKindId: venueKind?.id ?? null,
         credits: { create: credits },
         genres: { create: genreRows.map((g) => ({ genreId: g.id })) },
       },

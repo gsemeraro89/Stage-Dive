@@ -37,7 +37,7 @@ export default async function VenuePage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
   const { venue, concerts } = page;
-  const kind = concerts.find((s) => s.setting)?.setting?.name ?? "Venue";
+  const kind = concerts.find((s) => s.venueKind)?.venueKind?.name ?? "Venue";
   return (
     <main data-od="venue">
       <header className="od-pagehero">

@@ -24,7 +24,8 @@ const concertInclude = {
     orderBy: { position: "asc" as const },
   },
   venue: true,
-  setting: true,
+  venueKind: true,
+  tour: true,
   channel: true,
   genres: { include: { genre: true }, orderBy: { genre: { sortOrder: "asc" as const } } },
 };
@@ -48,9 +49,12 @@ export interface ConcertView {
   venue: { slug: string; name: string } | null;
   city: string | null;
   country: string | null;
-  setting: { slug: string; name: string } | null;
+  venueKind: { slug: string; name: string } | null;
   genres: { slug: string; name: string }[];
-  liveAct: boolean;
+  /** Year the concert was played, and the exact day when known. */
+  performedYear: number | null;
+  performedOn: Date | null;
+  tour: { slug: string; name: string } | null;
   durationSeconds: number;
   viewCount: number;
   publishedAt: Date;
@@ -76,9 +80,11 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     venue: concert.venue ? { slug: concert.venue.slug, name: concert.venue.name } : null,
     city: concert.city,
     country: concert.country,
-    setting: concert.setting ? { slug: concert.setting.slug, name: concert.setting.name } : null,
+    venueKind: concert.venueKind ? { slug: concert.venueKind.slug, name: concert.venueKind.name } : null,
     genres: concert.genres.map((g) => ({ slug: g.genre.slug, name: g.genre.name })),
-    liveAct: concert.liveAct,
+    performedYear: concert.performedYear,
+    performedOn: concert.performedOn,
+    tour: concert.tour ? { slug: concert.tour.slug, name: concert.tour.name } : null,
     durationSeconds: concert.durationSeconds,
     viewCount: concert.viewCount,
     publishedAt: concert.publishedAt,
@@ -169,9 +175,9 @@ async function mostWatchedConcertsUncached(take: number): Promise<ConcertView[]>
 async function filterOptionsUncached() {
   const db = getDb();
   const concerts = { where: VISIBLE };
-  const [genres, settings, venues, artists] = await Promise.all([
+  const [genres, venueKinds, venues, artists] = await Promise.all([
     db.genre.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { concerts: { where: { concert: VISIBLE } } } } } }),
-    db.setting.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { concerts } } } }),
+    db.venueKind.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { concerts } } } }),
     db.venue.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { concerts } } } }),
     db.artist.findMany({ where: PAGE_ARTIST, orderBy: { name: "asc" }, include: { _count: { select: { credits: { where: { concert: VISIBLE } } } } } }),
   ]);
@@ -179,7 +185,7 @@ async function filterOptionsUncached() {
     rows.map((r) => ({ slug: r.slug, name: r.name, count: count(r) })).filter((r) => r.count > 0);
   return {
     genres: pick(genres, (g) => g._count.concerts),
-    settings: pick(settings, (s) => s._count.concerts),
+    venueKinds: pick(venueKinds, (s) => s._count.concerts),
     venues: pick(venues, (v) => v._count.concerts),
     artists: pick(artists, (a) => a._count.credits),
   };
@@ -464,11 +470,11 @@ async function listArtistsUncached() {
 
 /**
  * The Festivals index (owner decision, 13 Nov 2026: festivals only, no clubs or other venues):
- * places with at least one visible concert played in the Festival setting. Other venues keep their
+ * places with at least one visible concert played in the Festival venueKind. Other venues keep their
  * own page, reached from their concerts.
  */
 async function listVenuesUncached() {
-  const FESTIVAL = { ...VISIBLE, setting: { slug: "festival" } };
+  const FESTIVAL = { ...VISIBLE, venueKind: { slug: "festival" } };
   const rows = await getDb().venue.findMany({
     where: { concerts: { some: FESTIVAL } },
     orderBy: { name: "asc" },

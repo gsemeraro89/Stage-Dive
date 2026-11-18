@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: { absolute: "FullDJSet — free full-length electronic DJ concerts" },
   description:
-    "Every free, full-length electronic DJ concert on YouTube, played right here: Cercle, Boiler Room, festivals and clubs, by artist, festival, genre and setting.",
+    "Every free, full-length electronic DJ concert on YouTube, played right here: Cercle, Boiler Room, festivals and clubs, by artist, festival, genre and venueKind.",
   alternates: { canonical: "/" },
 };
 
-const LIST_PARAMS = ["q", "genre", "artist", "venue", "setting", "sort", "page"];
+const LIST_PARAMS = ["q", "genre", "artist", "venue", "venueKind", "sort", "page"];
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 

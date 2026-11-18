@@ -301,10 +301,10 @@ export function Feature({
           )}
           <dt>Channel</dt>
           <dd>{concert.channel.name}</dd>
-          {(concert.genres.length > 0 || concert.liveAct) && (
+          {concert.genres.length > 0 && (
             <>
               <dt>Genre</dt>
-              <dd>{[...concert.genres.map((g) => g.name), ...(concert.liveAct ? ["Live act"] : [])].join(" · ")}</dd>
+              <dd>{concert.genres.map((g) => g.name).join(" · ")}</dd>
             </>
           )}
           <dt>Views</dt>

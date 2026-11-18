@@ -1,78 +1,93 @@
 // Fixed lists the catalogue is built on. Both are a starting point the owner can edit.
 
 /**
- * Genres shown on the site (owner decision, 12 Nov 2026: these 9 only, for now).
- * "Live Act" is an attribute, not a genre (see Concert.liveAct).
+ * Genres shown on the site (docs/BRIEF.md section 1, editable). "new wave / synth" added by the owner
+ * on 18 Nov 2026 for Depeche Mode-type acts (docs/SUPPLY-CHECK.md). Names are shown as written here.
  */
 export const GENRES = [
-  "Techno",
-  "Melodic Techno",
-  "Melodic House",
-  "Progressive House",
-  "Progressive",
-  "Deep House",
-  "Tech House",
-  "Afro House",
-  "Electronica",
+  "classic rock",
+  "hard rock",
+  "punk",
+  "post-punk",
+  "new wave / synth",
+  "indie",
+  "alternative",
+  "grunge",
+  "metal",
+  "garage",
+  "shoegaze",
+  "stoner",
+  "emo / post-hardcore",
 ] as const;
 
-/**
- * Genres used only for artists the owner approved by name (data/artist-rules.json), owner decision
- * 16 Nov 2026. They are never offered to the classifier, so other artists of these styles (e.g. Alok,
- * Timmy Trumpet) still stay out. "Hard Techno" added by the owner on 17 Nov 2026 for the hard techno
- * artists of the per-artist lane (I Hate Models, Sara Landry, Klangkuenstler...).
- */
-export const ARTIST_ONLY_GENRES = ["Big Room / EDM", "Trance", "Nu Disco", "Bass", "Hard Techno"] as const;
+export type GenreName = (typeof GENRES)[number];
 
 /** Every genre that can appear on the site, in display order. */
-export const SITE_GENRES = [...GENRES, ...ARTIST_ONLY_GENRES] as const;
+export const SITE_GENRES = GENRES;
 
-/**
- * Genres that were on the original list (docs/BRIEF.md 4.2) and were taken off by the owner.
- * In the seed data they are dropped quietly; a concert keeps its other genres.
- */
-export const RETIRED_GENRES = [
-  "Hard Techno",
-  "Psytrance",
-  "House",
-  "Organic House",
-  "Disco",
-  "Drum & Bass",
-  "Trance",
-  "Neo-Classical",
-] as const;
-
-/** The "Live Act" label in source data. Stored as Concert.liveAct, not as a genre. */
-export const LIVE_ACT = "Live Act";
-
-/** Settings from docs/BRIEF.md section 4 (owner approved, 12 Nov 2026). */
-export const SETTINGS = [
-  "Festival",
-  "Club",
-  "Special location",
-  "Studio-Session",
-  "Livestream",
-] as const;
-
-export type SettingName = (typeof SETTINGS)[number];
-
-/**
- * How setting labels found in older data map onto the approved settings.
- * Cercle is a channel, not a setting, so "Cercle / Special location" becomes "Special location".
- */
-export const SETTING_ALIASES: Record<string, SettingName> = {
-  "festival": "Festival",
-  "club": "Club",
-  "special location": "Special location",
-  "cercle / special location": "Special location",
-  "studio-session": "Studio-Session",
-  "studio / session": "Studio-Session",
-  "studio / bedroom": "Studio-Session",
-  "livestream": "Livestream",
+/** How genre labels found in source data (the seed CSV, Claude's answers) map onto GENRES. */
+export const GENRE_ALIASES: Record<string, GenreName> = {
+  "emo/post-hardcore": "emo / post-hardcore",
+  "emo": "emo / post-hardcore",
+  "post-hardcore": "emo / post-hardcore",
+  "new wave": "new wave / synth",
+  "synth": "new wave / synth",
+  "synth-pop": "new wave / synth",
+  "synthpop": "new wave / synth",
+  "new wave/synth": "new wave / synth",
 };
 
-export function normalizeSetting(label: string): SettingName {
-  const setting = SETTING_ALIASES[label.trim().toLowerCase()];
-  if (!setting) throw new Error(`Unknown setting "${label}". Add it to SETTING_ALIASES.`);
-  return setting;
+/** A genre label in our list, or null when it is not one of ours. */
+export function normalizeGenre(label: string): GenreName | null {
+  const key = label.trim().toLowerCase();
+  if ((GENRES as readonly string[]).includes(key)) return key as GenreName;
+  return GENRE_ALIASES[key] ?? null;
+}
+
+/**
+ * Where a concert happened. Festivals are "the fields", rooms (arenas, clubs, halls, stadiums) are
+ * "the rooms" on the homepage (brand book board 04).
+ */
+export const VENUE_KINDS = ["Festival", "Room", "Livestream", "TV-Studio"] as const;
+
+export type VenueKindName = (typeof VENUE_KINDS)[number];
+
+/** How venue-kind labels found in source data map onto VENUE_KINDS. */
+export const VENUE_KIND_ALIASES: Record<string, VenueKindName> = {
+  "festival": "Festival",
+  "festival archive": "Festival",
+  "festival stream": "Festival",
+  "room": "Room",
+  "club": "Room",
+  "arena": "Room",
+  "hall": "Room",
+  "stadium": "Room",
+  "theatre": "Room",
+  "livestream": "Livestream",
+  "webcast": "Livestream",
+  "tv-studio": "TV-Studio",
+  "tv studio": "TV-Studio",
+  "studio": "TV-Studio",
+};
+
+export function normalizeVenueKind(label: string): VenueKindName {
+  const venueKind = VENUE_KIND_ALIASES[label.trim().toLowerCase()];
+  if (!venueKind) throw new Error(`Unknown venue kind "${label}". Add it to VENUE_KIND_ALIASES.`);
+  return venueKind;
+}
+
+/** Decades shown on the site: the first one with a concert we can show, up to now. */
+export const FIRST_DECADE = 1960;
+
+/** "1980s" for 1983. */
+export function decadeOf(year: number): string {
+  return `${Math.floor(year / 10) * 10}s`;
+}
+
+/** 1980 for "1980s"; null for anything else. */
+export function parseDecade(label: string): number | null {
+  const m = /^(\d{3}0)s$/.exec(label);
+  if (!m) return null;
+  const start = Number(m[1]);
+  return start >= FIRST_DECADE && start <= new Date().getUTCFullYear() ? start : null;
 }

@@ -4,7 +4,7 @@ import "dotenv/config";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ARTIST_ONLY_GENRES, GENRES, SITE_GENRES } from "../src/lib/catalogue";
+import { GENRES, SITE_GENRES } from "../src/lib/catalogue";
 import {
   agreement,
   artistsInTitle,
@@ -291,7 +291,7 @@ describe("Haiku or Haiku + Opus", () => {
     expect(chooseClassifierMode(undefined, null)).toBe("haiku+opus");
     expect(chooseClassifierMode("", 0.99)).toBe("haiku");
   });
-  it("an explicit setting wins", () => {
+  it("an explicit venueKind wins", () => {
     expect(chooseClassifierMode("haiku", null)).toBe("haiku");
     expect(chooseClassifierMode("haiku+opus", 1)).toBe("haiku+opus");
   });
@@ -382,18 +382,6 @@ describe("data/artist-rules.json (owner, 17 Nov 2026)", () => {
     const keys = rules.map((r) => matchText(r.name));
     expect(new Set(keys).size).toBe(keys.length);
   });
-  it("uses only site genres; Hard Techno is artist-only, never offered to the classifier", () => {
-    for (const r of rules) for (const g of r.genres) expect(SITE_GENRES as readonly string[]).toContain(g);
-    expect(ARTIST_ONLY_GENRES as readonly string[]).toContain("Hard Techno");
-    expect(GENRES as readonly string[]).not.toContain("Hard Techno");
-    for (const n of ["I Hate Models", "Sara Landry", "Klangkuenstler", "Dax J", "999999999", "VTSS"]) expect(rule(n).genres).toContain("Hard Techno");
-    expect(rule("Vini Vici").genres).toEqual(["Trance"]);
-    for (const n of ["Timmy Trumpet", "Hardwell", "W&W"]) expect(rule(n).genres).toEqual(["Big Room / EDM"]);
-  });
-  it("a hard techno artist's concert gets Hard Techno even though the classifier cannot give it", () => {
-    const r = findArtistRule(["Sara Landry"], rules)!;
-    expect(genresForApprovedArtist(["Techno"], r)).toEqual(["Hard Techno"]);
-  });
 });
 
 const url = process.env.TEST_DATABASE_URL;
@@ -415,7 +403,7 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.classifierBatch.deleteMany();
   });
 
-  const answer = { isFullConcert: true, notConcertReason: "", isElectronic: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", setting: "Club" as const, genres: ["Techno" as const], liveAct: false };
+  const answer = { isFullConcert: true, notConcertReason: "", isElectronic: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", venueKind: "Club" as const, genres: ["Techno" as const], liveAct: false };
 
   it("stores Haiku answers by prompt version and reuses them (a dry run's answers serve the real run)", async () => {
     await haiku.storeLaneAnswer(db, "LANEVID0001", "classify", haiku.LANE_CLASSIFY_VERSION, answer);

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: `${SITE_NAME} — free electronic DJ concerts`, template: `%s — ${SITE_NAME}` },
   description:
-    "Full-length electronic DJ concerts and live acts from YouTube, organised by artist, festival, venue, genre and setting. Press play once and keep listening.",
+    "Full-length electronic DJ concerts and live acts from YouTube, organised by artist, festival, venue, genre and venueKind. Press play once and keep listening.",
 };
 
 export const viewport: Viewport = { themeColor: "#0B0B0F", colorScheme: "dark" };

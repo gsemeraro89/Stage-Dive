@@ -1,172 +1,204 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { normalizeSetting } from "../src/lib/catalogue";
+import { decadeOf, GENRES, normalizeGenre, normalizeVenueKind, parseDecade, VENUE_KINDS } from "../src/lib/catalogue";
 import { formatCredits, formatDate, formatDuration } from "../src/lib/format";
 import {
   buildConcertSlugs,
+  cleanGenres,
   normalizeSeed,
   parseCollaborator,
-  splitGenres,
-  type SeedFile,
+  parsePerformed,
   type SeedConcert,
+  type SeedFile,
 } from "../src/lib/seed/normalize";
 import { slugify } from "../src/lib/slug";
 
-const seedFile = JSON.parse(readFileSync("data/seed-concerts.json", "utf8")) as SeedFile;
+const seedFile = JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8")) as SeedFile;
 
 function makeConcert(overrides: Partial<SeedConcert> = {}): SeedConcert {
   return {
     id: "AAAAAAAAAAA",
-    artist: "Test Artist",
-    title: "Test Artist live",
+    artist: "Test Band",
+    title: "Test Band live (full concert)",
     channel: "Test Channel",
+    official: true,
     secs: 3600,
     views: 500000,
     date: "2025-01-01",
-    genres: ["Techno"],
-    venue: "Test Venue",
-    city: "Barcelona",
-    country: "Spain",
-    setting: "Club",
-    about: "A concert.",
-    youtube_url: "https://www.youtube.com/watch?v=AAAAAAAAAAA",
-    checked_embeddable_on: "2026-11-11",
+    performed: "1994-06-04",
+    genres: ["grunge"],
+    venue: "Test Hall",
+    city: "Seattle",
+    country: "US",
+    venueKind: "Room",
+    checked_on: "2026-11-18",
     ...overrides,
   };
 }
 
 describe("slugify", () => {
   it("strips accents, apostrophes and symbols", () => {
-    expect(slugify("Sónar Lisboa")).toBe("sonar-lisboa");
-    expect(slugify("N'to")).toBe("nto");
-    expect(slugify("HÖR x Sennheiser Livingroom")).toBe("hor-x-sennheiser-livingroom");
-    expect(slugify("Drum & Bass")).toBe("drum-and-bass");
-    expect(slugify("  --Hello--  ")).toBe("hello");
+    expect(slugify("Mötley Crüe")).toBe("motley-crue");
+    expect(slugify("Guns N' Roses")).toBe("guns-n-roses");
+    expect(slugify("AC/DC")).toBe("ac-dc");
   });
 });
 
-describe("normalizeSetting", () => {
-  it("maps the old seed labels onto the five approved settings", () => {
-    expect(normalizeSetting("Cercle / Special location")).toBe("Special location");
-    expect(normalizeSetting("Studio / Bedroom")).toBe("Studio-Session");
-    expect(normalizeSetting("Studio / Session")).toBe("Studio-Session");
-    expect(normalizeSetting("festival")).toBe("Festival");
-    expect(normalizeSetting(" Livestream ")).toBe("Livestream");
+describe("catalogue", () => {
+  it("has the 12 genres of the brief plus new wave / synth", () => {
+    expect(GENRES).toHaveLength(13);
+    expect(GENRES).toContain("new wave / synth");
+    expect(GENRES).toContain("emo / post-hardcore");
   });
-  it("rejects labels it does not know", () => {
-    expect(() => normalizeSetting("Rooftop")).toThrow(/Unknown setting/);
+  it("maps genre spellings onto the list and rejects others", () => {
+    expect(normalizeGenre("Metal")).toBe("metal");
+    expect(normalizeGenre("emo/post-hardcore")).toBe("emo / post-hardcore");
+    expect(normalizeGenre("synth-pop")).toBe("new wave / synth");
+    expect(normalizeGenre("techno")).toBeNull();
+  });
+  it("maps venue-kind labels onto the four kinds", () => {
+    expect(VENUE_KINDS).toEqual(["Festival", "Room", "Livestream", "TV-Studio"]);
+    expect(normalizeVenueKind("festival archive")).toBe("Festival");
+    expect(normalizeVenueKind("Arena")).toBe("Room");
+    expect(normalizeVenueKind("webcast")).toBe("Livestream");
+    expect(() => normalizeVenueKind("Boiler Room")).toThrow(/Unknown venue kind/);
+  });
+  it("names decades", () => {
+    expect(decadeOf(1983)).toBe("1980s");
+    expect(decadeOf(2000)).toBe("2000s");
+    expect(parseDecade("1990s")).toBe(1990);
+    expect(parseDecade("1995s")).toBeNull();
+    expect(parseDecade("1890s")).toBeNull();
+    expect(parseDecade("nineties")).toBeNull();
+  });
+});
+
+describe("parsePerformed", () => {
+  it("accepts a year, a month or a day", () => {
+    expect(parsePerformed("1997", "x")).toEqual({ year: 1997, day: null });
+    expect(parsePerformed("2026-06", "x")).toEqual({ year: 2026, day: null });
+    expect(parsePerformed("1983-08-12", "x")).toEqual({ year: 1983, day: new Date("1983-08-12T00:00:00Z") });
+  });
+  it("rejects anything else", () => {
+    expect(() => parsePerformed("check", "x")).toThrow();
+    expect(() => parsePerformed("1991-13", "x")).toThrow();
+    expect(() => parsePerformed("1991-02-30", "x")).toThrow();
+    expect(() => parsePerformed("2999", "x")).toThrow();
   });
 });
 
 describe("parseCollaborator", () => {
-  it("splits an alias note in brackets", () => {
-    expect(parseCollaborator("Joachim Pastor (as Sinners)")).toEqual({ name: "Joachim Pastor", note: "as Sinners" });
-    expect(parseCollaborator("Sofiane Pamart")).toEqual({ name: "Sofiane Pamart", note: null });
+  it("splits a note in brackets", () => {
+    expect(parseCollaborator("Dave Mustaine (guest on Am I Evil?)")).toEqual({ name: "Dave Mustaine", note: "guest on Am I Evil?" });
+    expect(parseCollaborator("Lou Reed")).toEqual({ name: "Lou Reed", note: null });
   });
 });
 
-describe("splitGenres", () => {
-  it("drops genres the owner took off the list", () => {
-    expect(splitGenres(["Techno", "Psytrance"], "x").genres).toEqual(["Techno"]);
-    expect(splitGenres(["House", "Disco"], "x").genres).toEqual([]);
-  });
-  it("treats Live Act as an attribute, not a genre", () => {
-    expect(splitGenres(["Melodic Techno", "Live Act"], "x")).toEqual({ genres: ["Melodic Techno"], liveAct: true });
-  });
+describe("cleanGenres", () => {
   it("drops duplicates and rejects unknown genres", () => {
-    expect(splitGenres(["Techno", "Techno"], "x").genres).toEqual(["Techno"]);
-    expect(() => splitGenres(["Dubstep"], "x")).toThrow(/unknown genre/);
+    expect(cleanGenres(["Metal", "metal", "hard rock"], "x")).toEqual(["metal", "hard rock"]);
+    expect(() => cleanGenres(["Techno"], "x")).toThrow(/unknown genre "Techno"/);
   });
 });
 
 describe("buildConcertSlugs", () => {
-  it("builds artist-venue-year slugs", () => {
-    const slugs = buildConcertSlugs([{ id: "2is2o6_Hxe0", artist: "NTO", venue: "Spectra Festival", date: "2026-09-30" }]);
-    expect(slugs.get("2is2o6_Hxe0")).toBe("nto-spectra-festival-2026");
+  it("builds band-venue-year slugs from the year played", () => {
+    const slugs = buildConcertSlugs([{ id: "abDLUhw-53w", artist: "Metallica", venue: "The Metro", performed: "1983-08-12" }]);
+    expect(slugs.get("abDLUhw-53w")).toBe("metallica-the-metro-1983");
   });
   it("adds the YouTube ID to every concert in a clash, whatever the order", () => {
-    const a = { id: "AAAAAAAAAAA", artist: "X", venue: "Y", date: "2020-01-01" };
-    const b = { id: "BBBBBBBBBBB", artist: "X", venue: "Y", date: "2020-06-01" };
-    const forward = buildConcertSlugs([a, b]);
-    const backward = buildConcertSlugs([b, a]);
-    expect(forward.get(a.id)).toBe("x-y-2020-aaaaaaaaaaa");
-    expect(forward.get(b.id)).toBe("x-y-2020-bbbbbbbbbbb");
-    expect(backward).toEqual(forward);
+    const a = { id: "AAAAAAAAAAA", artist: "Korn", venue: "Pinkpop", performed: "2000" };
+    const b = { id: "BBBBBBBBBBB", artist: "Korn", venue: "Pinkpop", performed: "2000-06" };
+    for (const list of [[a, b], [b, a]]) {
+      const slugs = buildConcertSlugs(list);
+      expect(slugs.get(a.id)).toBe("korn-pinkpop-2000-aaaaaaaaaaa");
+      expect(slugs.get(b.id)).toBe("korn-pinkpop-2000-bbbbbbbbbbb");
+    }
   });
 });
 
-describe("normalizeSeed on data/seed-concerts.json", () => {
+describe("normalizeSeed on the test fixture", () => {
   const seed = normalizeSeed(seedFile);
 
-  it("keeps all 23 concerts with unique IDs and slugs", () => {
-    expect(seed.concerts).toHaveLength(23);
-    expect(new Set(seed.concerts.map((s) => s.youtubeId)).size).toBe(23);
-    expect(new Set(seed.concerts.map((s) => s.slug)).size).toBe(23);
+  it("keeps every concert with unique IDs and slugs", () => {
+    expect(seed.concerts).toHaveLength(seedFile.concerts.length);
+    expect(new Set(seed.concerts.map((c) => c.youtubeId)).size).toBe(seed.concerts.length);
+    expect(new Set(seed.concerts.map((c) => c.slug)).size).toBe(seed.concerts.length);
   });
-
-  it("only uses the five approved settings", () => {
-    const used = new Set(seed.concerts.map((s) => s.setting));
-    expect([...used].every((s) => ["Festival", "Club", "Special location", "Studio-Session", "Livestream"].includes(s))).toBe(true);
+  it("only uses the four venue kinds", () => {
+    for (const c of seed.concerts) expect(VENUE_KINDS).toContain(c.venueKind);
   });
-
-  it("credits collaborations", () => {
-    const sinners = seed.concerts.find((s) => s.youtubeId === "b_fKzTdMViQ")!;
-    expect(sinners.credits).toEqual([
-      { artistSlug: "nto", role: "MAIN", creditNote: null, position: 0 },
-      { artistSlug: "joachim-pastor", role: "WITH", creditNote: "as Sinners", position: 1 },
+  it("stores the year played apart from the upload date", () => {
+    const metro = seed.concerts.find((c) => c.youtubeId === "abDLUhw-53w")!;
+    expect(metro.performedYear).toBe(1983);
+    expect(metro.performedOn?.toISOString().slice(0, 10)).toBe("1983-08-12");
+    expect(metro.publishedAt.getUTCFullYear()).toBe(2021);
+    const limp = seed.concerts.find((c) => c.youtubeId === "o1rkPf9Nd00")!;
+    expect(limp.performedYear).toBe(1997);
+    expect(limp.performedOn).toBeNull();
+  });
+  it("creates one tour per band and tour name", () => {
+    expect(seed.tours.map((t) => t.slug).sort()).toEqual(["metallica-kill-em-all-for-one", "metallica-wherever-we-may-roam"]);
+    expect(seed.concerts.find((c) => c.youtubeId === "IA9xKr_Dmek")!.tourSlug).toBe("metallica-wherever-we-may-roam");
+  });
+  it("credits a guest", () => {
+    const yankee = seed.concerts.find((c) => c.youtubeId === "nbhqDjIWLpk")!;
+    expect(yankee.credits).toEqual([
+      { artistSlug: "metallica", role: "MAIN", creditNote: null, position: 0 },
+      { artistSlug: "dave-mustaine", role: "WITH", creditNote: "guest on Am I Evil?", position: 1 },
     ]);
-    expect(seed.artists.find((a) => a.slug === "sofiane-pamart")).toBeTruthy();
   });
-
-  it("keeps the NTO profile", () => {
-    const nto = seed.artists.find((a) => a.slug === "nto")!;
-    expect(nto.profile?.label).toBe("Hungry Music");
-    expect(nto.profile?.similarNames).toEqual(["The Blaze", "Marsh", "Paul Kalkbrenner"]);
+  it("keeps channel IDs and marks fan uploads as not official", () => {
+    expect(seed.channels.find((c) => c.name === "Metallica")).toEqual({
+      name: "Metallica",
+      youtubeChannelId: "UCbulh9WdLtEXiooRcYK7SWw",
+      isOfficial: true,
+    });
+    expect(seed.channels.find((c) => c.name === "some fan")!.isOfficial).toBe(false);
   });
-
-  it("marks the three fan-upload channels as not official", () => {
-    const fan = seed.channels.filter((c) => !c.isOfficial).map((c) => c.name).sort();
-    expect(fan).toEqual(["WAiT_A_DrEAm", "anton", "paardenmiddel"]);
-    expect(seed.channels.find((c) => c.name === "Cercle")?.isOfficial).toBe(true);
+  it("one venue per festival, empty city/country become null", () => {
+    expect(seed.venues.filter((v) => v.slug === "pinkpop")).toHaveLength(1);
+    expect(seed.venues.find((v) => v.slug === "pinkpop")!.city).toBe("Landgraaf");
+    expect(seed.concerts.find((c) => c.youtubeId === "o1rkPf9Nd00")!.city).toBeNull();
   });
-
-  it("turns empty city/country into null", () => {
-    const pamart = seed.concerts.find((s) => s.youtubeId === "0QnMv0bRyk0")!;
-    expect(pamart.city).toBeNull();
-    expect(pamart.country).toBeNull();
+  it("keeps the artist profile", () => {
+    expect(seed.artists.find((a) => a.slug === "metallica")!.profile?.similarNames).toEqual(["Megadeth", "Slayer"]);
   });
 });
 
 describe("normalizeSeed validation", () => {
   it("rejects a duplicate YouTube ID", () => {
-    expect(() => normalizeSeed({ concerts: [makeConcert(), makeConcert()], artists: {} })).toThrow(/appears twice/);
+    expect(() => normalizeSeed({ concerts: [makeConcert(), makeConcert()] })).toThrow(/appears twice/);
   });
   it("rejects a malformed YouTube ID", () => {
-    expect(() => normalizeSeed({ concerts: [makeConcert({ id: "short" })], artists: {} })).toThrow(/Invalid YouTube ID/);
+    expect(() => normalizeSeed({ concerts: [makeConcert({ id: "short" })] })).toThrow(/Invalid YouTube ID/);
   });
-  it("rejects an impossible date", () => {
-    expect(() => normalizeSeed({ concerts: [makeConcert({ date: "2025-02-30" })], artists: {} })).toThrow(/not a real date/);
+  it("rejects an impossible upload date", () => {
+    expect(() => normalizeSeed({ concerts: [makeConcert({ date: "2025-02-30" })] })).toThrow(/not a real date/);
+  });
+  it("rejects a missing concert date", () => {
+    expect(() => normalizeSeed({ concerts: [makeConcert({ performed: "" })] })).toThrow(/performed/);
   });
   it("rejects a zero duration", () => {
-    expect(() => normalizeSeed({ concerts: [makeConcert({ secs: 0 })], artists: {} })).toThrow(/invalid duration/);
+    expect(() => normalizeSeed({ concerts: [makeConcert({ secs: 0 })] })).toThrow(/invalid duration/);
   });
 });
 
 describe("format helpers", () => {
   it("formats durations as H:MM:SS", () => {
-    expect(formatDuration(7416)).toBe("2:03:36");
+    expect(formatDuration(8820)).toBe("2:27:00");
     expect(formatDuration(3001)).toBe("50:01");
     expect(formatDuration(59)).toBe("0:59");
   });
   it("formats dates as DD.MM.YY", () => {
     expect(formatDate(new Date("2026-09-30T00:00:00Z"))).toBe("30.09.26");
   });
-  it("writes collaboration credits", () => {
+  it("writes guest credits", () => {
     expect(
       formatCredits([
-        { role: "MAIN", creditNote: null, artist: { name: "NTO" } },
-        { role: "WITH", creditNote: "as Sinners", artist: { name: "Joachim Pastor" } },
+        { role: "MAIN", creditNote: null, artist: { name: "Metallica" } },
+        { role: "WITH", creditNote: "guest on Am I Evil?", artist: { name: "Dave Mustaine" } },
       ]),
-    ).toBe("NTO with Joachim Pastor (as Sinners)");
+    ).toBe("Metallica with Dave Mustaine (guest on Am I Evil?)");
   });
 });

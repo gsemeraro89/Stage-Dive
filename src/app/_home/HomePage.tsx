@@ -10,17 +10,17 @@ import { MapSearch } from "@/components/ui/MapSearch";
 import { count2, SectionHead } from "@/components/ui/SectionHead";
 import { CLUB, FESTIVAL, homeData, SETS_HREF, concertsHref, SPECIAL } from "./home-data";
 
-// The reel: which setting each frame stands for. Special locations lead and come back most often.
+// The reel: which venueKind each frame stands for. Special locations lead and come back most often.
 const REEL_ORDER = [SPECIAL, FESTIVAL, CLUB, SPECIAL, SPECIAL, FESTIVAL, CLUB, SPECIAL, SPECIAL, FESTIVAL, CLUB, SPECIAL];
 const REEL_NAMES: Record<string, string> = { [SPECIAL]: "Special locations", [FESTIVAL]: "Festivals", [CLUB]: "Clubs" };
 
 export default async function HomePage() {
   const data = await homeData();
   const { totals } = data;
-  const count = (slug: string) => data.settings.find((s) => s.slug === slug)?.count ?? 0;
+  const count = (slug: string) => data.venueKinds.find((s) => s.slug === slug)?.count ?? 0;
   const kicker = (slug: string) => ({
     label: `${REEL_NAMES[slug]} · ${count(slug)} ${count(slug) === 1 ? "concert" : "concerts"}`,
-    href: concertsHref({ setting: slug }),
+    href: concertsHref({ venueKind: slug }),
   });
 
   // The reel is filled first, so it gets the best pictures. The cover picks open it.
@@ -66,11 +66,11 @@ export default async function HomePage() {
       more: "All genres",
     },
     {
-      word: "Settings",
-      count: totals.settings,
+      word: "Venue kinds",
+      count: totals.venueKinds,
       href: SETS_HREF,
       line: "Where it was played: a festival, a club, a studio, or somewhere no one had played before.",
-      links: data.settings.map((s) => ({ label: `${s.name} (${s.count})`, href: concertsHref({ setting: s.slug }) })),
+      links: data.venueKinds.map((s) => ({ label: `${s.name} (${s.count})`, href: concertsHref({ venueKind: s.slug }) })),
       more: "All concerts",
     },
   ];
@@ -107,7 +107,7 @@ export default async function HomePage() {
             id="atlas"
             title="The atlas"
             note={`${count2(count(SPECIAL))} special locations`}
-            href={concertsHref({ setting: SPECIAL })}
+            href={concertsHref({ venueKind: SPECIAL })}
             linkLabel="All special locations"
           />
           <div className={`od-atlas-grid${plates.length === 0 ? " od-atlas-grid--list" : ""}`}>

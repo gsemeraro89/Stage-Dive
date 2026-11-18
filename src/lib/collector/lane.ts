@@ -328,8 +328,8 @@ export const DEFAULT_SOURCES: LaneSource[] = ["long", "channel", "search", "hand
  * LANE_SOURCES, e.g. "answers,matches,search": a cheap pass that reads again only the videos the lane
  * already matched or classified, instead of all ~26,800 remembered long videos. Empty: the default.
  */
-export function parseSources(setting: string | undefined): Set<LaneSource> {
-  const wanted = (setting ?? "").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+export function parseSources(value: string | undefined): Set<LaneSource> {
+  const wanted = (value ?? "").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
   const unknown = wanted.filter((x) => !ALL_SOURCES.includes(x as LaneSource));
   if (unknown.length) throw new Error(`unknown LANE_SOURCES: ${unknown.join(", ")} (known: ${ALL_SOURCES.join(", ")})`);
   return new Set(wanted.length ? (wanted as LaneSource[]) : DEFAULT_SOURCES);
@@ -372,8 +372,8 @@ export const AGREEMENT_NEEDED = 0.95;
  * follows the last Haiku test: Haiku alone when it agreed with Opus on at least 95% of outcomes,
  * otherwise Haiku first and Opus for Haiku answers below 0.75 confidence. No test yet: Haiku + Opus.
  */
-export function chooseClassifierMode(setting: string | undefined, lastTestAgreement: number | null): LaneClassifierMode {
-  const s = (setting ?? "").trim().toLowerCase();
+export function chooseClassifierMode(value: string | undefined, lastTestAgreement: number | null): LaneClassifierMode {
+  const s = (value ?? "").trim().toLowerCase();
   if (s === "haiku" || s === "haiku+opus") return s;
   return lastTestAgreement !== null && lastTestAgreement >= AGREEMENT_NEEDED ? "haiku" : "haiku+opus";
 }

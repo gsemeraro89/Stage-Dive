@@ -39,8 +39,8 @@ function cls(overrides: Partial<FullClassification> = {}): FullClassification {
     venue: "Somewhere Open Air",
     city: "Berlin",
     country: "Germany",
-    setting: "Festival",
-    genres: ["Melodic House"],
+    venueKind: "Festival",
+    genres: ["metal"],
     liveAct: false,
     uploaderIsOfficial: false,
     writeUp: "Marsh plays a long melodic house concert outdoors.",
@@ -60,9 +60,9 @@ describe.skipIf(!url)("saveConcert (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, video_decisions, long_videos, classification_cache, classifier_batches, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, video_decisions, long_videos, classification_cache, classifier_batches, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, venue_kinds, tours, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"))));
     store = await import("../src/lib/collector/store");
   });
   afterAll(async () => db?.$disconnect());
@@ -70,19 +70,19 @@ describe.skipIf(!url)("saveConcert (database)", () => {
   const fanChannel = { youtubeChannelId: "UCfan000000000000000000", name: "Some Fan", isOfficial: false };
   const officialChannel = { youtubeChannelId: "UCofficial0000000000000", name: "Somewhere Festival", isOfficial: true };
 
-  it("creates a new concert with artist, venue, genres, setting and write-up", async () => {
+  it("creates a new concert with artist, venue, genres, venueKind and write-up", async () => {
     const r = await store.saveConcert(db, { video: ytVideo(), classification: cls(), channel: fanChannel, thumbnail: "maxresdefault" });
     expect(r.status).toBe("created");
     const concert = await db.concert.findUniqueOrThrow({
       where: { youtubeId: "NEWSET00001" },
-      include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, venue: true, setting: true, channel: true },
+      include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, venue: true, venueKind: true, channel: true },
     });
     expect(concert.source).toBe("COLLECTOR");
     expect(concert.curated).toBe(false);
     expect(concert.credits.map((c) => c.artist.slug)).toEqual(["marsh"]); // existing artist reused
     expect(concert.genres.map((g) => g.genre.name)).toEqual(["Melodic House"]);
     expect(concert.venue?.name).toBe("Somewhere Open Air");
-    expect(concert.setting?.name).toBe("Festival");
+    expect(concert.venueKind?.name).toBe("Festival");
     expect(concert.channel.isOfficial).toBe(false);
     expect(concert.thumbnailUrl).toContain("maxresdefault");
     expect(concert.writeUp).toContain("melodic house");

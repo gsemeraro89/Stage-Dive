@@ -18,9 +18,9 @@ describe.skipIf(!url)("admin fixes (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, venue_kinds, tours, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"))));
     admin = await import("../src/lib/admin/merge");
   });
   afterAll(async () => db?.$disconnect());

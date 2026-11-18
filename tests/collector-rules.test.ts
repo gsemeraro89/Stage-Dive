@@ -115,19 +115,20 @@ describe("toVideo", () => {
 
 describe("genresInText", () => {
   it("finds our genres in titles, descriptions and hashtags", () => {
-    expect(genresInText("Melodic Techno Mix 2025")).toEqual(expect.arrayContaining(["Melodic Techno", "Techno"]));
-    expect(genresInText("", "", ["#techhouse", "ibiza"])).toEqual(["Tech House"]);
-    expect(genresInText("Afro House sunset session")).toEqual(["Afro House"]);
+    expect(genresInText("Thrash Metal live 1986")).toEqual(["metal"]);
+    expect(genresInText("", "", ["#grunge", "seattle"])).toEqual(["grunge"]);
+    expect(genresInText("Post-punk legends live")).toEqual(["post-punk"]);
+    expect(genresInText("post punk and punk rock night")).toEqual(["punk", "post-punk"]);
     expect(genresInText("Best of Drum and Bass")).toEqual([]); // not on our list
   });
   it("does not match words inside other words", () => {
-    expect(genresInText("Warehouse party", "lighthouse")).toEqual([]);
-    expect(genresInText("Stranced away")).toEqual([]);
+    expect(genresInText("Metallica live", "punkish")).toEqual([]);
+    expect(genresInText("Indiepop", "emotional")).toEqual([]);
   });
   it("does not count genres that are not on our list", () => {
-    expect(genresInText("Live at the opera house")).toEqual([]);
-    expect(genresInText("Classic house music concert")).toEqual([]);
-    expect(genresInText("Psytrance and hard techno night")).toEqual([]);
+    expect(genresInText("Live at the Hard Rock Cafe")).toEqual([]);
+    expect(genresInText("Pop punk all-dayer")).toEqual([]);
+    expect(genresInText("Techno and house night")).toEqual([]);
   });
 });
 
@@ -288,8 +289,8 @@ describe("needsClassification (never pay twice)", () => {
 
 describe("owner-approved artists", () => {
   const rules = [
-    { name: "Fred again..", genres: ["Electronica", "Tech House"] },
-    { name: "Yousuke Yukimatsu", aka: ["¥ØU$UK€ ¥UK1MAT$U"], genres: ["Electronica", "Afro House", "Disco"] },
+    { name: "Fred again..", genres: ["indie", "alternative"] },
+    { name: "Yousuke Yukimatsu", aka: ["¥ØU$UK€ ¥UK1MAT$U"], genres: ["indie", "garage", "Disco"] },
   ];
   it("matches names ignoring case, punctuation and stylised spellings", async () => {
     const { findArtistRule } = await import("../src/lib/collector/rules");
@@ -299,14 +300,8 @@ describe("owner-approved artists", () => {
   });
   it("keeps the classifier's genres, else uses the owner's (only those on our list)", async () => {
     const { genresForApprovedArtist } = await import("../src/lib/collector/rules");
-    expect(genresForApprovedArtist(["Deep House"], rules[0])).toEqual(["Deep House"]);
-    expect(genresForApprovedArtist([], rules[1])).toEqual(["Electronica", "Afro House"]);
-  });
-  it("uses the owner's artist-only genre (Big Room / EDM) instead of stretching one of ours", async () => {
-    const { genresForApprovedArtist } = await import("../src/lib/collector/rules");
-    const garrix = { name: "Martin Garrix", genres: ["Big Room / EDM"] };
-    expect(genresForApprovedArtist(["Progressive House"], garrix)).toEqual(["Big Room / EDM"]);
-    expect(genresForApprovedArtist([], garrix)).toEqual(["Big Room / EDM"]);
+    expect(genresForApprovedArtist(["grunge"], rules[0])).toEqual(["grunge"]);
+    expect(genresForApprovedArtist([], rules[1])).toEqual(["indie", "garage"]);
   });
   it("a group name that is not an artist is credited to each member", async () => {
     const { expandGroups } = await import("../src/lib/collector/rules");
@@ -314,10 +309,6 @@ describe("owner-approved artists", () => {
     expect(expandGroups(["3 Are Legend"], groups)).toEqual(["Dimitri Vegas & Like Mike", "Steve Aoki"]);
     expect(expandGroups(["Steve Aoki", "3 are legend"], groups)).toEqual(["Steve Aoki", "Dimitri Vegas & Like Mike"]);
     expect(expandGroups(["NTO"], groups)).toEqual(["NTO"]);
-  });
-  it("the classifier is never offered the artist-only genres", async () => {
-    const { GENRES, ARTIST_ONLY_GENRES } = await import("../src/lib/catalogue");
-    for (const g of ARTIST_ONLY_GENRES) expect(GENRES as readonly string[]).not.toContain(g);
   });
   it("accepts a full concert by an approved artist on any channel, but never a clip", () => {
     const base = {
@@ -359,8 +350,8 @@ describe("channel names and catalogue artists", () => {
   });
   it("falls back to the artist's genres on the site when the classifier gives none of ours", async () => {
     const { genresWithFallback } = await import("../src/lib/collector/rules");
-    expect(genresWithFallback(["Techno"], ["Melodic Techno"])).toEqual(["Techno"]);
-    expect(genresWithFallback([], ["Melodic Techno", "Techno", "Electronica", "Deep House"])).toEqual(["Melodic Techno", "Techno", "Electronica"]);
+    expect(genresWithFallback(["metal"], ["punk"])).toEqual(["metal"]);
+    expect(genresWithFallback([], ["punk", "metal", "grunge", "indie"])).toEqual(["punk", "metal", "grunge"]);
     expect(genresWithFallback([], [])).toEqual([]);
   });
 });

@@ -18,7 +18,7 @@ export function FilterForm({
   options,
 }: {
   filters: ConcertFilters;
-  options: { genres: Option[]; artists: Option[]; venues: Option[]; settings: Option[] };
+  options: { genres: Option[]; artists: Option[]; venues: Option[]; venueKinds: Option[] };
 }) {
   const select = (name: string, label: string, anyLabel: string, value: string | null, items: Option[]) => (
     <label className="od-field" data-on={value ? "" : undefined}>
@@ -43,7 +43,7 @@ export function FilterForm({
       {select("genre", "Genre", "Any genre", filters.genre, options.genres)}
       {select("artist", "DJ", "Any DJ", filters.artist, options.artists)}
       {select("venue", "Venue or festival", "Any venue", filters.venue, options.venues)}
-      {select("setting", "Setting", "Any setting", filters.setting, options.settings)}
+      {select("venueKind", "VenueKind", "Any venueKind", filters.venueKind, options.venueKinds)}
       <label className="od-field">
         <span className="meta">Sort</span>
         <select name="sort" defaultValue={filters.sort}>

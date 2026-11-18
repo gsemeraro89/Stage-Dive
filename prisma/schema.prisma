@@ -74,10 +74,6 @@ model Artist {
   profileCheckedAt DateTime?               @map("profile_checked_at")
   /// Last time the collector searched YouTube for this artist's other concerts. Null = never (searched first).
   lastSearchedAt   DateTime?               @map("last_searched_at")
-  /// A guest (credited only with "with") that MusicBrainz knows as an artist. Guests get their own page
-  /// only when this is true or they have a concert of their own (owner rule, 13 Nov 2026); otherwise their
-  /// name stays as plain text in the concert's credits.
-  guestVerified    Boolean                 @default(false) @map("guest_verified")
   /// The artist's own picture: the avatar of their official YouTube channel (owner decision 13 Nov 2026,
   /// instead of concert thumbnails with baked-in titles). YouTube data: refreshed or cleared within 30 days.
   imageUrl         String?                 @map("image_url")
@@ -94,6 +90,7 @@ model Artist {
   /// The concert IDs the choice was made among; the choice is made again when they change.
   coverChosenFrom  String?                 @map("cover_chosen_from")
   credits          ConcertArtist[]
+  tours            Tour[]
   /// Artists most like this one, computed weekly by the similarity job (best first).
   similarTo        ArtistSimilarity[]      @relation("similarFrom")
   similarOf        ArtistSimilarity[]      @relation("similarTo")
@@ -142,38 +139,54 @@ model ArtistExternalSimilar {
 
 /// A venue, festival or special location.
 model Venue {
-  id        Int      @id @default(autoincrement())
-  slug      String   @unique
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
   name      String
   city      String?
   country   String?
-  concerts      Concert[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  concerts  Concert[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@map("venues")
 }
 
 model Genre {
-  id        Int        @id @default(autoincrement())
-  slug      String     @unique
-  name      String     @unique
-  sortOrder Int        @default(0) @map("sort_order")
-  concerts      ConcertGenre[]
+  id        Int            @id @default(autoincrement())
+  slug      String         @unique
+  name      String         @unique
+  sortOrder Int            @default(0) @map("sort_order")
+  concerts  ConcertGenre[]
 
   @@map("genres")
 }
 
 /// The kind of place a concert was played in (Festival, Club, ...). A table rather than a
-/// fixed list so the owner can rename or add settings without a code change.
-model Setting {
-  id        Int    @id @default(autoincrement())
-  slug      String @unique
-  name      String @unique
-  sortOrder Int    @default(0) @map("sort_order")
-  concerts      Concert[]
+/// fixed list so the owner can rename or add venueKinds without a code change.
+model VenueKind {
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
+  name      String    @unique
+  sortOrder Int       @default(0) @map("sort_order")
+  concerts  Concert[]
 
-  @@map("settings")
+  @@map("venue_kinds")
+}
+
+/// A named tour, e.g. "Wherever We May Roam" (Metallica, 1991-93). Browse by tour (BRIEF section 1).
+model Tour {
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
+  name      String
+  /// The band that toured, when it is one band.
+  artistId  Int?      @map("artist_id")
+  artist    Artist?   @relation(fields: [artistId], references: [id])
+  concerts  Concert[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([artistId])
+  @@map("tours")
 }
 
 /// A YouTube channel that uploaded at least one concert.
@@ -190,7 +203,7 @@ model Channel {
   /// The channel's "uploads" playlist, read by the collector.
   uploadsPlaylistId String?     @map("uploads_playlist_id")
   lastCrawledAt     DateTime?   @map("last_crawled_at")
-  concerts              Concert[]
+  concerts          Concert[]
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
@@ -198,18 +211,21 @@ model Channel {
 }
 
 model Concert {
-  id                 Int       @id @default(autoincrement())
-  youtubeId          String    @unique @map("youtube_id")
-  slug               String    @unique
-  title              String
-  durationSeconds    Int       @map("duration_seconds")
-  viewCount          Int       @map("view_count")
-  publishedAt        DateTime  @map("published_at") @db.Date
-  city               String?
-  country            String?
-  liveAct            Boolean   @default(false) @map("live_act")
+  id               Int       @id @default(autoincrement())
+  youtubeId        String    @unique @map("youtube_id")
+  slug             String    @unique
+  title            String
+  durationSeconds  Int       @map("duration_seconds")
+  viewCount        Int       @map("view_count")
+  publishedAt      DateTime  @map("published_at") @db.Date
+  city             String?
+  country          String?
+  /// Year the concert was played (not the upload year). Drives the decade pages.
+  performedYear    Int?      @map("performed_year")
+  /// Exact day, when known (often only the year or month is).
+  performedOn      DateTime? @map("performed_on") @db.Date
   /// Our own original text about the concert (required before ads, YouTube policy III.G.1.d).
-  writeUp            String?   @map("write_up")
+  writeUp          String?   @map("write_up")
   /// Setlist as a list of { time, artist, title } (time in seconds or null; artist null for an
   /// untitled line). Read from the video description or its comments (src/lib/setlist). It is
   /// YouTube data: re-read by the refresh job at least every 30 days, removed when it disappears.
@@ -219,13 +235,13 @@ model Concert {
   /// Last time the description and comments were read for a setlist. Null = never.
   setlistCheckedAt DateTime? @map("setlist_checked_at")
   /// Best available thumbnail. Null = derive from the YouTube ID.
-  thumbnailUrl       String?   @map("thumbnail_url")
+  thumbnailUrl     String?   @map("thumbnail_url")
 
   source  ConcertSource
   status  ConcertStatus @default(PUBLISHED)
   /// Hand-picked by the owner: kept even if it breaks the collector's automatic rules
   /// (shorter than 40 minutes, fewer views than the threshold).
-  curated Boolean   @default(false)
+  curated Boolean       @default(false)
 
   // YouTube status (CLAUDE.md rules 1 and 4)
   embeddable    Boolean
@@ -236,12 +252,14 @@ model Concert {
   /// Last time YouTube data (title, stats) was refreshed. Must be under 30 days old.
   ytRefreshedAt DateTime @map("yt_refreshed_at")
 
-  channelId Int      @map("channel_id")
-  channel   Channel  @relation(fields: [channelId], references: [id])
-  venueId   Int?     @map("venue_id")
-  venue     Venue?   @relation(fields: [venueId], references: [id])
-  settingId Int?     @map("setting_id")
-  setting   Setting? @relation(fields: [settingId], references: [id])
+  channelId   Int        @map("channel_id")
+  channel     Channel    @relation(fields: [channelId], references: [id])
+  venueId     Int?       @map("venue_id")
+  venue       Venue?     @relation(fields: [venueId], references: [id])
+  venueKindId Int?       @map("venue_kind_id")
+  venueKind   VenueKind? @relation(fields: [venueKindId], references: [id])
+  tourId      Int?       @map("tour_id")
+  tour        Tour?      @relation(fields: [tourId], references: [id])
 
   credits ConcertArtist[]
   genres  ConcertGenre[]
@@ -251,14 +269,15 @@ model Concert {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([status, publishedAt])
+  @@index([status, performedYear])
   @@index([status, viewCount])
   @@map("concerts")
 }
 
 /// Who played a concert: the main artist and any collaborators.
 model ConcertArtist {
-  concertId      Int        @map("concert_id")
-  concert        Concert        @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  concertId  Int        @map("concert_id")
+  concert    Concert    @relation(fields: [concertId], references: [id], onDelete: Cascade)
   artistId   Int        @map("artist_id")
   artist     Artist     @relation(fields: [artistId], references: [id], onDelete: Cascade)
   role       CreditRole
@@ -272,10 +291,10 @@ model ConcertArtist {
 }
 
 model ConcertGenre {
-  concertId   Int   @map("concert_id")
-  concert     Concert   @relation(fields: [concertId], references: [id], onDelete: Cascade)
-  genreId Int   @map("genre_id")
-  genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  concertId Int     @map("concert_id")
+  concert   Concert @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  genreId   Int     @map("genre_id")
+  genre     Genre   @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
   @@id([concertId, genreId])
   @@index([genreId])
@@ -428,8 +447,8 @@ model ReviewItem {
 /// One row each time a visitor starts playing a concert (phase 5 analytics).
 model Play {
   id        BigInt   @id @default(autoincrement())
-  concertId     Int      @map("concert_id")
-  concert       Concert      @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  concertId Int      @map("concert_id")
+  concert   Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
   startedAt DateTime @default(now()) @map("started_at")
   /// Two-letter country code of the visitor, if known. No IP addresses are stored.
   country   String?  @db.Char(2)

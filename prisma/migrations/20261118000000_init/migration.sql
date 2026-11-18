@@ -35,7 +35,6 @@ CREATE TABLE "artists" (
     "bio_generated" BOOLEAN NOT NULL DEFAULT false,
     "profile_checked_at" TIMESTAMP(3),
     "last_searched_at" TIMESTAMP(3),
-    "guest_verified" BOOLEAN NOT NULL DEFAULT false,
     "image_url" TEXT,
     "image_checked_at" TIMESTAMP(3),
     "youtube_channel_id" TEXT,
@@ -97,13 +96,25 @@ CREATE TABLE "genres" (
 );
 
 -- CreateTable
-CREATE TABLE "settings" (
+CREATE TABLE "venue_kinds" (
     "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "sort_order" INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "venue_kinds_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tours" (
+    "id" SERIAL NOT NULL,
+    "slug" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "artist_id" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tours_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -133,7 +144,8 @@ CREATE TABLE "concerts" (
     "published_at" DATE NOT NULL,
     "city" TEXT,
     "country" TEXT,
-    "live_act" BOOLEAN NOT NULL DEFAULT false,
+    "performed_year" INTEGER,
+    "performed_on" DATE,
     "write_up" TEXT,
     "setlist" JSONB,
     "setlist_source" TEXT,
@@ -149,7 +161,8 @@ CREATE TABLE "concerts" (
     "yt_refreshed_at" TIMESTAMP(3) NOT NULL,
     "channel_id" INTEGER NOT NULL,
     "venue_id" INTEGER,
-    "setting_id" INTEGER,
+    "venue_kind_id" INTEGER,
+    "tour_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -313,10 +326,16 @@ CREATE UNIQUE INDEX "genres_slug_key" ON "genres"("slug");
 CREATE UNIQUE INDEX "genres_name_key" ON "genres"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "settings_slug_key" ON "settings"("slug");
+CREATE UNIQUE INDEX "venue_kinds_slug_key" ON "venue_kinds"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "settings_name_key" ON "settings"("name");
+CREATE UNIQUE INDEX "venue_kinds_name_key" ON "venue_kinds"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tours_slug_key" ON "tours"("slug");
+
+-- CreateIndex
+CREATE INDEX "tours_artist_id_idx" ON "tours"("artist_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "channels_youtube_channel_id_key" ON "channels"("youtube_channel_id");
@@ -332,6 +351,9 @@ CREATE UNIQUE INDEX "concerts_slug_key" ON "concerts"("slug");
 
 -- CreateIndex
 CREATE INDEX "concerts_status_published_at_idx" ON "concerts"("status", "published_at");
+
+-- CreateIndex
+CREATE INDEX "concerts_status_performed_year_idx" ON "concerts"("status", "performed_year");
 
 -- CreateIndex
 CREATE INDEX "concerts_status_view_count_idx" ON "concerts"("status", "view_count");
@@ -397,13 +419,19 @@ ALTER TABLE "artist_similarity" ADD CONSTRAINT "artist_similarity_similar_id_fke
 ALTER TABLE "artist_external_similar" ADD CONSTRAINT "artist_external_similar_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "artists"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "tours" ADD CONSTRAINT "tours_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "artists"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "concerts" ADD CONSTRAINT "concerts_channel_id_fkey" FOREIGN KEY ("channel_id") REFERENCES "channels"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "concerts" ADD CONSTRAINT "concerts_venue_id_fkey" FOREIGN KEY ("venue_id") REFERENCES "venues"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "concerts" ADD CONSTRAINT "concerts_setting_id_fkey" FOREIGN KEY ("setting_id") REFERENCES "settings"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "concerts" ADD CONSTRAINT "concerts_venue_kind_id_fkey" FOREIGN KEY ("venue_kind_id") REFERENCES "venue_kinds"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "concerts" ADD CONSTRAINT "concerts_tour_id_fkey" FOREIGN KEY ("tour_id") REFERENCES "tours"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "concert_artists" ADD CONSTRAINT "concert_artists_concert_id_fkey" FOREIGN KEY ("concert_id") REFERENCES "concerts"("id") ON DELETE CASCADE ON UPDATE CASCADE;

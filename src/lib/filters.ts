@@ -15,7 +15,7 @@ export interface ConcertFilters {
   genre: string | null; // genre slug
   artist: string | null; // artist slug
   venue: string | null; // venue slug
-  setting: string | null; // setting slug
+  venueKind: string | null; // venueKind slug
   sort: Sort;
 }
 
@@ -42,13 +42,13 @@ export function parseFilters(params: RawParams): ConcertFilters {
     genre: slugParam(params.genre),
     artist: slugParam(params.artist),
     venue: slugParam(params.venue),
-    setting: slugParam(params.setting),
+    venueKind: slugParam(params.venueKind),
     sort,
   };
 }
 
 export function hasActiveFilters(f: ConcertFilters): boolean {
-  return Boolean(f.q || f.genre || f.artist || f.venue || f.setting);
+  return Boolean(f.q || f.genre || f.artist || f.venue || f.venueKind);
 }
 
 const SOURCES = ["SEED", "COLLECTOR", "MANUAL"] as const;
@@ -83,7 +83,7 @@ export function buildWhere(f: ConcertFilters) {
   if (f.genre) and.push({ genres: { some: { genre: { slug: f.genre } } } });
   if (f.artist) and.push({ credits: { some: { artist: { slug: f.artist } } } });
   if (f.venue) and.push({ venue: { slug: f.venue } });
-  if (f.setting) and.push({ setting: { slug: f.setting } });
+  if (f.venueKind) and.push({ venueKind: { slug: f.venueKind } });
   if (f.q) {
     // Every word must appear somewhere: title, artist, venue, city or country.
     for (const word of f.q.split(" ")) {
@@ -122,7 +122,7 @@ export function filtersToQuery(f: Partial<ConcertFilters>): string {
   if (f.genre) params.set("genre", f.genre);
   if (f.artist) params.set("artist", f.artist);
   if (f.venue) params.set("venue", f.venue);
-  if (f.setting) params.set("setting", f.setting);
+  if (f.venueKind) params.set("venueKind", f.venueKind);
   if (f.sort && f.sort !== "newest") params.set("sort", f.sort);
   const s = params.toString();
   return s ? `?${s}` : "";
