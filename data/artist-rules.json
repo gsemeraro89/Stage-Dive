@@ -1,5 +1,5 @@
 {
-  "_note": "Bands the owner has confirmed (include) or keeps out (exclude). Included bands' official full concerts are accepted even when the classifier is unsure; their genres here are used when the classifier gives none of ours. allConcerts: true puts the band in the per-artist lane (scripts/artist-lane.ts). The 90 bands below were approved by the owner on 18 Nov 2026 (festival line-ups + the seed bands); The Rolling Stones moved from exclude to include the same day (owner). Excluded bands are never published, whatever the source. Names are matched ignoring case, accents and symbols; add other spellings to 'aka'.",
+  "_note": "Bands the owner has confirmed (include) or keeps out (exclude). Included bands' official full concerts are accepted even when the classifier is unsure; their genres here are used when the classifier gives none of ours. allConcerts: true puts the band in the per-artist lane (scripts/artist-lane.ts). The 90 bands below were approved by the owner on 18 Nov 2026 (festival line-ups + the seed bands); The Rolling Stones moved from exclude to include the same day (owner). 100 more bands approved by the owner on 18 Nov 2026 (similar artists from ListenBrainz + festival regulars). Excluded bands are never published, whatever the source. Names are matched ignoring case, accents and symbols; add other spellings to 'aka'.",
   "include": [
     {
       "name": "Queen",
@@ -692,6 +692,739 @@
       ],
       "genres": [
         "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Led Zeppelin",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Pink Floyd",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Doors",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "David Bowie",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Police",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Dire Straits",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Fleetwood Mac",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Creedence Clearwater Revival",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Lynyrd Skynyrd",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Jimi Hendrix",
+      "aka": [
+        "The Jimi Hendrix Experience"
+      ],
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "U2",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "ZZ Top",
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Van Halen",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Mötley Crüe",
+      "aka": [
+        "Motley Crue"
+      ],
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Ozzy Osbourne",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Dio",
+      "aka": [
+        "Ronnie James Dio"
+      ],
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Rush",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Audioslave",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Wolfmother",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Royal Blood",
+      "genres": [
+        "hard rock"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Avenged Sevenfold",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Lamb of God",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Mastodon",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Sepultura",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "In Flames",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Machine Head",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Trivium",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Killswitch Engage",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Bullet for My Valentine",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Nightwish",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Dream Theater",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Bring Me the Horizon",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Architects",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Parkway Drive",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Disturbed",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Rob Zombie",
+      "genres": [
+        "metal"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Nine Inch Nails",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Faith No More",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "A Perfect Circle",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Incubus",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Papa Roach",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Marilyn Manson",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Evanescence",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Godsmack",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Stone Sour",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Staind",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Three Days Grace",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Thirty Seconds to Mars",
+      "aka": [
+        "30 Seconds to Mars"
+      ],
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Jane's Addiction",
+      "aka": [
+        "Janes Addiction"
+      ],
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Primus",
+      "genres": [
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Bush",
+      "genres": [
+        "grunge"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Mudhoney",
+      "genres": [
+        "grunge"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Hole",
+      "genres": [
+        "grunge"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Melvins",
+      "genres": [
+        "grunge"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "blink-182",
+      "aka": [
+        "Blink 182",
+        "Blink-182"
+      ],
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Sum 41",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Rise Against",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Pennywise",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Social Distortion",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Misfits",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Dead Kennedys",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Sex Pistols",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Billy Talent",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Flogging Molly",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Damned",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Buzzcocks",
+      "genres": [
+        "punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Sisters of Mercy",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Bauhaus",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Jesus and Mary Chain",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Editors",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Stranglers",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Television",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Shame",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Viagra Boys",
+      "genres": [
+        "post-punk"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Duran Duran",
+      "genres": [
+        "new wave / synth"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Tears for Fears",
+      "genres": [
+        "new wave / synth"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Weezer",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Coldplay",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Verve",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Suede",
+      "aka": [
+        "The London Suede"
+      ],
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Manic Street Preachers",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Kasabian",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Snow Patrol",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Bloc Party",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Yeah Yeah Yeahs",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Libertines",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Elbow",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Death Cab for Cutie",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Modest Mouse",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Garbage",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Jimmy Eat World",
+      "genres": [
+        "emo / post-hardcore"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Paramore",
+      "genres": [
+        "emo / post-hardcore"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "The Mars Volta",
+      "genres": [
+        "emo / post-hardcore"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Fugazi",
+      "genres": [
+        "emo / post-hardcore"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Alkaline Trio",
+      "genres": [
+        "emo / post-hardcore"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Iggy Pop & The Stooges",
+      "aka": [
+        "Iggy Pop",
+        "The Stooges",
+        "Iggy and the Stooges"
+      ],
+      "genres": [
+        "garage"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Tame Impala",
+      "genres": [
+        "indie"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Sonic Youth",
+      "genres": [
+        "indie",
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Dinosaur Jr.",
+      "aka": [
+        "Dinosaur Jr"
+      ],
+      "genres": [
+        "indie",
+        "alternative"
+      ],
+      "allConcerts": true
+    },
+    {
+      "name": "Turnstile",
+      "genres": [
+        "punk",
+        "emo / post-hardcore"
       ],
       "allConcerts": true
     }

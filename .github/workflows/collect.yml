@@ -1,5 +1,5 @@
 # Collector: a manual button ("Run workflow") with a dry-run option.
-# The daily schedule is PAUSED (owner, 18 Nov 2026) until step 6 of the brief (dry run for 90 bands,
+# The daily schedule is PAUSED (owner, 18 Nov 2026) until step 6 of the brief (dry run for the approved bands,
 # report, owner's OK). To switch it back on, restore under "on:":
 #   schedule:
 #     - cron: "47 8 * * *"   # 08:47 UTC, just after YouTube's daily quota resets
