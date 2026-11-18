@@ -2,7 +2,7 @@
 // as rows, and a clean sheet with who is in the pile. Styles: src/styles/pages.css.
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Sheet, Tape } from "@/components/zine";
+import { Sheet } from "@/components/zine";
 import type { ConcertView } from "@/lib/queries";
 import { GigRows } from "./GigRows";
 import { SectionTitle } from "./PageHead";
@@ -48,7 +48,7 @@ export function Collection({
       </section>
       <div className="pg-pile-side">
         {shown.length > 0 && (
-          <Sheet as="aside" title="On the bill" level={2} tilt={1} fixings={<Tape at="top-center" tilt={-2} />} label="Bands on this page">
+          <Sheet as="aside" title="On the bill" level={2} tilt={1} label="Bands on this page">
             <ul className="pg-list">
               {shown.map((b) => (
                 <li key={b.slug}>

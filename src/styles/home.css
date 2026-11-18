@@ -122,7 +122,8 @@
   margin-top: 18px;
 }
 
-.hm-hero-tape {
+/* The gig's own YouTube picture, beside a band photo. */
+.hm-hero-still {
   --i: 3;
   margin-right: 22px;
 }
@@ -131,7 +132,7 @@
   --i: 4;
 }
 
-.hm-hero-tape + .hm-setlist {
+.hm-hero-still + .hm-setlist {
   margin: 12px 0 0 14px;
 }
 
@@ -171,7 +172,13 @@
 
 /* ---------- 1b. Find your next band: the crossroads (NextBand.tsx) ---------- */
 
+/* The last section of the page: it starts with scissors, like the others, and the cut line stays
+   inside the page margins. */
 .hm-next {
+  margin: 0 var(--margin);
+  padding-left: 0;
+  padding-right: 0;
+  border-top: var(--cut);
   display: grid;
   /* The left column is as wide as the title strip, which stays on one line. */
   grid-template-columns: max-content minmax(0, 1fr);
@@ -638,7 +645,7 @@
   align-items: flex-start;
   gap: 14px;
   margin-top: 22px;
-  padding: 34px 28px 26px;
+  padding: 28px 28px 26px;
 }
 
 .hm-night > .zn-photo {
@@ -796,11 +803,11 @@
     box-shadow: var(--shadow-button);
   }
 
-  .hm-hero-tape {
+  .hm-hero-still {
     margin-right: 10px;
   }
 
-  .hm-hero-tape + .hm-setlist {
+  .hm-hero-still + .hm-setlist {
     margin-left: 6px;
   }
 

@@ -44,7 +44,7 @@ Proportions on any page: **paper 58 / toner 25 / sheet 11 / pink 6.**
 | `--paper` | `#ECEAE4` | The ground. Always speckled (`--paper-ground`), never flat, never pure white |
 | `--sheet` | `#FBFAF6` | Labels, setlists, anything glued on top |
 | `--pink` | `#FF2D7A` | A block behind black words. One live thing per view |
-| `--tape` | `#D8D2B4` | Masking tape. Decoration only |
+| `--tape` | `#D8D2B4` | Masking tape. Decoration only, and rare (section 5) |
 
 Supporting greys (not brand colours, never used for decoration): `--label-grey #4F4D48` (small labels on paper), `--toner-track #3A3936` (empty progress line), `--toner-soft #B9B6AD` (quiet text on toner), the two staple greys.
 
@@ -91,6 +91,12 @@ Three hands, one job each. Google Fonts, self-hosted through `next/font` in `src
 
 - A strip bites **20–30 px** into its photo (`--bite`). On a YouTube thumbnail it bites into the black mount instead (section 6).
 - **Tape always bridges two things.** It never sits in the middle of one.
+- **Tape is rare (owner rule, 18 Nov 2026).** Use it only where it is small and adds something, never as a habit:
+  - **Never on the homepage.** (The wordmark's own drawn tape is part of the logo, not a fixing.)
+  - **At most one piece per page.**
+  - **Never over content**: not over a picture, a title, text or a control. It sits on a bare edge of paper.
+  - Most sheets need nothing: a keyline and a solid shadow already make them sit on the page. If one needs holding, a staple does it.
+  - Where it stays today: the centre poster on the wall (`/map`) and the "Start here" sheet on a band page. Anything new needs a reason.
 - A **staple** means stacked sheets.
 - Nothing floats alone.
 
@@ -109,7 +115,7 @@ YouTube's developer policies say a video thumbnail must not be altered. So:
 - **No filter, no recolouring, no photocopy treatment.** The file goes to the browser as YouTube serves it (a plain `<img>`, no resizing proxy).
 - **No crop.** The picture keeps the shape of its own file (pass the real `width` and `height`). No `object-fit: cover`.
 - **Nothing on the picture except a play control.** No strip, no stamp, no duration tag, no tape, no shade, no light bar.
-- The zine happens **around** it: the 4 px black frame, a black mount under the picture that the strips bite into, tape across the top edge, the "On now" stamp sitting on the top edge, the tilt, the shadow.
+- The zine happens **around** it: the 4 px black frame, a black mount under the picture that the strips bite into, the "On now" stamp sitting on the top edge, the tilt, the shadow.
 - **A visible "YouTube" credit** under the frame, always.
 
 ### `kind="treated"`: a picture we are allowed to change
@@ -169,7 +175,7 @@ All in `src/components/zine/`, server components unless noted. See them at `/kit
 | `Wordmark`, `SdStamp` | The logo (section 2) |
 | `PaperStrip`, `StripHeading` | A line of headline on cut paper; a heading of alternating strips |
 | `CutOut` | A small piece of cut paper: nav label, tag, sticker |
-| `Tape`, `Staple` | Fixings. Decoration, hidden from screen readers |
+| `Tape`, `Staple` | Fixings. Decoration, hidden from screen readers. Tape is rare: section 5 |
 | `Sheet` | A clean sheet with keyline and 7 px shadow; with `href` it lifts |
 | `PhotoFrame`, `OnNowStamp` | The two kinds of picture (section 6); the pink stamp |
 | `IconButton`, `PressButton`, glyphs | Section 7 |
@@ -231,11 +237,12 @@ Tilt and texture must never hurt usability.
 5. Don't round a corner, blur a shadow or draw a gradient.
 6. Don't fade anything in or out.
 7. Don't tilt the player, an input, or anything pressed twice.
-8. Don't let anything float alone: tape it, staple it, overlap it or end the section.
+8. Don't let anything float alone: staple it, overlap it or end the section. Tape only within the rule in section 5.
 9. Don't type the wordmark.
 10. Don't use real band logos, copied artwork or unlicensed artist photos.
 11. Don't write "content", "curated", "get started" or "at no cost".
 12. Don't add a second typeface, a second accent colour or a dark mode.
+13. Don't use tape on the homepage, more than once on a page, or over anything you are meant to read or see.
 
 ## 14. Pages
 
@@ -256,7 +263,7 @@ Rules the pages add:
 - **One pink thing per page.** On a page that has its label pink in the header (Bands, Decades, Genres…), nothing else is pink at rest: data strips are black, play labels are black and turn pink only for the gig that is playing. On the concert page (no pink label in the header) the date strip is pink, as on the board.
 - **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
 - **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.
-- **Find your next band** has three ways in besides the footer: the sticker in the header, the crossroads under the homepage's black band (`hm-next`, `src/app/_home/NextBand.tsx`: "you are here" on today's band, then four signs, Louder / Softer / Older / Newer, up to three bands each with their genre; every name opens the wall from that band), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
+- **Find your next band** has three ways in besides the footer: the sticker in the header, the crossroads as the last section of the homepage, just above the footer (`hm-next`, `src/app/_home/NextBand.tsx`: "you are here" on today's band, then four signs, Louder / Softer / Older / Newer, up to three bands each with their genre; every name opens the wall from that band), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
 - **The wall (`/map`)**: every band's picture keeps its own shape (a 16:9 concert thumbnail, a square channel avatar) in the 4 px black frame with a black mount, a solid shadow and a slight tilt; the name is typed on a paper strip that bites into the mount. Three sizes: nearer is bigger. The band in the middle is a poster: a clean sheet, taped, its name in the heavy hand. The name of the band pointed at goes on pink. A band with no picture gets its first letter on a clean sheet in the same frame.
 - **Nothing is invented.** No story, quote or song note that is not stored. An empty pile says "Nothing. Not even a bootleg." and points somewhere full.
 

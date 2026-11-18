@@ -1,6 +1,7 @@
 // The homepage (brand book board 04, phones board 07). Sections, top to bottom: gig of the week with
-// its typewriter setlist, Find your next band, Fresh off the copier, Pick a decade, Where it happened, Most played,
-// the night that…, Sort by noise. The issue strip, header, footer and player live in the layout.
+// its typewriter setlist, Fresh off the copier, Pick a decade, Where it happened, Most played,
+// the night that…, Sort by noise, and last, Find your next band (the crossroads).
+// The issue strip, header, footer and player live in the layout.
 // Data: src/lib/home.ts. Styles: src/styles/home.css. A section with nothing to show is left out.
 //
 // Pictures (design/DESIGN.md section 6): a YouTube thumbnail is shown whole and untouched, with only a
@@ -12,7 +13,7 @@ import { PlayButton } from "@/components/player/PlayButton";
 import { GigCard } from "@/components/gig/GigCard";
 import { YouTubePicture } from "@/components/gig/GigPicture";
 import { bandName, cutName, mainArtist, playedOn } from "@/components/gig/words";
-import { PaperStrip, PhotoFrame, PlayableSetlist, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { PaperStrip, PhotoFrame, PlayableSetlist, PlayGlyph, Sheet, Staple, StripHeading } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { homeData, type HomeData } from "@/lib/home";
 import { toTrack } from "@/lib/player-types";
@@ -69,12 +70,6 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
             credit={photo.credit}
             creditHref={photo.sourcePage}
             stamp={label}
-            fixings={
-              <>
-                <Tape at="top-left" tilt={-5} />
-                <Tape at="top-right" tilt={4} />
-              </>
-            }
             className="hm-hero-photo zn-slap"
           >
             {strips}
@@ -86,7 +81,6 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
             tilt={-1}
             eager
             stamp={label}
-            fixings={<Tape at="top-left" tilt={-5} />}
             className="hm-hero-photo zn-slap"
           >
             {strips}
@@ -109,7 +103,7 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
       <div className="hm-hero-side">
         {/* With a band photo up front, the gig itself is shown here: the YouTube picture, whole. */}
         {photo && (
-          <YouTubePicture concert={concert} sizes="(min-width: 901px) 36vw, 100vw" tilt={1.5} className="hm-hero-tape zn-slap">
+          <YouTubePicture concert={concert} sizes="(min-width: 901px) 36vw, 100vw" tilt={1.5} className="hm-hero-still zn-slap">
             <PaperStrip hand="type" tone="white" tilt={-1}>
               STRAIGHT OFF: {concert.channel.name}
             </PaperStrip>
@@ -122,12 +116,7 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
           meta={meta || undefined}
           level={2}
           tilt={photo ? -0.8 : 1.2}
-          fixings={
-            <>
-              <Tape at="top-center" tilt={-2} />
-              <Staple at="top-right" />
-            </>
-          }
+          fixings={<Staple at="top-right" />}
           className="hm-setlist zn-slap"
         >
           {timed.length > 0 ? (
@@ -227,10 +216,8 @@ export default async function HomePage() {
         ONE CLICK AND THE GIG STARTS <span>IT KEEPS PLAYING</span> WHILE YOU DIG THROUGH THE REST
       </p>
 
-      <NextBand wall={wall} noise={noise} />
-
       {freshCards.length > 0 && (
-        <section className="hm-section hm-section--cut" aria-labelledby="hm-fresh" data-od="fresh">
+        <section className="hm-section" aria-labelledby="hm-fresh" data-od="fresh">
           <div className="hm-head">
             <SectionTitle id="hm-fresh">Fresh off the copier</SectionTitle>
             <Link href="/concerts" className="hm-more">
@@ -336,7 +323,7 @@ export default async function HomePage() {
           )}
 
           {nightThat ? (
-            <Sheet as="article" tilt={-1} fixings={<Tape at="top-left" tilt={-4} />} className="hm-night" label="The night that…">
+            <Sheet as="article" tilt={-1} className="hm-night" label="The night that…">
               <span className="zn-marker" data-size="big">
                 the night that…
               </span>
@@ -350,7 +337,7 @@ export default async function HomePage() {
             </Sheet>
           ) : (
             /* No story yet: the house rules take the wall instead (brand book, voice). Never an invented story. */
-            <Sheet as="aside" tilt={-1} fixings={<Tape at="top-left" tilt={-4} />} className="hm-deal" label="How this works">
+            <Sheet as="aside" tilt={-1} className="hm-deal" label="How this works">
               <p className="zn-label">STAGEDIVE /// THE DEAL</p>
               <p className="hm-deal-text">
                 No login. No algorithm. No &ldquo;recommended for you&rdquo;. We&rsquo;ve got scissors, glue and every full gig we
@@ -404,6 +391,9 @@ export default async function HomePage() {
           {noise.some((g) => g.count === 0) && <p className="zn-marker hm-noise-note">dashed = nothing on the wall yet</p>}
         </section>
       )}
+
+      {/* Last on the page (owner, 18 Nov 2026): once you have dug through the issue, where to go next. */}
+      <NextBand wall={wall} noise={noise} />
     </main>
   );
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead, TagLinks } from "@/components/gig/PageHead";
 import { gigs } from "@/components/gig/words";
-import { Sheet, Tape } from "@/components/zine";
+import { Sheet } from "@/components/zine";
 import { listTours } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function ToursPage() {
       {tours.length === 0 ? (
         // No gig is filed under a tour yet: say so, and point at the piles that are full.
         <section className="pg-section pg-tours-empty" data-od="empty">
-          <Sheet tilt={-1} fixings={<Tape at="top-left" tilt={-4} />} className="pg-note">
+          <Sheet tilt={-1} className="pg-note">
             <p className="zn-label">Tours /// nothing filed yet</p>
             <p className="pg-note-big">The van isn&rsquo;t loaded yet.</p>
             <p className="pg-note-text">

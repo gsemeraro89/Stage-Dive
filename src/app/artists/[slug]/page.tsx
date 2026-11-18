@@ -121,7 +121,6 @@ export default async function ArtistPage({ params, searchParams }: Props) {
               sizes="(min-width: 901px) 470px, 100vw"
               credit={photo.credit}
               creditHref={photo.sourcePage}
-              fixings={<Tape at="top-left" tilt={-5} />}
               className="bp-photo"
             >
               {name}
@@ -139,7 +138,6 @@ export default async function ArtistPage({ params, searchParams }: Props) {
               shadow
               eager
               sizes="(min-width: 901px) 300px, 70vw"
-              fixings={<Tape at="top-left" tilt={-5} />}
               className="bp-photo bp-photo--avatar"
             >
               {name}
@@ -151,7 +149,6 @@ export default async function ArtistPage({ params, searchParams }: Props) {
               shadow
               eager
               sizes="(min-width: 901px) 470px, 100vw"
-              fixings={<Tape at="top-left" tilt={-5} />}
               className="bp-photo"
             >
               {name}

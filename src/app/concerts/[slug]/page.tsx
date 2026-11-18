@@ -11,7 +11,7 @@ import { OnNowMark } from "@/components/gig/OnNowMark";
 import { Crumbs, SectionTitle } from "@/components/gig/PageHead";
 import { bandName, cutName, gigs, kindWord, mainArtist, placeYear, playedOn, playedOnLong } from "@/components/gig/words";
 import { PlayerSlot } from "@/components/player/PlayerSlot";
-import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading } from "@/components/zine";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
@@ -137,12 +137,7 @@ export default async function ConcertPage({ params }: Props) {
           meta={songCount ?? undefined}
           level={2}
           tilt={1}
-          fixings={
-            <>
-              <Tape at="top-center" tilt={-2} />
-              <Staple at="top-right" />
-            </>
-          }
+          fixings={<Staple at="top-right" />}
           className="cp-setlist"
         >
           <div data-od="setlist" data-timed={timed || undefined}>
