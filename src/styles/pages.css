@@ -22,7 +22,7 @@
 }
 
 .od-rail span:first-child {
-  color: var(--acid);
+  color: var(--ink);
 }
 
 /* ---------- Home hero: rail left, lead image right, giant artist name below ---------- */
@@ -249,7 +249,8 @@
 }
 
 .od-profile-concert h2 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-profile-concert-meta {
@@ -415,7 +416,7 @@
 }
 
 .od-sheet-artist {
-  color: var(--acid);
+  color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
@@ -428,7 +429,8 @@
 /* A guest without a page: same type and colour, but not a link, so no underline and no hover. */
 .od-sheet-artist--plain,
 .od-sheet-artist--plain:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
   text-decoration: none;
 }
 
@@ -564,7 +566,7 @@
   min-width: 52px;
   border: 0;
   background: none;
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-track-time time {
@@ -593,13 +595,14 @@
   left: calc(-1 * min(var(--pad-x), 12px));
   width: 3px;
   background: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-track-time[data-current] time {
   margin-right: -5px;
   padding: 1px 5px;
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
   font-weight: 500;
   text-decoration: none;
 }
@@ -717,7 +720,8 @@
 }
 
 .od-upnext h3 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* In the narrow rail the image is too small for a label with the length. */
@@ -909,7 +913,8 @@ a.od-month:hover {
 }
 
 a.od-month:hover .od-month-name {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 a.od-month:focus-visible {
@@ -954,7 +959,8 @@ a.od-month:focus-visible {
 }
 
 .od-period-step:hover .title {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 @media (max-width: 1000px) {

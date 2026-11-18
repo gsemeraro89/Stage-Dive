@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Archivo_Black, Permanent_Marker, Special_Elite } from "next/font/google";
 import Form from "next/form";
 import Link from "next/link";
 import { PlayerDock } from "@/components/player/PlayerDock";
@@ -10,12 +10,14 @@ import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 // Self-hosted by Next.js: no request to Google from the visitor's browser.
-// Archivo is loaded as a variable font with its width axis (the display type is 125% wide).
-const archivo = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-archivo", display: "swap" });
-const plexMono = IBM_Plex_Mono({
+// Three hands, one job each (design/DESIGN.md): Archivo Black on cut strips, Special Elite for
+// everything you read, Permanent Marker for the one handwritten line. Each has a single weight.
+const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", variable: "--font-archivo-black", display: "swap" });
+const specialElite = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--font-special-elite", display: "swap" });
+const permanentMarker = Permanent_Marker({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  weight: "400",
+  variable: "--font-permanent-marker",
   display: "swap",
 });
 
@@ -26,13 +28,13 @@ export const metadata: Metadata = {
     "Full rock concerts from YouTube, free: the whole set, by band, festival, room, decade, genre and tour. Press play once and keep listening.",
 };
 
-export const viewport: Viewport = { themeColor: "#0B0B0F", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#ECEAE4", colorScheme: "light" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Months and years with concerts, for the menu's drop-down lists (cached, see src/lib/memo.ts).
   const decades = await decadeIndex();
   return (
-    <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${archivoBlack.variable} ${specialElite.variable} ${permanentMarker.variable}`}>
       <body>
         {/* The player wraps every page and is never unmounted, so music survives navigation. */}
         <PlayerProvider>

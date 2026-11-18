@@ -1,21 +1,25 @@
-/* Page ground, links, focus, and the small shared pieces every page uses. */
+/* Page ground, links, focus, and the small shared pieces every page uses.
+   Old OpenDecks page styles, kept alive by the bridge tokens in design/tokens.css. */
 
 html {
-  background: var(--ground);
+  /* The ground is copier paper: always speckled, never flat. */
+  background: var(--paper-ground);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
   scroll-padding-bottom: var(--deck-space);
+  /* Each of the three faces has one weight: never let the browser fake a bold or an italic. */
+  font-synthesis: none;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--ground);
+  background: none;
   color: var(--ink);
-  font-family: var(--font-sans);
-  font-weight: 500;
+  font-family: var(--font-type);
+  font-weight: 400;
   font-size: 16px;
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -27,7 +31,7 @@ body {
 
 ::selection {
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 a {
@@ -44,8 +48,8 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 2px solid var(--acid);
-  outline-offset: 2px;
+  outline: 3px dashed var(--ink);
+  outline-offset: 3px;
 }
 
 /* Hidden from the eye, read by screen readers. */
@@ -76,7 +80,8 @@ button:disabled {
 }
 
 .od-link:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* Links inside running text. */
@@ -87,7 +92,8 @@ button:disabled {
 }
 
 .od-inline:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-muted {
@@ -95,7 +101,7 @@ button:disabled {
 }
 
 .od-acid {
-  color: var(--acid);
+  color: var(--ink);
 }
 
 /* The play button: a rectangular acid block with a ground-colour triangle and mono label. */
@@ -106,7 +112,7 @@ button:disabled {
   min-height: 48px;
   padding: 16px 24px;
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
@@ -117,6 +123,7 @@ button:disabled {
 
 .od-play:hover {
   background: var(--ink);
+  color: var(--ground);
 }
 
 .od-play svg {

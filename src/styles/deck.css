@@ -30,6 +30,7 @@
 .od-dock-progress > div {
   height: 3px;
   background: var(--acid);
+  color: var(--on-acid);
 }
 
 /* Docked: video flush left, the rest of the bar reads like a now-playing panel. */
@@ -59,7 +60,7 @@
 
 .od-dock-label {
   padding-bottom: 6px;
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-dock-title {
@@ -72,7 +73,8 @@
 }
 
 .od-dock-title:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-dock-credits {
@@ -106,7 +108,8 @@
 }
 
 .od-dock-more[aria-expanded="true"] {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-dock-more-short {
@@ -134,7 +137,8 @@
 }
 
 .od-dock-next a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-dock-controls {
@@ -166,11 +170,12 @@
 .od-dock-controls button.od-dock-toggle {
   background: var(--acid);
   border-color: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 .od-dock-controls button.od-dock-toggle:hover {
   background: var(--ink);
+  color: var(--ground);
   border-color: var(--ink);
 }
 
@@ -581,11 +586,12 @@
   width: clamp(72px, 9vw, 104px);
   height: clamp(72px, 9vw, 104px);
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 .od-poster:hover .od-poster-play {
   background: var(--ink);
+  color: var(--ground);
 }
 
 .od-poster-label {
@@ -643,7 +649,8 @@
 .od-dock-min:hover {
   background: var(--hover-row);
   border-color: var(--ink);
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-dock-min svg {
@@ -785,7 +792,7 @@
 
 .od-mini-label {
   flex: none;
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-mini-credits {
@@ -807,5 +814,6 @@
 
 .od-mini-strip button:not(.od-mini-handle):hover {
   background: var(--hover-row);
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }

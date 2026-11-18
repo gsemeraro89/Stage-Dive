@@ -22,7 +22,7 @@
 }
 
 .od-logo span {
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-nav {
@@ -41,7 +41,8 @@
 
 .od-nav a:hover,
 .od-nav a[aria-current] {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* Marks where the second row starts on narrow screens; not drawn anywhere else. */
@@ -72,7 +73,8 @@
 
 .od-nav-toggle:hover,
 .od-nav-toggle[aria-expanded="true"] {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-nav-toggle:focus-visible {
@@ -135,7 +137,7 @@
 }
 
 .od-search:focus-within {
-  border-bottom-color: var(--acid);
+  border-bottom-color: var(--ink);
 }
 
 .od-search label {
@@ -153,7 +155,7 @@
   height: var(--touch);
   background: transparent;
   color: var(--ink);
-  font: 500 16px/1.2 var(--font-sans);
+  font: 400 16px/1.2 var(--font-type);
   outline-offset: 0;
 }
 
@@ -170,7 +172,8 @@
 }
 
 .od-search button:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* Seven items, the last one long ("Find your next DJ"). Where nav and search no longer fit beside
@@ -291,7 +294,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   padding: 0 var(--pad-x);
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
   font-weight: 500;
 }
 
@@ -494,7 +497,7 @@
 .od-thumb:focus-visible .od-dur,
 .od-thumb[data-current] .od-dur {
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 .od-thumb[data-current] .od-dur::before {
@@ -537,7 +540,8 @@
 
 .od-tile:hover h3 a,
 .od-tile h3 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-credit {
@@ -553,7 +557,7 @@
 }
 
 .od-credit .od-credit-artist {
-  color: var(--acid);
+  color: var(--ink);
   /* Short names ("NTO") still get a finger-wide target. */
   padding-inline: 11px;
   margin-inline: -11px;
@@ -678,7 +682,7 @@
 }
 
 li:first-child > .od-row .od-rank {
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-row h3 {
@@ -697,7 +701,8 @@ li:first-child > .od-row .od-rank {
 }
 
 .od-row h3 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-row .od-credit {
@@ -721,6 +726,7 @@ li:first-child > .od-row .od-rank {
   display: block;
   height: 3px;
   background: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-row .od-num {
@@ -798,7 +804,8 @@ li:first-child > .od-row .od-rank {
 }
 
 .od-arc:hover .od-arc-title {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-arc:focus-visible {
@@ -807,7 +814,7 @@ li:first-child > .od-row .od-rank {
 
 .od-arc-year {
   grid-area: year;
-  color: var(--acid);
+  color: var(--ink);
 }
 
 /* 16:9, 96px wide: the row stays a line of an archive, not a tile. No text on the image. */
@@ -950,7 +957,8 @@ li:first-child > .od-row .od-rank {
 }
 
 .od-index-row:hover .od-index-name {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-index-row img {
@@ -1042,7 +1050,8 @@ li:first-child > .od-row .od-rank {
 
 .od-words a:hover,
 .od-words li:nth-child(even) a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
   -webkit-text-stroke: 0;
 }
 
@@ -1051,7 +1060,7 @@ li:first-child > .od-row .od-rank {
   top: 0.5em;
   margin-left: 6px;
   vertical-align: top;
-  color: var(--acid);
+  color: var(--ink);
   -webkit-text-stroke: 0;
   font-stretch: 100%;
 }
@@ -1104,7 +1113,7 @@ li:first-child > .od-row .od-rank {
   height: auto;
   margin-top: 13%;
   transform: translate(-50%, -50%);
-  filter: grayscale(1) contrast(1.15);
+  /* No filter: a YouTube picture is shown as YouTube serves it (design/DESIGN.md, section 6). */
 }
 
 /* The artist's own picture (the avatar of their YouTube channel) is already square: it is shown
@@ -1120,7 +1129,7 @@ li:first-child > .od-row .od-rank {
   margin: 0;
   object-fit: cover;
   transform: none;
-  filter: grayscale(1) contrast(1.08) brightness(0.8);
+  /* No filter: a YouTube picture is shown as YouTube serves it (design/DESIGN.md, section 6). */
 }
 
 .od-square:hover .od-square-pic img,
@@ -1150,7 +1159,8 @@ li:first-child > .od-row .od-rank {
 
 .od-square:hover .od-square-name,
 .od-square:focus-visible .od-square-name {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-square:focus-visible {
@@ -1171,7 +1181,7 @@ li:first-child > .od-row .od-rank {
 
 .od-square:hover .od-square-pic--plain,
 .od-square:focus-visible .od-square-pic--plain {
-  -webkit-text-stroke-color: var(--acid);
+  -webkit-text-stroke-color: var(--ink);
 }
 
 /* The acid "All artists" tile that closes the home grid: its words are inside the block. */
@@ -1181,11 +1191,12 @@ li:first-child > .od-row .od-rank {
   justify-content: space-between;
   padding: 10px 12px;
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 .od-square--all:hover .od-square-pic {
   background: var(--ink);
+  color: var(--ground);
 }
 
 .od-square--all .display {
@@ -1320,7 +1331,8 @@ li:first-child > .od-row .od-rank {
 
 .od-feature-rail h2 a:hover,
 .od-feature-rail h3 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-facts {
@@ -1339,7 +1351,8 @@ li:first-child > .od-row .od-rank {
 }
 
 .od-facts a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 @media (max-width: 760px) {
@@ -1385,7 +1398,7 @@ li:first-child > .od-row .od-rank {
   background-color: transparent;
   color: var(--ink);
   border-bottom: 1px solid var(--ink);
-  font: 500 16px/1.2 var(--font-sans);
+  font: 400 16px/1.2 var(--font-type);
   outline-offset: 0;
 }
 
@@ -1406,14 +1419,15 @@ li:first-child > .od-row .od-rank {
 
 .od-field input:focus-visible,
 .od-field select:focus-visible {
-  border-bottom-color: var(--acid);
+  border-bottom-color: var(--ink);
 }
 
 /* A filter that is switched on shows its value in acid. */
 .od-field[data-on] select,
 .od-field[data-on] input {
-  color: var(--acid);
-  border-bottom-color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
+  border-bottom-color: var(--ink);
 }
 
 .od-filter-actions {
@@ -1552,7 +1566,8 @@ li:first-child > .od-row .od-rank {
 .od-aline-name a:hover,
 .od-aline-settitle a:hover,
 .od-aline-genres a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-aline-facts {
@@ -1635,7 +1650,8 @@ li:first-child > .od-row .od-rank {
 
 /* "Play next" once queued: plain acid text, no longer a link. */
 .od-playnext[data-queued] {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
   text-decoration: none;
   cursor: default;
 }

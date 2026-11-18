@@ -1,5 +1,7 @@
-/* Tailwind + the Magazine design system. Tokens live in design/tokens.css (source of truth:
-   design/DESIGN.md); component styles live in src/styles/. */
+/* Tailwind + the STAGEDIVE zine. Tokens live in design/tokens.css (rules: design/DESIGN.md).
+   src/styles/zine.css holds the zine components and the motion system; the other files in
+   src/styles/ are the old OpenDecks page styles, kept alive by the bridge tokens until each page
+   is rebuilt. zine.css comes last so it wins. */
 @import "tailwindcss";
 @import "../../design/tokens.css";
 @import "../styles/base.css";
@@ -8,11 +10,70 @@
 @import "../styles/pages.css";
 @import "../styles/map.css";
 @import "../styles/home.css";
+@import "../styles/zine.css";
 
 @source not "../../design";
 
-/* Tokens as Tailwind utilities: bg-ground, text-acid, border-line, font-mono ... */
+/* Tokens as Tailwind utilities: bg-paper, text-toner, bg-pink, font-strip, shadow-sheet,
+   rotate-tilt-2, duration-slap, ease-slap ... */
 @theme inline {
+  --color-toner: var(--toner);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-pink: var(--pink);
+  --color-tape: var(--tape);
+  --color-label-grey: var(--label-grey);
+  --color-toner-track: var(--toner-track);
+  --color-toner-soft: var(--toner-soft);
+
+  --font-strip: var(--font-strip);
+  --font-type: var(--font-type);
+  --font-marker: var(--font-marker);
+
+  --text-h1: var(--text-h1);
+  --text-h2: var(--text-h2);
+  --text-name: var(--text-name);
+  --text-body: var(--text-body);
+  --text-data: var(--text-data);
+  --text-label: var(--text-label);
+  --text-marker: var(--text-marker);
+
+  --spacing-margin: var(--margin);
+  --spacing-gutter: var(--gutter);
+  --spacing-frame: var(--frame);
+  --spacing-keyline: var(--keyline);
+  --spacing-bite: var(--bite);
+  --spacing-touch: var(--touch);
+
+  --rotate-tilt-1: var(--tilt-1);
+  --rotate-tilt-2: var(--tilt-2);
+  --rotate-tilt-3: var(--tilt-3);
+  --rotate-tilt-4: var(--tilt-4);
+
+  --shadow-sheet: var(--shadow-sheet);
+  --shadow-rest: var(--shadow-rest);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-press: var(--shadow-press);
+
+  --ease-slap: var(--slap-ease);
+  --ease-stamp: var(--stamp-ease);
+  --ease-turn: var(--turn-ease);
+  --ease-dock: var(--dock-ease);
+  --transition-duration-slap: var(--slap-time);
+  --transition-duration-lift: var(--lift-time);
+  --transition-duration-turn: var(--turn-time);
+
+  /* Square edges, always: every Tailwind radius is zero. */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+
+  /* Bridge: the old OpenDecks utility names (bg-ground, text-ink, border-line ...). */
   --color-ground: var(--ground);
   --color-ink: var(--ink);
   --color-muted: var(--muted);

@@ -1,201 +1,244 @@
-# FullDJSet — design system (direction A, "Magazine"), approved 11 Nov 2026
+# STAGEDIVE design rules
 
-This is the single source of truth for how FullDJSet looks. The approved pages are in `design/reference/` (`home.html`, `artist.html`, `set.html` — open them in a browser). Tokens are in `design/tokens.css`. Build the real pages to match them.
+**A fanzine that plays.** Every page is cut, glued and copied by hand. Every picture on it is a full gig, one click away.
 
-**Updated 17 Nov 2026 (archive rows carry a small image: section 8, item 29). 17 Nov 2026 ("This month" and year pages, and a seven-item menu: sections 8 and 9, item 28). 17 Nov 2026 (the home page is built: "Places" with "Four ways in" and the reel; sections 8 and 9, item 27). 16 Nov 2026 (home page proposals: sections 8 and 9; "Map" renamed "Find your next DJ": header, section 9, item 18; the map on phones: section 9). 13 Nov 2026 (recommendations and map: artist line, deck sheet, map page; section 12, items 15–18; tracklist, item 20. Earlier the same day: artist name, artist profile, close button; items 11–13).** Earlier: 12 Nov 2026 (phase 2b, the real site). Where this document and the reference pages differ, this document wins. The differences are listed in section 12. In code: tokens are imported by `src/app/globals.css`, component styles are in `src/styles/` (`base.css`, `components.css`, `deck.css`, `pages.css`, classes prefixed `od-`), and shared components are in `src/components/ui/` and `src/components/catalogue/`.
+This file is the rulebook. It is written from the approved brand book (`design/brandbook/*.dc.html`, order in `canvas.json`) and `docs/BRIEF.md` section 3. If this file and a board disagree, the board wins and this file gets fixed.
+
+| Where | What |
+| --- | --- |
+| `design/tokens.css` | Every colour, size, tilt, shadow and timing as a CSS variable |
+| `src/app/globals.css` | The same tokens as Tailwind utilities (`@theme inline`) |
+| `src/styles/zine.css` | Styles for the zine components and the motion system |
+| `src/components/zine/` | The components (import from `@/components/zine`) |
+| `/kit` | Every component and state on one page, desktop and phone |
+| `design/brandbook/` | The approved boards and treated photos: the source of truth |
+
+Light only. The brand has no dark mode.
+
+---
 
 ## 1. The idea
-An electronic-music magazine, not an app. The YouTube thumbnails are the raw material; type and rules do the rest. The owner explicitly rejected anything that looks like a generic AI-made interface.
 
-## 2. Never do this (hard bans)
-- No rounded corners anywhere (`border-radius: 0`). No pills, no circular buttons, no circular avatars.
-- No "cards": no boxed panels with a background fill, border and padding around content. Content sits on the page ground, separated by hairline rules and space.
-- No gradients, glows, drop shadows, blur or glass effects.
-- No emoji. No decorative icons. Icons only for player controls and the two arrows of the reel, as plain filled SVG.
-- No centred hero with a headline, subtitle and two buttons. No three-equal-columns feature rows.
-- No new colours beyond the tokens.
+- **Insight.** Nobody found their favourite band on a clean page. They found it on a photocopied flyer taped to a wall, already third-hand, already a bit ruined.
+- **Name.** The stage dive: you jump and strangers hold you up. You click, the gig catches you.
+- **Test for any screen.** Could this have been made with scissors, glue, a typewriter, a marker and one tired photocopier? If a part of it could not, it is wrong.
+
+## 2. Logo
+
+- **Wordmark**: nine cut-out letters drawn one by one (5 hands: heavy, typewriter, marker, slab, stencil; 4 black, 2 white, 2 pink, 1 newsprint; no two neighbours tilt the same way). The master drawing lives in `src/components/zine/brand-art.ts`, generated from board 01. **Never retype it in a font.** Use `<Wordmark />`.
+  - `variant="full"`: shadows and two pieces of tape. On paper or a clean sheet. **Min width 160 px.**
+  - `variant="flat"`: half tilt, no tape, no shadows, for small sizes. **Min width 90 px.**
+  - `variant="on-toner"`: the full wordmark on toner black, with paper keylines.
+- **SD stamp** (`<SdStamp />`): the symbol. **Under 60 px wide the symbol takes over** from the wordmark.
+- **Favicon**: black square, pink foot, white S. `src/app/icon.svg`, `src/app/favicon.ico` (16 / 32 / 64; the 16 uses the heavier drawing from the board) and `src/app/apple-icon.png`.
+- **Clear space**: one letter-width of bare paper all round. Only tape may cross that line.
+- **Don't**: type it straight · use pink as ink · set it on a photo · round its corners or soften its shadow · recolour, stretch or re-tilt the letters.
 
 ## 3. Colour
-| Token | Hex | Use |
-|---|---|---|
-| ground | #0B0B0F | Page background, text on acid |
-| ink | #ECEBF3 | Main text, strong rules |
-| muted | #9A98AB | Metadata, secondary text |
-| line | #2A2A36 | Hairline rules, empty tracks |
-| acid | #C6FF3D | The one accent |
-| hover-row | #15151C | Row hover only |
 
-Acid is rare. It is allowed only for: the play button, the "latest upload" strip (always the real newest set, also when the hero features another one), the active nav item (and, in the menu's month and year lists, the sign of the open list and the period the visitor is in), artist names under a tile, rank 01, view bars, the bars of the month index and the rail word of a month or year page ("This month", "This year", "Archive"), the "on deck" bar and "on deck" label, hover on titles and labels, the first word of a hero rail, the year in archive rows, genre counts, a filter that is switched on, "Next on deck" on a queued suggestion, the times of a tracklist (and the label of the one playing), the deck bar's "You might also like" button while its sheet is open, the name of the picture selected on the map, the tracklist line that is playing now (its time and a 3px bar), and the focus outline. One filled acid element per screen area. Violet #7C5CFF is reserved and unused for now.
+Proportions on any page: **paper 58 / toner 25 / sheet 11 / pink 6.**
+
+| Token | Hex | Job |
+| --- | --- | --- |
+| `--toner` | `#0A0A0A` | Text, photos, strips, the player |
+| `--paper` | `#ECEAE4` | The ground. Always speckled (`--paper-ground`), never flat, never pure white |
+| `--sheet` | `#FBFAF6` | Labels, setlists, anything glued on top |
+| `--pink` | `#FF2D7A` | A block behind black words. One live thing per view |
+| `--tape` | `#D8D2B4` | Masking tape. Decoration only |
+
+Supporting greys (not brand colours, never used for decoration): `--label-grey #4F4D48` (small labels on paper), `--toner-track #3A3936` (empty progress line), `--toner-soft #B9B6AD` (quiet text on toner), the two staple greys.
+
+Rules:
+
+- **Pink is never ink and never on a photo.** It is a block behind black words: the song on now, the play button, the one current nav label, the "On now" stamp. *If two things are pink, one of them is wrong.* (The player bar counts as one thing.)
+- **Tape never carries words.**
+- **The ground is always `--paper-ground`** (two offset dot screens over paper). Do not paint flat paper over it.
+- Contrast: black on paper 17:1, black on pink 5.4:1, paper on black 17:1. Pink on paper is under 3:1, which is why it is never text, never a border on paper and never a focus ring.
+- No other colours. No tints, no opacity tricks to make new ones. Photos are black and paper; the only colour in a picture is a YouTube thumbnail, which we are not allowed to change (section 6).
 
 ## 4. Type
-- **Display:** Archivo, weight 900, `font-stretch: 125%` (extended), uppercase, letter-spacing −0.02em, line-height 0.76–0.95. Used for the artist name, section titles, ranks, stats, genre words.
-- **Titles:** Archivo 700–800, `font-stretch: 108–112%`, uppercase, line-height ~1.08.
-- **Body:** Archivo 500, normal width, sentence case, 16–28px.
-- **Metadata:** IBM Plex Mono 400/500, 12px, uppercase, letter-spacing 0.05em. Dates as DD.MM.YY, durations as H:MM:SS.
-- Sizes are fluid with `clamp()`. On an artist page the artist name is the largest thing: one line, up to 13vw (20vw on phones, where it wraps word by word). The home page has no giant name: there the image is the largest thing.
-- **Big name fitting.** A giant name must never overflow or be cut. `BigName` (`src/components/ui/BigName.tsx`) knows the width of each display glyph (measured: Archivo 900, 125% width, −0.02em) and sets the font size so the widest line fills the column: one line for artists and up to two for venues and genres on desktop, word by word on phones. Caps: 13vw artist (20vw on phones, prop `maxPhone`), 15vw venue and genre. At 1440×900 the artist name, the stat strip and the start of the profile are visible without scrolling. The home page has no giant name (section 9).
-- Fonts are self-hosted with `next/font` (Archivo variable with the width axis, IBM Plex Mono 400/500). No request to Google from the visitor. Arrow glyphs are not in the font subset: links are underlined mono text without arrows.
 
-## 5. Layout
-- Fluid pages, side padding `clamp(16px, 2.4vw, 36px)`, 12-column grid, 28px column gap.
-- Sections start with a 1px ink rule, a display title, an optional mono count like `(06)`, and a mono link on the right.
-- Asymmetry over uniform grids: one lead image (7–8 columns) next to a stack of smaller ones. Never a wall of equal tiles on a key page.
-- Vertical rhythm between sections: `clamp(64px, 8vw, 120px)`.
-- Mobile: grids collapse to one column (two for square tiles and stat strips); rows wrap; nothing scrolls sideways.
+Three hands, one job each. Google Fonts, self-hosted through `next/font` in `src/app/layout.tsx`. Each has one weight; the browser must never fake a bold or an italic (`font-synthesis: none`).
 
-## 6. Thumbnails (the most important asset)
-- Always the highest resolution YouTube offers: try `maxresdefault.jpg` (1280×720), fall back to `sddefault`, then `hqdefault`. Detect the 120×90 placeholder and fall back. Serve responsive sizes (`srcset`) so lead images are sharp on 2× screens; never upscale a small thumbnail into a lead slot.
-- 16:9, square corners, `object-fit: cover`, never stretched. Lazy-load below the fold.
-- Duration sits bottom-left on the image in a solid ground-colour label, with no play triangle: a set thumbnail is a link that opens the set page and starts nothing (owner decision, 16 Nov 2026: nothing starts by itself, and the video never flashes in the deck bar on the way to the page). The visitor starts the set there with the page's own play button. The title is the same plain link. The label turns acid on hover, and reads "On deck" in acid while that set is playing. The one exception is the thumbnail inside an artist line (a suggestion): it plays in the deck bar without leaving the page, and it alone carries a small play triangle before the duration. The triangle means "plays here"; a thumbnail without it opens the page.
-- Tell the browser the real slot width with `sizes` (see `SIZES` in `src/components/catalogue/SetTile.tsx`).
-- Square crops: YouTube's smaller files are 4:3 with black bars. In a 1:1 slot the image is set to 177.78% of the square's width and centred, which hides the bars for both 4:3 and 16:9 files.
+| Hand | Token | Job | Sizes |
+| --- | --- | --- | --- |
+| **Archivo Black**, caps | `--font-strip` | Headlines and names, always on a cut strip | H1 56–74 px (33 on a phone) · H2 34–42 (21 on a phone) · names 22–26 · **never below 15** |
+| **Special Elite** | `--font-type` | Everything you read | Body 16–18 / 1.6 · data 16, caps · labels 13, tracked 0.08em |
+| **Permanent Marker** | `--font-marker` | Someone wrote on the page afterwards | 17–27, tilted, lower case |
 
-## 7. Text on photos — legibility rule (owner requirement)
-Text over a photo must always be perfectly readable. Only two patterns are allowed:
-1. **Solid label:** text inside a solid ground-colour (or acid) box placed on the image.
-2. **Flat scrim:** a flat `rgba(11,11,15, ≥0.62)` layer over the whole image, with white text of at least 17px bold or display size.
-Contrast must be at least 4.5:1 against the lightest area behind the text (3:1 for text 24px+ bold). No blend modes, no text straight on an unscrimmed photo, no gradient scrims. If a photo defeats the scrim, move the text off the photo. Thumbnails often contain their own baked-in text: never place our text over that area.
+- **H1**: on a cut strip, **one strip per line, alternating white and black**, each tilted against its neighbour, the second stepped in. Use `<StripHeading lines={[...]} />`.
+- **Data** is typed in caps with triple slashes: `GLASTONBURY 2024 /// 1:14:20`. Class `zn-data`.
+- **Marker**: hints, asides, arrows. **Never navigation. Never more than one line.** One per entry at most. Class `zn-marker`.
+- **Hierarchy of an entry**: 1 photo · 2 name strip · 3 typed data · 4 one marker line.
+- Type never breaks the page margin. Type never sits on a picture (section 6).
 
-## 8. Components
-- **Header:** logo (display, FULL + DJSET, "DJSet" in acid), mono nav, search as a label plus an underlined input. Hairline below. The nav has seven items (owner decision, 17 Nov 2026): Sets, This month, the year, Artists, Festivals, Genres, Find your next DJ. The year is never typed in: it comes from `menuYear()` (`src/lib/periods.ts`) and moves to the new year at the end of January. The items never break inside a label and the words are never shortened ("Find your next DJ" is long by the owner's decision, 16 Nov 2026).
-  - *Widths:* from 1361px everything is on one line. Up to 1360px the gaps tighten and the search narrows (200–340px, whatever is free). Up to 1140px the nav takes its own row under the logo and search. Up to 680px the nav is two rows divided by a hairline: Sets, This month, the year, Artists; then Festivals, Genres, Find your next DJ. The second row starts at a real element (`.od-nav-break`), so the rows never depend on how the labels wrap; nothing scrolls sideways. Below 360px the gaps are 14px.
-  - *Month and year lists* (owner request, 17 Nov 2026; `NavLinks`): "This month" and the year stay plain links. Each is followed by a small mono sign, "+" (a minus sign while open), which is a button of its own ("More months", "Other years") and opens a list: the last twelve months that have sets ("Oct '26" with its count), or every year that has sets, newest first. Arrow and triangle glyphs are not in the font subset (section 4), so the sign is a plus. Muted; acid on hover and while open. The button is 44×44px: its blank right half stands in for the gap to the next item, so the menu is no wider than the two signs (36px wide below 360px, the only way four items fit on a 320px row).
-    - *The list:* compact (owner feedback, 17 Nov 2026: "less space from one month or year to the next; the dropdown must not take up the whole page"). Mono lines, the period on the left and the count in muted on the right, no lines between the lines (owner, 17 Nov 2026: the columns and the space do the work), hover-row ground on hover, the period the visitor is in shown in acid. From 681px it hangs from the header's hairline under its item, text in line with the label: 30px lines in 136px columns (one column up to six lines, two from seven), ground colour with a hairline edge and an ink top; no shadow. It lies over the page, so it needs the edge; this is the one place a bordered list is allowed and it holds nothing but these lines. Up to 680px it is a low band across the page under the menu: three columns of 36px lines, no caption, an ink rule at its foot; twelve months are four lines high. These lines are the one exception to the 44px touch rule (section 11): each is a full column wide and 36px tall. A long list scrolls inside itself (at most 34% of the screen height on phones, 400px on a desktop).
-    - *Behaviour:* opens on click or tap only, never on hover. One list open at a time. The sign again, Esc (focus returns to the sign), a press or focus anywhere else, or a new page closes it. The lists are always in the page's HTML (hidden until opened), never fetched on click. With no periods to show there is no sign.
-  - *Active item:* acid, one at most. "Sets", "This month" and the year all live under `/sets`, so each claims only its own pages: "Sets" on `/sets` and on set pages; "This month" on `/sets/this-month`; the year on its own year page and that year's month pages. A page of another year lights nothing.
-- **Latest strip:** full-width acid band, ground-colour mono text, set as a ledger so no line wraps by accident. Phones: the tagline on one line; a ground hairline; the latest upload in bold (up to three lines, never a word alone on the last line) with its date top right; a hairline; the counts. From 600px: tagline left and counts right, a hairline, then the latest upload on one line (ellipsis if too long) with the date at the right edge. From 1100px: one line (tagline, latest upload, date, counts at the right edge). The latest upload is the only link; its tap target is 44px high and its focus outline is ground colour (acid on acid would not show).
-- **Play button:** rectangular acid block, ground-colour play triangle and mono label ("Play set — 56:46"). On the set page a 104px acid square (72px on phones) at the bottom-left of the player image and a solid "Play set — length" label bottom-right; the whole image is the button. Outside the set page the "Play set" block of a Feature opens the set page and starts nothing (item 25 in section 12); "Play latest set" on the artist page and the buttons of an artist line play in the deck bar.
-- **Set tile:** image, then a mono row (date left, views right), then the title, then the artist in acid mono and the venue in muted mono. No box around it. Hover turns the title acid.
-- **Chart row (most watched):** rank in display type (01 in acid), 176px thumbnail, title and mono sub-line, then views with a 3px acid bar proportional to the top item. Hairline between rows.
-- **Set row:** for long lists (All sets, search results, "You might also like"): 176px thumbnail, title, credits, then date and views in mono. Hairline between rows. On phones the image is 132px and date and views move under the credits.
-- **Index row:** for the venue and genre indexes: 176px image (the latest set, `cover`; without one, the outlined initial in a hairline 16:9 frame), name in title type, mono sub-line (venues: place), count in display type on the right. The whole row is one link.
-- **Feature:** one set shown large: image (8 columns) beside a rail with an acid mono kicker, the title, a mono fact list and the play button. Flipped (rail left, image right) for the home hero, where it also carries the artist credit line (acid mono) under the title.
-- **Home hero:** the flipped Feature at full weight. The image takes 8 of 12 columns (7 below 1000px), starts directly under the acid strip and runs off the right edge of the page; on phones it is edge to edge above the rail. The rail has the acid kicker "Featured today" at the top and the title (up to 50px), artist credit, fact list (under a hairline) and play button at the foot, level with the foot of the image. The image is 16:9 at least; if a long title makes the rail taller, the image grows with it (cover crop) so both end on the same line. No text on the photo except the duration label.
-- **Archive row** (`ArchiveRows`; image added on the owner's request, 17 Nov 2026): year in acid mono (only on the first row of each year), a small image of the set, title, venue in muted mono, duration, views. Hairline between rows; the list stays dense, it is not a list of tiles.
-  - *Image:* 16:9, 96px wide (54px tall) at every width, cover crop, lazy-loaded, the smallest file offered (`SIZES.archive`). Nothing is written on it: the length is a column of the row, so there is no duration label here.
-  - *Link:* the whole row, image included, is one link to the set page (like every set thumbnail, it starts nothing). Hover: hover-row ground and the title in acid. Focus: the acid outline drawn inside the row.
-  - *Widths:* from 1001px everything is on one line (year 52px, image, title, venue up to 260px, duration, views). Up to 1000px the venue goes under the title. On phones (up to 760px) the image is on the left and the title is on the right with duration and views under it; the venue is hidden, and the year is a line of its own above the first row of each year.
-- **Genre words:** large display words flowing in lines, alternating solid and outlined (1.5px stroke), each with its set count as a small acid superscript.
-- **Artist square:** a 1:1 picture with a caption under it, on the ground: the set count in muted mono ("12 sets"), then the name in display type, always at the same place and width, wrapping as it needs (long names and names with symbols included). **Nothing is written on the photo** (owner feedback, 13 Nov 2026): thumbnails carry their own titles and logos, and a label laid over them collided with that text. The picture is greyscale with raised contrast and uses the portrait crop below; colour returns on hover and the name turns acid. Pictures sit side by side with a 2px seam of ground between them, so baked-in text never reads on into the next picture. The picture is the artist's best set thumbnail, or their channel avatar when every thumbnail is pure graphics (see "Artist pictures"). An artist without either gets the outlined initial inside a hairline frame; never an empty dark square. The acid "All artists" tile keeps its words inside the block.
-- **Artist pictures** (owner decision, 13 Nov 2026, revised the same day; squares, artist lines, the map): the picture is a **set thumbnail first**: for each artist the best one is chosen automatically (a person in the frame, the least printed text), shown black-and-white with the portrait crop below, colour on hover. The owner likes this look and it stays the rule. Only when every thumbnail of an artist is pure graphics (three artists today) the picture is the avatar of their official YouTube channel instead (`cover.portrait` true, square, 800px). An avatar is shown whole in the square, never cropped. Greyscale too, with brightness lowered to 80%: some avatars are logos on a white or coloured ground, and this keeps a white one from glaring in the dark grid. Full colour and brightness return on hover or selection.
-- **Portrait crop** (the normal case: set thumbnails used as artist pictures in squares, artist lines and the map): the thumbnail is 2.35 times the square's width (a plain square crop is 1.78), centred, then moved down by 13% of the square. The square shows the middle of the picture from just under its top edge to about three quarters down, so lower-third titles, edge logos and channel marks fall outside and heads stay in. The same for 16:9 files and for YouTube's 4:3 files with black bars. It cannot remove text baked into the middle of a thumbnail; only a real artist photo can (section 10).
-- **Artist line:** a suggested artist as a row on the ground between hairlines (`ArtistLine`, `src/components/ui/`). No box. Left to right: a square greyscale picture (the newest set, colour on hover); the name in title type (link to the artist page), a muted mono line (origin · Born year · number of sets), the style in body type, up to three genres as underlined mono links; the most watched set (its 176px thumbnail is the play button, with the title and "Play next"); the latest set as text (title, "Play — length", "Play next"). When both are the same set it is shown once ("The set", or "Most watched · Latest"). "Play next" is a mono text button shown only while something is playing; once queued it reads "Next on deck" in acid text. It never says why an artist is suggested and shows no score. The row lays itself out from the width of its place (container queries): four columns when wide, three when medium (the two sets stacked), and on phones and in the map rail the picture and name on top with the sets below. Used in the deck sheet, "You might also like" on set pages, "If you like X" on artist pages, and the map.
-- **Find your next DJ search** (`MapSearch`): one left-aligned line of display type, "If you like", then an underlined field in the same type (outlined placeholder "An artist", the browser's list of our artists) and a play-button block. Large on the home page ("Find DJs"), compact at the top of the Find your next DJ page ("Show"). Never centred.
-- **Stat strip:** four or five figures in display type with mono labels, divided by vertical hairlines (two columns on phones).
-- **Deck bar:** fixed at the bottom, full width, 1px acid top rule, 3px progress line. Not a floating box (the visitor can collapse it into the mini-player, below). It holds the real YouTube video, never a thumbnail, because YouTube does not allow a video to play hidden or below 200×200:
-  - *Desktop:* video 356×200 flush left; beside it the "On deck" label, the title (two lines), credits, time; on the right "Next:" and three 48px square controls (play/pause in acid), then close. "Mini player" touches the video, top left of the text column (below). Bar height 204px.
-  - *Phone:* video 200×200 flush left (YouTube's minimum; the 16:9 picture is letterboxed by YouTube inside it); beside it the label, the title (three lines), time and the three controls (44px below 390px wide); "Mini player" touches the video at the top of the text column and close is a 44px square in the top right corner of the bar, on the same line. Bar height 204px, the lowest the rule allows. Below 360px wide the video goes on top at full width, 200px tall, and close returns to the row of controls.
-  - *Slim:* on the set page of the set that is playing, the video is in the page, so the bar is one row of text and controls (about 70px; four 44px squares on phones).
-  - *Hide bar (slim bar only; owner decision, 16 Nov 2026):* in the slim bar the "×" does not stop anything. It puts the bar away so the set can be watched with the whole page to itself; the video plays on in the page. Same square, same place, label "Hide bar". The bar returns by itself the moment the video is no longer in the page: the visitor goes to another page (the video moves to the bar or the mini-player, as before) or the next set starts. The bar is never hidden while it holds the video.
-  - *Close:* a square like the other controls with a plain filled "×" (`CloseIcon`), label "Close player". Wherever the bar holds the video it stops the music and removes the bar (YouTube does not allow sound with the video hidden); in the slim bar it only hides the bar (below). It is always set apart from previous / pause / next so it is not hit by mistake: after them with a wider gap and a vertical hairline, or alone in the top right corner on phones. Never on or over the video.
-  - *Mini player (the minimise control; owner feedback, 16 Nov 2026):* it sits right next to the video, because that is the thing it shrinks: far from the video, beside close, visitors did not connect the two. A labelled button, `MinimiseIcon` (a frame with a small filled window in its corner) and "Mini player" in mono, 44px high, in the top left corner of the text column. It reaches back across the column gap so it touches the video's right edge, and its icon lines up with the title below; "On deck" follows it on the same line. Hairline on the right and bottom only: the video and the progress line close the box. Hover: hover-row ground, ink border, acid text. It collapses the bar into the mini-player. Beside the video, never on it.
-    - *Phones:* same place, 6px down so it shares a line with close, with a hairline on top as well. Below 480px "On deck" gives way to it; below 400px the words are hidden (still read by screen readers) and it is a 44px square with the icon. Not shown below 360px wide (the video is on top and already as wide as the screen) or in the slim bar.
-  - *Mini-player (owner request, 16 Nov 2026):* the bar collapsed into a small window so it is out of the way while browsing. The one floating element of the site, and only because the visitor asked for it; still no shadow, no radius, no fill beyond the ground colour.
-    - *What it is:* 358px wide: a 44px strip, the 3px progress line, the video at 356×200. 1px line-colour outline, 1px acid top rule. Nothing else: no title, time, queue or previous / pause / next (YouTube's own controls in the video do that; expand for the rest). On a screen narrower than 358px it takes the full width; the video is still 200px tall.
-    - *Strip, above the video, never on it:* left, the handle: a six-dot grip (`GripIcon`), "On deck" in acid, the credits in muted mono, cut with an ellipsis; then two 44px squares divided by hairlines: expand (`ExpandIcon`, a frame with a band along the bottom; "Expand player") and close ("Close player", same as the bar). Hover: hover-row ground; the icons turn acid.
-    - *Moving it:* dragged by the handle only (pointer events; `touch-action: none` on the handle and nowhere else), so every click and touch on the video reaches YouTube. With the keyboard: focus the handle, arrow keys move it 16px, Shift + arrow 64px. It can go anywhere but never leaves the viewport, also when the window is resized or the phone is turned, and it stays above all page content. It first appears bottom right, 16px from the edges; the last position is remembered (`localStorage`).
-    - *Rules:* the video is the same YouTube player, moved and resized with CSS, never reloaded: the set keeps playing through minimise, drag and expand. No transition between bar and window (nothing to switch off for `prefers-reduced-motion`). The page keeps no bottom space while the window is up. On the set page of the set that is playing the video is in the page and the slim bar shows as usual; the window returns when the visitor leaves that page. The choice lasts until expand, also across sets. Ads never go near it.
-    - In code: `useMiniPlayer` (`src/components/player/`), `data-mini` on `.od-dock`, `.od-mini-*` in `src/styles/deck.css`.
-  - *You might also like (deck sheet):* when the set on deck has suggestions, the bar carries a mono text button "You might also like (4)" beside the time ("Also like (4)" under the time below 1000px; on phones it has its own line between the time and the controls: the title gives up its third line and the controls are 44px, so the time stays and the bar is still 204px; below 360px wide it sits with the time on a line under the controls). It opens the bar upward into a sheet: the display title, a "Close list" mono link, and the suggested artists as artist lines. The sheet is part of the bar, above the progress line and the row with the video, so it never touches the video; it scrolls inside itself and never carries ads. Closed by default; it never opens by itself; the button, "Close list", Esc or moving to another page close it. The open button is acid. On the page of the set that is playing (slim bar, video in the page) nothing opens: the button is a link that scrolls to the page's own "You might also like" (not shown in the slim bar on phones, where that section is right under the player).
-  - Nothing may overlap the video box, and nothing sits above the bar (z-index 40; the video is 41). The sheet is the bar itself growing taller, not something above it.
-- **Tracklist** (set page, beside the player on a desktop and right under the title on phones, see section 9; `.od-tracklist` in `src/styles/pages.css`): text only, set tight like the track listing on a record sleeve (owner feedback, 13 Nov 2026: more compact, times in a colour). A 1px ink rule, "Tracklist" in title type (20–26px) with the mono count `(24)`, then one line per track, with a hairline above the first and below the last and **no rules between lines**. A one-line track is 20px tall with a mouse (13px text on a 16px line, 2px above and below) and 30px on touch screens and phones (14px text on an 18px line). The space between two tracks is 4px, only a little more than the space between the two lines of a wrapped title, so the list reads as one block of type (owner feedback, three times: tighter, then smaller text; 13px is the floor for the track text on the dark ground). Beside the player at 1440×900 twenty-two tracks are visible at once. The line under the pointer gets the hover-row ground.
-  - *Line:* the time in mono 11px (12px on touch; never larger than the track text), right-aligned in a column as wide as the longest time (so the colons line up), then the artist in bold and the title in regular weight, 13px (14px on touch), sentence case as written. Long lines wrap under the title, never under the time.
-  - *Time:* a button that plays the set from there, in **acid text** (the colour of everything that plays here; small mono, so a column of thirty stays quiet), underlined on hover and focus (2px acid outline). Its click area is the full height of the line and at least 52px wide: 20px tall with a mouse, 30 × 60px or more on touch screens. This is the one place where a target is under 44px, because taller lines made the list too long; neighbouring times touch but never overlap.
-  - *Playing now:* the time becomes a solid acid label with ground-colour figures (as "On deck" on a thumbnail), a 3px acid bar stands at the start of the line in the page margin, and the line takes the hover-row ground. It reads at a glance against the other times, which are acid text on the ground.
-  - *ID lines* (unreleased or unidentified): the whole name in muted; the time stays acid, because it still plays.
-  - *Artists with a page:* underlined like any link in running text, acid on hover.
-  - *No times:* the lines are numbered 01, 02 ... in muted mono in the same column; nothing is clickable except artist links.
-  - *Source note:* one muted mono line under the list.
-  - The whole list is always shown and always in the HTML. No tracklist, no section.
-- **Home page parts** (`src/components/ui/Home.tsx`, `Reel.tsx`, `src/styles/home.css`; see section 9, "Home"). None of them writes on a photo: every caption is on the ground under its picture.
-  - *Statement and pitch:* a left-aligned display line (the h1) with part of it outlined, and two or three lines of body type (17–20px, 44 characters wide at most) that say what the site is for. Then one acid block ("Browse 163 sets", a link, no triangle) and one mono link ("Find your next DJ"). Never centred.
-  - *Plate:* a set tile titled by its place instead of its title (place in title type, city and country in the mono row, artist in acid mono).
-  - *Reel* (owner request, 17 Nov 2026; it replaces the triptych): a band of pictures that scrolls sideways, edge to edge. **Every frame has the same format and the same size: 16:9**, with a 2px seam of ground between frames. The frame width is a share of the band, so the edge of the next frame always shows: 3.25 frames on desktop, 2.25 up to 1000px, 1.14 on phones. Up to twelve frames, mixing special locations, festivals and clubs (special locations first and most often). Under each frame, on the ground: a muted mono link with the setting and its count ("Festivals · 41 sets"), the place in title type, the artist in acid mono. The picture opens the set page; nothing starts by itself.
-    - *Caption height:* the band is as tall as its tallest frame, so captions are held to one height: the place takes two lines at most, the setting and the artists one line each (cut with an ellipsis; the set page has the full names). The space under the reel is then the normal section gap, whatever the names are.
-    - *Arrows:* two buttons on the band's left and right edges, level with the middle of the pictures: solid ground squares (56px, 48px on phones) with a plain filled ink arrow, acid with a ground arrow on hover. They sit on the pictures as a solid label (section 7, pattern 1). One press moves the band by the frames that fit whole (three on desktop, two up to 1000px, one on phones). The arrow at an end of the band is taken away (disabled and hidden), so the first picture starts clean. These arrows are the one icon allowed besides the player controls.
-    - *Touch and keyboard:* the list scrolls natively with scroll-snap (each frame snaps to the left edge), so a swipe works; the arrows stay on phones too. The arrows are real buttons with labels ("Previous pictures", "Next pictures"), reachable by keyboard, with the acid focus outline drawn inside the square. With `prefers-reduced-motion` the band jumps instead of gliding. The scrollbar is hidden: the arrows and the cut-off frame say there is more.
-  - *Atlas rows:* a text list of sets by place: country in muted mono (once per country), place in title type, artist in muted mono, length on the right. One link per row, 56px tall at least, hairlines, hover-row ground.
-  - *Word rows:* a table of contents in giant display words (alternating solid and outlined, acid count as superscript, like genre words), each with one sentence and a few real entries as muted mono links. Hairlines between rows. On the home page they are closed by the Find your next DJ search line under a muted mono line ("Or start from someone you already like").
-  - *Hand-picked pictures:* `data/home-picks.json` lists YouTube IDs in order of preference (cover, places, festival, club). Rule for a pick: a real place, a crowd or light; no baked-in title or large logo; a maxres file. A pick that is not in the catalogue is skipped and the most watched sets of the same setting fill the gap. A picture is never shown twice on the page; the atlas rows are text and may name a place that also has a picture in the reel.
-- **Month index** (`MonthIndex`, `src/components/ui/`; `.od-months` in `src/styles/pages.css`): the twelve months of a year as one strip between hairlines, built like the stat strip: a three-letter mono name, the number of sets in display type, and a 3px bar (acid on the line-colour track, like a view bar) that compares the months with each other. A month with sets is one link to its page (hover-row ground, name in acid). A month without sets is muted text with a zero and an empty track; a month that has not started has no figure. Twelve cells on one line on a desktop, six up to 1000px, four up to 760px. Never a box, never a fill.
-- **Period nav** (`PeriodNav`): the foot of a month or year page. Under a 1px ink rule: the period before on the left, the one after on the right, each a muted mono word ("Earlier", "Later") over the name in title type, acid on hover. No arrows (section 4). On the newest month the right side is "The year / All of 2026".
-- **Empty state:** an outlined display line ("No sets match"), one body sentence, one mono link.
-- **Loading:** flat hover-row blocks in the page's grid under a section rule. No shimmer, no spinner. Available as `LoadingBlocks` (`src/components/ui/`); it is not wired as a root `loading.tsx`, because that makes missing pages answer 200 instead of 404.
-- **Filters:** mono labels over underlined fields in one row (two columns on phones), native menus with a small filled triangle. A filter that is on shows its value in acid. Submit is a play-button block; "Clear" is a mono link.
+## 5. Paste-up
 
-Not built yet, and not shown anywhere until they are (no placeholders): Follow button, partner slot, ad slots, tabs. When built: partner slot = 1px acid outline, mono "Partner" label, display line, mono link; ad slot = 1px line outline with a mono "Advertisement" label, never near or over the player; tabs = mono text buttons, the active one acid with a 2px acid underline.
+**Grid**: 12 columns you are allowed to disobey by up to 4°. Margins **40 px desktop / 16 px phone** (`--margin`), gutters **14 px** (`--gutter`). Photos may break the margin; type may not.
 
-## 9. Pages
-- **Home** (`/`, owner choice 17 Nov 2026: proposal B "Places" with C's "Four ways in"; `src/app/_home/HomePage.tsx`). In order: header; the statement, a display line of places ("Festivals. Clubs. Rooftops. Deserts.", alternating solid and outlined) under an acid mono kicker that completes the h1, with the pitch and two actions ("Browse N sets", "Find your next DJ") beside it; the **reel** (section 8), edge to edge; **The atlas** (two plates and the atlas rows of special locations); the latest strip and **Latest uploads** (the five newest, lead + four); **Artists** (nine squares, the tenth is the acid "All artists" tile); **Four ways in** (word rows: Artists, Festivals, Genres, Settings, each with real entries, closed by the "If you like ___" search line; this replaces the separate Festivals, By genre and Find your next DJ sections); **Most watched** (chart, all-time); footer. No giant name and no single hero image: the band of pictures is the largest thing. Phones: statement, reel, then the pitch and actions.
-- **Sets** (`/sets`): the full list. Filters and set rows; with a search or filter active it shows only the results. Old links to `/?genre=…` are sent here.
-- **This month and year pages** (owner decision, 17 Nov 2026; periods follow the YouTube upload date). Both start with a typographic hero, no picture: a mono rail (the acid word "This month", "This year" or "Archive"; the number of sets in muted; one underlined link on the right) and a big name fitted to the column.
-  - *Month* (`/sets/this-month`, `/sets/year/<year>/<month>`; `src/app/sets/_period/MonthView.tsx`): the big name is the month solid and the year outlined, on one line (two on phones); the rail link is "All of <year>". Then the uploads, newest first, like "Latest uploads" on the catalogue: under the section head "New uploads" ("Uploads" for a past month) with its count, the five newest as lead + four; any others follow as set rows under "Earlier in <Month>". A month with one set shows it as a Feature under the ink rule, without a section head. An empty month shows the empty state under the ink rule, with the link "See the latest sets". The page ends with the period nav.
-  - *Year* (`/sets/year/<year>`): the year as the big name (up to 22vw), with the month index directly under it, so the shape of the year is on the first screen; the rail link is the year before. Then one section per month that has sets, newest first: section head (month, "N sets · most watched first", "All N" or "Open month"), the six most watched as a chart from three sets up (set rows below that, as on artist pages), and a mono link "N more from <Month>". The sections sit a little closer than normal ones (48–88px). Period nav at the foot: the year before, and the year after when it exists.
-- **Artist:** mono rail, the name on the ground (one line), stat strip (five figures); then the profile on the left and the image of the latest upload on the right (see "Artist profile" below); **Latest uploads** (the next three: lead + two); **Most watched** (chart, all-time, from three sets up); Every set (archive rows); "If you like X": the first four similar artists as artist lines, the others as squares below, and a mono link "Open the map". Latest always comes before Most watched.
-- **Artist profile** (the block under the stat strip, `.od-intro`):
-  - *Left, 5 columns:* muted mono kicker "Profile"; the bio in body type (16–19px), four lines at most (six on phones), cut with an ellipsis, no "read more"; the facts as mono rows between hairlines, label in muted and value in ink: From, Born (the year, never an age), Style, Label, Also written. Only what is known is shown. At the foot of the column, level with the foot of the image: acid kicker "Latest upload", the set's title, date and views, credits, and the play button "Play latest set — length".
-  - *Right, 7 columns:* the image of the latest upload (a link to its set page, like every thumbnail). It is 16:9 at least and grows with the column beside it (cover crop, never deeper than about 4:3), so both columns end on the same line and no area is left blank.
-  - *Up to 1000px wide:* one column: profile, latest upload text and play button, then the image at 16:9.
-  - *Little or nothing known* (no bio and fewer than two facts): the column is not drawn. The latest upload is shown as a full-width Feature (image 8 columns, rail with its facts and play button), as on venue pages, and a single known fact stands in the mono rail above the name. Facts are never shown twice: with a profile column the rail says only "Artist".
-  - Bios should be written to fit: about 240 characters fill four lines on a desktop.
-- **Set** (owner feedback, 13 Nov 2026: the tracklist is the page's real added value and must be found without scrolling):
-  - *Desktop (from 1001px):* the player (16:9) with a side column beside it. With a tracklist the side column is 320–460px wide and starts with the tracklist, exactly as tall as the player and the line under it, so every time can be clicked with the video in view; a longer list scrolls inside the column (thin scrollbar in the line colour; every track is still in the page), a shorter one ends early and "Up next" follows it in the same column. Without a tracklist the side column is "Up next" alone, 300px, as before: no empty hole. Under the player: the title (display type, 24–56px: the player is the hero here and the title supports it; a long title of about 40 characters takes two lines on a desktop, three on a phone), the data sheet (cells with hairlines; Live act is shown next to the genres), the write-up.
-  - *Up to 1000px and phones:* one column: player (edge to edge on phones), title, tracklist in full (it starts on the first screen of a phone), data sheet, write-up, Up next.
-  - Then, on every width: More from the artist (lead + four), You might also like (up to four artist lines; the deck bar's button scrolls here), deck bar. Nothing is ever placed on or over the player, and the write-up always stays on the page.
-- **Venue / festival:** mono rail (setting, place, count), the name as a big name, stat strip (sets, hours, views, artists), the latest set as a Feature, then Latest uploads, Most watched (from four sets) and Every set (from six sets). Sections appear only when there are sets to fill them.
-- **Genre:** as venue, with the name outlined like a genre word. An empty genre shows the outlined name, one sentence, and the genre words of the genres that have sets.
-- **Find your next DJ** (`/map`, in the main menu; called "Map" until the owner renamed it on 16 Nov 2026. The address and the code keep "map"; visitors never read the word): a mono rail ("Find your next DJ" in acid, the number of artists around the centre), the map search line with the centre artist in the field, and the genres as mono switches (one that is on is acid with a 2px underline; "All genres" clears them). Below a 1px ink rule: the field (8 columns) and a rail (4 columns) with the artist line of the name the visitor points at or focuses; the selection stays, so the play buttons in the rail can be reached. Clicking a picture or name opens that artist's page (owner decision, 16 Nov 2026); the "Start from …" link in the rail restarts the map from that artist. The address holds the artist and the genres, so a map can be shared. Without a search it starts from today's featured artist. Closer to the centre means more alike; nothing on the page says so, and no score, reason or rank number is shown. Up to 1000px the rail goes under the field. Phones have the field too (below). On any touch screen the first tap on a picture selects it and a second tap opens the artist page, because a finger cannot point. Focusing the search field selects the name in it, so a new one can be typed at once. No match, or no neighbours: the empty state.
-  - *The field (owner's choice, 13 Nov 2026: pictures):* up to twelve artists as square black-and-white pictures in three sizes (nearer = larger, about 148 / 120 / 96px on a desktop, smaller on a narrow field), the centre artist larger (210px) on a hairline crosshair. The name is under each picture, on the ground, in display type; never on the photo (section 7). Pictures use the portrait crop (section 8). Colour returns and the name turns acid when the picture is selected.
-  - *Phones (up to 760px; owner feedback, 16 Nov 2026: the plain list that stood here "did not explain much", so the map itself now fits the phone; `MapView`, `MapGenres`, `src/styles/map.css`):*
-    - *Head:* the acid "Find your next DJ" line (the count is left out), "If you like" on its own line, then the field (18px display type, so a long name shows whole) with "Show" beside it. The genres fold into one 44px mono line that says what is on, "Genres: all" or "Only: Techno, House" (the names in acid), with an underlined "Change" / "Close" on the right that opens the same switches. Without scripts the switches are simply shown.
-    - *Field:* 8px from the screen edges, 320 / 420 / 520 / 600px tall for up to 3 / 7 / 9 / 12 artists. Pictures are 15 / 18.5 / 22% of the field width by distance (14 / 17 / 20% from ten artists up), the centre 33%, so every picture is a target of 48px or more. Names are 11px display type under the pictures, up to a third of the field wide. A mono "Start" in ink stands on the ground above the centre picture, never on it. If the pictures still cannot all be placed without touching, the field grows downward in 48px steps until they can.
-    - *Pick bar:* directly under the field, full width, 1px ink rule on top, ground colour, no box. It sticks to the foot of the screen while the field is in view and comes to rest under the field; while the deck bar is up it does not stick (the deck bar owns the foot of the screen). It holds the selected artist: a 72px picture in colour, a muted mono kicker ("You start from" for the centre, "Like <centre>" for the others), the name in title type (21px), up to three genres as plain mono words; then one row: the acid block "Start from here" (restarts the map from that artist; it reads "Loading" and the field goes to 35% until the new map is there) and the mono link "Artist page" on the right. For the centre the block gives way to one muted sentence: "Tap a picture. Bigger and closer means more alike." This sentence is the only place the site explains the map; it is words, never a score, a number or a reason.
-    - *Under the bar:* the rest of the selected artist's line: facts, style, the most watched set (thumbnail plays it) and the latest set. Picture, name, genres and "Start from" are not repeated there.
-    - Nothing moves or fades: there is no animation to switch off for `prefers-reduced-motion`.
-  - `MapView` places the closest artists first and moves any picture that would touch another to the nearest free spot: nothing ever overlaps, and the same map looks the same on every visit. No circles, bubbles or connecting webs.
-- **Indexes:** Artists = squares with captions, A–Z, four per row. Festivals = index rows (festivals only since 13 Nov 2026; clubs and other places keep their own pages, reached from sets). Genres = genre words at extra-large size, then index rows with the latest set of each.
-- **404:** mono rail, outlined "404" at hero size, section title, one sentence, play-button block back to all sets.
+**Tilt** (`tilt` prop on every component, in degrees):
 
-Settings are Festival, Club, Special location, Studio-Session, Livestream. "Live act" is an attribute, shown next to the genres.
+- 1–4° for cut-outs. **Alternate direction with each neighbour.**
+- **0° for anything you type into or press twice**: inputs, play/pause, next, the setlist rows, buttons.
+- **The player is the only thing that sits dead straight.** Never tilt it, never tape it.
+- Components clamp tilt to ±4°. Tape may swing to ±6°.
 
-## 10. Data the design needs
-- Per artist: set count, total duration, total views, first and last upload year, countries.
-- Per set: the best available thumbnail size.
-- Per artist, optional: bio, origin, birth year, style, label, alternative spelling (section 9, Artist profile).
-- Per artist: a picture: the best set thumbnail, chosen automatically (a person, the least printed text); the avatar of the official YouTube channel (`cover.portrait`) only when every thumbnail is pure graphics. A real press photo would still be better and would allow a photo hero again.
-- There is no "Trending" view: Most watched is all-time only.
+**Shadow**: 7 px right, 7 px down, solid black, **no blur** (`--shadow-sheet`). Only on sheets that sit on top of other things. A sheet you can pick up rests at 4 px and lifts to 13 px (section 8).
 
-## 11. Accessibility
-Real `<a>`, `<button>`, `<input>` with labels; visible focus outlines (2px acid); touch targets at least 44px; all text at least 4.5:1; `alt` text on meaningful images; respect `prefers-reduced-motion`.
+**Edges**: square, always. Photos get a **4 px black frame** (`--frame`); white paper gets a **3 px keyline** (`--keyline`). Every Tailwind radius is zeroed in `globals.css`.
 
-## 12. Changes since the reference pages were approved
-1. No "Trending" view and no tabs: Most watched is all-time only.
-2. The deck bar holds the real video (356×200, 200×200 on phones) instead of a 96px thumbnail (YouTube rule).
-3. Follow button, partner slot and ad slots are not built and not shown. (The tracklist was built on 13 Nov 2026: item 15.)
-4. Settings list updated; "Live act" is an attribute next to genres.
-5. Artist hero: the name sits on the ground, not on a scrimmed photo. A thumbnail stretched across the page breaks section 6 (never upscale) and puts the name over the thumbnail's own text (section 7). The photo is the latest upload, shown sharp beside the bio.
-6. Artist squares: solid labels instead of a scrim (section 7, pattern 1), so baked-in thumbnail text can never sit behind the name. Superseded by item 19.
-7. Every thumbnail is a play button and says so (triangle in the duration label, "On deck" state). Superseded by item 25: only the thumbnail in an artist line plays and carries the triangle; the "On deck" state stays everywhere.
-8. Giant names are fitted to the column (section 4), so long names such as "Paul Kalkbrenner" never overflow.
-9. Venue, genre and index pages are derived from the same parts (section 9).
-10. Home hero (owner feedback, 12 Nov 2026): it shows the daily featured artist's latest set under the kicker "Featured today", not the latest upload, and the giant artist name is removed from the home page. The image carries the weight instead (8 columns, flush under the strip, off the right edge). The acid strip still announces the real latest upload, and Latest uploads starts from the newest set. The giant name stays on artist, venue and genre pages.
-11. Artist name smaller (owner feedback, 13 Nov 2026): one line capped at 13vw instead of two lines up to 33vw, so the stat strip and the profile are on the first screen. Venue and genre names are unchanged.
-12. Artist profile (owner feedback, 13 Nov 2026): the block under the stat strip is a compact profile (short bio, facts) with the latest upload named at its foot, beside the image. Item 5's "photo beside the bio" still holds; the lead tile there is replaced by the image alone, its title moved into the left column. An artist with no profile gets the latest upload as a full-width Feature instead of an empty column.
-13. Deck bar: a close button (section 8).
-14. Pictures on the artist, venue and genre lists come from each item's own newest set (`cover`), not from the 60 newest sets overall, so older artists are no longer left without a picture. Genre index rows lost their "Latest: title" line (the cover carries no title).
-15. Recommendations (owner decisions, 13 Nov 2026): the artist line is the one way the site suggests an artist. The site never shows why an artist is suggested, nor a score.
-16. Deck bar: "You might also like" opens the bar upward (section 8). The rule "nothing sits above the bar" stands: the sheet is part of the bar and above the video row.
-17. Set pages: "You might also like" is artist lines, not set rows. Artist pages: "If you like X" is four artist lines, then squares.
-18. Find your next DJ page (`/map`, first called "Map"; renamed by the owner on 16 Nov 2026) and its search line on the home page (section 9); "Find your next DJ" is in the main menu. The field is pictures (the owner compared three looks and chose this one); the map shows up to twelve artists.
-19. Artist squares (owner feedback, 13 Nov 2026): the name and the count moved off the photo into a caption under it, and every square artist picture uses the portrait crop (section 8). On real thumbnails the labels collided with baked-in titles and looked misaligned.
-20. Tracklist (13 Nov 2026): built as a text list with clickable times (section 8). The reference page only had a placeholder box for it.
-21. Artist pictures (owner decisions, 13 Nov 2026): a set thumbnail is always the first choice, the best one per artist chosen automatically; the official channel's avatar, shown whole, is used only when every thumbnail is pure graphics (section 8).
-22. Set page (owner feedback, 13 Nov 2026): the tracklist moved up, beside the player on a desktop and right under the title on phones; the tracklist itself is compact with acid times (sections 8 and 9).
-23. Deck bar (owner request, 16 Nov 2026): a minimise control and a draggable mini-player (section 8). This is the one exception to "not a floating box".
-24. Deck bar (owner feedback, 16 Nov 2026): the minimise control moved from beside close to the edge of the video, with the words "Mini player", so it is clear what it shrinks (section 8).
-25. Set thumbnails (owner decision, 16 Nov 2026, revised the same day): a click opens the set page and starts nothing; the visitor starts the set with the page's play button (section 6). First built as "opens the page and plays there", then changed: nothing starts by itself, and the video must not flash in the deck bar on the way. The play triangle left the duration label of these thumbnails, because the click no longer plays; "On deck" still shows while the set is playing. The "Play set" button of a feature also opens the set page. Suggestions in artist lines keep "play here" and keep the triangle.
-26. Deck bar (owner decision, 16 Nov 2026): on the set page the "×" hides the bar and the set plays on in the page (section 8).
-27. Home page (owner choice, 17 Nov 2026): the catalogue list moved to `/sets`; `/` is the home page "Places" with "Four ways in" (section 9). The band of three pictures of different widths became the reel: equal 16:9 frames, 2px seams, arrows left and right, swipe on phones (section 8). The proposals A "Cover" and C "Index" and their parts (ways line, triptych, contact strip) were removed with the `/preview` pages.
-28. "This month" and year pages, and the menu (owner decision, 17 Nov 2026): two menu items were added, "This month" and the year; the header breakpoints moved to make room (section 8, Header). New parts: month index and period nav (section 8); pages in section 9. The h1 of "This month" is the month and year, with "This month" in the acid rail and read out first by screen readers.
-29. Archive rows (owner request, 17 Nov 2026): each row of "Every set" carries a small image of the set (96px, 16:9) after the year; the row is still one link and the list is still dense (section 8). The reference page had text only.
-30. Month and year lists in the menu (owner request, 17 Nov 2026): "This month" and the year each got a "+" sign that opens a list of other months or years with their counts (section 8, Header). The sign is a plus because the font subset has no arrows. Made compact the same day on the owner's feedback: 30px lines on a desktop, three columns of 36px lines and no caption on phones; then the hairlines between the lines were removed. The edge of the desktop list and the ink rule at the foot of the phone band stay: the list lies over the page and needs them.
+**Things touch**:
+
+- A strip bites **20–30 px** into its photo (`--bite`). On a YouTube thumbnail it bites into the black mount instead (section 6).
+- **Tape always bridges two things.** It never sits in the middle of one.
+- A **staple** means stacked sheets.
+- Nothing floats alone.
+
+**Sections end** with a dashed cut line (`<hr class="zn-cutline">`) or a full-bleed black band (`zn-band`). Never with empty space.
+
+**Never**: rounded corners · gradients · glassmorphism · blur · soft shadows · emoji as icons · outline icons · card grids of identical tiles · fades.
+
+## 6. Photos
+
+There are **two kinds of picture and they follow different rules.** `<PhotoFrame kind="…">` enforces them.
+
+### `kind="youtube"`: a YouTube thumbnail
+
+YouTube's developer policies say a video thumbnail must not be altered. So:
+
+- **No filter, no recolouring, no photocopy treatment.** The file goes to the browser as YouTube serves it (a plain `<img>`, no resizing proxy).
+- **No crop.** The picture keeps the shape of its own file (pass the real `width` and `height`). No `object-fit: cover`.
+- **Nothing on the picture except a play control.** No strip, no stamp, no duration tag, no tape, no shade, no light bar.
+- The zine happens **around** it: the 4 px black frame, a black mount under the picture that the strips bite into, tape across the top edge, the "On now" stamp sitting on the top edge, the tilt, the shadow.
+- **A visible "YouTube" credit** under the frame, always.
+
+### `kind="treated"`: a picture we are allowed to change
+
+Our own art, the brand book photos, licensed pictures (Wikimedia Commons, credited through the `credit` prop). These get the **photocopy treatment**, done once in the image pipeline and cached, never with a CSS filter:
+
+1. Drop the colour. Keep the brightest channel so stage light survives.
+2. Crush it: blacks to black, haze to white. Lose the mid-greys.
+3. What is left of the greys becomes a 45° dot screen, 6 px.
+4. Add what a tired copier adds: specks, toner gaps, one or two drum streaks.
+5. Print on paper colour with a 4 px frame.
+
+Then: **crop hard; hands, not faces.** Strips bite into the picture. Words still go on a strip, never straight on the image. Pink never touches a photo, except the "On now" stamp and the live pause control.
+
+Both kinds: real `alt` text that says what is in the picture. No real band logos or copied artwork, anywhere.
+
+## 7. Icons and buttons
+
+- Six icons: **play, pause, next, setlist, search, share** (plus "previous", from the player on board 03). Solid shapes cut from black paper with scissors, so no two edges are quite parallel. **Never outlines.** The points come from board 02: do not tidy them.
+- Each sits on a **48 px square label** (`<IconButton />`): white with a keyline, or toner black; on the player a paper outline (`tone="on-toner"`).
+- **The live control** (pause, while playing) is the one that sits on pink: `live`. One per view.
+- `<PressButton />` is the big labelled button ("Play it loud"): 4 px black edge, solid 6 px shadow. Pink only for the one live action; black or white for everything else.
+- Always a real `<button>` or `<a>`, always named (`label`), **touch area 48 px or more**, dead straight if it is pressed twice.
+
+## 8. Motion
+
+**Nothing fades. Things get slapped, stamped, struck and lifted.** All of it lives in section 10 of `src/styles/zine.css`, driven by tokens.
+
+| Move | Timing | How to use it |
+| --- | --- | --- |
+| **Slap-on** (page load) | 260 ms, overshoot `cubic-bezier(.2,1.5,.4,1)`, 60–120 ms stagger | Class `zn-slap` with `style="--i: 0…n"`. Order: photo, strip, strip, tape, sticker |
+| **Light bar** (press play) | 900 ms linear, once per play | `<PhotoFrame scan="run">` |
+| **"On now" stamp** | 320 ms, one bounce, after the bar (950 ms delay) | `<OnNowStamp animate />` |
+| **Player docks** | 220 ms with overshoot, after the stamp | `<DockedPlayerFrame docking />` (shell only) |
+| **Marker strike** (setlist) | 350 ms in 5 jerky steps | Automatic in `<TypewriterSetlist />` |
+| **Paper lift** (hover / focus) | 90 ms; shadow 4 → 13 px, slight tilt, tape lets go at one end; press sinks 3 px and slams back | Class `zn-lift`, or `<Sheet href>` |
+| **Page turn** (next page) | 600 ms, hinged on the left edge | `zn-book` + `zn-leaf[data-turned]`; `zn-turn-in` / `zn-turn-out` for a whole page |
+
+- **`prefers-reduced-motion: reduce`: everything lands at once.** No slap, no light bar, no stamp bounce, no page turn. Pressing still answers (the shadow changes, nothing travels). All motion CSS sits inside `@media (prefers-reduced-motion: no-preference)`.
+- The light bar never crosses a YouTube thumbnail: there it runs in a thin scanner slot under the picture.
+- The real player bar is never animated while it holds the video.
+- No looping decoration, no parallax, no scroll-jacking, no fades, no easing "for polish".
+
+## 9. The player
+
+- The docked player is **toner black, a 5 px pink rule on top, an 8 px progress line** (track `--toner-track`, fill pink), paper text. Dead straight.
+- "now playing" is the one marker line; the time sits on pink; pause is the live control.
+- **YouTube rules (non-negotiable)**: nothing on top of or inside the player, ever: no label, no icon, no shade, no tape. Never hide YouTube's controls or branding. The video is never smaller than 200 × 200 (356 × 200 docked on desktop).
+- `<DockedPlayerFrame />` is the visual shell. The working bar is `src/components/player/PlayerDock.tsx`; it is dressed to match through its `data-od` attributes only (section 9b of `zine.css`). Its logic is not design's to touch.
+
+## 10. Components
+
+All in `src/components/zine/`, server components unless noted. See them at `/kit`.
+
+| Component | What it is |
+| --- | --- |
+| `Wordmark`, `SdStamp` | The logo (section 2) |
+| `PaperStrip`, `StripHeading` | A line of headline on cut paper; a heading of alternating strips |
+| `CutOut` | A small piece of cut paper: nav label, tag, sticker |
+| `Tape`, `Staple` | Fixings. Decoration, hidden from screen readers |
+| `Sheet` | A clean sheet with keyline and 7 px shadow; with `href` it lifts |
+| `PhotoFrame`, `OnNowStamp` | The two kinds of picture (section 6); the pink stamp |
+| `IconButton`, `PressButton`, glyphs | Section 7 |
+| `TypewriterSetlist` (client) | Songs with times; each a button; `onSelect(seconds, index)` |
+| `DockedPlayerFrame` | The player bar's visual shell |
+
+Utility classes: `zn-label`, `zn-data`, `zn-marker`, `zn-cutline`, `zn-band`, `zn-slap`, `zn-lift`, `zn-book` / `zn-leaf`.
+
+## 11. Voice
+
+Like the person who made the zine: **short, funny, on your side, slightly too loud.** We never explain a joke and we never use an exclamation mark we haven't earned.
+
+| We say | We don't say |
+| --- | --- |
+| gig | content |
+| free | at no cost |
+| fresh off the copier | new releases |
+| jump in | get started |
+| the whole set | curated |
+
+Fixed lines. Use them exactly:
+
+| Where | Line |
+| --- | --- |
+| Play | **Play it loud** |
+| New concerts | **Fresh off the copier** |
+| Loading | Warming up the copier… |
+| Empty search | Nothing. Not even a bootleg. Check the spelling or yell a different band. |
+| 404 | Page torn out. Somebody took it home. |
+| Error | The tape jammed. Hit play again, it usually behaves. |
+| Newsletter | The zine, in your inbox. One issue a week. No glitter. |
+| Cookie notice | We keep two cookies: one remembers your volume, one counts heads. That’s the lot. **[OK, fine] [No thanks]** |
+| Top strip | ISSUE No.001 /// FREE /// FULL ROCK GIGS, STRAIGHT OFF YOUTUBE /// NO LOGIN, NO NONSENSE |
+| Search label | find a gig: (placeholder: band / venue / year) |
+| Manifesto | No login. No algorithm. No “recommended for you”. We’ve got scissors, glue and every full gig we could find. Free, like the flyer on the venue wall. One click. Jump in. |
+
+Navigation: Bands · Fields + Rooms · Decades · Genres · Tours.
+
+## 12. Accessibility
+
+Tilt and texture must never hurt usability.
+
+- Real `<button>`, `<a>`, `<input>` with labels. Icon-only controls are named. Nothing clickable is a `<div>`.
+- **Visible focus**: a 3–4 px dashed toner outline, offset from the element (paper-coloured inside the player). Never pink, never removed.
+- **WCAG AA** for all text. Only toner on paper, sheet, pink or tape; only paper on toner.
+- **Touch targets 48 px** or more.
+- `alt` text on every picture; decoration (tape, staples, the light bar) is `aria-hidden`.
+- The song on now carries `aria-current`; played songs are announced as played, not only struck through.
+- Reduced motion respected (section 8).
+- Text stays selectable and zoomable; nothing is baked into an image.
+- **Desktop and phone (360–400 px), always.** Check both before calling anything done.
+
+## 13. Don'ts, in one place
+
+1. Don't use pink as ink, as a border on paper, or on a photo.
+2. Don't have two pink things in one view.
+3. Don't put words on tape, or on a picture.
+4. Don't alter, crop or cover a YouTube thumbnail.
+5. Don't round a corner, blur a shadow or draw a gradient.
+6. Don't fade anything in or out.
+7. Don't tilt the player, an input, or anything pressed twice.
+8. Don't let anything float alone: tape it, staple it, overlap it or end the section.
+9. Don't type the wordmark.
+10. Don't use real band logos, copied artwork or unlicensed artist photos.
+11. Don't write "content", "curated", "get started" or "at no cost".
+12. Don't add a second typeface, a second accent colour or a dark mode.
+
+## 14. The bridge (temporary)
+
+Pages not yet rebuilt still use the old OpenDecks styles (`base.css`, `components.css`, `deck.css`, `pages.css`, `map.css`, `home.css`) and `od-` class names. The old token names (`--ground`, `--ink`, `--muted`, `--line`, `--acid`, `--hover-row`, `--font-sans`, `--font-mono`, `.display`, `.title`, `.meta`…) are still defined at the bottom of `tokens.css`, mapped onto the zine, so those pages read as STAGEDIVE without layout changes. In the old CSS the accent is now only ever a pink block behind toner text, never a text colour.
+
+New work uses the zine tokens and components, not the bridge names. Remove the bridge page by page as each page is rebuilt.

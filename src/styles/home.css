@@ -45,7 +45,8 @@
 }
 
 .od-plate-kicker:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-plate-rest {
@@ -172,7 +173,8 @@
 
 .od-reel-frame:hover h2 a,
 .od-reel-cap h2 a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* The arrows: solid ground squares on the band's left and right edges, level with the middle
@@ -207,7 +209,7 @@
 
 .od-reel-arrow:hover {
   background: var(--acid);
-  color: var(--ground);
+  color: var(--on-acid);
 }
 
 .od-reel-arrow:focus-visible {
@@ -307,7 +309,8 @@
 }
 
 .od-atlas-row:hover .od-atlas-place {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-atlas-country {
@@ -409,7 +412,8 @@
 }
 
 .od-wordrows .od-wordrows-word:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
   -webkit-text-stroke: 0;
 }
 
@@ -418,7 +422,7 @@
   top: 0.5em;
   margin-left: 8px;
   vertical-align: top;
-  color: var(--acid);
+  color: var(--ink);
   -webkit-text-stroke: 0;
   font-stretch: 100%;
 }
@@ -453,7 +457,8 @@
 }
 
 .od-wordrows-links a:hover {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-wordrows-links .od-wordrows-more {

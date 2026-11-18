@@ -39,7 +39,7 @@
 
 .od-mapsearch input:focus-visible {
   outline: 0;
-  border-bottom-color: var(--acid);
+  border-bottom-color: var(--ink);
 }
 
 /* The browser's own list arrow is not part of the design. */
@@ -96,7 +96,7 @@
 .od-map-top h1 {
   margin: 0;
   font: inherit;
-  color: var(--acid);
+  color: var(--ink);
 }
 
 .od-map-top .od-rail {
@@ -123,7 +123,8 @@
 
 .od-map-genres a:hover,
 .od-map-genres a[aria-current] {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 .od-map-genres a[aria-current] {
@@ -296,7 +297,8 @@
 .od-map-node:hover .od-map-name,
 .od-map-node[data-selected] .od-map-name,
 .od-map-centre:hover .od-map-name {
-  color: var(--acid);
+  background-color: var(--acid);
+  color: var(--on-acid);
 }
 
 /* Tablet: the field on top, the selected artist below it. */

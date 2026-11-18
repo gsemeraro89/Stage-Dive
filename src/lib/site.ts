@@ -1,9 +1,9 @@
 export const SITE_NAME = "STAGEDIVE";
 export const SITE_TAGLINE = "A fanzine that plays. Full rock gigs, free, the whole set.";
 
-/** Public address of the site, used for canonical links. Concert SITE_URL on the server. */
+/** Public address of the site, used for canonical links. Set SITE_URL on the server. */
 export function siteUrl(): string {
-  return (process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return (process.env.SITE_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
 /** 4413755 -> "4.4M", 66693 -> "67K", 950 -> "950". */

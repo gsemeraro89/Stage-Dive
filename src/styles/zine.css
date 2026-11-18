@@ -1,0 +1,1277 @@
+/* The STAGEDIVE zine: base components (src/components/zine/) and the motion system.
+   Rules: design/DESIGN.md. Tokens: design/tokens.css. Source: design/brandbook/ boards 01-04.
+
+   How tilt works: every cut-out reads --tilt (set inline by its component) through the `rotate`
+   property. Motion uses `translate` and `transform`, so a slap, a lift and a tilt never fight. */
+
+/* ---------- 1. Small type pieces ---------- */
+
+/* Small tracked label: STAGEDIVE /// BRAND BOOK. */
+.zn-label {
+  font-family: var(--font-type);
+  font-size: var(--text-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--label-grey);
+}
+
+/* Typed data in caps: GLASTONBURY 2024 /// 1:14:20. */
+.zn-data {
+  font-family: var(--font-type);
+  font-size: var(--text-data);
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* The one handwritten line. Lower case, tilted, never navigation. */
+.zn-marker {
+  display: inline-block;
+  font-family: var(--font-marker);
+  font-size: var(--text-marker);
+  line-height: 1.15;
+  text-transform: none;
+  letter-spacing: 0;
+  rotate: var(--tilt, -1.5deg);
+}
+
+.zn-marker[data-size="big"] {
+  font-size: var(--text-marker-big);
+}
+
+/* The end of a section: a dashed cut line, or a full-bleed black band. Never empty space. */
+.zn-cutline {
+  position: relative;
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: var(--cut);
+}
+
+.zn-cutline[data-scissors]::before {
+  content: "\2702  cut here";
+  position: absolute;
+  left: var(--margin);
+  top: -11px;
+  padding: 0 6px;
+  background: var(--paper);
+  font-family: var(--font-type);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  color: var(--toner);
+}
+
+.zn-band {
+  background: var(--toner);
+  color: var(--paper);
+  padding: 10px var(--margin) 7px;
+  font-family: var(--font-type);
+  font-size: 14.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ---------- 2. PaperStrip: a headline cut from paper ---------- */
+
+.zn-strip {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--strip-pad);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: var(--text-name);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  rotate: var(--tilt, 0deg);
+}
+
+.zn-strip[data-tone="white"] {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.zn-strip[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* A black strip lying on a photo gets a clean-sheet keyline so it does not sink into the toner. */
+.zn-strip[data-tone="black"][data-keyline] {
+  outline: var(--keyline) solid var(--sheet);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+/* Pink: a block behind black words. One live thing per view. */
+.zn-strip[data-tone="pink"] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+.zn-strip[data-size="h1"] {
+  font-size: var(--text-h1);
+}
+
+.zn-strip[data-size="h2"] {
+  font-size: var(--text-h2);
+}
+
+.zn-strip[data-size="name"] {
+  font-size: var(--text-name);
+}
+
+.zn-strip[data-size="small"] {
+  font-size: var(--text-name-small);
+}
+
+/* Typed strips (dates, places, lengths) and the handwritten one. */
+.zn-strip[data-hand="type"] {
+  padding: 0.42em 0.58em 0.2em;
+  font-family: var(--font-type);
+  font-size: var(--text-data);
+  letter-spacing: var(--track-data);
+  line-height: 1.25;
+}
+
+.zn-strip[data-hand="marker"] {
+  padding: 0.42em 0.62em 0.2em;
+  font-family: var(--font-marker);
+  font-size: var(--text-marker);
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+/* A heading: one strip per line, the second line stepped in. */
+.zn-strips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-weight: 400;
+}
+
+.zn-strips > .zn-strip:nth-child(even) {
+  margin-left: 0.6em;
+}
+
+.zn-strips[data-size="h1"] > .zn-strip:nth-child(even) {
+  margin-left: clamp(18px, 3vw, 44px);
+}
+
+/* ---------- 3. CutOut: any small piece of cut paper (nav label, sticker, tag) ---------- */
+
+.zn-cutout {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+  padding: 9px 12px 6px;
+  font-family: var(--font-type);
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+}
+
+.zn-cutout[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.zn-cutout[data-tone="white"] {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.zn-cutout[data-tone="pink"] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+/* A sticker: heavy type, 4px black edge. */
+.zn-cutout[data-sticker] {
+  padding: 10px 10px 8px;
+  border: var(--frame) solid var(--toner);
+  font-family: var(--font-strip);
+  font-size: 16px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+a.zn-cutout,
+button.zn-cutout {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  cursor: pointer;
+}
+
+/* ---------- 4. Tape and Staple: decoration that holds things down ---------- */
+
+/* Tape always bridges two things and never carries words. */
+.zn-tape {
+  position: absolute;
+  z-index: 3;
+  width: var(--tape-w, 118px);
+  height: 34px;
+  background: var(--tape);
+  opacity: 0.93;
+  border-left: 2px dashed var(--tape-edge);
+  border-right: 2px dashed var(--tape-edge);
+  rotate: var(--tilt, -5deg);
+  pointer-events: none;
+}
+
+.zn-tape[data-at="top-left"] {
+  top: -17px;
+  left: 36px;
+}
+
+.zn-tape[data-at="top-right"] {
+  top: -15px;
+  right: 44px;
+}
+
+.zn-tape[data-at="top-center"] {
+  top: -17px;
+  left: 50%;
+  margin-left: calc(var(--tape-w, 118px) / -2);
+}
+
+/* A staple means stacked sheets. Two flat bands of grey, no gradient. */
+.zn-staple {
+  position: absolute;
+  z-index: 4;
+  display: block;
+  width: 30px;
+  height: 6px;
+  background: var(--staple-dark);
+  border-top: 3px solid var(--staple-light);
+  box-shadow: 0 1px 0 var(--toner);
+  rotate: var(--tilt, 12deg);
+  pointer-events: none;
+}
+
+.zn-staple[data-at="top-left"] {
+  top: 10px;
+  left: 12px;
+}
+
+.zn-staple[data-at="top-right"] {
+  top: 12px;
+  right: 16px;
+}
+
+@media (max-width: 760px) {
+  .zn-tape {
+    --tape-w: 96px;
+    height: 30px;
+  }
+
+  .zn-tape[data-at="top-left"] {
+    left: 24px;
+  }
+
+  .zn-tape[data-at="top-right"] {
+    right: 24px;
+  }
+}
+
+/* ---------- 5. Sheet: clean paper glued on top ---------- */
+
+.zn-sheet {
+  display: block;
+  position: relative;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  padding: 28px 22px 20px;
+  font-family: var(--font-type);
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+}
+
+/* A sheet that lies flat on the page, with nothing under it to cast a shadow on. */
+.zn-sheet[data-flat] {
+  box-shadow: none;
+}
+
+.zn-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--toner);
+}
+
+.zn-sheet-title {
+  margin: 0;
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.zn-sheet-meta {
+  font-size: 15px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .zn-sheet {
+    padding: 26px 16px 16px;
+  }
+}
+
+/* ---------- 6. PhotoFrame ----------
+   kind="treated": our own, already photocopied pictures. Crop hard; strips bite into the picture.
+   kind="youtube": a YouTube thumbnail, shown exactly as YouTube serves it. No filter, no crop,
+   no words and no decoration on the picture: only a play control may sit on it. Strips, stamp and
+   tape stay on the black mount around it. */
+
+.zn-photo {
+  display: block;
+  position: relative;
+  margin: 0;
+  rotate: var(--tilt, 0deg);
+}
+
+.zn-photo-frame {
+  display: block;
+  position: relative;
+  background: var(--toner);
+  border: var(--frame) solid var(--toner);
+}
+
+.zn-photo[data-shadow] .zn-photo-frame {
+  box-shadow: var(--shadow-sheet);
+}
+
+.zn-photo-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Treated pictures fill the box we cut for them. */
+.zn-photo[data-kind="treated"] .zn-photo-frame {
+  overflow: hidden;
+  aspect-ratio: var(--photo-ratio, 16 / 9);
+}
+
+.zn-photo[data-kind="treated"] .zn-photo-frame img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--photo-focus, center);
+}
+
+/* YouTube: the picture keeps the shape of its own file. Below it the frame grows a black mount
+   that the strips bite into instead of the picture. */
+.zn-photo[data-kind="youtube"] {
+  --mount: calc(var(--bite) + 18px);
+}
+
+.zn-photo[data-kind="youtube"][data-strips] .zn-photo-frame {
+  border-bottom-width: calc(var(--frame) + var(--mount));
+}
+
+/* The play control: the only thing allowed on any picture. */
+.zn-photo-control {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+
+/* Strips glued over the bottom edge. */
+.zn-photo-strips {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: calc(-1 * var(--bite)) 0 0 clamp(10px, 2vw, 22px);
+}
+
+/* A stamp or sticker: on the corner of a treated picture, on the top edge of a YouTube one. */
+.zn-photo-stamp {
+  position: absolute;
+  z-index: 4;
+  left: clamp(10px, 2vw, 20px);
+  top: 16px;
+}
+
+.zn-photo[data-kind="youtube"] .zn-photo-stamp {
+  top: auto;
+  bottom: 100%;
+  left: auto;
+  right: clamp(10px, 2vw, 20px);
+}
+
+.zn-photo-credit {
+  display: block;
+  margin-top: 8px;
+  text-align: right;
+}
+
+.zn-photo-credit a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- 7. Icons and buttons ----------
+   Icons are solid shapes cut with scissors, on a 48px square label. Never outlines.
+   Anything you press twice sits at 0 degrees. */
+
+.zn-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--icon-box, var(--touch));
+  height: var(--icon-box, var(--touch));
+  min-width: var(--touch);
+  min-height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  cursor: pointer;
+  rotate: var(--tilt, 0deg);
+  transition:
+    translate var(--lift-time) var(--lift-ease),
+    box-shadow var(--lift-time) var(--lift-ease);
+}
+
+.zn-icon svg {
+  display: block;
+  width: 46%;
+  height: 46%;
+  fill: currentColor;
+}
+
+.zn-icon[data-size="large"] {
+  --icon-box: 56px;
+}
+
+.zn-icon[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+}
+
+/* The live control (pause, while playing): the one thing on pink. */
+.zn-icon[data-tone="pink"] {
+  background: var(--pink);
+  color: var(--toner);
+  outline: var(--frame) solid var(--toner);
+  outline-offset: calc(-1 * var(--frame));
+}
+
+/* On toner (the player): a paper outline, no fill. */
+.zn-icon[data-tone="on-toner"] {
+  background: none;
+  color: var(--paper);
+  outline-color: var(--paper);
+}
+
+.zn-icon:hover:not(:disabled) {
+  translate: -2px -2px;
+  box-shadow: var(--shadow-rest);
+}
+
+.zn-icon[data-tone="on-toner"]:hover:not(:disabled) {
+  box-shadow: 4px 4px 0 var(--toner-track);
+}
+
+.zn-icon:active:not(:disabled) {
+  translate: 3px 3px;
+  box-shadow: none;
+}
+
+.zn-icon:disabled {
+  cursor: default;
+  color: var(--toner-track);
+  outline-color: var(--toner-track);
+}
+
+.zn-icon:focus-visible,
+.zn-btn:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.zn-icon[data-tone="on-toner"]:focus-visible {
+  outline-color: var(--paper);
+}
+
+/* The big labelled button: "Play it loud". */
+.zn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 3px 22px 0;
+  border: var(--frame) solid var(--toner);
+  background: var(--pink);
+  color: var(--toner);
+  box-shadow: var(--shadow-button);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    translate var(--lift-time) var(--lift-ease),
+    box-shadow var(--lift-time) var(--lift-ease);
+}
+
+.zn-btn svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.zn-btn[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.zn-btn[data-tone="white"] {
+  background: var(--sheet);
+}
+
+.zn-btn[data-size="large"] {
+  min-height: 66px;
+  padding: 3px 26px 0;
+  font-size: 22px;
+  box-shadow: var(--shadow-sheet);
+}
+
+.zn-btn[data-size="small"] {
+  min-height: var(--touch);
+  padding: 3px 16px 0;
+  font-size: 15px;
+}
+
+.zn-btn[data-wide] {
+  width: 100%;
+}
+
+.zn-btn:hover {
+  translate: -2px -2px;
+  box-shadow: var(--shadow-button-up);
+}
+
+.zn-btn:active {
+  translate: 4px 4px;
+  box-shadow: var(--shadow-button-down);
+}
+
+/* ---------- 8. TypewriterSetlist ---------- */
+
+.zn-setlist {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-family: var(--font-type);
+}
+
+.zn-setlist li {
+  margin: 0;
+}
+
+.zn-setlist-song {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 8px 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--toner);
+  font: inherit;
+  font-size: clamp(16px, 1.3vw, 18.5px);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.zn-setlist-song:hover {
+  background: var(--tape);
+}
+
+.zn-setlist-song:focus-visible {
+  outline: 3px dashed var(--toner);
+  outline-offset: 2px;
+}
+
+.zn-setlist-n,
+.zn-setlist-time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.zn-setlist-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.zn-setlist-now {
+  flex: none;
+  font-family: var(--font-marker);
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* The song on now: the one pink thing. */
+.zn-setlist-song[aria-current="true"],
+.zn-setlist-song[aria-current="true"]:hover {
+  background: var(--pink);
+}
+
+/* Played: struck through with a marker, in five jerks. */
+.zn-strike {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 96%;
+  height: 6px;
+  margin-top: -3px;
+  background: var(--toner);
+  rotate: -1.2deg;
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.zn-setlist li:nth-child(even) .zn-strike {
+  rotate: 0.9deg;
+}
+
+.zn-setlist-empty {
+  margin: 10px 0 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+/* ---------- 9. DockedPlayerFrame: the only thing that sits dead straight ---------- */
+
+.zn-dock {
+  position: relative;
+  width: 100%;
+  background: var(--toner);
+  color: var(--paper);
+  border-top: 5px solid var(--pink);
+  font-family: var(--font-type);
+}
+
+.zn-dock[data-fixed] {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+}
+
+.zn-dock-progress {
+  height: 8px;
+  background: var(--toner-track);
+}
+
+.zn-dock-progress > div {
+  height: 8px;
+  background: var(--pink);
+}
+
+.zn-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px var(--margin);
+}
+
+/* The video box. YouTube's minimum is 200x200 and nothing may ever be drawn on the video. */
+.zn-dock-video {
+  flex: none;
+  width: var(--deck-video-w);
+  height: var(--deck-video-h);
+  margin: -10px 0 -10px calc(-1 * var(--margin));
+  background: var(--toner-track);
+}
+
+.zn-dock-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.zn-dock-now {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--pink);
+  color: var(--toner);
+  font-family: var(--font-marker);
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.zn-dock-title {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  font-family: var(--font-strip);
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.zn-dock-meta {
+  flex: none;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: var(--track-data);
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.zn-dock-time {
+  display: inline-block;
+  padding: 2px 6px 0;
+  background: var(--pink);
+  color: var(--toner);
+  font-variant-numeric: tabular-nums;
+}
+
+.zn-dock-controls {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.zn-dock-text {
+  min-height: var(--touch);
+  padding: 3px 14px 0;
+  border: var(--keyline) solid var(--paper);
+  background: none;
+  color: var(--paper);
+  font-family: var(--font-type);
+  font-size: 14px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.zn-dock-text:focus-visible {
+  outline: 3px dashed var(--paper);
+  outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .zn-dock-row {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 10px 12px;
+  }
+
+  .zn-dock-video {
+    width: var(--deck-video-phone);
+    height: var(--deck-video-phone);
+    margin: -10px 0 -10px -12px;
+  }
+
+  .zn-dock-meta {
+    text-align: left;
+  }
+
+  .zn-dock-title {
+    font-size: 16px;
+    white-space: normal;
+  }
+
+  .zn-dock[data-video] .zn-dock-row {
+    display: grid;
+    grid-template-columns: var(--deck-video-phone) minmax(0, 1fr);
+    grid-auto-rows: min-content;
+    align-content: center;
+  }
+
+  .zn-dock[data-video] .zn-dock-video {
+    grid-row: 1 / span 3;
+  }
+
+  .zn-dock[data-video] .zn-dock-controls {
+    gap: 3px;
+  }
+
+  /* Slim bar on a phone: name on its own line, then the song, then the controls. */
+  .zn-dock:not([data-video]) .zn-dock-info,
+  .zn-dock:not([data-video]) .zn-dock-meta {
+    flex: 1 1 100%;
+  }
+
+  .zn-dock-now {
+    white-space: nowrap;
+  }
+
+  .zn-dock[data-video] .zn-dock-text {
+    display: none;
+  }
+}
+
+/* ---------- 9b. The existing player bar (src/components/player/PlayerDock.tsx), restyled ----------
+   CSS only, through its data-od attributes. Its layout stays in src/styles/deck.css. */
+
+[data-od="dock"] {
+  /* Inside the bar the bridge colours flip: toner ground, paper ink. */
+  --ground: var(--toner);
+  --ink: var(--paper);
+  --muted: var(--toner-soft);
+  --line: var(--toner-track);
+  --hover-row: #1F1E1C;
+  font-family: var(--font-type);
+}
+
+[data-od="dock"]:not([data-mini]) {
+  border-top: 5px solid var(--pink);
+}
+
+[data-od="dock"] [data-od="dock-progress"],
+[data-od="dock"] [data-od="dock-progress"] > div {
+  height: 8px;
+}
+
+[data-od="dock"] [data-od="dock-progress"] {
+  background: var(--toner-track);
+}
+
+[data-od="dock"] [data-od="dock-progress"] > div {
+  background: var(--pink);
+}
+
+[data-od="dock"] [data-od="dock-label"],
+[data-od="dock"] .od-mini-label {
+  padding: 2px 6px 1px;
+  background: var(--pink);
+  color: var(--toner);
+  font-family: var(--font-marker);
+  font-size: 14px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+[data-od="dock"] [data-od="dock-time"] {
+  padding: 2px 6px 0;
+  background: var(--pink);
+  color: var(--toner);
+}
+
+[data-od="dock"] [data-od="dock-video"] {
+  background: var(--toner-track);
+}
+
+[data-od="dock"] [data-od="dock-controls"] button {
+  border: var(--keyline) solid var(--paper);
+  transition: translate var(--lift-time) var(--lift-ease);
+}
+
+[data-od="dock"] [data-od="dock-controls"] button:disabled {
+  border-color: var(--toner-track);
+  color: var(--toner-track);
+}
+
+[data-od="dock"] [data-od="dock-controls"] button:active:not(:disabled) {
+  translate: 3px 3px;
+}
+
+[data-od="dock"] [data-od="dock-controls"] button.od-dock-toggle {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--toner);
+}
+
+[data-od="dock"] [data-od="dock-controls"] button.od-dock-toggle:hover {
+  background: var(--paper);
+  border-color: var(--paper);
+}
+
+[data-od="dock"] [data-od="dock-min"] {
+  border-width: 0 var(--keyline) var(--keyline) 0;
+  border-color: var(--toner-track);
+}
+
+/* The bar is 9px taller than the old one on the narrowest phones too. */
+@media (max-width: 359px) {
+  .od-dock-spacer:not([data-in-page]) {
+    height: 285px;
+  }
+
+  .od-dock-spacer[data-more]:not([data-in-page]) {
+    height: 321px;
+  }
+}
+
+/* ---------- 10. Motion ----------
+   Nothing fades. Things get slapped, stamped, struck and lifted.
+   Everything that moves is inside (prefers-reduced-motion: no-preference); with reduced motion
+   every piece is simply there: no slap, no light bar, no stamp bounce, no page turn. */
+
+/* The "On now" stamp. At rest it is just a tilted pink label with a 4px edge. */
+.zn-stamp {
+  display: inline-block;
+  padding: 0.32em 0.55em 0.22em;
+  border: var(--frame) solid var(--toner);
+  background: var(--pink);
+  color: var(--toner);
+  font-family: var(--font-strip);
+  font-size: clamp(20px, 2.2vw, 30px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  transform: rotate(var(--stamp-tilt, -7deg));
+}
+
+.zn-photo[data-kind="youtube"] .zn-stamp {
+  --stamp-tilt: -2deg;
+}
+
+/* The photocopier light bar. Lives inside a treated photo frame, or in the scanner slot. */
+.zn-lightbar {
+  display: none;
+}
+
+/* The scanner slot: a thin strip of copier glass under a YouTube picture, so the light bar has
+   somewhere to run without ever crossing the picture. */
+.zn-scanner {
+  display: block;
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  background: var(--toner-track);
+}
+
+/* Paper you can pick up: at rest a small shadow. */
+.zn-lift {
+  box-shadow: var(--shadow-rest);
+  cursor: pointer;
+}
+
+.zn-lift:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 5px;
+}
+
+/* A page of the zine. The leaf turns on its left edge. */
+.zn-book {
+  position: relative;
+  perspective: 1100px;
+}
+
+.zn-leaf {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+.zn-leaf > * {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.zn-leaf > :nth-child(2) {
+  transform: rotateY(180deg);
+}
+
+.zn-leaf[data-turned] {
+  transform: rotateY(-180deg);
+}
+
+/* Without motion the turned leaf simply shows its back. */
+@media (prefers-reduced-motion: reduce) {
+  .zn-leaf[data-turned] {
+    transform: none;
+  }
+
+  .zn-leaf[data-turned] > :first-child {
+    visibility: hidden;
+  }
+
+  .zn-leaf[data-turned] > :nth-child(2) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Page load: pieces slap on, 260ms with overshoot, 60-120ms apart.
+     Give each piece its place in the order with style="--i: 0|1|2..." (photo, strip, strip,
+     tape, sticker). data-from changes the direction of the throw. */
+  .zn-slap {
+    animation: zn-slap-a var(--slap-time) var(--slap-ease) both;
+    animation-delay: calc(var(--slap-start, 250ms) + var(--i, 0) * var(--slap-stagger));
+  }
+
+  .zn-slap[data-from="right"] {
+    animation-name: zn-slap-b;
+  }
+
+  .zn-slap[data-from="near"] {
+    animation-name: zn-slap-c;
+  }
+
+  @keyframes zn-slap-a {
+    0% {
+      transform: translateY(-70px) rotate(-14deg) scale(1.5);
+      opacity: 0;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes zn-slap-b {
+    0% {
+      transform: translateY(-70px) rotate(12deg) scale(1.5);
+      opacity: 0;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes zn-slap-c {
+    0% {
+      transform: translateY(-70px) rotate(-10deg) scale(1.5);
+      opacity: 0;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  /* Press play, 1: the light bar sweeps once, 900ms, linear. */
+  .zn-lightbar {
+    display: block;
+    position: absolute;
+    top: -6%;
+    bottom: -6%;
+    left: -28%;
+    z-index: 2;
+    width: 22%;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff 40%, #fff 60%, rgba(255, 255, 255, 0));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  [data-scan="run"] .zn-lightbar {
+    animation: zn-lightbar var(--lightbar-time) linear 50ms 1 both;
+  }
+
+  @keyframes zn-lightbar {
+    0% {
+      left: -28%;
+      opacity: 1;
+    }
+    99% {
+      left: 108%;
+      opacity: 1;
+    }
+    100% {
+      left: 108%;
+      opacity: 0;
+    }
+  }
+
+  /* Press play, 2: the stamp comes down after the bar, 320ms, one bounce. */
+  .zn-stamp[data-stamp="run"] {
+    animation: zn-stamp var(--stamp-time) var(--stamp-ease) var(--stamp-delay) 1 both;
+  }
+
+  @keyframes zn-stamp {
+    0% {
+      transform: rotate(var(--stamp-tilt, -7deg)) scale(3);
+      opacity: 0;
+    }
+    60% {
+      transform: rotate(var(--stamp-tilt, -7deg)) scale(0.92);
+      opacity: 1;
+    }
+    80% {
+      transform: rotate(calc(var(--stamp-tilt, -7deg) + 2deg)) scale(1.04) translate(2px, -1px);
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--stamp-tilt, -7deg)) scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Press play, 3: the player docks. For the visual shell only; the real bar is placed by the
+     player code and must not be moved while it holds the video. */
+  .zn-dock[data-docking] {
+    animation: zn-dock var(--dock-time) var(--dock-ease) var(--dock-delay, 1000ms) both;
+  }
+
+  @keyframes zn-dock {
+    from {
+      transform: translateY(102%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  /* Setlist: the marker strike, 350ms in five jerky steps. */
+  .zn-strike {
+    animation: zn-strike var(--strike-time) steps(var(--strike-steps)) both;
+  }
+
+  @keyframes zn-strike {
+    from {
+      width: 0;
+    }
+    to {
+      width: 96%;
+    }
+  }
+
+  /* Hover or focus: paper lifts in 90ms, the shadow grows from 4 to 13px, the sheet tilts a
+     little and the tape lets go at one end. Press: it sinks 3px and slams back. */
+  .zn-lift {
+    transition:
+      translate var(--lift-time) var(--lift-ease),
+      rotate var(--lift-time) var(--lift-ease),
+      box-shadow var(--lift-time) var(--lift-ease);
+  }
+
+  .zn-lift .zn-tape {
+    transform-origin: left center;
+    transition: transform var(--tape-time) var(--lift-ease);
+  }
+
+  .zn-lift:hover,
+  .zn-lift:focus-visible,
+  .zn-lift[data-lifted] {
+    translate: -6px -7px;
+    rotate: calc(var(--tilt, 0deg) + var(--lift-turn, -1.5deg));
+    box-shadow: var(--shadow-lift);
+  }
+
+  .zn-lift:hover .zn-tape,
+  .zn-lift:focus-visible .zn-tape,
+  .zn-lift[data-lifted] .zn-tape {
+    transform: rotate(-16deg) translateY(-5px);
+  }
+
+  .zn-lift:active {
+    translate: 3px 3px;
+    rotate: var(--tilt, 0deg);
+    box-shadow: var(--shadow-press);
+  }
+
+  /* Next page: a page turn, 600ms, hinged on the left edge. */
+  .zn-leaf {
+    transition: transform var(--turn-time) var(--turn-ease);
+  }
+
+  /* The same turn as utilities for a whole page (wrap the page in .zn-book). */
+  .zn-turn-in {
+    transform-origin: left center;
+    animation: zn-turn-in var(--turn-time) var(--turn-ease) both;
+  }
+
+  .zn-turn-out {
+    transform-origin: left center;
+    animation: zn-turn-out var(--turn-time) var(--turn-ease) both;
+  }
+
+  @keyframes zn-turn-in {
+    from {
+      transform: rotateY(90deg);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes zn-turn-out {
+    from {
+      transform: none;
+    }
+    to {
+      transform: rotateY(-90deg);
+    }
+  }
+}
+
+/* Without motion a press still has to answer: the shadow changes, nothing travels. */
+@media (prefers-reduced-motion: reduce) {
+  .zn-icon,
+  .zn-btn {
+    transition: none;
+  }
+
+  .zn-lift:hover,
+  .zn-lift:focus-visible,
+  .zn-lift[data-lifted] {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .zn-lift:active {
+    box-shadow: var(--shadow-press);
+  }
+}

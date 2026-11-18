@@ -1,41 +1,142 @@
-/* FullDJSet design tokens — direction A "Magazine". See design/DESIGN.md.
-   Imported by src/app/globals.css. Fonts are loaded with next/font in src/app/layout.tsx,
-   which sets --font-archivo and --font-plex-mono on <html>. */
+/* STAGEDIVE design tokens: "a fanzine that plays". Rules: design/DESIGN.md.
+   Source: the approved brand book boards in design/brandbook/.
+   Imported by src/app/globals.css. Fonts are loaded with next/font in src/app/layout.tsx, which
+   sets --font-archivo-black, --font-special-elite and --font-permanent-marker on <html>.
+   Light only: the brand has no dark mode. */
 
 :root {
-  --ground: #0B0B0F;
-  --ink: #ECEBF3;
-  --muted: #9A98AB;
-  --line: #2A2A36;
-  --acid: #C6FF3D;
-  --hover-row: #15151C;
-  --scrim: rgba(11, 11, 15, 0.64);
+  /* ---------- Colour. Per page: paper 58 / toner 25 / sheet 11 / pink 6. ---------- */
+  --toner: #0A0A0A; /* text, photos, strips, the player */
+  --paper: #ECEAE4; /* the ground: always speckled (see --paper-ground), never flat */
+  --sheet: #FBFAF6; /* labels, setlists, anything glued on top */
+  --pink: #FF2D7A; /* a block behind black words, one live thing per view. Never ink. */
+  --tape: #D8D2B4; /* masking tape: decoration only, never carries words */
+  --tape-edge: rgba(10, 10, 10, 0.22); /* the torn, dashed ends of a piece of tape */
+  --label-grey: #4F4D48; /* small tracked labels on paper (7.6:1 on paper) */
+  --toner-track: #3A3936; /* empty part of the player's progress line */
+  --toner-soft: #B9B6AD; /* quiet text on toner (9:1 on toner) */
+  --staple-light: #BDBBB4;
+  --staple-dark: #77756F;
+  --newsprint-ink: #9A9892; /* the lines of text on the newsprint "E" of the wordmark */
 
-  --font-sans: var(--font-archivo), "Archivo", "Arial Black", sans-serif;
-  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  /* The speckled copier paper. Two offset dot screens over the paper colour. */
+  --paper-ground:
+    radial-gradient(rgba(10, 10, 10, 0.075) 1px, transparent 1.3px) 0 0 / 11px 13px,
+    radial-gradient(rgba(10, 10, 10, 0.05) 1px, transparent 1.4px) 5px 7px / 17px 19px, var(--paper);
 
-  --pad-x: clamp(16px, 2.4vw, 36px);
-  --section-gap: clamp(64px, 8vw, 120px);
+  /* ---------- Type: three hands, one job each. ---------- */
+  --font-strip: var(--font-archivo-black), "Archivo Black", "Arial Black", Impact, sans-serif;
+  --font-type: var(--font-special-elite), "Special Elite", "Courier 10 Pitch", "Courier New", monospace;
+  --font-marker: var(--font-permanent-marker), "Permanent Marker", "Comic Sans MS", cursive;
+
+  /* Archivo Black, caps, on cut strips. Never below 15px. */
+  --text-h1: clamp(33px, 5vw, 72px); /* 56-74 desktop, 33 on a phone */
+  --text-h2: clamp(21px, 2.9vw, 38px); /* 34-42 desktop, 21 on a phone */
+  --text-name: clamp(20px, 1.8vw, 26px); /* names 22-26 */
+  --text-name-small: 15px; /* the floor */
+  /* Special Elite: everything you read. */
+  --text-body: 17px; /* 16-18 / 1.6 */
+  --leading-body: 1.6;
+  --text-data: 16px; /* caps with triple slashes: GLASTONBURY 2024 /// 1:14:20 */
+  --track-data: 0.04em;
+  --text-label: 13px;
+  --track-label: 0.08em;
+  /* Permanent Marker: one handwritten line, 17-27, tilted, lower case. */
+  --text-marker: clamp(17px, 1.6vw, 21px);
+  --text-marker-big: clamp(21px, 2vw, 27px);
+
+  /* A strip's padding follows its type size (72px type = 23px 40px 17px on the boards). */
+  --strip-pad: 0.32em 0.55em 0.24em;
+
+  /* ---------- Paste-up grid ---------- */
+  --grid-columns: 12;
+  --margin: 40px; /* 16px on phones, set below */
+  --gutter: 14px;
+  --frame: 4px; /* black frame round every photo */
+  --keyline: 3px; /* black keyline round white paper */
+  --cut: 3px dashed var(--toner); /* "cut here": the end of a section */
+  --bite: 26px; /* a strip bites 20-30px into its photo */
+
+  /* Tilt: 1-4 degrees for cut-outs, alternate direction with each neighbour.
+     0 for anything you type into or press twice. The player is dead straight. */
+  --tilt-0: 0deg;
+  --tilt-1: 1deg;
+  --tilt-2: 2deg;
+  --tilt-3: 3deg;
+  --tilt-4: 4deg;
+  --tilt-max: 4deg;
+
+  /* Shadow: solid, no blur, only on sheets that sit on other things. */
+  --shadow-sheet: 7px 7px 0 var(--toner);
+  --shadow-rest: 4px 4px 0 var(--toner); /* a sheet you can pick up, at rest */
+  --shadow-lift: 13px 14px 0 var(--toner); /* the same sheet, lifted */
+  --shadow-press: 1px 1px 0 var(--toner);
+  --shadow-button: 6px 6px 0 var(--toner);
+  --shadow-button-up: 8px 8px 0 var(--toner);
+  --shadow-button-down: 2px 2px 0 var(--toner);
+
+  /* ---------- Motion. Nothing fades: things get slapped, stamped, struck and lifted. ---------- */
+  --slap-time: 260ms;
+  --slap-ease: cubic-bezier(0.2, 1.5, 0.4, 1); /* overshoot */
+  --slap-stagger: 80ms; /* 60-120ms between pieces: photo, strip, strip, tape, sticker */
+  --lightbar-time: 900ms; /* linear, once per play */
+  --stamp-time: 320ms;
+  --stamp-ease: cubic-bezier(0.3, 1.6, 0.5, 1); /* one bounce */
+  --stamp-delay: 950ms; /* after the light bar */
+  --strike-time: 350ms;
+  --strike-steps: 5; /* jerky */
+  --lift-time: 90ms;
+  --lift-ease: ease-out;
+  --tape-time: 120ms;
+  --turn-time: 600ms; /* page turn, hinged on the left edge */
+  --turn-ease: cubic-bezier(0.4, 0.1, 0.2, 1);
+  --dock-time: 220ms;
+  --dock-ease: cubic-bezier(0.2, 1.4, 0.4, 1);
+
+  /* Smallest area a link or button may offer to a finger. */
+  --touch: 48px;
+
+  /* ---------- Bridge: the old OpenDecks names, mapped onto the zine. ----------
+     The pages that still use the old CSS in src/styles/ read these. Remove them page by page
+     as each page is rebuilt with the zine components. */
+  --ground: var(--paper);
+  --ink: var(--toner);
+  --muted: var(--label-grey);
+  --line: var(--toner);
+  --acid: var(--pink); /* fills and blocks only: the old CSS no longer uses it as a text colour */
+  --on-acid: var(--toner); /* the only ink allowed on pink */
+  --hover-row: var(--sheet);
+  --scrim: rgba(10, 10, 10, 0.64);
+  --font-sans: var(--font-strip);
+  --font-mono: var(--font-type);
+  --pad-x: var(--margin);
+  --section-gap: clamp(56px, 7vw, 96px);
   --col-gap: 28px;
   --radius: 0;
 
-  /* Smallest area a link or button may offer to a finger. */
-  --touch: 44px;
   /* Deck bar: the docked YouTube player. YouTube's minimum is 200x200. */
   --deck-video-w: 356px;
   --deck-video-h: 200px;
   --deck-video-phone: 200px;
-  /* Page space kept free behind the fixed deck bar (bar height incl. its rule and progress line). */
-  --deck-space: 204px;
-  --deck-space-slim: 72px;
+  /* Page space kept free behind the fixed deck bar: video + 5px pink rule + 8px progress line. */
+  --deck-space: 213px;
+  --deck-space-slim: 81px;
 }
 
-.display { font-family: var(--font-sans); font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.9; }
-.title   { font-family: var(--font-sans); font-weight: 800; font-stretch: 112%; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.08; }
-.body    { font-family: var(--font-sans); font-weight: 500; line-height: 1.35; }
-.meta    { font-family: var(--font-mono); font-size: 12px; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.5; }
+@media (max-width: 760px) {
+  :root {
+    --margin: 16px;
+    --text-body: 16px;
+  }
+}
 
-.size-hero    { font-size: clamp(150px, 33vw, 520px); line-height: 0.76; }
-.size-section { font-size: clamp(30px, 4.2vw, 60px); }
-.size-lead    { font-size: clamp(22px, 2.6vw, 40px); }
-.size-tile    { font-size: clamp(18px, 1.6vw, 24px); }
+/* ---------- Bridge: the old type classes, set in the zine's hands. ---------- */
+.display { font-family: var(--font-strip); font-weight: 400; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.95; }
+.title   { font-family: var(--font-strip); font-weight: 400; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.1; }
+.body    { font-family: var(--font-type); font-weight: 400; line-height: var(--leading-body); }
+.meta    { font-family: var(--font-type); font-size: 13px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.5; }
+
+.size-hero    { font-size: clamp(64px, 17vw, 260px); line-height: 0.86; }
+.size-section { font-size: clamp(26px, 3.4vw, 42px); }
+.size-lead    { font-size: clamp(20px, 2.2vw, 30px); }
+.size-tile    { font-size: clamp(16px, 1.5vw, 22px); }
