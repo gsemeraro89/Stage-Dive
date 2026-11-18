@@ -96,18 +96,7 @@ export function PhotoFrame(props: PhotoFrameProps) {
         {control && <div className="zn-photo-control">{control}</div>}
       </div>
       {children && <div className="zn-photo-strips">{children}</div>}
-      {youtube ? (
-        <figcaption className="zn-photo-credit zn-label">
-          Picture:{" "}
-          {props.creditHref ? (
-            <a href={props.creditHref} rel="noopener">
-              YouTube
-            </a>
-          ) : (
-            "YouTube"
-          )}
-        </figcaption>
-      ) : (
+      {youtube ? null : (
         props.credit && (
           <figcaption className="zn-photo-credit zn-label">
             {props.creditHref ? (

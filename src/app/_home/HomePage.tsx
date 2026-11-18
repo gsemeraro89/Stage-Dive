@@ -323,7 +323,6 @@ export default async function HomePage() {
                   />
                 ))}
               </ol>
-              <p className="zn-label hm-rows-credit">Pictures: YouTube</p>
             </section>
           )}
 

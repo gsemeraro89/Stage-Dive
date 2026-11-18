@@ -134,7 +134,7 @@ export default async function ArtistPage({ params, searchParams }: Props) {
               srcSet={avatar.srcSet}
               width={avatar.width}
               height={avatar.height}
-              alt={`${artist.name}: the band's picture on YouTube`}
+              alt={`${artist.name}: the band's picture`}
               tilt={-2}
               shadow
               eager

@@ -63,7 +63,6 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
           );
         })}
       </ol>
-      <p className="zn-label pg-rows-credit">Pictures: YouTube</p>
     </>
   );
 }

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: `${SITE_NAME} — full rock gigs, free`, template: `%s — ${SITE_NAME}` },
   description:
-    "Full rock concerts from YouTube, free: the whole set, by band, festival, room, decade, genre and tour. Press play once and keep listening.",
+    "Full rock concerts, free: the whole set, by band, festival, room, decade, genre and tour. Press play once and keep listening.",
 };
 
 export const viewport: Viewport = { themeColor: "#ECEAE4", colorScheme: "light" };
@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteHeader logo={<Wordmark variant="full" width={300} label="" />} decades={decades} />
           {children}
           <footer className="zn-foot" data-od="footer">
-            <p>{SITE_NAME} /// every gig here is an official or freely available YouTube upload. We just glue them together.</p>
+            <p>{SITE_NAME} /// every gig here is an official, freely available upload. We just glue them together.</p>
             <Link href="/map">FIND YOUR NEXT BAND &gt;&gt;</Link>
           </footer>
           <PlayerDock />

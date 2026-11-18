@@ -61,12 +61,12 @@ export function linkArtists(view: SetlistView | null, known: Set<string>): Setli
 export function sourceNote(source: string | null): string {
   switch (source) {
     case "DESCRIPTION":
-      return "Setlist from the video description on YouTube.";
+      return "Setlist from the video description.";
     case "CHANNEL_COMMENT":
-      return "Setlist from the uploader's comment on YouTube.";
+      return "Setlist from the uploader's comment.";
     case "COMMENT":
-      return "Setlist from a viewer's comment on YouTube. It may contain mistakes.";
+      return "Setlist from a viewer's comment. It may contain mistakes.";
     default:
-      return "Setlist from the video's description or comments on YouTube.";
+      return "Setlist from the video's description or comments.";
   }
 }

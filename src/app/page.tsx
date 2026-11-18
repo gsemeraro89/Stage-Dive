@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: { absolute: "STAGEDIVE — full rock gigs, free" },
   description:
-    "Every free, full rock concert on YouTube, played right here: festival archives and band channels, by band, festival, room, decade, genre and tour.",
+    "Every free, full rock concert, played right here: festival archives and band channels, by band, festival, room, decade, genre and tour.",
   alternates: { canonical: "/" },
 };
 

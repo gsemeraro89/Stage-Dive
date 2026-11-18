@@ -54,7 +54,7 @@ function songTitle(t: TrackView, band: string): string {
 
 /** Where the setlist was read, said honestly. */
 function setlistSource(source: string | null): string {
-  if (source === "COMMENT") return "Setlist typed up by a viewer on YouTube. It may have mistakes.";
+  if (source === "COMMENT") return "Setlist typed up by a viewer. It may have mistakes.";
   return sourceNote(source);
 }
 
@@ -103,10 +103,7 @@ export default async function ConcertPage({ params }: Props) {
             )}
           </div>
           <p className="cp-note zn-label" data-od="player-note">
-            <span>Plays right here /// picture and video: YouTube</span>
-            <a href={`https://www.youtube.com/watch?v=${concert.youtubeId}`} rel="noopener">
-              Open on YouTube &gt;&gt;
-            </a>
+            <span>Plays right here</span>
           </p>
         </div>
 
@@ -230,7 +227,7 @@ export default async function ConcertPage({ params }: Props) {
             <div>
               <dt className="zn-label">Source</dt>
               <dd>
-                {concert.channel.isOfficial ? "Official upload" : "Upload"} by {concert.channel.name}, plays from YouTube
+                {concert.channel.isOfficial ? "Official upload" : "Upload"} by {concert.channel.name}
               </dd>
             </div>
             <div>

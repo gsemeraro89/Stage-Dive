@@ -77,7 +77,7 @@ export default async function ArtistsPage() {
                             width={a.cover.thumbnail.width}
                             height={a.cover.thumbnail.height}
                             sizes={sizes}
-                            alt={a.cover.portrait ? `${a.name}: the band's picture on YouTube` : `Still from a gig by ${a.name}`}
+                            alt={a.cover.portrait ? `${a.name}: the band's picture` : `Still from a gig by ${a.name}`}
                             className={a.cover.portrait ? "pg-avatar" : undefined}
                           >
                             {strip}
