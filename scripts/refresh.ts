@@ -101,7 +101,11 @@ try {
     // Setlist: re-read now. If the quota runs out, the old one stays and is looked at next run.
     if (setlistQuotaLeft) {
       try {
-        const found = await lookUpSetlist(yt, video!, { extractor: setlistExtractor, claudeMax: setlistClaudeMax });
+        const found = await lookUpSetlist(yt, video!, {
+          extractor: setlistExtractor,
+          claudeMax: setlistClaudeMax,
+          bands: concert.credits.flatMap((c) => [c.artist.name, ...(c.artist.aka ? [c.artist.aka] : [])]),
+        });
         await db.concert.update({ where: { id: concert.id }, data: setlistFields(found, now) });
         if (found.tracks) stats.withSetlist++;
         else if (concert.setlist) stats.setlistsRemoved++;

@@ -5,6 +5,12 @@
 //   Artist - Title (12:30)        1. 00:00 Artist — Title
 // A text only counts as a setlist when it passes the checks in `validateTracks`; texts that look
 // like a setlist but fail them are reported as "unclear" so they can be handed to Claude.
+//
+// Rock mode (pass the band's names in `bands`): a rock setlist is a list of SONGS, so lines need not
+// name an artist ("02:10 Hit the Lights", "1. Creeping Death"). The band's own name on a line is taken
+// off ("Metallica - Hit the Lights", "Hit the Lights - Metallica" -> "Hit the Lights"), a dash that is
+// part of a song line ("Seek & Destroy - Live") does not create an artist, and chapter lines that are
+// not songs ("Intro", "Encore break", "Credits") are left out.
 
 export interface Track {
   /** Seconds from the start of the concert, when the text gives a time. */
@@ -21,6 +27,30 @@ export type ParseResult =
   | { kind: "none" };
 
 export const MIN_TRACKS = 5;
+
+/** Options for reading a setlist. */
+export interface ParseOptions {
+  /** The band's names (main credits and their aka): switches on rock mode (see the top of this file). */
+  bands?: string[];
+}
+
+/** Chapter lines that are not songs, left out in rock mode. */
+const NOT_A_SONG =
+  /^(?:intro(?:duction)?|intro tape|outro|encore(?: break)?|break|interval|intermission|end credits|credits|crowd|crowd noise|soundcheck|tuning|band introductions?|speech|start|end|the end|pre-?show|post-?show)$/i;
+
+const loose = (s: string) =>
+  s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "");
+
+/** True when a name is one of the band's names ("Metallica", "metallica!", "The Cure" ~ "Cure"). */
+export function isBandName(name: string, bands: string[]): boolean {
+  const n = loose(name).replace(/^the/, "");
+  return n.length > 0 && bands.some((b) => loose(b).replace(/^the/, "") === n);
+}
 /** Share of lines that must name both an artist and a title (or be an ID). Chapter lists fail this. */
 const MIN_NAMED_SHARE = 0.6;
 /** Non-track lines allowed inside one setlist (a "Part 2" heading, a stray note) before it is cut. */
@@ -110,25 +140,43 @@ function splitArtistTitle(rest: string): { artist: string | null; title: string 
   return { artist, title };
 }
 
+/**
+ * Rock mode: the band's name on either side of a dash is taken off; any other dash stays part of the
+ * song line ("Seek & Destroy - Live"), so no artist is made up.
+ */
+function asSong(raw: string, split: { artist: string | null; title: string }, bands: string[]): { artist: string | null; title: string } {
+  if (!split.artist) return split;
+  if (isBandName(split.artist, bands)) return { artist: null, title: split.title };
+  if (isBandName(split.title, bands)) return { artist: null, title: cleanTitle(split.artist) };
+  const whole = clean(decodeEntities(raw).replace(TRAILING_TIME, "").replace(LEADING_TIMES, ""));
+  // "Anesthesia - (Pulling Teeth)" -> "Anesthesia (Pulling Teeth)"
+  return { artist: null, title: whole.replace(/\s+[-–—]\s+(?=[([])/g, " ") };
+}
+
 /** One line read as a track, or null when it is not one. */
-export function parseLine(line: string): Track | null {
+export function parseLine(line: string, options: ParseOptions = {}): Track | null {
   const text = line.trim();
   if (!text || NOT_A_TRACK.test(text)) return null;
+  const rock = Boolean(options.bands?.length);
+  const read = (raw: string) => (rock ? asSong(raw, splitArtistTitle(raw), options.bands!) : splitArtistTitle(raw));
+  const keep = (t: Track | null) => (t && rock && NOT_A_SONG.test(t.title.replace(/[.!:]+$/, "").trim()) ? null : t);
 
   const lead = TIME_LEAD.exec(text);
   if (lead) {
-    const { artist, title } = splitArtistTitle(lead[2]);
-    return title ? { time: timeToSeconds(lead[1]), artist, title } : null;
+    const { artist, title } = read(lead[2]);
+    return keep(title ? { time: timeToSeconds(lead[1]), artist, title } : null);
   }
   const trail = TIME_TRAIL.exec(text);
-  if (trail && SEPARATOR.test(trail[1])) {
-    const { artist, title } = splitArtistTitle(trail[1]);
-    return title ? { time: timeToSeconds(trail[2]), artist, title } : null;
+  if (trail && (SEPARATOR.test(trail[1]) || rock)) {
+    const { artist, title } = read(trail[1]);
+    return keep(title ? { time: timeToSeconds(trail[2]), artist, title } : null);
   }
   const numbered = NUMBERED.exec(text);
   if (numbered) {
-    const { artist, title } = splitArtistTitle(numbered[1]);
-    // A numbered line only counts when it names an artist: "1. Intro" on its own says too little.
+    const { artist, title } = read(numbered[1]);
+    // DJ mode: a numbered line only counts when it names an artist ("1. Intro" says too little).
+    // Rock mode: a numbered song title is the normal way to write a setlist.
+    if (rock) return keep(title ? { time: null, artist, title } : null);
     return artist ? { time: null, artist, title } : null;
   }
   return null;
@@ -158,13 +206,13 @@ export function fixSwapped(tracks: Track[]): Track[] {
 }
 
 /** Runs of track lines, allowing blank lines and a few stray lines inside a run. */
-function blocks(text: string): Track[][] {
+function blocks(text: string, options: ParseOptions = {}): Track[][] {
   const result: Track[][] = [];
   let current: Track[] = [];
   let gap = 0;
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim()) continue;
-    const track = parseLine(line);
+    const track = parseLine(line, options);
     if (track) {
       current.push(track);
       gap = 0;
@@ -182,10 +230,13 @@ function blocks(text: string): Track[][] {
  * The checks a list of tracks must pass to be shown. Also used on Claude's answers.
  * Returns null when the list is fine, or the reason it is not.
  */
-export function validateTracks(tracks: Track[], durationSeconds?: number): string | null {
+export function validateTracks(tracks: Track[], durationSeconds?: number, options: ParseOptions = {}): string | null {
   if (tracks.length < MIN_TRACKS) return `only ${tracks.length} tracks`;
-  const named = tracks.filter((t) => t.artist || isUnidentified(t)).length;
-  if (named / tracks.length < MIN_NAMED_SHARE) return "most lines name no artist (chapters, not tracks)";
+  // DJ mode only: a rock setlist names songs, not artists.
+  if (!options.bands?.length) {
+    const named = tracks.filter((t) => t.artist || isUnidentified(t)).length;
+    if (named / tracks.length < MIN_NAMED_SHARE) return "most lines name no artist (chapters, not tracks)";
+  }
   const times = tracks.map((t) => t.time);
   if (times.some((t) => t !== null)) {
     if (times.some((t) => t === null)) return "some tracks have a time and some do not";
@@ -198,14 +249,16 @@ export function validateTracks(tracks: Track[], durationSeconds?: number): strin
 }
 
 /** Find the setlist in a description or comment. */
-export function parseSetlist(text: string, durationSeconds?: number): ParseResult {
-  const candidates = blocks(text).sort((a, b) => b.length - a.length);
+export function parseSetlist(text: string, durationSeconds?: number, options: ParseOptions = {}): ParseResult {
+  const candidates = blocks(text, options).sort((a, b) => b.length - a.length);
   if (!candidates.length) return { kind: "none" };
 
   let firstProblem: string | null = null;
   for (const tracks of candidates) {
-    const problem = validateTracks(tracks, durationSeconds);
-    if (!problem) return { kind: "setlist", tracks: fixSwapped(tracks), timed: tracks[0].time !== null };
+    const problem = validateTracks(tracks, durationSeconds, options);
+    if (!problem) {
+      return { kind: "setlist", tracks: options.bands?.length ? tracks : fixSwapped(tracks), timed: tracks[0].time !== null };
+    }
     // A short run (a couple of timestamps in a sentence) is just text, not a failed setlist.
     if (tracks.length >= MIN_TRACKS) firstProblem ??= problem;
   }

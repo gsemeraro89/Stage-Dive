@@ -465,7 +465,7 @@ try {
         stats.created.push(saved.slug);
         if (saved.status === "replaced") detail += `; replaced fan upload ${saved.replacedYoutubeId}`;
         try {
-          const found = await lookUpSetlist(yt, video, { extractor: setlistExtractor, claudeMax: setlistClaudeMax });
+          const found = await lookUpSetlist(yt, video, { extractor: setlistExtractor, claudeMax: setlistClaudeMax, bands: classification.mainArtists });
           await db.concert.update({ where: { id: saved.concertId }, data: setlistFields(found, new Date()) });
           if (found.tracks) stats.setlists++;
         } catch (error) {

@@ -2,7 +2,7 @@
 // Order (owner, 13 Nov 2026): the description first; then a comment by the uploading channel itself
 // (usually the pinned one); then the most liked comment; on equal likes, the most complete list.
 
-import { parseSetlist, type Track } from "./parse";
+import { parseSetlist, type ParseOptions, type Track } from "./parse";
 
 export interface CommentText {
   text: string;
@@ -25,8 +25,8 @@ export interface Choice {
   unclear: { source: SetlistSource; text: string; reason: string }[];
 }
 
-export function fromDescription(description: string, durationSeconds?: number): Choice {
-  const result = parseSetlist(description, durationSeconds);
+export function fromDescription(description: string, durationSeconds?: number, options: ParseOptions = {}): Choice {
+  const result = parseSetlist(description, durationSeconds, options);
   if (result.kind === "setlist") {
     return { chosen: { tracks: result.tracks, timed: result.timed, source: "DESCRIPTION" }, unclear: [] };
   }
@@ -36,12 +36,12 @@ export function fromDescription(description: string, durationSeconds?: number): 
   return { chosen: null, unclear: [] };
 }
 
-export function fromComments(comments: CommentText[], durationSeconds?: number): Choice {
+export function fromComments(comments: CommentText[], durationSeconds?: number, options: ParseOptions = {}): Choice {
   const found: (ChosenSetlist & { likes: number })[] = [];
   const unclear: Choice["unclear"] = [];
   for (const comment of comments) {
     const source: SetlistSource = comment.byChannel ? "CHANNEL_COMMENT" : "COMMENT";
-    const result = parseSetlist(comment.text, durationSeconds);
+    const result = parseSetlist(comment.text, durationSeconds, options);
     if (result.kind === "setlist") {
       found.push({ tracks: result.tracks, timed: result.timed, source, likes: comment.likeCount });
     } else if (result.kind === "unclear") {

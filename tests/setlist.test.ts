@@ -6,6 +6,7 @@ import { toTracks } from "../src/lib/setlist/extract";
 import {
   cleanTitle,
   fixSwapped,
+  isBandName,
   isUnidentified,
   parseLine,
   parseSetlist,
@@ -416,5 +417,66 @@ describe("fixes from the store check (13 Nov 2026)", () => {
 
   it("decodes HTML entities", () => {
     expect(parseLine("00:00 Zelda &amp; ZHU - Good Life")).toMatchObject({ artist: "Zelda & ZHU", title: "Good Life" });
+  });
+});
+
+describe("rock mode (the band's names given)", () => {
+  const bands = ["Metallica"];
+  const HOUR2 = 2.5 * 3600;
+
+  it("reads plain timed song lines, without any artist", () => {
+    const text = [
+      "Setlist:",
+      "0:00 Enter Sandman",
+      "5:15 Creeping Death",
+      "13:05 Harvester of Sorrow",
+      "19:55 Welcome Home (Sanitarium)",
+      "27:00 Sad But True",
+      "32:49 Wherever I May Roam",
+    ].join("\n");
+    const r = parseSetlist(text, HOUR2, { bands });
+    expect(r.kind).toBe("setlist");
+    if (r.kind !== "setlist") return;
+    expect(r.timed).toBe(true);
+    expect(r.tracks.map((t) => [t.time, t.artist, t.title])).toEqual([
+      [0, null, "Enter Sandman"],
+      [315, null, "Creeping Death"],
+      [785, null, "Harvester of Sorrow"],
+      [1195, null, "Welcome Home (Sanitarium)"],
+      [1620, null, "Sad But True"],
+      [1969, null, "Wherever I May Roam"],
+    ]);
+    // Without the band's names it stays a DJ-style reader and refuses song-only lines.
+    expect(parseSetlist(text, HOUR2).kind).not.toBe("setlist");
+  });
+
+  it("takes the band's name off either side, and never makes an artist out of a song note", () => {
+    expect(parseLine("1:02 Metallica - Hit the Lights", { bands })).toEqual({ time: 62, artist: null, title: "Hit the Lights" });
+    expect(parseLine("1:02 Hit the Lights – METALLICA", { bands })).toEqual({ time: 62, artist: null, title: "Hit the Lights" });
+    expect(parseLine("20:06 Anesthesia - (Pulling Teeth)", { bands })).toEqual({ time: 1206, artist: null, title: "Anesthesia (Pulling Teeth)" });
+    expect(parseLine("45:00 Seek & Destroy - Live", { bands })?.title).toBe("Seek & Destroy - Live");
+    expect(parseLine("50:00 Am I Evil? (Diamond Head cover)", { bands })?.title).toBe("Am I Evil? (Diamond Head cover)");
+  });
+
+  it("reads numbered songs without times, and leaves chapter lines out", () => {
+    const text = ["1. Intro", "2. Hit the Lights", "3. The Four Horsemen", "4. Jump in the Fire", "5. Motorbreath", "6. Encore break", "7. Seek & Destroy"].join("\n");
+    const r = parseSetlist(text, HOUR2, { bands });
+    expect(r.kind).toBe("setlist");
+    if (r.kind !== "setlist") return;
+    expect(r.timed).toBe(false);
+    expect(r.tracks.map((t) => t.title)).toEqual(["Hit the Lights", "The Four Horsemen", "Jump in the Fire", "Motorbreath", "Seek & Destroy"]);
+  });
+
+  it("knows the band by any spelling of its names", () => {
+    expect(isBandName("METALLICA!", ["Metallica"])).toBe(true);
+    expect(isBandName("Cure", ["The Cure"])).toBe(true);
+    expect(isBandName("Guns and Roses", ["Guns & Roses"])).toBe(true);
+    expect(isBandName("Megadeth", ["Metallica"])).toBe(false);
+  });
+
+  it("still applies the checks: too few songs or times past the end are not a setlist", () => {
+    expect(parseSetlist("0:00 One\n1:00 Two\n2:00 Three", HOUR2, { bands }).kind).toBe("none");
+    const late = ["0:00 A", "10:00 B", "20:00 C", "30:00 D", "3:30:00 E"].join("\n");
+    expect(parseSetlist(late, 3600, { bands })).toEqual({ kind: "unclear", reason: "times run past the end of the concert" });
   });
 });

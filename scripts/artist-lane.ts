@@ -779,7 +779,7 @@ async function runLane() {
         rep.created.push(saved.slug);
         totals.created.push(saved.slug);
         try {
-          const found = await lookUpSetlist(yt, t.video, { extractor, claudeMax: 20 });
+          const found = await lookUpSetlist(yt, t.video, { extractor, claudeMax: 20, bands: classification.mainArtists });
           await db.concert.update({ where: { id: saved.concertId }, data: setlistFields(found, new Date()) });
         } catch (error) {
           // Never lose a new concert over its setlist: the refresh job looks again.

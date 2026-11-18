@@ -24,6 +24,8 @@ export interface LookupOptions {
   extractor?: SetlistExtractor | null;
   /** Stop asking Claude after this many calls in the run. */
   claudeMax?: number;
+  /** The band's names (main credits and their aka): reads the text as a rock setlist of songs. */
+  bands?: string[];
 }
 
 /**
@@ -32,7 +34,8 @@ export interface LookupOptions {
  */
 export async function lookUpSetlist(yt: YouTubeClient, video: YouTubeVideo, options: LookupOptions = {}): Promise<Lookup> {
   const duration = video.durationSeconds;
-  let choice = fromDescription(video.description, duration);
+  const parse = { bands: options.bands };
+  let choice = fromDescription(video.description, duration, parse);
   let commentsOff = false;
   if (!choice.chosen) {
     let comments: Awaited<ReturnType<YouTubeClient["topComments"]>> = [];
@@ -45,6 +48,7 @@ export async function lookUpSetlist(yt: YouTubeClient, video: YouTubeVideo, opti
     const fromThread = fromComments(
       comments.map((c) => ({ text: c.text, likeCount: c.likeCount, byChannel: c.authorChannelId === video.channelId })),
       duration,
+      parse,
     );
     choice = { chosen: fromThread.chosen, unclear: [...choice.unclear, ...fromThread.unclear] };
   }

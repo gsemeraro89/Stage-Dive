@@ -39,7 +39,13 @@ const errors: string[] = [];
 try {
   const concerts = await db.concert.findMany({
     where: { status: "PUBLISHED" },
-    select: { slug: true, youtubeId: true, durationSeconds: true, channel: { select: { name: true } } },
+    select: {
+      slug: true,
+      youtubeId: true,
+      durationSeconds: true,
+      channel: { select: { name: true } },
+      credits: { where: { role: "MAIN" }, select: { artist: { select: { name: true, aka: true } } } },
+    },
     orderBy: { viewCount: "desc" },
     take: limit,
   });
@@ -54,7 +60,8 @@ try {
       continue;
     }
     const duration = video.durationSeconds || concert.durationSeconds;
-    let choice = fromDescription(video.description, duration);
+    const parse = { bands: concert.credits.flatMap((c) => [c.artist.name, ...(c.artist.aka ? [c.artist.aka] : [])]) };
+    let choice = fromDescription(video.description, duration, parse);
     if (!choice.chosen) {
       try {
         const comments = await yt.topComments(concert.youtubeId);
@@ -62,6 +69,7 @@ try {
         const fromThread = fromComments(
           comments.map((c) => ({ text: c.text, likeCount: c.likeCount, byChannel: c.authorChannelId === video.channelId })),
           duration,
+          parse,
         );
         choice = { chosen: fromThread.chosen, unclear: [...choice.unclear, ...fromThread.unclear] };
       } catch (error) {
