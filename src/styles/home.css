@@ -1,498 +1,757 @@
-/* Home page (DESIGN.md section 9, "Home"): the statement (.od-places), the reel of pictures
-   (.od-reel), the atlas (.od-atlas) and the four ways in (.od-wordrows). Only tokens; no radius, no fills behind content, no gradients.
-   No text is written on a photo: captions stand under their pictures, on the ground. */
+/* The homepage (brand book board 04; phones board 07). Markup: src/app/_home/HomePage.tsx.
+   Built from the zine components (zine.css); this file only places them on the page.
+   Rules: design/DESIGN.md. A YouTube picture is never cropped, filtered or written on. */
 
-/* ---------- Shared pieces ---------- */
-
-/* Outlined display type, as on genre words. */
-.od-outline {
-  color: transparent;
-  -webkit-text-stroke: 1.5px var(--ink);
+.hm {
+  /* Tilted pieces and solid shadows may hang over the page edge; they never make it scroll sideways. */
+  overflow-x: clip;
 }
 
-/* The pitch: two or three lines that say what the site is for. */
-.od-home-pitch {
-  margin: 0;
-  max-width: 44ch;
-  font-size: clamp(17px, 1.4vw, 20px);
-  line-height: 1.4;
-}
-
-.od-home-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 28px;
-}
-
-/* A link block that is not a play button keeps the acid block but needs no triangle. */
-.od-home-actions .od-play {
-  min-height: 52px;
-}
-
-/* The latest strip inside a section: it runs edge to edge, right above the section rule. */
-.od-strip--inset {
-  margin: 0 calc(var(--pad-x) * -1) clamp(28px, 3.4vw, 48px);
-}
-
-/* Plate: a set tile titled by its place. The kicker is a quiet mono link. */
-.od-plate-kicker {
-  padding: 15px 0;
-  margin: -15px 0;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-thickness: 1px;
-}
-
-.od-plate-kicker:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-.od-plate-rest {
-  margin: 0;
-  padding-top: 4px;
-}
-
-/* ---------- The statement: a line of places, then the reel of pictures ---------- */
-
-.od-places {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--col-gap);
-  align-items: end;
-  padding-top: clamp(22px, 2.6vw, 40px);
-}
-
-.od-places h1 {
-  grid-column: 1 / span 8;
-  margin: 0 0 0 var(--pad-x);
-  min-width: 0;
-}
-
-.od-places h1 .meta {
-  display: block;
-  padding-bottom: 12px;
-}
-
-.od-places h1 .display {
-  display: block;
-  font-size: clamp(34px, 4.6vw, 72px);
-  line-height: 0.94;
-}
-
-.od-places-side {
-  grid-column: 9 / span 4;
-  margin-right: var(--pad-x);
-  min-width: 0;
-}
-
-.od-places-side .od-home-actions {
-  margin-top: 20px;
-}
-
-/* Reel: the band of pictures. Edge to edge, every frame the same 16:9 picture at the same
-   size, a 2px seam of ground between them. The list scrolls sideways with scroll-snap (swipe
-   on touch screens); its scrollbar is hidden because the two arrows and the frame that is cut
-   off at the right edge say there is more. The frame width is a share of the band (cqw), so a
-   part of the next frame always shows: 3.25 frames on desktop, 2.25 up to 1000px, 1.14 on phones. */
-.od-reel {
-  grid-column: 1 / -1;
-  position: relative;
-  container-type: inline-size;
-  margin-top: clamp(24px, 2.8vw, 40px);
-  min-width: 0;
-}
-
-.od-reel > * {
-  --reel-seam: 2px;
-  --reel-frame: calc((100cqw - 3 * var(--reel-seam)) / 3.25);
-  --reel-arrow: 56px;
-}
-
-.od-reel-list {
-  display: flex;
-  gap: var(--reel-seam);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-
-.od-reel-list::-webkit-scrollbar {
-  display: none;
-}
-
-.od-reel-list li {
-  flex: 0 0 var(--reel-frame);
-  min-width: 0;
-  scroll-snap-align: start;
-}
-
-.od-reel .od-thumb img {
-  aspect-ratio: 16 / 9;
-}
-
-.od-reel-cap {
-  padding: 12px 14px 0 var(--pad-x);
-  min-width: 0;
-}
-
-.od-reel-cap p {
-  margin: 0;
-  color: var(--muted);
-}
-
-.od-reel-cap h2 {
-  margin: 0;
-  font-size: clamp(18px, 1.8vw, 28px);
-  overflow-wrap: anywhere;
-}
-
-/* Captions keep one height along the band: the list is as tall as its tallest frame, so one
-   long caption (even one that is scrolled out of view) would open a hole under all the others.
-   The place takes two lines at most, the setting and the artists one line each. */
-.od-reel-cap h2 a {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  min-height: var(--touch);
-  padding: 10px 0 0;
-  margin-bottom: 2px;
-}
-
-.od-reel-cap p {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.od-reel-frame:hover h2 a,
-.od-reel-cap h2 a:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-/* The arrows: solid ground squares on the band's left and right edges, level with the middle
-   of the pictures (legibility rule, pattern 1: a solid label). Acid on hover. An arrow at its
-   end of the band is taken away. */
-.od-reel-arrow {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--reel-frame) * 9 / 32 - var(--reel-arrow) / 2);
-  display: grid;
-  place-items: center;
-  width: var(--reel-arrow);
-  height: var(--reel-arrow);
-  padding: 0;
-  border: 0;
-  background: var(--ground);
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.od-reel-arrow--prev {
-  left: 0;
-}
-
-.od-reel-arrow--prev svg {
-  transform: scaleX(-1);
-}
-
-.od-reel-arrow--next {
-  right: 0;
-}
-
-.od-reel-arrow:hover {
-  background: var(--acid);
-  color: var(--on-acid);
-}
-
-.od-reel-arrow:focus-visible {
-  outline-offset: -4px;
-}
-
-.od-reel-arrow:disabled {
-  visibility: hidden;
-}
-
-@media (max-width: 1000px) {
-  .od-places h1 {
-    grid-column: 1 / span 7;
-  }
-
-  .od-places-side {
-    grid-column: 8 / span 5;
-  }
-
-  .od-reel > * {
-    --reel-frame: calc((100cqw - 2 * var(--reel-seam)) / 2.25);
-  }
-}
-
-/* Phones: the line of places, the reel (one picture and the edge of the next), then the pitch. */
-@media (max-width: 760px) {
-  .od-places {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding-top: 18px;
-  }
-
-  .od-places h1 {
-    margin-right: var(--pad-x);
-  }
-
-  .od-places h1 .display {
-    font-size: clamp(30px, 9.4vw, 58px);
-  }
-
-  .od-reel {
-    margin-top: 18px;
-  }
-
-  .od-reel > * {
-    --reel-frame: calc((100cqw - var(--reel-seam)) / 1.14);
-    --reel-arrow: 48px;
-  }
-
-  .od-places-side {
-    order: 3;
-    margin: 28px var(--pad-x) 0;
-  }
-}
-
-/* The atlas: two plates on the left, the list of places on the right. */
-.od-atlas-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 36px var(--col-gap);
-  align-items: start;
-}
-
-.od-atlas-plates {
-  grid-column: 1 / span 5;
-  display: grid;
-  gap: 28px;
-  min-width: 0;
-}
-
-.od-atlas {
-  grid-column: 7 / span 6;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--line);
-}
-
-/* No pictures left for the plates (a small catalogue): the list takes the whole width. */
-.od-atlas-grid--list .od-atlas {
-  grid-column: 1 / -1;
-}
-
-.od-atlas-row {
-  display: grid;
-  grid-template-columns: 9.5em minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 0 20px;
-  min-height: 56px;
-  padding: 12px 0 10px;
-  border-bottom: 1px solid var(--line);
-}
-
-.od-atlas-row:hover {
-  background: var(--hover-row);
-}
-
-.od-atlas-row:hover .od-atlas-place {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-.od-atlas-country {
-  color: var(--muted);
-}
-
-.od-atlas-place {
-  font-size: clamp(17px, 1.5vw, 22px);
-  overflow-wrap: anywhere;
-}
-
-.od-atlas-artist {
-  grid-column: 2;
-  color: var(--muted);
-}
-
-.od-atlas-dur {
-  grid-column: 3;
-  grid-row: 1;
-  text-align: right;
-}
-
-@media (max-width: 1000px) {
-  .od-atlas-plates,
-  .od-atlas {
-    grid-column: 1 / -1;
-  }
-
-  .od-atlas-plates {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--col-gap);
-  }
-}
-
-@media (max-width: 760px) {
-  .od-atlas-plates {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 26px;
-  }
-
-  .od-atlas-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0 14px;
-  }
-
-  /* The country leads each group as a small line above its first place. */
-  .od-atlas-country {
-    grid-column: 1 / -1;
-  }
-
-  .od-atlas-country:empty,
-  .od-atlas-country:has(> .od-sr:only-child) {
-    display: none;
-  }
-
-  .od-atlas-place,
-  .od-atlas-artist {
-    grid-column: 1;
-  }
-
-  .od-atlas-dur {
-    grid-column: 2;
-    grid-row: auto;
-  }
-}
-
-/* Word rows: a giant word with its count, a sentence and a few real entries. */
-.od-wordrows {
+.hm ul,
+.hm ol {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.od-wordrows li {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 6px var(--col-gap);
-  align-items: end;
-  padding: clamp(14px, 1.8vw, 26px) 0 clamp(12px, 1.4vw, 20px);
-  border-bottom: 1px solid var(--line);
+.hm-section {
+  padding: clamp(36px, 4vw, 56px) var(--margin) clamp(36px, 3.6vw, 50px);
 }
 
-.od-wordrows li:first-child {
+/* A section that starts with scissors: the dashed cut line. */
+.hm-section--cut {
   padding-top: 0;
 }
 
-.od-wordrows-word {
-  grid-column: 1 / span 7;
-  justify-self: start;
-  font-size: clamp(40px, 7vw, 108px);
-  line-height: 0.9;
-  min-height: var(--touch);
-  overflow-wrap: anywhere;
+.hm-section--cut > .hm-head {
+  padding-top: clamp(26px, 2.8vw, 38px);
+  border-top: var(--cut);
 }
 
-.od-wordrows li:nth-child(even) .od-wordrows-word {
-  color: transparent;
-  -webkit-text-stroke: 1.5px var(--ink);
+.hm-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px 20px;
+  margin-bottom: clamp(18px, 2.4vw, 34px);
 }
 
-.od-wordrows .od-wordrows-word:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-  -webkit-text-stroke: 0;
-}
-
-.od-wordrows-word sup {
-  position: relative;
-  top: 0.5em;
-  margin-left: 8px;
-  vertical-align: top;
-  color: var(--ink);
-  -webkit-text-stroke: 0;
-  font-stretch: 100%;
-}
-
-.od-wordrows-side {
-  grid-column: 8 / span 5;
-  min-width: 0;
-}
-
-.od-wordrows-side p {
+.hm-title {
   margin: 0;
 }
 
-.od-wordrows-side .body {
-  max-width: 40ch;
-  font-size: clamp(16px, 1.25vw, 18px);
-}
-
-.od-wordrows-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 22px;
-  padding-top: 4px;
-}
-
-.od-wordrows-links a {
+/* "ALL NEW GIGS >>": typed, underlined, a finger tall. */
+.hm-more {
   display: inline-flex;
   align-items: center;
-  min-width: var(--touch);
+  gap: 0.45em;
   min-height: var(--touch);
-  color: var(--muted);
-}
-
-.od-wordrows-links a:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-.od-wordrows-links .od-wordrows-more {
-  color: var(--ink);
+  font-family: var(--font-type);
+  font-size: clamp(14px, 1.3vw, 18px);
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
   text-decoration: underline;
+  text-decoration-thickness: 2px;
   text-underline-offset: 4px;
-  text-decoration-thickness: 1px;
+  white-space: nowrap;
 }
 
-/* The fifth way in: the search line of Find your next DJ. */
-.od-wordrows-ask {
-  padding-top: clamp(22px, 2.6vw, 36px);
+.hm-more:hover {
+  background: var(--toner);
+  color: var(--paper);
 }
 
-.od-wordrows-ask > p {
-  margin: 0 0 6px;
+/* The play control on a picture: the kit's 48px label. */
+.hm-playicon[data-current] {
+  background: var(--pink);
+  outline-width: var(--frame);
+  outline-offset: calc(-1 * var(--frame));
 }
+
+/* ---------- 1. Gig of the week ---------- */
+
+.hm-hero {
+  --slap-start: 60ms;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding: 44px var(--margin);
+}
+
+.hm-hero-photo {
+  --hero-ratio: 11 / 8;
+}
+
+/* On a treated photo the headline lies on the picture, as on the board. On a YouTube picture the
+   strips stay on the black mount under it (zine.css), never on the picture. */
+.hm-hero-photo[data-kind="treated"] {
+  --bite: clamp(44px, 8vw, 118px);
+}
+
+.hm-hero-photo .zn-photo-strips {
+  gap: 8px;
+}
+
+.hm-hero-data {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 1.35vw, 19px);
+}
+
+.hm-hero-actions {
+  --i: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin: 20px 0 0 clamp(10px, 2vw, 22px);
+}
+
+/* "Play it loud": the big size of the kit's button. */
+.hm-play {
+  min-height: 66px;
+  padding: 3px 26px 0;
+  font-size: 22px;
+  box-shadow: var(--shadow-sheet);
+}
+
+.hm-hero-side {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+
+.hm-hero-tape {
+  --i: 3;
+  margin-right: 22px;
+}
+
+.hm-setlist {
+  --i: 4;
+}
+
+.hm-hero-tape + .hm-setlist {
+  margin: 12px 0 0 14px;
+}
+
+.hm-setlist-hint {
+  margin: 12px 0 0;
+  font-size: 19px;
+}
+
+.hm-setlist-plain li {
+  padding: 8px 8px 4px;
+  font-size: clamp(16px, 1.3vw, 18.5px);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.hm-setlist-empty {
+  margin: 12px 0 4px;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+/* The black band between the gig of the week and the rest. */
+.hm-band {
+  margin: 0;
+  padding: 14px var(--margin) 10px;
+  font-size: clamp(14.5px, 1.4vw, 20px);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+.hm-band span {
+  padding: 3px 8px 0;
+  background: var(--pink);
+  color: var(--toner);
+  white-space: nowrap;
+}
+
+/* ---------- 2. Fresh off the copier ---------- */
+
+.hm-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 46px 40px;
+  align-items: start;
+}
+
+.hm-card {
+  rotate: var(--tilt, 0deg);
+}
+
+/* The name is the link to the gig's page; the strip's padding belongs to the link so the whole
+   strip takes the finger. */
+.hm-card-name {
+  padding: 0;
+}
+
+.hm-card-name a {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: var(--strip-pad);
+  color: inherit;
+}
+
+.hm-card-name a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-card .zn-photo-credit {
+  margin: 6px 0 0 clamp(10px, 2vw, 22px);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.hm-card-data {
+  margin: 6px 0 0 clamp(10px, 2vw, 22px);
+  font-size: 17px;
+}
+
+/* ---------- 3. Pick a decade ---------- */
+
+.hm-decades {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 7), minmax(0, 1fr));
+  gap: 22px;
+}
+
+.hm-decade {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  height: 100%;
+  min-height: 170px;
+  padding: 12px 14px 10px;
+  outline: var(--frame) solid var(--toner);
+  outline-offset: calc(-1 * var(--frame));
+  rotate: var(--tilt, 0deg);
+}
+
+.hm-decade[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-decade[data-tone="white"] {
+  background: var(--sheet);
+  color: var(--toner);
+}
+
+.hm-decade[data-tone="pink"] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+.hm-decade-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px 10px;
+}
+
+.hm-decade-n {
+  font-family: var(--font-strip);
+  font-size: 70px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Few decades on the wall: bigger sheets, bigger numbers. */
+.hm-decades[data-few] .hm-decade {
+  min-height: 200px;
+}
+
+.hm-decades[data-few] .hm-decade-n {
+  font-size: clamp(70px, 8vw, 112px);
+}
+
+.hm-decade-line {
+  font-size: 15.5px;
+  line-height: 1.25;
+}
+
+/* ---------- 4. Where it happened: a full-bleed black band ---------- */
+
+.hm-where {
+  padding: 52px var(--margin) 54px;
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-where :focus-visible {
+  outline-color: var(--paper);
+}
+
+.hm-where .hm-more:hover {
+  background: var(--paper);
+  color: var(--toner);
+}
+
+.hm-where-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px 64px;
+}
+
+.hm-where-title {
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+
+.hm-venue {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: var(--touch);
+  padding: 10px 4px 4px;
+  color: var(--paper);
+}
+
+.hm-venue-name {
+  font-family: var(--font-strip);
+  font-size: clamp(20px, 1.9vw, 26px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.hm-venue:hover .hm-venue-name {
+  background: var(--paper);
+  color: var(--toner);
+}
+
+.hm-venue-dots {
+  flex: 1;
+  min-width: 18px;
+  border-bottom: 3px dotted currentColor;
+}
+
+.hm-venue-place {
+  text-align: right;
+}
+
+.hm-where-thin {
+  margin: 12px 4px 0;
+  font-family: var(--font-marker);
+  font-size: 17px;
+  color: var(--toner-soft);
+}
+
+/* ---------- 5. Most played + the night that… ---------- */
+
+.hm-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.hm-two > :only-child {
+  grid-column: 1 / -1;
+}
+
+.hm-two .hm-head {
+  margin-bottom: 16px;
+}
+
+.hm-rows {
+  border-top: var(--frame) solid var(--toner);
+}
+
+.hm-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 6px;
+  border-bottom: var(--cut);
+}
+
+.hm-row-rank {
+  flex: none;
+  width: 56px;
+  font-family: var(--font-strip);
+  font-size: 48px;
+  line-height: 1;
+  text-align: center;
+}
+
+/* The YouTube picture, whole, as a play button. Nothing is drawn on it. */
+.hm-row-pic {
+  flex: none;
+  display: block;
+  width: 118px;
+  padding: 0;
+  border: 3px solid var(--toner);
+  background: var(--toner);
+}
+
+.hm-row-pic img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hm-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--touch);
+}
+
+.hm-row-name {
+  font-family: var(--font-strip);
+  font-size: clamp(18px, 1.6vw, 22px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.hm-row-text:hover .hm-row-name {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+
+.hm-row-data {
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.hm-row-play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 3px 10px 0;
+  border: 0;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-type);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-row-play svg {
+  width: 14px;
+  height: 14px;
+}
+
+.hm-row-play:hover,
+.hm-row-play[data-current] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+.hm-night,
+.hm-deal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 34px 28px 26px;
+}
+
+.hm-night > .zn-photo {
+  width: 100%;
+}
+
+.hm-night-head {
+  margin: 0;
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.hm-night-story,
+.hm-deal-text {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.hm-deal-text {
+  font-size: clamp(17px, 1.5vw, 20px);
+}
+
+.hm-deal .zn-label {
+  margin: 0;
+}
+
+.hm-deal .zn-marker {
+  margin: 0;
+}
+
+.hm-night-play {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* ---------- 6. Sort by noise: the type gets bigger as the genre gets louder ---------- */
+
+.hm-noise {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 16px;
+}
+
+.hm-genre {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: var(--touch);
+  padding: 10px 16px 7px;
+  font-family: var(--font-strip);
+  font-size: calc(17px + var(--loud, 0.5) * 15px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: var(--tilt, 0deg);
+}
+
+.hm-genre[data-tone="white"] {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.hm-genre[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-genre[data-tone="pink"] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+/* Not on the wall yet: the outline of where the cut-out will go. Not a link. */
+.hm-genre[data-tone="none"] {
+  color: var(--label-grey);
+  outline: var(--keyline) dashed var(--label-grey);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.hm-genre-n {
+  font-family: var(--font-type);
+  font-size: 0.6em;
+  letter-spacing: 0;
+}
+
+.hm-noise-note {
+  margin: 22px 0 0;
+}
+
+/* The homepage ends on its last section; the footer rule follows at once. */
+.hm + .zn-foot {
+  margin-top: 0;
+}
+
+/* ---------- Narrower pages ---------- */
+
+@media (max-width: 1100px) {
+  .hm-hero {
+    gap: 32px;
+  }
+
+  .hm-two {
+    gap: 40px;
+  }
+
+  .hm-decades {
+    grid-template-columns: repeat(min(var(--n, 7), 4), minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hm-hero,
+  .hm-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hm-hero-side {
+    margin-top: 0;
+  }
+
+  .hm-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px 24px;
+  }
+}
+
+/* ---------- Phones (board 07): one column, same paste-up ---------- */
 
 @media (max-width: 760px) {
-  .od-wordrows li {
+  .hm-hero {
+    gap: 30px;
+    padding: 22px var(--margin) 30px;
+  }
+
+  .hm-hero-photo {
+    --hero-ratio: 3 / 2;
+  }
+
+  .hm-hero-actions {
+    margin: 16px 0 0;
+  }
+
+  .hm-play {
+    width: 100%;
+    min-height: 60px;
+    font-size: 20px;
+    box-shadow: var(--shadow-button);
+  }
+
+  .hm-hero-tape {
+    margin-right: 10px;
+  }
+
+  .hm-hero-tape + .hm-setlist {
+    margin-left: 6px;
+  }
+
+  .hm-setlist-hint {
+    font-size: 17px;
+  }
+
+  .hm-band {
+    padding: 10px var(--margin) 7px;
+  }
+
+  .hm-wide {
+    display: none;
+  }
+
+  .hm-cards {
+    gap: 28px 16px;
+  }
+
+  .hm-card {
+    --bite: 16px;
+  }
+
+  .hm-card .zn-photo-frame {
+    border-width: 3px;
+  }
+
+  .hm-card .zn-photo[data-kind="youtube"][data-strips] .zn-photo-frame {
+    border-bottom-width: calc(3px + var(--mount));
+  }
+
+  .hm-card .zn-photo-control {
+    right: 6px;
+    bottom: 6px;
+  }
+
+  .hm-card .zn-photo-strips,
+  .hm-card .zn-photo-credit,
+  .hm-card-data {
+    margin-left: 8px;
+  }
+
+  .hm-card .hm-card-name {
+    font-size: var(--text-name-small);
+  }
+
+  .hm-card-data {
+    font-size: 13.5px;
+  }
+
+  /* The licence credit stays, in small print: two narrow columns leave it little room. */
+  .hm-card .zn-photo-credit {
+    font-size: 12px;
+    letter-spacing: 0;
+    line-height: 1.3;
+    text-transform: none;
+  }
+
+  .hm-decades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .hm-decade,
+  .hm-decades[data-few] .hm-decade {
+    min-height: 132px;
+  }
+
+  .hm-decade-n,
+  .hm-decades[data-few] .hm-decade-n {
+    font-size: 56px;
+  }
+
+  .hm-where {
+    padding: 34px var(--margin) 36px;
+  }
+
+  .hm-where-grid {
     grid-template-columns: minmax(0, 1fr);
-    padding: 18px 0 8px;
   }
 
-  .od-wordrows-word,
-  .od-wordrows-side {
-    grid-column: auto;
+  .hm-venue {
+    flex-wrap: wrap;
+    gap: 2px 10px;
   }
 
-  .od-wordrows-word {
-    font-size: clamp(34px, 11.4vw, 88px);
+  .hm-venue-place {
+    font-size: 14px;
   }
 
-  .od-wordrows-links {
-    gap: 0 20px;
+  .hm-row {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 10px 0;
+  }
+
+  .hm-row-rank {
+    width: 30px;
+    font-size: 32px;
+  }
+
+  .hm-row-pic {
+    width: 96px;
+  }
+
+  .hm-row-text {
+    flex-basis: 120px;
+  }
+
+  .hm-row-data {
+    font-size: 13.5px;
+  }
+
+  .hm-row-play {
+    margin-left: auto;
+  }
+
+  .hm-night,
+  .hm-deal {
+    margin-top: 10px;
+    padding: 30px 18px 20px;
+  }
+
+  .hm-noise {
+    gap: 12px 10px;
+  }
+
+  .hm-genre {
+    padding: 8px 12px 6px;
+    font-size: calc(15px + var(--loud, 0.5) * 8px);
   }
 }

@@ -116,7 +116,7 @@ export function PlayerDock() {
               {...handle}
             >
               <GripIcon />
-              <span className="od-mini-label meta">On deck</span>
+              <span className="od-mini-label meta">now playing</span>
               <span className="od-mini-credits meta">{current.credits}</span>
             </button>
             <button ref={expandRef} type="button" data-od="mini-expand" aria-label="Expand player" onClick={() => switchTo(false)}>
@@ -178,7 +178,7 @@ export function PlayerDock() {
                 </button>
               )}
               <div className="od-dock-label meta" data-od="dock-label">
-                On deck
+                now playing
               </div>
             </div>
             <Link href={`/concerts/${current.slug}`} className="od-dock-title title" data-od="dock-title">

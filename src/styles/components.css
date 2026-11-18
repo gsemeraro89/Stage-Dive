@@ -1,284 +1,9 @@
 /* The Magazine components (design/DESIGN.md section 8). Content sits on the page ground,
    separated by hairline rules and space: no boxes, no rounded corners, no shadows. */
 
-/* ---------- Header ---------- */
-
-.od-header {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 44px;
-  padding: 10px var(--pad-x);
-  border-bottom: 1px solid var(--line);
-}
-
-.od-logo {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  font-size: 22px;
-  line-height: 1;
-}
-
-.od-logo span {
-  color: var(--ink);
-}
-
-.od-nav {
-  --nav-gap: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--nav-gap);
-}
-
-.od-nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  white-space: nowrap;
-}
-
-.od-nav a:hover,
-.od-nav a[aria-current] {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-/* Marks where the second row starts on narrow screens; not drawn anywhere else. */
-.od-nav-break {
-  display: none;
-}
-
-/* "This month" and the year: the label is a link, the sign after it opens a list of other
-   months or years. The sign's blank right half stands in for the gap to the next item, so the
-   button is a full finger wide without pushing the menu apart. */
-.od-nav-item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  margin-right: calc(-1 * var(--nav-gap));
-}
-
-.od-nav-toggle {
-  flex: none;
-  width: var(--touch);
-  height: var(--touch);
-  padding: 0 0 0 8px;
-  color: var(--muted);
-  font: inherit;
-  font-weight: 500;
-  text-align: left;
-}
-
-.od-nav-toggle:hover,
-.od-nav-toggle[aria-expanded="true"] {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-.od-nav-toggle:focus-visible {
-  outline-offset: -4px;
-}
-
-/* The list hangs from the header's hairline, its text in line with the label above it.
-   Ground colour, no lines between its lines (owner, 17 Nov 2026), no shadow. */
-.od-nav-panel {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 10px);
-  left: -13px;
-  max-height: min(60vh, 400px);
-  padding: 4px 0;
-  overflow-y: auto;
-  background: var(--ground);
-  border: 1px solid var(--line);
-  border-top-color: var(--ink);
-}
-
-.od-nav-list {
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(var(--rows), auto);
-  grid-auto-columns: 136px;
-}
-
-/* Compact lines (owner, 17 Nov 2026): the list must stay a small thing under the menu. */
-.od-nav-list a {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 30px;
-  padding: 0 12px;
-}
-
-.od-nav-list a:focus-visible {
-  outline-offset: -2px;
-}
-
-.od-nav-count {
-  color: var(--muted);
-}
-
-@media (hover: hover) {
-  .od-nav-list a:hover {
-    background: var(--hover-row);
-  }
-}
-
-.od-search {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: auto;
-  flex: 0 1 340px;
-  min-width: 0;
-  border-bottom: 1px solid var(--ink);
-}
-
-.od-search:focus-within {
-  border-bottom-color: var(--ink);
-}
-
-.od-search label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-  color: var(--muted);
-}
-
-.od-search input {
-  flex: 1;
-  min-width: 0;
-  height: var(--touch);
-  background: transparent;
-  color: var(--ink);
-  font: 400 16px/1.2 var(--font-type);
-  outline-offset: 0;
-}
-
-.od-search input::placeholder,
 .od-field input::placeholder {
   color: var(--muted);
   opacity: 1;
-}
-
-.od-search button {
-  min-width: var(--touch);
-  height: var(--touch);
-  color: var(--ink);
-}
-
-.od-search button:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
-/* Seven items, the last one long ("Find your next DJ"). Where nav and search no longer fit beside
-   the logo, the search narrows first, then the nav takes its own row. The labels are never
-   shortened and never break inside. */
-@media (max-width: 1360px) {
-  .od-header {
-    gap: 0 32px;
-  }
-
-  .od-nav {
-    --nav-gap: 22px;
-  }
-
-  .od-search {
-    flex: 1 1 200px;
-    max-width: 340px;
-  }
-}
-
-@media (max-width: 1140px) {
-  .od-header {
-    gap: 0 20px;
-  }
-
-  .od-nav {
-    order: 3;
-    flex: 1 0 100%;
-  }
-
-  .od-search {
-    flex: 1 1 120px;
-    max-width: 340px;
-  }
-}
-
-/* Narrow screens: two rows of mono, divided by a hairline. Row one is the sets by time and the
-   artists; row two the festivals, the genres and the long one. The break is a real element, so
-   the rows never depend on how the labels happen to wrap. */
-@media (max-width: 680px) {
-  .od-nav {
-    --nav-gap: 18px;
-  }
-
-  .od-nav-break {
-    display: block;
-    flex: 1 0 100%;
-    border-top: 1px solid var(--line);
-  }
-
-  /* The list becomes a low band across the page under the whole menu: three columns. */
-  .od-nav-item {
-    position: static;
-  }
-
-  .od-nav-panel {
-    top: 100%;
-    left: 0;
-    right: 0;
-    max-height: 34vh;
-    padding: 0 var(--pad-x) 6px;
-    border-width: 0 0 1px;
-    border-bottom-color: var(--ink);
-  }
-
-  .od-nav-list {
-    grid-template-rows: repeat(var(--rows-phone), auto);
-    grid-auto-columns: minmax(0, 1fr);
-    column-gap: 16px;
-  }
-
-  .od-nav-list a {
-    gap: 4px;
-    min-height: 36px;
-    padding: 0;
-  }
-}
-
-@media (max-width: 359px) {
-  .od-nav {
-    --nav-gap: 14px;
-  }
-
-  /* 320px: the four items of the first row only fit with a slightly narrower sign. */
-  .od-nav-toggle {
-    width: 36px;
-  }
-}
-
-/* ---------- Footer ---------- */
-
-.od-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 40px;
-  margin-top: var(--section-gap);
-  padding: 22px var(--pad-x) 28px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-}
-
-.od-footer p {
-  margin: 0;
-  max-width: 70ch;
 }
 
 /* ---------- Latest strip (home) ---------- */
@@ -475,17 +200,17 @@
   display: block;
   width: 100%;
   height: auto;
+  /* The whole YouTube picture, never cropped: a 4:3 file stands between black edges. */
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--toner);
 }
 
-/* Solid label on the image: the duration (with a play triangle only where the click plays here:
-   the artist line). Turns acid on hover and while on deck. */
+/* Solid label under the image, never on it (a YouTube picture carries no words): the duration
+   (with a play triangle only where the click plays here: the artist line). Turns pink on hover
+   and while playing. */
 .od-dur {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 5px 9px;
@@ -501,7 +226,7 @@
 }
 
 .od-thumb[data-current] .od-dur::before {
-  content: "On deck";
+  content: "Now playing";
   font-weight: 500;
 }
 
@@ -828,8 +553,10 @@ li:first-child > .od-row .od-rank {
   display: block;
   width: 100%;
   height: auto;
+  /* The whole YouTube picture, never cropped: a 4:3 file stands between black edges. */
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--toner);
 }
 
 .od-arc-title {
@@ -965,9 +692,10 @@ li:first-child > .od-row .od-rank {
   display: block;
   width: 100%;
   height: auto;
+  /* The whole YouTube picture, never cropped: a 4:3 file stands between black edges. */
   aspect-ratio: 16 / 9;
-  object-fit: cover;
-  background: var(--hover-row);
+  object-fit: contain;
+  background: var(--toner);
 }
 
 /* No picture: the initial, outlined, in a hairline 16:9 frame. */
@@ -1096,40 +824,24 @@ li:first-child > .od-row .od-rank {
   background: var(--hover-row);
 }
 
-/* Portrait crop, shared by every square artist picture (squares, artist lines, the map).
-   The thumbnail is 2.35 times the square's width (a plain square crop is 1.78), centred, then
-   moved down by 13% of the square: the square shows the middle of the picture from just under
-   its top edge to about three quarters down. Lower-third titles and edge logos fall outside and
-   heads stay in. The offset is measured on the square, not the file, so it is the same for
-   16:9 files and for YouTube's smaller 4:3 files with black bars (the bars never show). */
+/* Square artist pictures (squares, artist lines, the map). The picture is a YouTube thumbnail or
+   a channel avatar, so it is shown whole and untouched (design/DESIGN.md, section 6): no crop, no
+   zoom, no filter. A 16:9 thumbnail lies across the middle of a black mount; a square avatar
+   fills the square. */
+.od-square-pic,
+.od-aline-pic,
+.od-map-pic {
+  background: var(--toner);
+}
+
 .od-square-pic img,
 .od-aline-pic img,
 .od-map-pic img {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 235%;
-  max-width: none;
-  height: auto;
-  margin-top: 13%;
-  transform: translate(-50%, -50%);
-  /* No filter: a YouTube picture is shown as YouTube serves it (design/DESIGN.md, section 6). */
-}
-
-/* The artist's own picture (the avatar of their YouTube channel) is already square: it is shown
-   whole, with no crop. Some avatars are logos on a white or coloured ground; greyscale and a
-   slightly lowered brightness keep a white one from glaring in the dark grid. Full colour and
-   brightness return on hover, like every other picture. */
-.od-square-pic[data-portrait] img,
-.od-aline-pic[data-portrait] img,
-.od-map-pic[data-portrait] img {
   inset: 0;
   width: 100%;
   height: 100%;
-  margin: 0;
-  object-fit: cover;
-  transform: none;
-  /* No filter: a YouTube picture is shown as YouTube serves it (design/DESIGN.md, section 6). */
+  object-fit: contain;
 }
 
 .od-square:hover .od-square-pic img,

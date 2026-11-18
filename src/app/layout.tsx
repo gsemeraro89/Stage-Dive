@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Permanent_Marker, Special_Elite } from "next/font/google";
-import Form from "next/form";
 import Link from "next/link";
 import { PlayerDock } from "@/components/player/PlayerDock";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
-import { NavLinks } from "@/components/ui/NavLinks";
+import { SiteHeader } from "@/components/zine/SiteHeader";
+import { Wordmark } from "@/components/zine/Wordmark";
+import { issueLabel } from "@/lib/home";
 import { decadeIndex } from "@/lib/queries";
-import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 // Self-hosted by Next.js: no request to Google from the visitor's browser.
@@ -38,27 +39,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* The player wraps every page and is never unmounted, so music survives navigation. */}
         <PlayerProvider>
-          <header className="od-header" data-od="header">
-            <Link href="/" className="od-logo display" data-od="logo" aria-label={`${SITE_NAME} home`}>
-              Full<span>DJSet</span>
-            </Link>
-            <NavLinks decades={decades} />
-            <Form action="/concerts" role="search" className="od-search" data-od="header-search">
-              <label>
-                <span className="meta">Search</span>
-                <input type="search" name="q" placeholder="Metallica, Pinkpop, 1991" maxLength={80} />
-              </label>
-              <button type="submit" className="meta">
-                Go
-              </button>
-            </Form>
-          </header>
+          {/* The top strip (board 04). Phones get the short version (board 07). */}
+          <p className="zn-band zn-issue" data-od="issue-strip">
+            ISSUE {issueLabel(new Date())} /// FREE <span className="zn-issue-long">/// FULL ROCK GIGS, STRAIGHT OFF YOUTUBE </span>
+            /// NO LOGIN<span className="zn-issue-long">, NO NONSENSE</span>
+          </p>
+          <SiteHeader logo={<Wordmark variant="full" width={300} label="" />} decades={decades} />
           {children}
-          <footer className="od-footer meta" data-od="footer">
-            <p>
-              {SITE_NAME} indexes public, embeddable YouTube videos. All rights belong to the artists and channels.
-            </p>
-            <p>{SITE_TAGLINE}.</p>
+          <footer className="zn-foot" data-od="footer">
+            <p>{SITE_NAME} /// every gig here is an official or freely available YouTube upload. We just glue them together.</p>
+            <Link href="/map">FIND YOUR NEXT BAND &gt;&gt;</Link>
           </footer>
           <PlayerDock />
         </PlayerProvider>

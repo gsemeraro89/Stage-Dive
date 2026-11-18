@@ -49,6 +49,8 @@ type TreatedPhoto = Common & {
   focus?: string;
   /** Licence credit, when the licence asks for one: "Photo: Name / Wikimedia Commons, CC BY-SA 4.0". */
   credit?: string;
+  /** Where the credit links to: the page of the original (CC licences ask for it). */
+  creditHref?: string;
 };
 
 export type PhotoFrameProps = YouTubePhoto | TreatedPhoto;
@@ -106,7 +108,17 @@ export function PhotoFrame(props: PhotoFrameProps) {
           )}
         </figcaption>
       ) : (
-        props.credit && <figcaption className="zn-photo-credit zn-label">{props.credit}</figcaption>
+        props.credit && (
+          <figcaption className="zn-photo-credit zn-label">
+            {props.creditHref ? (
+              <a href={props.creditHref} rel="noopener">
+                {props.credit}
+              </a>
+            ) : (
+              props.credit
+            )}
+          </figcaption>
+        )
       )}
     </figure>
   );

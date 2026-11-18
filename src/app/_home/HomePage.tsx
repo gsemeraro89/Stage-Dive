@@ -1,152 +1,506 @@
-// The home page (owner choice, 17 Nov 2026): "Places" with "Four ways in". The catalogue shown
-// through where the concerts were played: a reel of pictures (festivals, special locations, clubs),
-// an atlas of places, the latest uploads, the artists, the four ways in closed by the
-// "If you like ___" search line, and the chart. DESIGN.md section 9, "Home".
+// The homepage (brand book board 04, phones board 07). Sections, top to bottom: gig of the week with
+// its typewriter setlist, Fresh off the copier, Pick a decade, Where it happened, Most played,
+// the night that…, Sort by noise. The issue strip, header, footer and player live in the layout.
+// Data: src/lib/home.ts. Styles: src/styles/home.css. A section with nothing to show is left out.
+//
+// Pictures (design/DESIGN.md section 6): a YouTube thumbnail is shown whole and untouched, with only a
+// play control on it; a band photo (licensed, already photocopied) may be cropped and always carries
+// its credit. A band photo is used once on the page, so four gigs by one band never show it four times.
 import Link from "next/link";
-import { ChartList, LeadGrid } from "@/components/catalogue/ConcertTile";
-import { ArtistSquares } from "@/components/ui/ArtistSquares";
-import { AtlasRows, LatestStrip, PlaceReel, Plate, WordRows, type ReelFrame, type WordRow } from "@/components/ui/Home";
-import { MapSearch } from "@/components/ui/MapSearch";
-import { count2, SectionHead } from "@/components/ui/SectionHead";
-import { CLUB, FESTIVAL, homeData, SETS_HREF, concertsHref, SPECIAL } from "./home-data";
+import type { CSSProperties, ReactNode } from "react";
+import { PlayButton } from "@/components/player/PlayButton";
+import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { formatDuration } from "@/lib/format";
+import { homeData, type HomeData } from "@/lib/home";
+import { toTrack } from "@/lib/player-types";
+import type { BandPhotoView } from "@/lib/photos/view";
+import type { ConcertView } from "@/lib/queries";
+import { compactNumber } from "@/lib/site";
+import { HomeSetlist } from "./HomeSetlist";
 
-// The reel: which venueKind each frame stands for. Special locations lead and come back most often.
-const REEL_ORDER = [SPECIAL, FESTIVAL, CLUB, SPECIAL, SPECIAL, FESTIVAL, CLUB, SPECIAL, SPECIAL, FESTIVAL, CLUB, SPECIAL];
-const REEL_NAMES: Record<string, string> = { [SPECIAL]: "Special locations", [FESTIVAL]: "Festivals", [CLUB]: "Clubs" };
+const mainArtist = (c: ConcertView) => c.artists.find((a) => a.role === "MAIN") ?? c.artists[0];
+const bandName = (c: ConcertView) => mainArtist(c)?.name ?? c.credits;
+
+/** "06.06.2010", or the year when the day is not known. */
+function playedOn(c: ConcertView, shortYear = false): string | null {
+  if (c.performedOn) {
+    const d = new Date(c.performedOn);
+    const year = String(d.getUTCFullYear());
+    return `${String(d.getUTCDate()).padStart(2, "0")}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.${shortYear ? year.slice(2) : year}`;
+  }
+  return c.performedYear ? String(c.performedYear) : null;
+}
+
+/** "PINKPOP 1996 /// 1:14:20" */
+const shortData = (c: ConcertView) =>
+  [[c.venue?.name, c.performedYear].filter(Boolean).join(" "), formatDuration(c.durationSeconds)].filter(Boolean).join(" /// ");
+
+/** Where a headline is cut: one strip for a short name, two for a long one, cut near the middle. */
+function cutName(name: string): string[] {
+  const words = name.split(" ");
+  if (name.length <= 12 || words.length < 2) return [name];
+  let best = 1;
+  let bestGap = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const gap = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length);
+    if (gap < bestGap) [best, bestGap] = [i, gap];
+  }
+  return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+}
+
+/** A play control for a picture: the only thing allowed on a YouTube thumbnail. */
+function PlayOnPicture({ concert }: { concert: ConcertView }) {
+  return (
+    <PlayButton track={toTrack(concert)} className="zn-icon hm-playicon">
+      <PlayGlyph />
+    </PlayButton>
+  );
+}
+
+function YouTubePicture({
+  concert,
+  sizes,
+  children,
+  ...rest
+}: {
+  concert: ConcertView;
+  sizes: string;
+  children?: ReactNode;
+  tilt?: number;
+  shadow?: boolean;
+  eager?: boolean;
+  fixings?: ReactNode;
+  stamp?: ReactNode;
+  className?: string;
+}) {
+  const t = concert.thumbnail;
+  return (
+    <PhotoFrame
+      kind="youtube"
+      src={t.src}
+      srcSet={t.srcSet}
+      width={t.width}
+      height={t.height}
+      sizes={sizes}
+      alt={`Still from the video: ${concert.title}`}
+      control={<PlayOnPicture concert={concert} />}
+      {...rest}
+    >
+      {children}
+    </PhotoFrame>
+  );
+}
+
+function SectionTitle({ id, children, tone = "black" }: { id: string; children: ReactNode; tone?: "black" | "pink" }) {
+  return (
+    <PaperStrip as="h2" size="h2" tone={tone} tilt={-1.2} className="hm-title">
+      <span id={id}>{children}</span>
+    </PaperStrip>
+  );
+}
+
+// ---------- 1. Gig of the week ----------
+
+function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
+  const { concert, setlist, photo } = gig;
+  const track = toTrack(concert);
+  const name = bandName(concert);
+  const place = [concert.venue?.name, concert.city].filter(Boolean).join(", ");
+  const data = [place, playedOn(concert), formatDuration(concert.durationSeconds)].filter(Boolean).join(" /// ");
+  const timed = (setlist?.tracks ?? []).flatMap((t) => (t.time === null ? [] : [{ title: t.title, seconds: t.time }]));
+  const songs = setlist?.tracks.length ?? 0;
+  const meta = [songs ? `${songs} ${songs === 1 ? "song" : "songs"}` : null, playedOn(concert, true)].filter(Boolean).join(" / ");
+  const label = (
+    <PaperStrip hand="marker" tilt={-3}>
+      gig of the week!
+    </PaperStrip>
+  );
+  const strips = (
+    <>
+      <StripHeading as="h1" size="h1" lines={cutName(name)} keyline />
+      <PaperStrip as="p" hand="type" tone="pink" className="hm-hero-data">
+        {data}
+      </PaperStrip>
+    </>
+  );
+
+  return (
+    <section className="hm-hero" aria-label="Gig of the week" data-od="gig-of-the-week" data-photo={photo ? true : undefined}>
+      <div className="hm-hero-main">
+        {photo ? (
+          <PhotoFrame
+            kind="treated"
+            src={photo.src}
+            alt={`${name}, photocopied`}
+            ratio="var(--hero-ratio)"
+            tilt={-1}
+            eager
+            sizes="(min-width: 901px) 58vw, 100vw"
+            credit={photo.credit}
+            creditHref={photo.sourcePage}
+            stamp={label}
+            fixings={
+              <>
+                <Tape at="top-left" tilt={-5} />
+                <Tape at="top-right" tilt={4} />
+              </>
+            }
+            className="hm-hero-photo zn-slap"
+          >
+            {strips}
+          </PhotoFrame>
+        ) : (
+          <YouTubePicture
+            concert={concert}
+            sizes="(min-width: 901px) 58vw, 100vw"
+            tilt={-1}
+            eager
+            stamp={label}
+            fixings={<Tape at="top-left" tilt={-5} />}
+            className="hm-hero-photo zn-slap"
+          >
+            {strips}
+          </YouTubePicture>
+        )}
+        <div className="hm-hero-actions zn-slap">
+          <PlayButton track={track} className="zn-btn hm-play">
+            <PlayGlyph />
+            Play it loud
+          </PlayButton>
+          <span className="zn-marker" style={{ "--tilt": "2deg" } as CSSProperties}>
+            1 click. that’s it.
+          </span>
+          <Link href={`/concerts/${concert.slug}`} className="hm-more">
+            THE GIG&rsquo;S PAGE &gt;&gt;
+          </Link>
+        </div>
+      </div>
+
+      <div className="hm-hero-side">
+        {/* With a band photo up front, the gig itself is shown here: the YouTube picture, whole. */}
+        {photo && (
+          <YouTubePicture concert={concert} sizes="(min-width: 901px) 36vw, 100vw" tilt={1.5} className="hm-hero-tape zn-slap">
+            <PaperStrip hand="type" tone="white" tilt={-1}>
+              STRAIGHT OFF: {concert.channel.name}
+            </PaperStrip>
+          </YouTubePicture>
+        )}
+        <Sheet
+          as="aside"
+          label="Setlist"
+          title="Setlist"
+          meta={meta || undefined}
+          level={2}
+          tilt={photo ? -0.8 : 1.2}
+          fixings={
+            <>
+              <Tape at="top-center" tilt={-2} />
+              <Staple at="top-right" />
+            </>
+          }
+          className="hm-setlist zn-slap"
+        >
+          {timed.length > 0 ? (
+            <>
+              <HomeSetlist track={track} songs={timed} />
+              <p className="zn-marker hm-setlist-hint">click any song = jump straight to it</p>
+            </>
+          ) : setlist ? (
+            <ol className="zn-setlist hm-setlist-plain">
+              {setlist.tracks.map((t, i) => (
+                <li key={`${i}-${t.title}`}>
+                  <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span> {t.title}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="hm-setlist-empty">
+              Still being typed up. Two fingers, one typewriter. The gig plays start to finish without it.
+            </p>
+          )}
+        </Sheet>
+      </div>
+    </section>
+  );
+}
+
+// ---------- 2. Fresh off the copier ----------
+
+function FreshCard({ concert, photo, index }: { concert: ConcertView; photo: BandPhotoView | null; index: number }) {
+  const tilt = [-1.2, 1, -0.8][index % 3];
+  const name = (
+    <PaperStrip tone="white" size="name" className="hm-card-name">
+      <Link href={`/concerts/${concert.slug}`}>{concert.credits}</Link>
+    </PaperStrip>
+  );
+  const sizes = "(min-width: 901px) 30vw, 50vw";
+  return (
+    <li className="hm-card" style={{ "--tilt": `${tilt}deg` } as CSSProperties}>
+      {photo ? (
+        <PhotoFrame
+          kind="treated"
+          src={photo.src}
+          alt={`${bandName(concert)}, photocopied`}
+          ratio="4 / 3"
+          sizes={sizes}
+          credit={photo.credit}
+          creditHref={photo.sourcePage}
+          control={<PlayOnPicture concert={concert} />}
+        >
+          {name}
+        </PhotoFrame>
+      ) : (
+        <YouTubePicture concert={concert} sizes={sizes}>
+          {name}
+        </YouTubePicture>
+      )}
+      <p className="zn-data hm-card-data">{shortData(concert)}</p>
+    </li>
+  );
+}
+
+// ---------- 5. Most played ----------
+
+function ChartRow({ concert, rank, note }: { concert: ConcertView; rank: number; note: string }) {
+  const track = toTrack(concert);
+  const t = concert.thumbnail;
+  return (
+    <li className="hm-row">
+      <span className="hm-row-rank" aria-hidden="true">
+        {rank}
+      </span>
+      {/* The picture is a play button; nothing is drawn on it. */}
+      <PlayButton track={track} className="hm-row-pic">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={t.src} srcSet={t.srcSet} sizes="118px" width={t.width} height={t.height} alt="" loading="lazy" decoding="async" />
+      </PlayButton>
+      <Link href={`/concerts/${concert.slug}`} className="hm-row-text">
+        <span className="od-sr">Number {rank}: </span>
+        <span className="hm-row-name">{concert.credits}</span>
+        <span className="zn-data hm-row-data">
+          {[[concert.venue?.name, concert.performedYear].filter(Boolean).join(", "), note].filter(Boolean).join(" /// ")}
+        </span>
+      </Link>
+      <PlayButton track={track} className="hm-row-play">
+        <PlayGlyph />
+        <span>{formatDuration(concert.durationSeconds)}</span>
+      </PlayButton>
+    </li>
+  );
+}
+
+// ---------- The page ----------
+
+const DECADE_TONES = ["black", "white", "pink"] as const;
+const DECADE_TILTS = [-2, 1.5, -1, 2, -1.5, 1, -2];
+const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
+const NOISE_TONES = ["white", "black", "white", "black"] as const;
 
 export default async function HomePage() {
   const data = await homeData();
-  const { totals } = data;
-  const count = (slug: string) => data.venueKinds.find((s) => s.slug === slug)?.count ?? 0;
-  const kicker = (slug: string) => ({
-    label: `${REEL_NAMES[slug]} · ${count(slug)} ${count(slug) === 1 ? "concert" : "concerts"}`,
-    href: concertsHref({ venueKind: slug }),
-  });
+  const { gigOfTheWeek: gig, fresh, decades, fields, rooms, mostPlayed, mostPlayedBy, nightThat, noise } = data;
 
-  // The reel is filled first, so it gets the best pictures. The cover picks open it.
-  const specialPicks = [...data.picks.cover, ...data.picks.places];
-  const picksFor: Record<string, { id: string }[]> = {
-    [SPECIAL]: specialPicks,
-    [FESTIVAL]: data.picks.festival,
-    [CLUB]: data.picks.club,
+  // A band photo is used once on the page.
+  const used = new Set<string>();
+  if (gig?.photo) used.add(mainArtist(gig.concert)?.slug ?? "");
+  const photoOnce = (c: ConcertView): BandPhotoView | null => {
+    const slug = mainArtist(c)?.slug;
+    if (!slug || used.has(slug) || !data.photos[slug]) return null;
+    used.add(slug);
+    return data.photos[slug];
   };
-  const frames: ReelFrame[] = REEL_ORDER.flatMap((slug) =>
-    data.take(picksFor[slug], 1, slug).map((concert) => ({ concert, kicker: kicker(slug) })),
-  );
+  const freshCards = fresh.map((concert) => ({ concert, photo: photoOnce(concert) }));
 
-  const plates = data.take(data.picks.places, 2, SPECIAL);
-  // The list names places in words, so it may repeat a place that has a picture in the reel.
-  const atlas = data.take(data.picks.places, 14, SPECIAL, true)
-    .filter((s) => !plates.some((p) => p.youtubeId === s.youtubeId))
-    .slice(0, 12);
-
-  const ways: WordRow[] = [
-    {
-      word: "Artists",
-      count: totals.artists,
-      href: "/artists",
-      line: "Every concert of an artist on one page, newest first.",
-      links: data.topArtists.slice(0, 6).map((a) => ({ label: a.name, href: `/artists/${a.slug}` })),
-      more: "A–Z index",
-    },
-    {
-      word: "Festivals",
-      count: totals.festivals,
-      href: "/venues",
-      line: "Main stages, deserts and open airs, concert by concert.",
-      links: data.topVenues.slice(0, 5).map((v) => ({ label: v.name, href: `/venues/${v.slug}` })),
-      more: "All festivals",
-    },
-    {
-      word: "Genres",
-      count: totals.genres,
-      href: "/genres",
-      line: "From punk to shoegaze.",
-      links: data.genres.map((g) => ({ label: g.name, href: `/genres/${g.slug}` })),
-      more: "All genres",
-    },
-    {
-      word: "Venue kinds",
-      count: totals.venueKinds,
-      href: SETS_HREF,
-      line: "Where it was played: a festival, a club, a studio, or somewhere no one had played before.",
-      links: data.venueKinds.map((s) => ({ label: `${s.name} (${s.count})`, href: concertsHref({ venueKind: s.slug }) })),
-      more: "All concerts",
-    },
-  ];
+  const byViews = mostPlayedBy === "views";
+  const loudest = [...noise].reverse().find((g) => g.count > 0)?.slug;
+  const places = [
+    { title: "the fields", rows: fields, thin: "one field so far. more on the way." },
+    { title: "the rooms", rows: rooms, thin: "one room so far. more on the way." },
+  ].filter((p) => p.rows.length > 0);
 
   return (
-    <main data-od="home">
-      <section className="od-places" aria-labelledby="home-title" data-od="hero">
-        <h1 id="home-title">
-          <span className="meta od-acid">Full rock gigs, free, from</span>
-          <span className="display">
-            Festivals. <span className="od-outline">Clubs.</span> Rooftops. <span className="od-outline">Deserts.</span>
-          </span>
-        </h1>
-        <div className="od-places-side">
-          <p className="od-home-pitch">
-            STAGEDIVE is the fanzine of full rock gigs on YouTube: every one free, every one played on this page. Start
-            from a band, a festival, a decade or a genre, or tell us who you like and we find your next band.
-          </p>
-          <div className="od-home-actions">
-            <Link href={SETS_HREF} className="od-play">
-              Browse {totals.concerts} concerts
-            </Link>
-            <Link href="/map" className="od-link">
-              Find your next band
+    <main data-od="home" className="hm">
+      {gig && <GigOfTheWeek gig={gig} />}
+
+      <p className="zn-band hm-band">
+        ONE CLICK AND THE GIG STARTS <span>IT KEEPS PLAYING</span> WHILE YOU DIG THROUGH THE REST
+      </p>
+
+      {freshCards.length > 0 && (
+        <section className="hm-section" aria-labelledby="hm-fresh" data-od="fresh">
+          <div className="hm-head">
+            <SectionTitle id="hm-fresh">Fresh off the copier</SectionTitle>
+            <Link href="/concerts" className="hm-more">
+              ALL <span className="hm-wide">NEW GIGS </span>&gt;&gt;
             </Link>
           </div>
-        </div>
-        <PlaceReel frames={frames} />
-      </section>
+          <ul className="hm-cards">
+            {freshCards.map(({ concert, photo }, i) => (
+              <FreshCard key={concert.id} concert={concert} photo={photo} index={i} />
+            ))}
+          </ul>
+        </section>
+      )}
 
-      {atlas.length > 0 && (
-        <section className="od-section" aria-labelledby="atlas" data-od="atlas-section">
-          <SectionHead
-            id="atlas"
-            title="The atlas"
-            note={`${count2(count(SPECIAL))} special locations`}
-            href={concertsHref({ venueKind: SPECIAL })}
-            linkLabel="All special locations"
-          />
-          <div className={`od-atlas-grid${plates.length === 0 ? " od-atlas-grid--list" : ""}`}>
-            {plates.length > 0 && (
-              <div className="od-atlas-plates">
-                {plates.map((concert) => (
-                  <Plate key={concert.id} concert={concert} sizes="(min-width: 761px) 40vw, 100vw" />
-                ))}
+      {decades.length > 0 && (
+        <section className="hm-section hm-section--cut" aria-labelledby="hm-decades" data-od="decades">
+          <div className="hm-head">
+            <SectionTitle id="hm-decades">Pick a decade</SectionTitle>
+          </div>
+          <ul className="hm-decades" data-few={decades.length <= 4 || undefined} style={{ "--n": Math.min(decades.length, 7) } as CSSProperties}>
+            {decades.map((d, i) => (
+              <li key={d.label}>
+                <Link
+                  href={`/decades/${d.label}`}
+                  className="hm-decade zn-lift"
+                  data-tone={DECADE_TONES[i % 3]}
+                  style={{ "--tilt": `${DECADE_TILTS[i % DECADE_TILTS.length]}deg` } as CSSProperties}
+                >
+                  <span className="hm-decade-top">
+                    <span className="hm-decade-n" aria-hidden="true">
+                      {d.label.slice(2, 4)}
+                    </span>
+                    <span className="od-sr">The {d.label}: </span>
+                    <span className="zn-data">
+                      {d.count} {d.count === 1 ? "gig" : "gigs"}
+                    </span>
+                  </span>
+                  {d.line && <span className="hm-decade-line">{d.line}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {places.length > 0 && (
+        <section className="hm-where" aria-labelledby="hm-where" data-od="where">
+          <div className="hm-head">
+            <SectionTitle id="hm-where" tone="pink">
+              Where it happened
+            </SectionTitle>
+            <Link href="/venues" className="hm-more">
+              ALL <span className="hm-wide">FIELDS + ROOMS </span>&gt;&gt;
+            </Link>
+          </div>
+          <div className="hm-where-grid">
+            {places.map((p) => (
+              <div key={p.title}>
+                <h3 className="zn-marker hm-where-title" data-size="big">
+                  {p.title}
+                </h3>
+                <ul>
+                  {p.rows.map((v) => (
+                    <li key={v.slug}>
+                      <Link href={`/venues/${v.slug}`} className="hm-venue">
+                        <span className="hm-venue-name">{v.name}</span>
+                        <span className="hm-venue-dots" aria-hidden="true" />
+                        <span className="zn-data hm-venue-place">
+                          {[[v.city, v.country].filter(Boolean).join(", "), `${v.count} ${v.count === 1 ? "gig" : "gigs"}`]
+                            .filter(Boolean)
+                            .join(" /// ")}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {p.rows.length === 1 && <p className="hm-where-thin">{p.thin}</p>}
               </div>
-            )}
-            <AtlasRows concerts={atlas} label="Concerts by place" />
+            ))}
           </div>
         </section>
       )}
 
-      <section className="od-section" aria-labelledby="latest" data-od="latest">
-        <LatestStrip newest={data.latest[0]} concerts={totals.concerts} artists={totals.artists} />
-        <SectionHead id="latest" title="Latest uploads" note={count2(data.latest.length)} href={concertsHref({ sort: "newest" })} linkLabel="All concerts" />
-        <LeadGrid concerts={data.latest} label="Latest uploads" />
-      </section>
+      {(mostPlayed.length > 0 || nightThat) && (
+        <div className="hm-section hm-two">
+          {mostPlayed.length > 0 && (
+            <section aria-labelledby="hm-chart" data-od="most-played">
+              <div className="hm-head">
+                <SectionTitle id="hm-chart">{byViews ? "Most watched" : "Most played"}</SectionTitle>
+                <span className="zn-label">{byViews ? "by views on YouTube" : "on this site, last 30 days"}</span>
+              </div>
+              <ol className="hm-rows">
+                {mostPlayed.map(({ concert, plays }, i) => (
+                  <ChartRow
+                    key={concert.id}
+                    concert={concert}
+                    rank={i + 1}
+                    note={byViews ? `${compactNumber(concert.viewCount)} views` : `${plays} ${plays === 1 ? "play" : "plays"}`}
+                  />
+                ))}
+              </ol>
+            </section>
+          )}
 
-      <section className="od-section od-section--bleed" aria-labelledby="artists" data-od="artists">
-        <SectionHead id="artists" title="Artists" note={count2(totals.artists)} href="/artists" linkLabel="A–Z index" />
-        <ArtistSquares artists={data.topArtists} allTile={{ count: totals.artists }} label="Artists" />
-      </section>
-
-      <section className="od-section" aria-labelledby="ways" data-od="ways">
-        <SectionHead id="ways" title="Four ways in" />
-        <WordRows rows={ways} />
-        <div className="od-wordrows-ask">
-          <p className="meta od-muted">Or start from someone you already like</p>
-          <MapSearch artists={data.mapIndex} id="home-map-q" lead />
+          {nightThat ? (
+            <Sheet as="article" tilt={-1} fixings={<Tape at="top-left" tilt={-4} />} className="hm-night" label="The night that…">
+              <span className="zn-marker" data-size="big">
+                the night that…
+              </span>
+              <h2 className="hm-night-head">{nightThat.headline}</h2>
+              <YouTubePicture concert={nightThat.concert} sizes="(min-width: 901px) 36vw, 100vw" />
+              <p className="hm-night-story">{nightThat.story}</p>
+              <PlayButton track={toTrack(nightThat.concert)} className="zn-btn hm-night-play">
+                <PlayGlyph />
+                Play /// {formatDuration(nightThat.concert.durationSeconds)}
+              </PlayButton>
+            </Sheet>
+          ) : (
+            /* No story yet: the house rules take the wall instead (brand book, voice). Never an invented story. */
+            <Sheet as="aside" tilt={-1} fixings={<Tape at="top-left" tilt={-4} />} className="hm-deal" label="How this works">
+              <p className="zn-label">STAGEDIVE /// THE DEAL</p>
+              <p className="hm-deal-text">
+                No login. No algorithm. No &ldquo;recommended for you&rdquo;. We&rsquo;ve got scissors, glue and every full gig we
+                could find. Free, like the flyer on the venue wall.
+              </p>
+              <p className="zn-marker" data-size="big">
+                One click. Jump in.
+              </p>
+            </Sheet>
+          )}
         </div>
-      </section>
+      )}
 
-      <section className="od-section" aria-labelledby="most-watched" data-od="most-watched">
-        <SectionHead id="most-watched" title="Most watched" note="All-time" href={concertsHref({ sort: "most-viewed" })} linkLabel="Full chart" />
-        <ChartList concerts={data.mostWatched} label="Most watched" />
-      </section>
+      {noise.length > 0 && (
+        <section className="hm-section" aria-labelledby="hm-noise" data-od="noise">
+          <div className="hm-head">
+            <SectionTitle id="hm-noise">Sort by noise</SectionTitle>
+            <span className="zn-label">quiet on the left /// loud on the right</span>
+          </div>
+          <ul className="hm-noise">
+            {noise.map((g, i) => {
+              const style = {
+                "--tilt": `${NOISE_TILTS[i % NOISE_TILTS.length]}deg`,
+                "--loud": noise.length > 1 ? i / (noise.length - 1) : 1,
+              } as CSSProperties;
+              return (
+                <li key={g.slug}>
+                  {g.count > 0 ? (
+                    <Link
+                      href={`/genres/${g.slug}`}
+                      className="hm-genre zn-lift"
+                      data-tone={g.slug === loudest ? "pink" : NOISE_TONES[i % NOISE_TONES.length]}
+                      style={style}
+                    >
+                      {g.name}
+                      <span className="hm-genre-n">
+                        {g.count}
+                        <span className="od-sr">{g.count === 1 ? " gig" : " gigs"}</span>
+                      </span>
+                    </Link>
+                  ) : (
+                    <span className="hm-genre" data-tone="none" style={style}>
+                      {g.name}
+                      <span className="od-sr">: no gigs yet</span>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {noise.some((g) => g.count === 0) && <p className="zn-marker hm-noise-note">dashed = nothing on the wall yet</p>}
+        </section>
+      )}
     </main>
   );
 }

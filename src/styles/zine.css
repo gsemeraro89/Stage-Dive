@@ -436,6 +436,7 @@ button.zn-cutout {
   display: block;
   margin-top: 8px;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .zn-photo-credit a {
@@ -1273,5 +1274,271 @@ button.zn-cutout {
 
   .zn-lift:active {
     box-shadow: var(--shadow-press);
+  }
+}
+
+/* ---------- 11. The page frame: issue strip, header, footer, 404 (boards 04 and 07) ---------- */
+
+.zn-issue {
+  margin: 0;
+}
+
+.zn-head {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 14px var(--margin) 12px;
+  border-bottom: var(--frame) solid var(--toner);
+}
+
+/* The wordmark, drawn, never typed. 300px on a desktop, 200px on a phone (min 160). */
+.zn-head-logo {
+  flex: none;
+  display: block;
+  width: clamp(200px, 21vw, 300px);
+  line-height: 0;
+}
+
+.zn-head-logo svg {
+  width: 100%;
+}
+
+.zn-head-toggles {
+  display: none;
+  gap: 6px;
+}
+
+.zn-head-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.zn-head-nav .zn-cutout {
+  white-space: nowrap;
+}
+
+.zn-head-nav a.zn-cutout[data-tone="black"]:hover {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.zn-head-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* "+" after Decades: opens the list of decades. A small black tab, a finger tall. */
+.zn-head-more {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font: 400 20px/1 var(--font-type);
+}
+
+.zn-head-more > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 30px;
+  padding-top: 3px;
+  background: var(--toner);
+}
+
+.zn-head-more:hover > span,
+.zn-head-more[aria-expanded="true"] > span {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+/* The list of decades: a small clean sheet hanging under the label. */
+.zn-head-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  padding: 8px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+}
+
+.zn-head-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zn-head-panel a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: var(--touch);
+  padding: 3px 10px 0;
+  font-size: 16px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.zn-head-panel a:hover,
+.zn-head-panel a[aria-current] {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.zn-head-panel a:focus-visible {
+  outline-offset: -3px;
+}
+
+/* "find a gig:" Dead straight: you type into it. */
+.zn-head-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.zn-head-search label {
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+.zn-head-search input {
+  flex: 1;
+  width: 220px;
+  min-width: 0;
+  height: var(--touch);
+  padding: 4px 12px 0;
+  border: var(--frame) solid var(--toner);
+  background: var(--sheet);
+  color: var(--toner);
+  font: 400 16px/1.2 var(--font-type);
+}
+
+.zn-head-search input::placeholder {
+  color: var(--label-grey);
+  opacity: 1;
+}
+
+.zn-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 20px;
+  margin-top: clamp(40px, 5vw, 72px);
+  padding: 14px var(--margin) 18px;
+  border-top: var(--frame) solid var(--toner);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+.zn-foot p {
+  margin: 0;
+  max-width: 80ch;
+}
+
+.zn-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  letter-spacing: var(--track-data);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.zn-foot a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* 404: "Page torn out." */
+.zn-404 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  padding: clamp(40px, 7vw, 96px) var(--margin) clamp(30px, 4vw, 60px);
+  overflow-x: clip;
+}
+
+.zn-404 p {
+  margin: 0;
+}
+
+.zn-404-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 10px;
+}
+
+/* The nav takes its own row before it gets squeezed. */
+@media (max-width: 1240px) {
+  .zn-head-nav {
+    order: 3;
+    flex: 1 0 100%;
+  }
+}
+
+/* Phones (board 07): wordmark, then two 48px labels that unfold the search and the menu. */
+@media (max-width: 760px) {
+  .zn-issue-long {
+    display: none;
+  }
+
+  .zn-head {
+    padding: 8px var(--margin) 6px;
+  }
+
+  .zn-head-toggles {
+    display: flex;
+  }
+
+  .zn-head-nav,
+  .zn-head-search {
+    display: none;
+    flex: 1 0 100%;
+    padding: 6px 0 8px;
+  }
+
+  .zn-head[data-open="menu"] .zn-head-nav,
+  .zn-head[data-open="search"] .zn-head-search {
+    display: flex;
+  }
+
+  .zn-head-search label {
+    font-size: 17px;
+  }
+
+  .zn-head-item {
+    position: static;
+  }
+
+  .zn-head-panel {
+    top: 100%;
+    left: var(--margin);
+    right: var(--margin);
   }
 }

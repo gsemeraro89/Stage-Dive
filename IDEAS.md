@@ -27,3 +27,14 @@ Each idea: date, the idea, why it fits the zine, effort.
 **Why it fits.** Zines are full of stamps and stickers, and each one is a tiny honest reason to click. They add texture to lists without breaking "one pink thing per view", and they are facts, not hype.
 
 **Effort.** Small. The `CutOut sticker` piece exists. Each stamp is one rule on data we already store (length, date, counts), plus one manual flag for `LOUD`.
+
+---
+
+## 2026-11-18 · after the homepage
+
+### 4. One handwritten line per gig
+**Idea.** The board gives every gig on "Fresh off the copier" a marker line ("17 songs, zero breathers", "Barcelona, after midnight"). The homepage leaves them out today because nothing true is stored to write them from. Add one optional line per gig, written by the owner in the admin (60 characters, lower case), shown in marker under the typed data wherever the gig appears.
+
+**Why it fits.** It is the fourth step of an entry (photo, name strip, typed data, one marker line) and the place where the zine's voice lives. Written by a person, never generated, so it stays honest.
+
+**Effort.** Small. One text field on the concert, one input in the admin; the homepage card and the band page already have the slot.
