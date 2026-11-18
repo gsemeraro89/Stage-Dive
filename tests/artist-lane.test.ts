@@ -406,10 +406,15 @@ describe("data/artist-rules.json", () => {
     expect(new Set(keys).size).toBe(keys.length);
     for (const r of file.include) for (const g of r.genres) expect(SITE_GENRES as readonly string[]).toContain(g);
   });
-  it("keeps The Rolling Stones out (official sources only, owner 17 Nov 2026)", () => {
-    expect(isExcludedArtist(["The Rolling Stones"], file.exclude)).toBe(true);
-    expect(isExcludedArtist(["Rolling Stones"], file.exclude)).toBe(true);
-    expect(isExcludedArtist(["The Stone Roses"], file.exclude)).toBe(false);
+  it("includes The Rolling Stones in the per-artist lane (owner, 18 Nov 2026; excluded since 17 Nov)", () => {
+    expect(isExcludedArtist(["The Rolling Stones"], file.exclude)).toBe(false);
+    expect(findArtistRule(["Rolling Stones"], file.include)?.name).toBe("The Rolling Stones");
+    expect(findArtistRule(["The Rolling Stones"], file.include)?.allConcerts).toBe(true);
+  });
+  it("matches an exclude entry by any spelling, and only that band", () => {
+    const exclude = [{ name: "The Rolling Stones", aka: ["Rolling Stones"], reason: "test", since: "2026-11-17" }];
+    expect(isExcludedArtist(["Rolling Stones"], exclude)).toBe(true);
+    expect(isExcludedArtist(["The Stone Roses"], exclude)).toBe(false);
   });
   it("finds an included band by any spelling and uses its genres when the classifier gives none", () => {
     expect(findArtistRule(["guns and roses"], rules)?.name).toBe("Guns N' Roses");

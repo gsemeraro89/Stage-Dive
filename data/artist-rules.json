@@ -1,5 +1,5 @@
 {
-  "_note": "Bands the owner has confirmed (include) or keeps out (exclude). Included bands' official full concerts are accepted even when the classifier is unsure; their genres here are used when the classifier gives none of ours. allConcerts: true puts the band in the per-artist lane (scripts/artist-lane.ts). The 90 bands below were approved by the owner on 18 Nov 2026 (festival line-ups + the seed bands). Excluded bands are never published, whatever the source. Names are matched ignoring case, accents and symbols; add other spellings to 'aka'.",
+  "_note": "Bands the owner has confirmed (include) or keeps out (exclude). Included bands' official full concerts are accepted even when the classifier is unsure; their genres here are used when the classifier gives none of ours. allConcerts: true puts the band in the per-artist lane (scripts/artist-lane.ts). The 90 bands below were approved by the owner on 18 Nov 2026 (festival line-ups + the seed bands); The Rolling Stones moved from exclude to include the same day (owner). Excluded bands are never published, whatever the source. Names are matched ignoring case, accents and symbols; add other spellings to 'aka'.",
   "include": [
     {
       "name": "Queen",
@@ -684,17 +684,18 @@
         "emo / post-hardcore"
       ],
       "allConcerts": true
-    }
-  ],
-  "exclude": [
+    },
     {
       "name": "The Rolling Stones",
       "aka": [
         "Rolling Stones"
       ],
-      "reason": "No official full shows on YouTube, only fan uploads; official-only rule kept. Revisit once the site has traffic (possibly labelled pro-shot fan uploads with a 'bootleg' sticker).",
-      "since": "2026-11-17"
+      "genres": [
+        "classic rock"
+      ],
+      "allConcerts": true
     }
   ],
+  "exclude": [],
   "groups": []
 }
