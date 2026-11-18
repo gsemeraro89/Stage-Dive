@@ -10,6 +10,8 @@ import {
   isSameConcert,
   parseIsoDuration,
   refreshAction,
+  statusAfterRefresh,
+  blockedRegions,
   resolveDuplicate,
   titleSaysNotAConcert,
   worthRemembering,
@@ -32,6 +34,7 @@ function video(overrides: Partial<VideoFacts> = {}): VideoFacts {
     madeForKids: false,
     liveBroadcastContent: "none",
     uploadStatus: "processed",
+    blockedIn: [],
     ...overrides,
   };
 }
@@ -231,11 +234,21 @@ describe("de-duplication", () => {
 });
 
 describe("refresh (30-day rule)", () => {
-  it("deletes concerts YouTube no longer allows us to show", () => {
-    expect(refreshAction(null).action).toBe("delete");
-    expect(refreshAction({ embeddable: true, privacyStatus: "private" }).action).toBe("delete");
-    expect(refreshAction({ embeddable: false, privacyStatus: "public" }).action).toBe("delete");
-    expect(refreshAction({ embeddable: true, privacyStatus: "public" }).action).toBe("update");
+  const ok = { embeddable: true, privacyStatus: "public", blockedIn: [] as string[] };
+  it("hides concerts YouTube no longer lets us show, instead of deleting them", () => {
+    expect(refreshAction(null)).toEqual({ action: "remove", reason: "deleted from YouTube" });
+    expect(refreshAction({ ...ok, privacyStatus: "private" }).action).toBe("remove");
+    expect(refreshAction({ ...ok, embeddable: false }).action).toBe("remove");
+    expect(refreshAction({ ...ok, blockedIn: ["DE"] })).toEqual({ action: "remove", reason: "blocked in DE" });
+    expect(refreshAction(ok).action).toBe("update");
+  });
+  it("brings a removed concert back when its video returns, but never one the owner hid", () => {
+    expect(statusAfterRefresh("PUBLISHED", "remove")).toBe("REMOVED");
+    expect(statusAfterRefresh("REMOVED", "remove")).toBe("REMOVED");
+    expect(statusAfterRefresh("REMOVED", "update")).toBe("PUBLISHED");
+    expect(statusAfterRefresh("PUBLISHED", "update")).toBe("PUBLISHED");
+    expect(statusAfterRefresh("HIDDEN", "update")).toBe("HIDDEN");
+    expect(statusAfterRefresh("HIDDEN", "remove")).toBe("HIDDEN");
   });
   it("refreshes well inside 30 days", () => {
     const now = new Date("2026-12-06T00:00:00Z");
@@ -353,5 +366,31 @@ describe("channel names and catalogue artists", () => {
     expect(genresWithFallback(["metal"], ["punk"])).toEqual(["metal"]);
     expect(genresWithFallback([], ["punk", "metal", "grunge", "indie"])).toEqual(["punk", "metal", "grunge"]);
     expect(genresWithFallback([], [])).toEqual([]);
+  });
+});
+
+describe("region check (ES, IT, GB, US, DE)", () => {
+  it("reads YouTube's blocked and allowed lists", () => {
+    expect(blockedRegions(undefined)).toEqual([]);
+    expect(blockedRegions({ blocked: ["FR", "DE"] })).toEqual(["DE"]);
+    expect(blockedRegions({ blocked: ["FR"] })).toEqual([]);
+    // An allowed list that leaves a key country out blocks it there.
+    expect(blockedRegions({ allowed: ["NL", "BE", "DE"] })).toEqual(["ES", "IT", "GB", "US"]);
+    expect(blockedRegions({ allowed: ["ES", "IT", "GB", "US", "DE", "FR"] })).toEqual([]);
+  });
+  it("keeps a region-blocked video out, as something that can change", () => {
+    const failures = checkRules(video({ blockedIn: ["GB"] }), DEFAULT_CONFIG);
+    expect(failures).toContain("region-blocked");
+    expect(worthRemembering(["region-blocked"])).toBe(true);
+  });
+  it("reads the restriction from a videos.list item", () => {
+    const item = {
+      id: "IA9xKr_Dmek",
+      snippet: { title: "x", channelId: "c", channelTitle: "c", publishedAt: "2021-01-01T00:00:00Z" },
+      contentDetails: { duration: "PT2H27M", regionRestriction: { blocked: ["IT"] } },
+      statistics: { viewCount: "10" },
+      status: { embeddable: true, privacyStatus: "public", madeForKids: false, uploadStatus: "processed" },
+    };
+    expect(toVideo(item)?.blockedIn).toEqual(["IT"]);
   });
 });

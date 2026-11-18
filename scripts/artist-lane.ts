@@ -8,7 +8,7 @@
 // (b) each artist's official channel (uploads playlist, capped), (c) one YouTube search per artist,
 // never repeated (results stored, so a dry run's searches serve the real run). Free filters come
 // first (src/lib/collector/lane.ts); only official videos that pass them are sent to Claude Haiku.
-// Venue kinds (environment): CLAUDE_BUDGET_USD (default 3), LANE_CLASSIFIER (auto | haiku | haiku+opus),
+// Settings (environment): CLAUDE_BUDGET_USD (default 3), LANE_CLASSIFIER (auto | haiku | haiku+opus),
 // YOUTUBE_UNIT_BUDGET, LANE_SEARCHES (most searches this run; default: as many as the units allow),
 // LANE_CHANNEL_CAP (uploads read per artist channel, default 150), LANE_WAIT_MINUTES (default 40).
 import "dotenv/config";

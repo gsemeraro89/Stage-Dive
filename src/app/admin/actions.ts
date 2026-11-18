@@ -41,6 +41,7 @@ export async function publishReviewItem(formData: FormData) {
       madeForKids: false,
       liveBroadcastContent: "none",
       uploadStatus: "processed",
+      blockedIn: [],
     },
     classification: p.classification,
     channel: { youtubeChannelId: p.channelId, name: p.channel, isOfficial: p.channelKind !== "UNKNOWN" || p.classification.uploaderIsOfficial === true },

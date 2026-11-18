@@ -3,7 +3,7 @@
 // batch videos.list (1 unit per 50 IDs). search.list costs 100 units and is used only for
 // occasional discovery, inside a fixed budget.
 
-import { parseIsoDuration, type VideoFacts } from "./rules";
+import { blockedRegions, parseIsoDuration, type VideoFacts } from "./rules";
 
 const API = "https://www.googleapis.com/youtube/v3";
 
@@ -294,5 +294,6 @@ export function toVideo(item: any): YouTubeVideo | null {
     privacyStatus: item.status?.privacyStatus ?? "unknown",
     madeForKids: item.status?.madeForKids === true,
     uploadStatus: item.status?.uploadStatus ?? "unknown",
+    blockedIn: blockedRegions(item.contentDetails?.regionRestriction),
   };
 }

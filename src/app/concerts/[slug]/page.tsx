@@ -214,7 +214,7 @@ export default async function ConcertPage({ params }: Props) {
             </div>
             {concert.venueKind && (
               <div>
-                <dt className="meta">VenueKind</dt>
+                <dt className="meta">Kind</dt>
                 <dd>{concert.venueKind.name}</dd>
               </div>
             )}

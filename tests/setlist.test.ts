@@ -269,6 +269,7 @@ describe("lookUpSetlist", async () => {
       privacyStatus: "public",
       madeForKids: false,
       uploadStatus: "processed",
+      blockedIn: [],
     }) as never;
   const fakeYt = (comments: { text: string; likeCount: number; authorChannelId: string }[] | Error) => {
     const yt = {

@@ -21,7 +21,7 @@ enum ConcertSource {
 enum ConcertStatus {
   PUBLISHED
   HIDDEN // kept in the database but not shown (e.g. a decision on fan uploads)
-  REMOVED // no longer public/embeddable on YouTube; kept only until the refresh job deletes it
+  REMOVED // gone, private, not embeddable or region-blocked on YouTube: hidden, YouTube data cleared; shown again if it returns
 }
 
 enum CreditRole {

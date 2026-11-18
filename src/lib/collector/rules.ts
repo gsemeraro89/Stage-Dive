@@ -4,7 +4,7 @@
 import { GENRES, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 
-// ---------- Venue kinds that control the rules ----------
+// ---------- Settings that control the rules ----------
 
 export interface CollectorConfig {
   /** Minimum length of a concert, in seconds. Product rule: a full concert is normally at least 40 minutes. */
@@ -43,6 +43,26 @@ export function parseIsoDuration(iso: string | undefined | null): number {
   return d * 86400 + h * 3600 + m * 60 + s;
 }
 
+/**
+ * Countries where every concert must play (owner, 18 Nov 2026): Spain, Italy, UK, US, Germany.
+ * YouTube uses ISO 3166-1 codes, so the UK is "GB".
+ */
+export const KEY_REGIONS = ["ES", "IT", "GB", "US", "DE"] as const;
+
+/**
+ * Key countries where a video is blocked, from videos.list contentDetails.regionRestriction:
+ * either a "blocked" list, or an "allowed" list that leaves a country out. No restriction: [].
+ */
+export function blockedRegions(
+  restriction: { allowed?: string[]; blocked?: string[] } | null | undefined,
+  regions: readonly string[] = KEY_REGIONS,
+): string[] {
+  if (!restriction) return [];
+  const blocked = new Set(restriction.blocked ?? []);
+  const allowed = restriction.allowed ? new Set(restriction.allowed) : null;
+  return regions.filter((r) => blocked.has(r) || (allowed !== null && !allowed.has(r)));
+}
+
 /** The fields of a YouTube video the rules look at (from videos.list). */
 export interface VideoFacts {
   youtubeId: string;
@@ -55,6 +75,8 @@ export interface VideoFacts {
   /** "none" for a normal video; "live" or "upcoming" for a broadcast that is not over. */
   liveBroadcastContent: string;
   uploadStatus: string;
+  /** Key countries (KEY_REGIONS) where YouTube blocks the video. Empty: playable in all of them. */
+  blockedIn: string[];
 }
 
 export type RuleFailure =
@@ -65,6 +87,7 @@ export type RuleFailure =
   | "made-for-kids"
   | "live-or-upcoming"
   | "not-processed"
+  | "region-blocked"
   | "not-a-concert-title";
 
 /**
@@ -88,6 +111,7 @@ export function checkRules(video: VideoFacts, config: CollectorConfig): RuleFail
   if (video.madeForKids) failures.push("made-for-kids");
   if (video.liveBroadcastContent !== "none") failures.push("live-or-upcoming");
   if (video.uploadStatus !== "processed") failures.push("not-processed");
+  if (video.blockedIn.length) failures.push("region-blocked");
   if (video.durationSeconds < config.minDurationSeconds) failures.push("too-short");
   if (video.viewCount < config.viewThreshold) failures.push("below-view-threshold");
   if (titleSaysNotAConcert(video.title)) failures.push("not-a-concert-title");
@@ -95,7 +119,14 @@ export function checkRules(video: VideoFacts, config: CollectorConfig): RuleFail
 }
 
 /** Failures that can go away later (more views, a lower threshold, a live stream that ended...). */
-const CAN_CHANGE: RuleFailure[] = ["below-view-threshold", "not-embeddable", "not-public", "live-or-upcoming", "not-processed"];
+const CAN_CHANGE: RuleFailure[] = [
+  "below-view-threshold",
+  "not-embeddable",
+  "not-public",
+  "live-or-upcoming",
+  "not-processed",
+  "region-blocked",
+];
 
 /**
  * Whether a video that failed the rules is worth remembering for a cheap later look (long_videos):
@@ -312,17 +343,34 @@ export function resolveDuplicate(existing: ConcertIdentity, candidate: ConcertId
 
 // ---------- 6. Refresh (YouTube rule 4: refresh or delete stored data at least every 30 days) ----------
 
-export type RefreshAction = "update" | "delete";
+/**
+ * "remove": the video is gone, private, not embeddable or blocked in a key country. That is normal
+ * (takedowns, livestreams kept "for a time"; docs/SUPPLY-CHECK.md): the concert is hidden with status
+ * REMOVED, its YouTube data is cleared, and it comes back by itself if the video does.
+ */
+export type RefreshAction = "update" | "remove";
 
 /** What to do with a stored concert after asking YouTube about it again. `null` = YouTube no longer has it. */
 export function refreshAction(
-  video: Pick<VideoFacts, "embeddable" | "privacyStatus"> | null,
+  video: Pick<VideoFacts, "embeddable" | "privacyStatus" | "blockedIn"> | null,
 ): { action: RefreshAction; reason: string } {
-  if (!video) return { action: "delete", reason: "deleted from YouTube" };
-  if (video.privacyStatus !== "public") return { action: "delete", reason: `now ${video.privacyStatus}` };
-  if (!video.embeddable) return { action: "delete", reason: "embedding switched off" };
+  if (!video) return { action: "remove", reason: "deleted from YouTube" };
+  if (video.privacyStatus !== "public") return { action: "remove", reason: `now ${video.privacyStatus}` };
+  if (!video.embeddable) return { action: "remove", reason: "embedding switched off" };
+  if (video.blockedIn.length) return { action: "remove", reason: `blocked in ${video.blockedIn.join(", ")}` };
   return { action: "update", reason: "still public and embeddable" };
 }
+
+/**
+ * The concert's status after a refresh. A removed video that is back is shown again; a concert the
+ * owner hid stays hidden either way.
+ */
+export function statusAfterRefresh(current: ConcertStatusName, action: RefreshAction): ConcertStatusName {
+  if (current === "HIDDEN") return "HIDDEN";
+  return action === "remove" ? "REMOVED" : "PUBLISHED";
+}
+
+export type ConcertStatusName = "PUBLISHED" | "HIDDEN" | "REMOVED";
 
 /** Concerts due for a refresh: last refreshed more than `days` ago (kept below 30 for a safety margin). */
 export function isDueForRefresh(lastRefreshed: Date, now: Date, days = 25): boolean {

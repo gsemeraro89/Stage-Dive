@@ -84,31 +84,37 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
       }
 
       for (const concert of seed.concerts) {
-        const data = {
+        // Our own facts about the concert: re-applied on every run, so edits to the seed file show up.
+        const ours = {
           slug: concert.slug,
-          title: concert.title,
-          durationSeconds: concert.durationSeconds,
-          viewCount: concert.viewCount,
-          publishedAt: concert.publishedAt,
           performedYear: concert.performedYear,
           performedOn: concert.performedOn,
           city: concert.city,
           country: concert.country,
           writeUp: concert.writeUp,
-          embeddable: true,
-          privacyStatus: "public",
-          ytCheckedAt: concert.checkedAt,
-          ytRefreshedAt: concert.checkedAt,
           channelId: channelIds.get(concert.channelName)!,
           venueId: concert.venueSlug ? venueIds.get(concert.venueSlug)! : null,
           venueKindId: venueKindIds.get(concert.venueKind)!,
           tourId: concert.tourSlug ? tourIds.get(concert.tourSlug)! : null,
         };
+        // What YouTube said when the seed was checked: written only on first import. After that the
+        // nightly refresh owns it (30-day rule), so a re-run never brings back stale titles or views,
+        // or shows a video the refresh found removed.
+        const youtube = {
+          title: concert.title,
+          durationSeconds: concert.durationSeconds,
+          viewCount: concert.viewCount,
+          publishedAt: concert.publishedAt,
+          embeddable: true,
+          privacyStatus: "public",
+          ytCheckedAt: concert.checkedAt,
+          ytRefreshedAt: concert.checkedAt,
+        };
         // status and curated are only set on first import, so later edits by the owner survive a re-run.
         const row = await tx.concert.upsert({
           where: { youtubeId: concert.youtubeId },
-          create: { youtubeId: concert.youtubeId, source: "SEED", curated: true, status: "PUBLISHED", ...data },
-          update: data,
+          create: { youtubeId: concert.youtubeId, source: "SEED", curated: true, status: "PUBLISHED", ...ours, ...youtube },
+          update: ours,
         });
 
         await tx.concertArtist.deleteMany({ where: { concertId: row.id } });

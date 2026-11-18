@@ -1,12 +1,15 @@
 // YouTube rule 4 (CLAUDE.md): stored YouTube data must be refreshed or deleted at least every 30 days.
 // This job asks YouTube again about every concert last refreshed 25+ days ago (all of them with --all),
-// updates title, views and length, and deletes concerts that became private, deleted or non-embeddable.
+// updates title, views and length. Concerts whose video became private, deleted, non-embeddable or
+// blocked in a key country are hidden (status REMOVED, YouTube data cleared), not deleted: that is a
+// normal outcome, not an error, and they come back by themselves if the video does.
 // It also records each concert's channel ID and marks official artist channels for the collector.
 // Run with: npm run refresh [-- --all]
 import "dotenv/config";
 import { appendFile } from "node:fs/promises";
 import { createPrismaClient } from "../src/lib/db";
-import { isDueForRefresh, refreshAction } from "../src/lib/collector/rules";
+import { Prisma } from "../src/generated/prisma/client";
+import { isDueForRefresh, refreshAction, statusAfterRefresh } from "../src/lib/collector/rules";
 import { expireOldData } from "../src/lib/collector/store";
 import { QuotaBudgetExceeded, YouTubeClient } from "../src/lib/collector/youtube";
 import { SetlistExtractor } from "../src/lib/setlist/extract";
@@ -22,7 +25,10 @@ const now = new Date();
 const stats = {
   checked: 0,
   updated: 0,
-  deleted: [] as string[],
+  /** Concerts hidden in this run because their video is gone, private, not embeddable or region-blocked. */
+  removed: [] as string[],
+  /** Removed concerts whose video is back. */
+  restored: [] as string[],
   artistChannels: 0,
   /** Concerts with a setlist after this run, and concerts whose setlist was dropped because it disappeared. */
   withSetlist: 0,
@@ -40,22 +46,46 @@ try {
   const concerts = await db.concert.findMany({
     include: { channel: true, credits: { where: { role: "MAIN" }, include: { artist: true } } },
   });
-  // Due for the 30-day refresh, or never checked for a setlist (e.g. the collector ran out of quota).
-  const due = concerts.filter((s) => all || isDueForRefresh(s.ytRefreshedAt, now) || !s.setlistCheckedAt);
+  // Due for the 30-day refresh, never checked for a setlist (e.g. the collector ran out of quota), or
+  // removed earlier (checked every night, so a video that comes back is shown again quickly).
+  const due = concerts.filter(
+    (s) => all || s.status === "REMOVED" || isDueForRefresh(s.ytRefreshedAt, now) || !s.setlistCheckedAt,
+  );
   const facts = await yt.videos(due.map((s) => s.youtubeId));
 
   for (const concert of due) {
     stats.checked++;
     const video = facts.get(concert.youtubeId) ?? null;
     const { action, reason } = refreshAction(video);
-    if (action === "delete") {
-      await db.concert.delete({ where: { id: concert.id } });
-      stats.deleted.push(`${concert.slug} (${reason})`);
+    const status = statusAfterRefresh(concert.status, action);
+    if (action === "remove") {
+      // Normal, not an error: hide it and clear what YouTube gave us (rule 4). Our own text, venue,
+      // date and genres stay, so it can come back as it was.
+      if (concert.status !== "REMOVED") stats.removed.push(`${concert.slug} (${reason})`);
+      await db.concert.update({
+        where: { id: concert.id },
+        data: {
+          status,
+          title: "",
+          viewCount: 0,
+          durationSeconds: 0,
+          thumbnailUrl: null,
+          setlist: Prisma.DbNull,
+          setlistSource: null,
+          setlistCheckedAt: now,
+          embeddable: video?.embeddable ?? false,
+          privacyStatus: video?.privacyStatus ?? "deleted",
+          ytCheckedAt: now,
+          ytRefreshedAt: now,
+        },
+      });
       continue;
     }
+    if (concert.status === "REMOVED" && status === "PUBLISHED") stats.restored.push(concert.slug);
     await db.concert.update({
       where: { id: concert.id },
       data: {
+        status,
         title: video!.title,
         viewCount: video!.viewCount,
         durationSeconds: video!.durationSeconds,
@@ -113,6 +143,6 @@ console.log(JSON.stringify(stats, null, 2));
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(
     process.env.GITHUB_STEP_SUMMARY,
-    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · deleted: ${stats.deleted.length}\n${stats.deleted.map((d) => `  - ${d}`).join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Setlists: ${stats.withSetlist} concerts have one · removed (gone from YouTube): ${stats.setlistsRemoved} · not checked (quota): ${stats.setlistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
+    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · hidden as removed: ${stats.removed.length} · back: ${stats.restored.length}\n${[...stats.removed.map((d) => `  - removed: ${d}`), ...stats.restored.map((d) => `  - back: ${d}`)].join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Setlists: ${stats.withSetlist} concerts have one · removed (gone from YouTube): ${stats.setlistsRemoved} · not checked (quota): ${stats.setlistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
   );
 }

@@ -24,6 +24,7 @@ function ytVideo(overrides: Partial<YouTubeVideo> = {}): YouTubeVideo {
     madeForKids: false,
     liveBroadcastContent: "none",
     uploadStatus: "processed",
+    blockedIn: [],
     ...overrides,
   };
 }
