@@ -48,17 +48,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const SORTS = { year: "by year", length: "by length", watched: "most watched" } as const;
+const SORTS = { year: "newest first", length: "by length", watched: "most watched" } as const;
 type Sort = keyof typeof SORTS;
 
 function sorted(concerts: ConcertView[], sort: Sort): ConcertView[] {
   const list = [...concerts];
   if (sort === "length") return list.sort((a, b) => b.durationSeconds - a.durationSeconds || a.id - b.id);
   if (sort === "watched") return list.sort((a, b) => b.viewCount - a.viewCount || a.id - b.id);
-  // Chronological (owner, 18 Nov 2026): by year, then by the day it was played; a gig known only by
-  // its year comes first in that year.
+  // Newest first (owner, 18 Nov 2026): by year, then by the day it was played; a gig known only by its
+  // year comes last in that year, and one with no year at the very end.
   const day = (c: ConcertView) => c.performedOn?.getTime() ?? -Infinity;
-  return list.sort((a, b) => (a.performedYear ?? 9999) - (b.performedYear ?? 9999) || day(a) - day(b) || a.id - b.id);
+  return list.sort((a, b) => (b.performedYear ?? -1) - (a.performedYear ?? -1) || day(b) - day(a) || a.id - b.id);
 }
 
 /** Gigs shown before "Show more" (owner, 18 Nov 2026). */
@@ -220,7 +220,7 @@ export default async function ArtistPage({ params, searchParams }: Props) {
                       <span key={s}>
                         {i > 0 && " /// "}
                         {s === sort ? (
-                          <span aria-current="true">{s === "year" ? "sorted by year" : SORTS[s]}</span>
+                          <span aria-current="true">{s === "year" ? "newest first" : SORTS[s]}</span>
                         ) : (
                           <Link href={s === "year" ? `/artists/${artist.slug}` : `/artists/${artist.slug}?sort=${s}`} scroll={false}>
                             {SORTS[s]}
