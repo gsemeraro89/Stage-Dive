@@ -1,6 +1,6 @@
 // Artist genres from MusicBrainz (open data, CC0), an independent check on the classifier.
 // MusicBrainz asks for at most one request per second and a descriptive User-Agent.
-import { isElectronicGenreList } from "./rules";
+import { isRockGenreList } from "./rules";
 
 const API = "https://musicbrainz.org/ws/2";
 const USER_AGENT = "FullDJSet/0.1 (+https://opendecks-bc0h.onrender.com)";
@@ -168,15 +168,15 @@ export interface IdentityCandidate {
 
 /**
  * Which of several MusicBrainz artists with exactly this name is ours (ANNA, Quest, Dixon...): the one
- * whose genres are electronic; among several electronic ones, the only one with a YouTube channel.
- * A single namesake with no genres at all is taken; one whose genres are clearly not electronic is not.
- * Null when it cannot be told: the owner can then concert "mbid" in data/artist-rules.json.
+ * whose genres are rock (rules.ts isRockGenreList); among several rock ones, the only one with a YouTube channel.
+ * A single namesake with no genres at all is taken; one whose genres are clearly not rock is not.
+ * Null when it cannot be told: the owner can then set "mbid" in data/artist-rules.json.
  */
 export function pickArtist(candidates: IdentityCandidate[]): IdentityCandidate | null {
-  const electronic = candidates.filter((c) => c.genres.length > 0 && isElectronicGenreList(c.genres));
-  if (electronic.length === 1) return electronic[0];
-  if (electronic.length > 1) {
-    const withChannel = electronic.filter((c) => c.youtube);
+  const rock = candidates.filter((c) => c.genres.length > 0 && isRockGenreList(c.genres));
+  if (rock.length === 1) return rock[0];
+  if (rock.length > 1) {
+    const withChannel = rock.filter((c) => c.youtube);
     return withChannel.length === 1 ? withChannel[0] : null;
   }
   return candidates.length === 1 && candidates[0].genres.length === 0 ? candidates[0] : null;

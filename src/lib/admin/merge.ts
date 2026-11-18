@@ -73,7 +73,7 @@ export async function rejectReviewVideos(db: PrismaClient, youtubeIds: string[])
     where: { status: "PENDING", youtubeId: { in: youtubeIds } },
     data: { status: "REJECTED", decidedAt: new Date() },
   });
-  for (const id of youtubeIds) await recordDecision(db, id, "NOT_ELECTRONIC", "rejected by owner");
+  for (const id of youtubeIds) await recordDecision(db, id, "NOT_ROCK", "rejected by owner");
   return closed.count;
 }
 

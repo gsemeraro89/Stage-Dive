@@ -1,5 +1,5 @@
-// The per-artist lane (owner, 17 Nov 2026): free filters, official channels, budget cap, search order,
-// Haiku/Opus agreement. Pure tests, plus a few database tests (TEST_DATABASE_URL).
+// The per-artist lane: free filters, official channels, budget cap, search order, Haiku/Opus
+// agreement. Pure tests, plus a few database tests (TEST_DATABASE_URL).
 import "dotenv/config";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -30,83 +30,105 @@ import {
   type OfficialChannels,
 } from "../src/lib/collector/lane";
 import { pickArtist, youtubeRefFromRelations } from "../src/lib/collector/musicbrainz";
-import { decide, DEFAULT_CONFIG, findArtistRule, genresForApprovedArtist, type ArtistRule, type Classification } from "../src/lib/collector/rules";
+import {
+  decide,
+  DEFAULT_CONFIG,
+  findArtistRule,
+  genresForApprovedArtist,
+  isExcludedArtist,
+  type ArtistExclusion,
+  type ArtistRule,
+  type Classification,
+} from "../src/lib/collector/rules";
 import { YouTubeClient } from "../src/lib/collector/youtube";
 
-const rules = JSON.parse(readFileSync("data/artist-rules.json", "utf8")).include as ArtistRule[];
+// A test list in the shape of data/artist-rules.json, with the names that are hard to match:
+// accents, slashes, apostrophes, "&", abbreviations and short common words.
+const rules: ArtistRule[] = [
+  { name: "The Cure", genres: ["post-punk"], allConcerts: true },
+  { name: "Metallica", genres: ["metal"], allConcerts: true },
+  { name: "Foo Fighters", genres: ["alternative"], allConcerts: true },
+  { name: "Mötley Crüe", genres: ["hard rock"], allConcerts: true },
+  { name: "Guns N' Roses", aka: ["Guns and Roses"], genres: ["hard rock"], allConcerts: true },
+  { name: "Sigur Rós", genres: ["indie"], allConcerts: true },
+  { name: "AC/DC", genres: ["hard rock"], allConcerts: true },
+  { name: "Echo & the Bunnymen", genres: ["post-punk"], allConcerts: true },
+  { name: "Queens of the Stone Age", aka: ["QOTSA"], genres: ["stoner"], allConcerts: true },
+  { name: "Ride", genres: ["shoegaze"], allConcerts: true },
+  { name: "Rammstein", genres: ["metal"] },
+];
 const rule = (name: string) => rules.find((r) => r.name === name)!;
 const names = (name: string) => [rule(name).name, ...(rule(name).aka ?? [])];
 
 describe("artist name in the title", () => {
   it("ignores accents, case and punctuation", () => {
-    expect(matchText("Rødhåd b2b Kölsch @ Berghain!")).toBe("rodhad b2b kolsch berghain");
-    expect(titleHasArtist("RODHAD live at Dekmantel 2023", names("Rødhåd"))).toBe(true);
-    expect(titleHasArtist("KÖLSCH | Cercle", names("Kölsch"))).toBe(true);
-    expect(titleHasArtist("Kolsch at Awakenings", names("Kölsch"))).toBe(true);
-    expect(titleHasArtist("Hector Oaks @ Tresor", names("Héctor Oáks"))).toBe(true);
-    expect(titleHasArtist("CLARA CUVE - Verknipt 2024", names("Clara Cuvé"))).toBe(true);
-    expect(titleHasArtist("Ogazon at Monegros", names("Ogazón"))).toBe(true);
+    expect(matchText("Mötley Crüe & Sigur Rós @ Wembley!")).toBe("motley crue and sigur ros wembley");
+    expect(titleHasArtist("MOTLEY CRUE live at Donington 1984", names("Mötley Crüe"))).toBe(true);
+    expect(titleHasArtist("Sigur Ros | Roskilde 2008", names("Sigur Rós"))).toBe(true);
+    expect(titleHasArtist("Guns N Roses - Tokyo 1992", names("Guns N' Roses"))).toBe(true);
+    expect(titleHasArtist("AC/DC - Live at Donington", names("AC/DC"))).toBe(true);
   });
 
   it("uses the aka spellings", () => {
-    expect(titleHasArtist("Tale of Us @ Afterlife Tulum", names("Tale Of Us"))).toBe(true);
-    expect(titleHasArtist("Pan Pot - Awakenings Festival", names("Pan-Pot"))).toBe(true);
-    expect(titleHasArtist("Plastikman live at Time Warp", names("Richie Hawtin"))).toBe(true);
-    expect(titleHasArtist("Klangkünstler @ Ruhr in Love", names("Klangkuenstler"))).toBe(true);
+    expect(titleHasArtist("QOTSA live at Rock am Ring", names("Queens of the Stone Age"))).toBe(true);
+    expect(titleHasArtist("Guns and Roses - Paris 1992", names("Guns N' Roses"))).toBe(true);
   });
 
   it("matches a name of several words written as one, and & written out", () => {
-    expect(titleHasArtist("Afterparty #panpot", names("Pan-Pot"))).toBe(true);
-    expect(titleHasArtist("W & W live at Tomorrowland", names("W&W"))).toBe(true);
-    expect(titleHasArtist("W and W - Mainstage", names("W&W"))).toBe(true);
-    expect(titleHasArtist("Dimitri Vegas and Like Mike | Tomorrowland", names("Dimitri Vegas & Like Mike"))).toBe(true);
+    expect(titleHasArtist("ACDC Live at River Plate", names("AC/DC"))).toBe(true);
+    expect(titleHasArtist("#FooFighters at Pinkpop", names("Foo Fighters"))).toBe(true);
+    expect(titleHasArtist("Echo and the Bunnymen - Glastonbury", names("Echo & the Bunnymen"))).toBe(true);
+    expect(titleHasArtist("Echo The Bunnymen - Live 1983", names("Echo & the Bunnymen"))).toBe(true);
   });
 
   it("needs whole words", () => {
-    expect(titleHasArtist("Annabel live in Berlin", names("ANNA"))).toBe(false);
-    expect(titleHasArtist("ANNA at Awakenings", names("ANNA"))).toBe(true);
-    expect(titleHasArtist("Questions about techno", names("Quest"))).toBe(false);
-    expect(titleHasArtist("Joris Voorn - Live at ADE", names("Charlotte de Witte"))).toBe(false);
+    expect(titleHasArtist("Riders on the Storm live", names("Ride"))).toBe(false);
+    expect(titleHasArtist("Ride - live at Primavera 2018", names("Ride"))).toBe(true);
+    expect(titleHasArtist("Metallica - Live at Pinkpop", names("The Cure"))).toBe(false);
   });
 
-  it("finds every lane artist in a b2b title, in list order", () => {
+  it("finds every lane artist in a shared title, in list order", () => {
     const lane = rules.filter((r) => r.allConcerts);
-    expect(artistsInTitle("Adam Beyer b2b Ida Engberg b2b Joseph Capriati", lane).map((r) => r.name)).toEqual(["Adam Beyer", "Joseph Capriati"]);
+    expect(artistsInTitle("Foo Fighters with Metallica - Bridge School", lane).map((r) => r.name)).toEqual(["Metallica", "Foo Fighters"]);
   });
 });
 
 describe("excluded words", () => {
-  it("drops trailers, aftermovies, interviews, documentaries (the collector's list)", () => {
-    expect(excludedTitleWord("Awakenings 2024 Official Aftermovie")).toBe("aftermovie");
-    expect(excludedTitleWord("Amelie Lens interview")).toBe("interview");
+  it("drops the collector's list: trailers, aftermovies, interviews, reactions, covers, tutorials, lyrics, full album", () => {
+    expect(excludedTitleWord("Pinkpop 2024 Official Aftermovie")).toBe("aftermovie");
+    expect(excludedTitleWord("Dave Grohl interview")).toBe("interview");
+    expect(excludedTitleWord("First time reaction to Metallica - One")).toBe("reaction");
+    expect(excludedTitleWord("Fade to Black (cover)")).toBe("cover");
+    expect(excludedTitleWord("Nothing Else Matters guitar tutorial")).toBe("tutorial");
+    expect(excludedTitleWord("Metallica - Enter Sandman (Lyrics)")).toBe("lyrics");
+    expect(excludedTitleWord("Metallica - Master of Puppets (Full Album)")).toBe("full album");
   });
-  it("drops podcasts, albums, compilations, best of, 1 hour", () => {
-    expect(excludedTitleWord("Drumcode Radio Podcast 600")).toBe("podcast");
-    expect(excludedTitleWord("Boris Brejcha - Full Album")).toBe("album");
-    expect(excludedTitleWord("Techno Compilation 2024")).toBe("compilation");
-    expect(excludedTitleWord("Best of Charlotte de Witte 2023")).toBe("best of");
-    expect(excludedTitleWord("1 Hour of Mau P")).toBe("1 hour");
-    expect(excludedTitleWord("Eric Prydz one-hour mix")).toBe("1 hour");
+  it("drops podcasts, compilations, best of, greatest hits", () => {
+    expect(excludedTitleWord("The Metallica Podcast 12")).toBe("podcast");
+    expect(excludedTitleWord("Grunge Compilation 1994")).toBe("compilation");
+    expect(excludedTitleWord("Best of The Cure live")).toBe("best of");
+    expect(excludedTitleWord("Greatest Hits live in Paris")).toBe("greatest hits");
   });
-  it("keeps normal concert titles", () => {
-    expect(excludedTitleWord("Charlotte de Witte @ Tomorrowland 2024 Mainstage")).toBeNull();
-    expect(excludedTitleWord("Boris Brejcha - 2 hours live at Grand Palais")).toBeNull();
-    expect(excludedTitleWord("Ben Klock | Boiler Room Berlin")).toBeNull();
+  it("keeps normal concert titles, also ones that name an album", () => {
+    expect(excludedTitleWord("Metallica - Live at Pinkpop 2008 (Full Concert)")).toBeNull();
+    expect(excludedTitleWord("The Cure plays Disintegration live at Sydney Opera House")).toBeNull();
+    expect(excludedTitleWord("Metallica: Black Album live, Muskegon 1991")).toBeNull();
+    expect(excludedTitleWord("Linkin Park | Rock in Rio Lisboa 2026")).toBeNull();
   });
 });
 
 const channels: OfficialChannels = {
-  listed: new Map([["UCcercle00000000000000", "ELECTRONIC_ONLY"], ["UCboiler00000000000000", "MIXED"]]),
-  artistChannels: new Map([["UCartist00000000000000", "Charlotte de Witte"]]),
+  listed: new Map([["UCpinkpop0000000000000", "ARCHIVE"], ["UClabel00000000000000", "MIXED"]]),
+  artistChannels: new Map([["UCartist00000000000000", "Metallica"]]),
   approved: new Map([["UCold0000000000000000", "UNKNOWN"]]),
 };
 
 describe("official channels", () => {
-  it("accepts our channel list, the artist's own channel and channels already approved", () => {
-    expect(officialChannel("UCcercle00000000000000", channels)).toEqual({ reason: "channel-list", kind: "ELECTRONIC_ONLY" });
-    expect(officialChannel("UCboiler00000000000000", channels)).toEqual({ reason: "channel-list", kind: "MIXED" });
+  it("accepts our channel list, the band's own channel and channels already approved", () => {
+    expect(officialChannel("UCpinkpop0000000000000", channels)).toEqual({ reason: "channel-list", kind: "ARCHIVE" });
+    expect(officialChannel("UClabel00000000000000", channels)).toEqual({ reason: "channel-list", kind: "MIXED" });
     expect(officialChannel("UCartist00000000000000", channels)).toEqual({ reason: "artist-channel", kind: "ARTIST" });
-    // An approved channel of unknown kind is treated as mixed (needs two signals unless the artist is approved).
+    // An approved channel of unknown kind is treated as mixed (needs two signals unless the band is approved).
     expect(officialChannel("UCold0000000000000000", channels)).toEqual({ reason: "approved-channel", kind: "MIXED" });
   });
   it("leaves everything else out (fan uploads)", () => {
@@ -117,19 +139,20 @@ describe("official channels", () => {
 function video(overrides: Partial<LaneVideoFacts> = {}): LaneVideoFacts {
   return {
     youtubeId: "VID00000001",
-    title: "Charlotte de Witte @ Awakenings 2024",
-    channelId: "UCcercle00000000000000",
+    title: "Metallica - Live at Pinkpop 2008",
+    channelId: "UCpinkpop0000000000000",
     durationSeconds: 90 * 60,
     embeddable: true,
     privacyStatus: "public",
     madeForKids: false,
     liveBroadcastContent: "none",
     uploadStatus: "processed",
+    blockedIn: [],
     ...overrides,
   };
 }
 const ctx = (o: Partial<Parameters<typeof laneFilter>[1]> = {}) => ({
-  names: names("Charlotte de Witte"),
+  names: names("Metallica"),
   isConcert: false,
   decided: false,
   channels,
@@ -139,48 +162,49 @@ const ctx = (o: Partial<Parameters<typeof laneFilter>[1]> = {}) => ({
 
 describe("laneFilter (free filters, in the owner's order)", () => {
   it("sends an official full concert to Claude, whatever its views", () => {
-    expect(laneFilter(video(), ctx())).toEqual({ outcome: "classify", official: { reason: "channel-list", kind: "ELECTRONIC_ONLY" } });
+    expect(laneFilter(video(), ctx())).toEqual({ outcome: "classify", official: { reason: "channel-list", kind: "ARCHIVE" } });
   });
   it("skips concerts and decided videos first", () => {
     expect(laneFilter(video({ durationSeconds: 60 }), ctx({ isConcert: true }))).toEqual({ outcome: "drop", reason: "already-a-concert" });
     expect(laneFilter(video(), ctx({ decided: true }))).toEqual({ outcome: "drop", reason: "already-decided" });
   });
-  it("drops on YouTube and length rules before looking at the title", () => {
+  it("drops on YouTube, region and length rules before looking at the title", () => {
     expect(laneFilter(video({ durationSeconds: 39 * 60, title: "trailer" }), ctx())).toEqual({ outcome: "drop", reason: "rule:too-short" });
     expect(laneFilter(video({ embeddable: false }), ctx())).toEqual({ outcome: "drop", reason: "rule:not-embeddable" });
     expect(laneFilter(video({ privacyStatus: "unlisted" }), ctx())).toEqual({ outcome: "drop", reason: "rule:not-public" });
     expect(laneFilter(video({ madeForKids: true }), ctx())).toEqual({ outcome: "drop", reason: "rule:made-for-kids" });
     expect(laneFilter(video({ liveBroadcastContent: "live" }), ctx())).toEqual({ outcome: "drop", reason: "rule:live-or-upcoming" });
     expect(laneFilter(video({ uploadStatus: "uploaded" }), ctx())).toEqual({ outcome: "drop", reason: "rule:not-processed" });
+    expect(laneFilter(video({ blockedIn: ["DE"] }), ctx())).toEqual({ outcome: "drop", reason: "rule:region-blocked" });
   });
-  it("drops a title without the artist's name, then titles with excluded words", () => {
-    expect(laneFilter(video({ title: "Awakenings 2024 aftermovie" }), ctx())).toEqual({ outcome: "drop", reason: "name-not-in-title" });
-    expect(laneFilter(video({ title: "Charlotte de Witte - Awakenings aftermovie" }), ctx())).toEqual({ outcome: "drop", reason: "excluded-word:aftermovie" });
+  it("drops a title without the band's name, then titles with excluded words", () => {
+    expect(laneFilter(video({ title: "Pinkpop 2008 aftermovie" }), ctx())).toEqual({ outcome: "drop", reason: "name-not-in-title" });
+    expect(laneFilter(video({ title: "Metallica - Pinkpop aftermovie" }), ctx())).toEqual({ outcome: "drop", reason: "excluded-word:aftermovie" });
   });
-  it("on the artist's own channel the name may be missing from the title", () => {
-    const own = video({ title: "Live at Awakenings 2024", channelId: "UCartist00000000000000" });
+  it("on the band's own channel the name may be missing from the title", () => {
+    const own = video({ title: "Live at The Metro, Chicago - August 12, 1983", channelId: "UCartist00000000000000" });
     expect(laneFilter(own, ctx({ onOwnChannel: true }))).toEqual({ outcome: "classify", official: { reason: "artist-channel", kind: "ARTIST" } });
   });
-  it("on the artist's own channel a bare title (a gaming or chat stream) is not a concert", () => {
-    const hi = video({ title: "HI!", channelId: "UCartist00000000000000" });
-    expect(laneFilter(hi, ctx({ onOwnChannel: true }))).toEqual({ outcome: "drop", reason: "own-channel-title-not-a-concert" });
-    for (const title of ["Ultra Japan 2024 Mainstage", "Lockdown session at home", "Closing concert @ Printworks", "B2B with Enrico"]) {
+  it("on the band's own channel a bare title (a promo or a chat stream) is not a concert", () => {
+    const promo = video({ title: "Happy holidays from all of us!", channelId: "UCartist00000000000000" });
+    expect(laneFilter(promo, ctx({ onOwnChannel: true }))).toEqual({ outcome: "drop", reason: "own-channel-title-not-a-concert" });
+    for (const title of ["Muskegon, MI - November 1, 1991", "Full show: Yankee Stadium", "#MetallicaMondays: Olympiastadion Munich 2004", "S&M2 concert"]) {
       expect(laneFilter(video({ title, channelId: "UCartist00000000000000" }), ctx({ onOwnChannel: true })).outcome).toBe("classify");
     }
   });
   it("fan uploads go to the report only", () => {
     expect(laneFilter(video({ channelId: "UCfan000000000000000000" }), ctx())).toEqual({ outcome: "report-only" });
   });
-  it("an artist with no readable official channel: any channel may go to Claude (via other channel)", () => {
+  it("a band with no readable official channel: any channel may go to Claude (via other channel)", () => {
     expect(laneFilter(video({ channelId: "UCfan000000000000000000" }), ctx({ otherChannelsOk: true }))).toEqual({
       outcome: "classify",
       official: { reason: "other-channel", kind: "UNKNOWN" },
     });
     // Official channels keep their own kind; the free filters still apply first.
-    expect(laneFilter(video(), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "classify", official: { reason: "channel-list", kind: "ELECTRONIC_ONLY" } });
-    expect(laneFilter(video({ channelId: "UCfan", title: "Some other DJ live" }), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "drop", reason: "name-not-in-title" });
+    expect(laneFilter(video(), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "classify", official: { reason: "channel-list", kind: "ARCHIVE" } });
+    expect(laneFilter(video({ channelId: "UCfan", title: "Some other band live" }), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "drop", reason: "name-not-in-title" });
     expect(laneFilter(video({ channelId: "UCfan", durationSeconds: 1200 }), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "drop", reason: "rule:too-short" });
-    expect(laneFilter(video({ channelId: "UCfan", title: "Charlotte de Witte - best of 2024" }), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "drop", reason: "excluded-word:best of" });
+    expect(laneFilter(video({ channelId: "UCfan", title: "Metallica - best of 2024" }), ctx({ otherChannelsOk: true }))).toEqual({ outcome: "drop", reason: "excluded-word:best of" });
   });
 });
 
@@ -207,8 +231,8 @@ describe("searches: resume order and units", () => {
     expect(searchesThatFit(150)).toBe(0);
     expect(searchesThatFit(50)).toBe(0);
   });
-  it("searches the artist's name in quotes, then 'concert'", () => {
-    expect(searchQuery("Charlotte de Witte")).toBe('"Charlotte de Witte" concert');
+  it("searches the band's name in quotes, then 'full concert'", () => {
+    expect(searchQuery("Metallica")).toBe('"Metallica" full concert');
   });
   it("takes each channel's uploads playlist from YouTube, 50 channels per unit", async () => {
     const calls: string[] = [];
@@ -298,15 +322,15 @@ describe("Haiku or Haiku + Opus", () => {
 });
 
 describe("Haiku/Opus agreement", () => {
-  const cls = (o: Partial<Classification>): Classification => ({ isFullConcert: true, isElectronic: true, confidence: 0.9, genres: ["Techno"], mainArtists: ["X"], ...o });
-  const d = (c: Classification) => decide({ channelKind: "ELECTRONIC_ONLY", classification: c, textGenres: [], artistGenres: null }, DEFAULT_CONFIG);
+  const cls = (o: Partial<Classification>): Classification => ({ isFullConcert: true, isRock: true, confidence: 0.9, genres: ["metal"], mainArtists: ["X"], ...o });
+  const d = (c: Classification) => decide({ channelKind: "ARCHIVE", official: true, classification: c, textGenres: [], artistGenres: null }, DEFAULT_CONFIG);
 
   it("compares the accept/reject outcome of the same decide()", () => {
     const pairs = [
       { youtubeId: "a", title: "A", opus: d(cls({})), haiku: d(cls({ confidence: 0.8 })) }, // both accept
       { youtubeId: "b", title: "B", opus: d(cls({ isFullConcert: false })), haiku: d(cls({ isFullConcert: false, confidence: 0.5 })) }, // both reject (different reasons)
       { youtubeId: "c", title: "C", opus: d(cls({})), haiku: d(cls({ confidence: 0.6 })) }, // Haiku unsure
-      { youtubeId: "d", title: "D", opus: d(cls({ isElectronic: false })), haiku: d(cls({})) }, // Haiku too generous
+      { youtubeId: "d", title: "D", opus: d(cls({ isRock: false })), haiku: d(cls({})) }, // Haiku too generous
     ];
     const r = agreement(pairs);
     expect(r).toMatchObject({ total: 4, agree: 2, rate: 0.5 });
@@ -318,24 +342,24 @@ describe("Haiku/Opus agreement", () => {
   });
 });
 
-describe("artist channels found by @handle", () => {
+describe("band channels found by @handle", () => {
   it("tries the name in plain letters, no spaces", () => {
-    expect(handleFor("Charlotte de Witte")).toBe("@charlottedewitte");
-    expect(handleFor("Rødhåd")).toBe("@rodhad");
-    expect(handleFor("Tale Of Us")).toBe("@taleofus");
+    expect(handleFor("Metallica")).toBe("@metallica");
+    expect(handleFor("Mötley Crüe")).toBe("@motleycrue");
+    expect(handleFor("Queens of the Stone Age")).toBe("@queensofthestoneage");
   });
-  it("accepts it only when the title is the artist's name and the channel has real content", () => {
-    expect(handleChannelMatches({ title: "Charlotte de Witte", videoCount: 120 }, names("Charlotte de Witte"))).toBe(true);
-    expect(handleChannelMatches({ title: "CHARLOTTE DE WITTE OFFICIAL", videoCount: 40 }, names("Charlotte de Witte"))).toBe(true);
-    expect(handleChannelMatches({ title: "Rodhad", videoCount: 30 }, names("Rødhåd"))).toBe(true);
-    expect(handleChannelMatches({ title: "Charlotte de Witte", videoCount: 3 }, names("Charlotte de Witte"))).toBe(false);
-    expect(handleChannelMatches({ title: "Charlotte de Witte - Topic", videoCount: 300 }, names("Charlotte de Witte"))).toBe(false);
-    expect(handleChannelMatches({ title: "Charlotte de Witte fan page", videoCount: 300 }, names("Charlotte de Witte"))).toBe(false);
-    expect(handleChannelMatches({ title: "Anna Cooking", videoCount: 300 }, names("ANNA"))).toBe(false);
+  it("accepts it only when the title is the band's name and the channel has real content", () => {
+    expect(handleChannelMatches({ title: "Metallica", videoCount: 120 }, names("Metallica"))).toBe(true);
+    expect(handleChannelMatches({ title: "METALLICA OFFICIAL", videoCount: 40 }, names("Metallica"))).toBe(true);
+    expect(handleChannelMatches({ title: "Motley Crue", videoCount: 30 }, names("Mötley Crüe"))).toBe(true);
+    expect(handleChannelMatches({ title: "Metallica", videoCount: 3 }, names("Metallica"))).toBe(false);
+    expect(handleChannelMatches({ title: "Metallica - Topic", videoCount: 300 }, names("Metallica"))).toBe(false);
+    expect(handleChannelMatches({ title: "Metallica fan page", videoCount: 300 }, names("Metallica"))).toBe(false);
+    expect(handleChannelMatches({ title: "Ride Cycling", videoCount: 300 }, names("Ride"))).toBe(false);
   });
   it("recognises YouTube's automatic Topic channels", () => {
-    expect(isTopicChannel("Kobosil - Topic")).toBe(true);
-    expect(isTopicChannel("Kobosil")).toBe(false);
+    expect(isTopicChannel("The Cure - Topic")).toBe(true);
+    expect(isTopicChannel("The Cure")).toBe(false);
   });
 });
 
@@ -352,16 +376,16 @@ describe("sources of a pass", () => {
 
 describe("namesakes on MusicBrainz", () => {
   const c = (mbid: string, genres: string[], youtube = false) => ({ mbid, genres, youtube: youtube ? { id: `UC${mbid.padEnd(22, "0")}` } : null });
-  it("takes the one electronic artist among namesakes", () => {
-    expect(pickArtist([c("rock", ["rock", "indie"]), c("dj", ["techno"]), c("pop", ["pop"])])?.mbid).toBe("dj");
+  it("takes the one rock band among namesakes", () => {
+    expect(pickArtist([c("dj", ["techno"]), c("band", ["rock", "indie"]), c("pop", ["pop"])])?.mbid).toBe("band");
   });
-  it("among several electronic namesakes, only the one with a YouTube channel", () => {
-    expect(pickArtist([c("a", ["house"]), c("b", ["techno"], true)])?.mbid).toBe("b");
-    expect(pickArtist([c("a", ["house"], true), c("b", ["techno"], true)])).toBeNull();
+  it("among several rock namesakes, only the one with a YouTube channel", () => {
+    expect(pickArtist([c("a", ["punk"]), c("b", ["metal"], true)])?.mbid).toBe("b");
+    expect(pickArtist([c("a", ["punk"], true), c("b", ["metal"], true)])).toBeNull();
   });
-  it("a single namesake without genres is taken; one that is clearly not electronic is not", () => {
+  it("a single namesake without genres is taken; one that is clearly not rock is not", () => {
     expect(pickArtist([c("only", [])])?.mbid).toBe("only");
-    expect(pickArtist([c("band", ["rock"])])).toBeNull();
+    expect(pickArtist([c("dj", ["techno"])])).toBeNull();
     expect(pickArtist([c("x", []), c("y", [])])).toBeNull();
   });
   it("reads the YouTube channel among an artist's links", () => {
@@ -375,12 +399,22 @@ describe("namesakes on MusicBrainz", () => {
   });
 });
 
-describe("data/artist-rules.json (owner, 17 Nov 2026)", () => {
-  const lane = rules.filter((r) => r.allConcerts);
-  it("has the 90 lane artists, once each", () => {
-    expect(lane).toHaveLength(90);
-    const keys = rules.map((r) => matchText(r.name));
+describe("data/artist-rules.json", () => {
+  const file = JSON.parse(readFileSync("data/artist-rules.json", "utf8")) as { include: ArtistRule[]; exclude: ArtistExclusion[] };
+  it("lists each band once, with genres from our list", () => {
+    const keys = file.include.map((r) => matchText(r.name));
     expect(new Set(keys).size).toBe(keys.length);
+    for (const r of file.include) for (const g of r.genres) expect(SITE_GENRES as readonly string[]).toContain(g);
+  });
+  it("keeps The Rolling Stones out (official sources only, owner 17 Nov 2026)", () => {
+    expect(isExcludedArtist(["The Rolling Stones"], file.exclude)).toBe(true);
+    expect(isExcludedArtist(["Rolling Stones"], file.exclude)).toBe(true);
+    expect(isExcludedArtist(["The Stone Roses"], file.exclude)).toBe(false);
+  });
+  it("finds an included band by any spelling and uses its genres when the classifier gives none", () => {
+    expect(findArtistRule(["guns and roses"], rules)?.name).toBe("Guns N' Roses");
+    expect(genresForApprovedArtist([], rule("Ride"))).toEqual(["shoegaze"]);
+    expect(GENRES).toContain("shoegaze");
   });
 });
 
@@ -403,7 +437,7 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.classifierBatch.deleteMany();
   });
 
-  const answer = { isFullConcert: true, notConcertReason: "", isElectronic: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", venueKind: "Club" as const, genres: ["Techno" as const], liveAct: false };
+  const answer = { isFullConcert: true, notConcertReason: "", isRock: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", venueKind: "Club" as const, genres: ["Techno" as const], liveAct: false };
 
   it("stores Haiku answers by prompt version and reuses them (a dry run's answers serve the real run)", async () => {
     await haiku.storeLaneAnswer(db, "LANEVID0001", "classify", haiku.LANE_CLASSIFY_VERSION, answer);

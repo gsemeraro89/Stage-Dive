@@ -15,6 +15,10 @@ import {
   decide,
   channelMatches,
   findArtistRule,
+  isExcludedArtist,
+  sourceRank,
+  inReadingOrder,
+  type ArtistExclusion,
   genresForApprovedArtist,
   expandGroups,
   genresWithFallback,
@@ -47,7 +51,7 @@ const dryRun = args.includes("--dry-run");
 // --no-batch: classify straight away at full price instead of through the half-price Batch API.
 const useBatch = !args.includes("--no-batch");
 const batchWaitMinutes = Number(process.env.BATCH_WAIT_MINUTES ?? 45);
-// --reconsider: look again at videos kept out as uncertain or not electronic (e.g. after the owner
+// --reconsider: look again at videos kept out as uncertain or not rock (e.g. after the owner
 // approved an artist). Free when their classifier answers are still stored.
 const reconsider = args.includes("--reconsider");
 // --recrawl: read every channel from its first upload again, ignoring the last read date. Needed once
@@ -79,7 +83,12 @@ interface ChannelConfig {
   /** Channel IDs that matched the search but are wrong (e.g. no public uploads). */
   skipIds?: string[];
 }
-const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) as { include: ArtistRule[]; groups?: ArtistGroup[] };
+const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) as {
+  include: ArtistRule[];
+  exclude?: ArtistExclusion[];
+  groups?: ArtistGroup[];
+};
+const excludedArtists = artistFile.exclude ?? [];
 const artistRules = artistFile.include;
 const artistGroups = artistFile.groups ?? [];
 const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as {
@@ -133,7 +142,7 @@ async function resolveChannels() {
   const resolved: { channelId: number; youtubeChannelId: string; uploads: string; kind: ChannelKindName; since: Date | null }[] = [];
   let newThisRun = 0;
   const newLimit = Number(process.env.NEW_CHANNELS_PER_RUN || channelFile.newChannelsPerRun || 8);
-  for (const cfg of channelFile.channels) {
+  for (const cfg of inReadingOrder(channelFile.channels)) {
     if (onlyChannel && cfg.name.toLowerCase() !== onlyChannel) continue;
     const skip = new Set(cfg.skipIds ?? []);
     const known = await db.channel.findFirst({
@@ -258,7 +267,7 @@ try {
   // --reconsider: also look again at older videos kept out earlier (not in this run's new uploads).
   if (reconsider) {
     const keptOut = await db.videoDecision.findMany({
-      where: { verdict: { in: ["UNCERTAIN", "NOT_ELECTRONIC"] } },
+      where: { verdict: { in: ["UNCERTAIN", "NOT_ROCK"] } },
       select: { youtubeId: true },
     });
     keptOut.forEach((d) => candidateIds.add(d.youtubeId));
@@ -274,7 +283,7 @@ try {
   // ONLY_VIDEOS: every earlier verdict is ignored (duplicate included); the owner asked for these again.
   const decided = onlyVideos.length
     ? new Set<string>()
-    : await recentDecisions(db, ids, decisionTtlDays, reconsider ? ["UNCERTAIN", "NOT_ELECTRONIC"] : []);
+    : await recentDecisions(db, ids, decisionTtlDays, reconsider ? ["UNCERTAIN", "NOT_ROCK"] : []);
   const fresh = ids.filter((id) => !listed.has(id) && !decided.has(id));
   stats.alreadyKnown = ids.length - fresh.length;
 
@@ -301,7 +310,10 @@ try {
     stats.longVideosRemembered = remember.length;
     stats.longVideosForgotten = await forgetLongVideos(db, forget);
   }
-  candidates.sort((a, b) => b.viewCount - a.viewCount);
+  // Festival and broadcaster archives first, then artist channels, then the rest (owner, 18 Nov 2026);
+  // the most watched first within each, so the classification limit spends on the best sources.
+  const rankOf = (v: { channelId: string }) => sourceRank(sourceKind.get(v.channelId) ?? "UNKNOWN");
+  candidates.sort((a, b) => rankOf(a) - rankOf(b) || b.viewCount - a.viewCount);
 
   const classifier = new Classifier();
 
@@ -421,7 +433,16 @@ try {
     const needsMusicBrainz = kind === "MIXED" || kind === "UNKNOWN";
     const mbGenres = needsMusicBrainz ? await artistGenres(classification.mainArtists[0]) : null;
     const decision = decide(
-      { channelKind: kind, ownerApproved: Boolean(rule || known), classification: toDecisionInput(classification), textGenres, artistGenres: mbGenres },
+      {
+      channelKind: kind,
+      // Official sources only (brief section 2): fan uploads go to the report.
+      official: kind !== "UNKNOWN" || classification.uploaderIsOfficial,
+      ownerApproved: Boolean(rule || known),
+      excluded: isExcludedArtist(classification.mainArtists, excludedArtists),
+      classification: toDecisionInput(classification),
+      textGenres,
+      artistGenres: mbGenres,
+    },
       config,
     );
     let verdict: string = decision.verdict;

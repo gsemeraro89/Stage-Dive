@@ -16,8 +16,8 @@ export const CoverChoiceSchema = z.object({
   best: z.number().int().min(0).max(MAX_CANDIDATES),
 });
 
-const SYSTEM = `You choose the picture that represents a DJ or live act on a music site. You are shown numbered thumbnails of the artist's concerts. The site shows the picture as a square cut from the upper centre of the image, in black and white.
-Pick the thumbnail that works best as the portrait of the named artist: that artist (if you can tell who they are; otherwise the person at the decks) clearly visible near the upper centre and as little printed text, logos and graphics as possible. A photo with a small logo in a corner is fine.
+const SYSTEM = `You choose the picture that represents a band on a rock concert site. You are shown numbered thumbnails of the band's concerts. The site shows the picture as a square cut from the upper centre of the image, in black and white.
+Pick the thumbnail that works best as the portrait of the named artist: the band or its singer (if you can tell who they are; otherwise the people on stage) clearly visible near the upper centre and as little printed text, logos and graphics as possible. A photo with a small logo in a corner is fine.
 Answer 0 only when no thumbnail shows a person at all (pure title cards, logos, graphics, landscapes with big titles).`;
 
 export type Choose = (thumbnailUrls: string[], artistName: string) => Promise<number>;
@@ -72,7 +72,7 @@ export interface CoverStats {
 
 /**
  * Choose every artist's cover. A thumbnail must show the artist, not someone else:
- * - only the artist's own concerts count when they have any (a b2b thumbnail may show the other DJ);
+ * - only the artist's own concerts count when they have any (a shared bill's thumbnail may show the other band);
  * - an artist with only shared concerts (e.g. Marco Carola, whose one concert is a b2b with Richie Hawtin)
  *   never takes a thumbnail another artist already uses; their channel photo is used instead, and a
  *   shared thumbnail only when there is nothing else.
@@ -126,7 +126,7 @@ export async function chooseCovers(db: PrismaClient, choose: Choose, limit = 100
         stats.skipped++;
         continue;
       }
-      // Only shared concerts: a b2b thumbnail may well show the other DJ (Marco Carola's shows Richie
+      // Only shared concerts: a shared bill's thumbnail may well show the other band (Marco Carola's shows Richie
       // Hawtin), so the artist's own channel photo wins whenever there is one. Otherwise a shared
       // thumbnail no one else uses, and only as a last resort one that is already in use.
       if (!solo.length && a.imageUrl) {

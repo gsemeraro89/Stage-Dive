@@ -69,6 +69,6 @@ describe.skipIf(!url)("admin fixes (database)", () => {
     expect(await db.reviewItem.count({ where: { status: "PENDING" } })).toBe(1);
     expect(await admin.rejectReviewVideos(db, ["WAITING0001"])).toBe(1);
     expect(await db.reviewItem.count({ where: { status: "PENDING" } })).toBe(0);
-    expect((await db.videoDecision.findFirst({ where: { youtubeId: "WAITING0001" } }))?.verdict).toBe("NOT_ELECTRONIC");
+    expect((await db.videoDecision.findFirst({ where: { youtubeId: "WAITING0001" } }))?.verdict).toBe("NOT_ROCK");
   });
 });

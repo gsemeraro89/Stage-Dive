@@ -4,7 +4,7 @@ import { VENUE_KINDS, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 import { thumbnailUrl, type ThumbnailName } from "../thumbnails";
 import type { FullClassification } from "./classify";
-import { isSameConcert, resolveDuplicate, type ConcertIdentity } from "./rules";
+import { isSameConcert, readPerformed, resolveDuplicate, type ConcertIdentity } from "./rules";
 import type { YouTubeVideo } from "./youtube";
 
 export interface NewConcert {
@@ -74,7 +74,8 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
 
   const c = n.classification;
   const v = n.video;
-  const year = v.publishedAt.getUTCFullYear();
+  // The year it was played, as on seed concerts ("metallica-the-metro-1983"); the upload year when unknown.
+  const year = readPerformed(c.performed).performedYear ?? v.publishedAt.getUTCFullYear();
   const baseSlug = slugify([c.mainArtists[0], c.venue || v.title.slice(0, 40), year].join(" "));
 
   return db.$transaction(async (tx) => {
@@ -133,6 +134,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         durationSeconds: v.durationSeconds,
         viewCount: v.viewCount,
         publishedAt: new Date(Date.UTC(v.publishedAt.getUTCFullYear(), v.publishedAt.getUTCMonth(), v.publishedAt.getUTCDate())),
+        ...readPerformed(c.performed),
         city: c.city || null,
         country: c.country || null,
         writeUp: c.writeUp || null,
@@ -173,7 +175,7 @@ async function freeChannelName(db: PrismaClient, ch: { youtubeChannelId: string;
  * is not paid again for the same video every month. Uncertain and duplicate verdicts follow the
  * normal retention (default 30 days), so they get a fresh look.
  */
-export const LONG_VERDICT_DAYS = { NOT_A_SET: 365, NOT_ELECTRONIC: 180 } as const;
+export const LONG_VERDICT_DAYS = { NOT_A_CONCERT: 365, NOT_ROCK: 180 } as const;
 
 /** Postgres takes at most 32,767 parameters per query; long ID lists are sent in slices of this size. */
 export const ID_CHUNK = 10_000;
@@ -191,7 +193,7 @@ export async function recentDecisions(
   db: PrismaClient,
   youtubeIds: string[],
   ttlDays: number,
-  lookAgain: ("UNCERTAIN" | "NOT_ELECTRONIC")[] = [],
+  lookAgain: ("UNCERTAIN" | "NOT_ROCK")[] = [],
 ): Promise<Set<string>> {
   const found = new Set<string>();
   for (const slice of chunks(youtubeIds)) {
@@ -200,9 +202,9 @@ export async function recentDecisions(
         youtubeId: { in: slice },
         verdict: { notIn: ["ERROR", ...lookAgain] },
         OR: [
-          { verdict: "NOT_A_SET", decidedAt: { gte: keptSince(ttlDays, "NOT_A_SET") } },
-          { verdict: "NOT_ELECTRONIC", decidedAt: { gte: keptSince(ttlDays, "NOT_ELECTRONIC") } },
-          { verdict: { notIn: ["NOT_A_SET", "NOT_ELECTRONIC"] }, decidedAt: { gte: keptSince(ttlDays, null) } },
+          { verdict: "NOT_A_CONCERT", decidedAt: { gte: keptSince(ttlDays, "NOT_A_CONCERT") } },
+          { verdict: "NOT_ROCK", decidedAt: { gte: keptSince(ttlDays, "NOT_ROCK") } },
+          { verdict: { notIn: ["NOT_A_CONCERT", "NOT_ROCK"] }, decidedAt: { gte: keptSince(ttlDays, null) } },
         ],
       },
       select: { youtubeId: true },
@@ -251,7 +253,7 @@ export async function longVideosDue(db: PrismaClient, opts: { everyDays: number;
 export async function recordDecision(
   db: PrismaClient,
   youtubeId: string,
-  verdict: "ACCEPTED" | "NOT_A_SET" | "NOT_ELECTRONIC" | "UNCERTAIN" | "DUPLICATE" | "ERROR",
+  verdict: "ACCEPTED" | "NOT_A_CONCERT" | "NOT_ROCK" | "NOT_OFFICIAL" | "EXCLUDED" | "UNCERTAIN" | "DUPLICATE" | "ERROR",
   reason: string,
 ) {
   await db.videoDecision.upsert({
@@ -267,9 +269,9 @@ export async function expireOldData(db: PrismaClient, ttlDays: number) {
   const decisions = await db.videoDecision.deleteMany({
     where: {
       OR: [
-        { verdict: "NOT_A_SET", decidedAt: { lt: keptSince(ttlDays, "NOT_A_SET") } },
-        { verdict: "NOT_ELECTRONIC", decidedAt: { lt: keptSince(ttlDays, "NOT_ELECTRONIC") } },
-        { verdict: { notIn: ["NOT_A_SET", "NOT_ELECTRONIC"] }, decidedAt: { lt: before } },
+        { verdict: "NOT_A_CONCERT", decidedAt: { lt: keptSince(ttlDays, "NOT_A_CONCERT") } },
+        { verdict: "NOT_ROCK", decidedAt: { lt: keptSince(ttlDays, "NOT_ROCK") } },
+        { verdict: { notIn: ["NOT_A_CONCERT", "NOT_ROCK"] }, decidedAt: { lt: before } },
       ],
     },
   });

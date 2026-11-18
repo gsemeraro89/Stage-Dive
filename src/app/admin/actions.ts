@@ -60,7 +60,7 @@ export async function rejectReviewItem(formData: FormData) {
   const id = Number(formData.get("id"));
   const db = getDb();
   const item = await db.reviewItem.update({ where: { id }, data: { status: "REJECTED", decidedAt: new Date() } });
-  await recordDecision(db, item.youtubeId, "NOT_ELECTRONIC", "rejected in admin");
+  await recordDecision(db, item.youtubeId, "NOT_ROCK", "rejected in admin");
   revalidatePath("/admin");
 }
 

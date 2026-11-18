@@ -1,8 +1,10 @@
 # Daily collector run, plus a manual button ("Run workflow") with a dry-run option.
 # Secrets (repository Settings -> Secrets and variables -> Actions):
 #   DATABASE_URL (Render "External Database URL"), YOUTUBE_API_KEY, ANTHROPIC_API_KEY
-# Optional variables: VIEW_THRESHOLD, MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET, CLAUDE_BUDGET_USD (artist lane)
-name: Collect sets
+# Optional variables: MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET, CLAUDE_BUDGET_USD (artist lane).
+# Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
+# No view threshold (brief section 2). Archives are read first (data/channels.json).
+name: Collect concerts
 
 on:
   schedule:
@@ -18,7 +20,7 @@ on:
         description: "Maximum videos to classify"
         default: "100"
       reconsider:
-        description: "Look again at videos kept out as uncertain or not electronic (free when answers are stored)"
+        description: "Look again at videos kept out as uncertain or not rock (free when answers are stored)"
         type: boolean
         default: false
       unit_budget:
@@ -39,14 +41,11 @@ on:
         type: boolean
         default: false
       recheck_long:
-        description: "Look again at every remembered long video now (use right after lowering the view threshold; 1 unit per 50 videos)"
+        description: "Look again at every remembered long video now (1 unit per 50 videos)"
         type: boolean
         default: false
-      view_threshold:
-        description: "Minimum views for this run (default: repository variable VIEW_THRESHOLD, else 5000000)"
-        default: ""
       only_channel:
-        description: "Read only this channel (name as in data/channels.json, e.g. Cercle); no searches"
+        description: "Read only this channel (name as in data/channels.json, e.g. Pinkpop Archive); no searches"
         default: ""
       similarity_only:
         description: "Only update similar artists (asks ListenBrainz; no YouTube quota, no Claude cost)"
@@ -59,7 +58,7 @@ on:
         description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;tidy-review (no YouTube quota, no Claude cost)"
         default: ""
       artist_search:
-        description: "Per-artist lane only: every official full set of the artists marked allSets in data/artist-rules.json, no view threshold (respects dry_run)"
+        description: "Per-artist lane only: every official full concert of the bands marked allConcerts in data/artist-rules.json (respects dry_run)"
         type: boolean
         default: false
       haiku_test:
@@ -91,7 +90,6 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      VIEW_THRESHOLD: ${{ inputs.view_threshold || vars.VIEW_THRESHOLD || '5000000' }}
       ONLY_CHANNEL: ${{ inputs.only_channel }}
       ONLY_VIDEOS: ${{ inputs.only_videos }}
       MAX_CLASSIFY_PER_RUN: ${{ vars.MAX_CLASSIFY_PER_RUN || '200' }}

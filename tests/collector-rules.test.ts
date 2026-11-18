@@ -6,7 +6,7 @@ import {
   DEFAULT_CONFIG,
   genresInText,
   isDueForRefresh,
-  isElectronicGenreList,
+  isRockGenreList,
   isSameConcert,
   parseIsoDuration,
   refreshAction,
@@ -15,6 +15,9 @@ import {
   resolveDuplicate,
   titleSaysNotAConcert,
   worthRemembering,
+  sourceRank,
+  inReadingOrder,
+  readPerformed,
   type DecisionInput,
   type ConcertIdentity,
   type VideoFacts,
@@ -63,11 +66,12 @@ describe("titles and long videos (saving calls and tokens)", () => {
   });
 
   it("remembers long videos kept out only by things that can change", () => {
-    expect(worthRemembering(checkRules(video({ viewCount: 6_000_000 }), config))).toBe(true);
-    expect(worthRemembering(checkRules(video({ viewCount: 6_000_000, embeddable: false }), config))).toBe(true);
-    expect(worthRemembering(checkRules(video({ durationSeconds: 300, viewCount: 6_000_000 }), config))).toBe(false); // length never changes
-    expect(worthRemembering(checkRules(video({ viewCount: 6_000_000, madeForKids: true }), config))).toBe(false);
-    expect(worthRemembering(checkRules(video({ viewCount: 6_000_000, title: "Official trailer" }), config))).toBe(false);
+    expect(worthRemembering(checkRules(video({ embeddable: false }), config))).toBe(true);
+    expect(worthRemembering(checkRules(video({ blockedIn: ["GB"] }), config))).toBe(true);
+    expect(worthRemembering(checkRules(video({ viewCount: 10 }), { ...config, viewThreshold: 1000 }))).toBe(true);
+    expect(worthRemembering(checkRules(video({ durationSeconds: 300, embeddable: false }), config))).toBe(false); // length never changes
+    expect(worthRemembering(checkRules(video({ madeForKids: true }), config))).toBe(false);
+    expect(worthRemembering(checkRules(video({ title: "Official trailer" }), config))).toBe(false);
     expect(worthRemembering(checkRules(video(), config))).toBe(false); // passes: goes to the classifier
   });
 });
@@ -76,10 +80,11 @@ describe("checkRules (YouTube and product rules)", () => {
   it("lets a long, popular, public, embeddable video through", () => {
     expect(checkRules(video(), config)).toEqual([]);
   });
-  it("needs at least 40 minutes and the view threshold", () => {
+  it("needs at least 40 minutes; no view threshold unless one is set", () => {
     expect(checkRules(video({ durationSeconds: 39 * 60 + 59 }), config)).toEqual(["too-short"]);
     expect(checkRules(video({ durationSeconds: 40 * 60 }), config)).toEqual([]);
-    expect(checkRules(video({ viewCount: 9_999_999 }), config)).toEqual(["below-view-threshold"]);
+    expect(checkRules(video({ viewCount: 0 }), config)).toEqual([]);
+    expect(checkRules(video({ viewCount: 999 }), { ...config, viewThreshold: 1000 })).toEqual(["below-view-threshold"]);
   });
   it("never lets through what YouTube says may not be embedded or shown", () => {
     expect(checkRules(video({ embeddable: false }), config)).toContain("not-embeddable");
@@ -91,7 +96,8 @@ describe("checkRules (YouTube and product rules)", () => {
   it("reads the threshold from the environment", async () => {
     const { configFromEnv } = await import("../src/lib/collector/rules");
     expect(configFromEnv({ VIEW_THRESHOLD: "200000" }).viewThreshold).toBe(200000);
-    expect(configFromEnv({ VIEW_THRESHOLD: "nonsense" }).viewThreshold).toBe(10_000_000);
+    expect(configFromEnv({ VIEW_THRESHOLD: "nonsense" }).viewThreshold).toBe(0);
+    expect(configFromEnv({}).viewThreshold).toBe(0);
   });
 });
 
@@ -135,56 +141,116 @@ describe("genresInText", () => {
   });
 });
 
-describe("isElectronicGenreList (MusicBrainz)", () => {
-  it("recognises electronic genres", () => {
-    expect(isElectronicGenreList(["melodic techno", "french"])).toBe(true);
-    expect(isElectronicGenreList(["electronic"])).toBe(true);
+describe("isRockGenreList (MusicBrainz)", () => {
+  it("recognises rock genres", () => {
+    expect(isRockGenreList(["thrash metal", "american"])).toBe(true);
+    expect(isRockGenreList(["post-punk", "gothic rock"])).toBe(true);
+    expect(isRockGenreList(["synth-pop", "new wave"])).toBe(true);
   });
   it("rejects other music", () => {
-    expect(isElectronicGenreList(["rock", "indie", "folk"])).toBe(false);
-    expect(isElectronicGenreList([])).toBe(false);
+    expect(isRockGenreList(["techno", "house", "pop"])).toBe(false);
+    expect(isRockGenreList(["hip hop"])).toBe(false);
+    expect(isRockGenreList([])).toBe(false);
   });
 });
 
 describe("decide", () => {
   const base: DecisionInput = {
-    channelKind: "ELECTRONIC_ONLY",
-    classification: { isFullConcert: true, isElectronic: true, confidence: 0.9, genres: ["Melodic Techno"], mainArtists: ["NTO"] },
+    channelKind: "ARCHIVE",
+    official: true,
+    classification: { isFullConcert: true, isRock: true, confidence: 0.9, genres: ["metal"], mainArtists: ["Korn"] },
     textGenres: [],
     artistGenres: null,
   };
   const with_ = (patch: Partial<DecisionInput>, cls: Partial<DecisionInput["classification"]> = {}) =>
     decide({ ...base, ...patch, classification: { ...base.classification, ...cls } }, config);
 
-  it("accepts a confident electronic concert on an electronic-only channel", () => {
+  it("accepts a confident rock concert on an archive or band channel", () => {
     expect(with_({}).verdict).toBe("ACCEPTED");
     expect(with_({ channelKind: "ARTIST" }).verdict).toBe("ACCEPTED");
   });
-  it("needs two independent signals on mixed channels and for fan uploads", () => {
+  it("needs two independent signals on mixed official channels (labels, broadcasters)", () => {
     expect(with_({ channelKind: "MIXED" }).verdict).toBe("UNCERTAIN");
-    expect(with_({ channelKind: "UNKNOWN" }).verdict).toBe("UNCERTAIN");
-    expect(with_({ channelKind: "MIXED", textGenres: ["Techno"] }).verdict).toBe("ACCEPTED");
-    expect(with_({ channelKind: "UNKNOWN", artistGenres: ["techno"] }).verdict).toBe("ACCEPTED");
+    expect(with_({ channelKind: "MIXED", textGenres: ["metal"] }).verdict).toBe("ACCEPTED");
+    expect(with_({ channelKind: "MIXED", artistGenres: ["nu metal"] }).verdict).toBe("ACCEPTED");
+  });
+  it("never publishes a fan upload: report only, even with every signal or an approved band", () => {
+    expect(with_({ channelKind: "UNKNOWN", official: false, textGenres: ["metal"], artistGenres: ["metal"] }).verdict).toBe("NOT_OFFICIAL");
+    expect(with_({ channelKind: "UNKNOWN", official: false, ownerApproved: true }).verdict).toBe("NOT_OFFICIAL");
+    // Found through search but recognised as an official uploader (a label): judged like a mixed channel.
+    expect(with_({ channelKind: "UNKNOWN", official: true, textGenres: ["metal"] }).verdict).toBe("ACCEPTED");
+  });
+  it("never publishes a band on the exclude list, whatever the source", () => {
+    expect(with_({ excluded: true }).verdict).toBe("EXCLUDED");
+    expect(with_({ excluded: true, ownerApproved: true }).verdict).toBe("EXCLUDED");
   });
   it("does not count a namesake's genres or other music as a signal", () => {
     expect(with_({ channelKind: "MIXED", artistGenres: ["hip hop"] }).verdict).toBe("UNCERTAIN");
   });
   it("other signals cannot outvote a doubtful classifier", () => {
-    const d = with_({ channelKind: "MIXED", textGenres: ["Techno"], artistGenres: ["techno"] }, { confidence: 0.5 });
+    const d = with_({ channelKind: "MIXED", textGenres: ["metal"], artistGenres: ["metal"] }, { confidence: 0.5 });
     expect(d.verdict).toBe("UNCERTAIN");
   });
-  it("rejects clips and non-electronic concerts only when the classifier is sure", () => {
-    expect(with_({}, { isFullConcert: false }).verdict).toBe("NOT_A_SET");
+  it("rejects clips and non-rock concerts only when the classifier is sure", () => {
+    expect(with_({}, { isFullConcert: false }).verdict).toBe("NOT_A_CONCERT");
     expect(with_({}, { isFullConcert: false, confidence: 0.4 }).verdict).toBe("UNCERTAIN");
-    expect(with_({}, { isElectronic: false }).verdict).toBe("NOT_ELECTRONIC");
+    expect(with_({}, { isRock: false }).verdict).toBe("NOT_ROCK");
   });
-  it("keeps out concerts with no genre of ours or no identified artist", () => {
+  it("keeps out concerts with no genre of ours or no identified band", () => {
     expect(with_({}, { genres: [] }).verdict).toBe("UNCERTAIN");
     expect(with_({}, { mainArtists: [] }).verdict).toBe("UNCERTAIN");
   });
   it("respects the confidence threshold exactly", () => {
     expect(with_({}, { confidence: 0.75 }).verdict).toBe("ACCEPTED");
     expect(with_({}, { confidence: 0.74 }).verdict).toBe("UNCERTAIN");
+  });
+});
+
+describe("source order (archives first)", () => {
+  it("ranks archives, then band channels, then other official channels, then the rest", () => {
+    expect(["UNKNOWN", "ARTIST", "MIXED", "ARCHIVE"].sort((a, b) => sourceRank(a as never) - sourceRank(b as never))).toEqual([
+      "ARCHIVE",
+      "ARTIST",
+      "MIXED",
+      "UNKNOWN",
+    ]);
+  });
+  it("reads the channel list archives first, keeping the file's order within each kind", () => {
+    const list = [
+      { name: "Metallica", kind: "ARTIST" as const },
+      { name: "Pinkpop Archive", kind: "ARCHIVE" as const },
+      { name: "A label", kind: "MIXED" as const },
+      { name: "Arte Concert", kind: "ARCHIVE" as const },
+    ];
+    expect(inReadingOrder(list).map((c) => c.name)).toEqual(["Pinkpop Archive", "Arte Concert", "Metallica", "A label"]);
+  });
+  it("data/channels.json starts with the four archives the owner named", async () => {
+    const { readFileSync } = await import("node:fs");
+    const file = JSON.parse(readFileSync("data/channels.json", "utf8")) as { channels: { name: string; kind: "ARCHIVE" | "ARTIST" | "MIXED" | "UNKNOWN" }[] };
+    expect(inReadingOrder(file.channels).slice(0, 4).map((c) => c.name)).toEqual(["Pinkpop Archive", "Rock in Rio", "Primavera Sound", "ARTE Concert"]);
+  });
+});
+
+describe("no view threshold, rock exclusion words", () => {
+  it("lets a video with few views through", () => {
+    expect(DEFAULT_CONFIG.viewThreshold).toBe(0);
+    expect(checkRules(video({ viewCount: 12 }), DEFAULT_CONFIG)).toEqual([]);
+  });
+  it("leaves out titles that say they are not a concert", () => {
+    for (const t of ["Pinkpop aftermovie", "Reaction to Korn live", "Enter Sandman (cover)", "Riff tutorial", "Lyrics video", "Full Album stream"]) {
+      expect(titleSaysNotAConcert(t)).toBe(true);
+    }
+    expect(titleSaysNotAConcert("Korn - Live at Pinkpop 2000 (full concert)")).toBe(false);
+    expect(titleSaysNotAConcert("Metallica plays the Black Album live")).toBe(false);
+  });
+  it("reads the year played from the classifier, and never a guessed one", () => {
+    const now = new Date("2026-11-18T00:00:00Z");
+    expect(readPerformed("1997", now)).toEqual({ performedYear: 1997, performedOn: null });
+    expect(readPerformed("1983-08-12", now)).toEqual({ performedYear: 1983, performedOn: new Date("1983-08-12T00:00:00Z") });
+    expect(readPerformed("2012-05", now)).toEqual({ performedYear: 2012, performedOn: null });
+    expect(readPerformed("", now)).toEqual({ performedYear: null, performedOn: null });
+    expect(readPerformed("2030", now)).toEqual({ performedYear: null, performedOn: null });
+    expect(readPerformed("summer 1994", now)).toEqual({ performedYear: null, performedOn: null });
   });
 });
 
@@ -323,16 +389,17 @@ describe("owner-approved artists", () => {
     expect(expandGroups(["Steve Aoki", "3 are legend"], groups)).toEqual(["Steve Aoki", "Dimitri Vegas & Like Mike"]);
     expect(expandGroups(["NTO"], groups)).toEqual(["NTO"]);
   });
-  it("accepts a full concert by an approved artist on any channel, but never a clip", () => {
+  it("accepts a full concert by an approved band on any official channel, but never a clip", () => {
     const base = {
       channelKind: "MIXED" as const,
+      official: true,
       ownerApproved: true,
-      classification: { isFullConcert: true, isElectronic: false, confidence: 0.5, genres: ["Tech House"], mainArtists: ["Honey Dijon"] },
+      classification: { isFullConcert: true, isRock: false, confidence: 0.5, genres: ["indie"], mainArtists: ["Ride"] },
       textGenres: [],
       artistGenres: null,
     };
     expect(decide(base, config).verdict).toBe("ACCEPTED");
-    expect(decide({ ...base, classification: { ...base.classification, isFullConcert: false, confidence: 0.9 } }, config).verdict).toBe("NOT_A_SET");
+    expect(decide({ ...base, classification: { ...base.classification, isFullConcert: false, confidence: 0.9 } }, config).verdict).toBe("NOT_A_CONCERT");
     expect(decide({ ...base, classification: { ...base.classification, genres: [] } }, config).verdict).toBe("UNCERTAIN");
   });
 });

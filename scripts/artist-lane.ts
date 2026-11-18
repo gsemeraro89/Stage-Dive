@@ -55,6 +55,8 @@ import {
   decide,
   expandGroups,
   findArtistRule,
+  isExcludedArtist,
+  type ArtistExclusion,
   genresForApprovedArtist,
   genresInText,
   genresWithFallback,
@@ -89,7 +91,12 @@ const config = { ...configFromEnv(), viewThreshold: 0 };
 const opusEstimateUsd = (v: YouTubeVideo) =>
   costOf("claude-opus-5-5", { input_tokens: Math.ceil((Math.min(v.description.length, 6000) + v.title.length + 400) / 3.5) + 900, output_tokens: 900 }, useBatch);
 
-const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) as { include: ArtistRule[]; groups?: ArtistGroup[] };
+const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) as {
+  include: ArtistRule[];
+  exclude?: ArtistExclusion[];
+  groups?: ArtistGroup[];
+};
+const excludedArtists = artistFile.exclude ?? [];
 const allRules = artistFile.include;
 const groups = artistFile.groups ?? [];
 const laneRules = allRules.filter((r) => r.allConcerts);
@@ -151,7 +158,16 @@ async function decideFor(video: YouTubeVideo, kind: ChannelKindName, stored: Ful
   const textGenres = genresInText(video.title, video.description, video.tags);
   const mbGenres = kind === "MIXED" || kind === "UNKNOWN" ? await storedArtistGenres(classification.mainArtists[0]) : null;
   const decision = decide(
-    { channelKind: kind, ownerApproved: Boolean(rule || fromCatalogue), classification: toDecisionInput(classification), textGenres, artistGenres: mbGenres },
+    {
+      channelKind: kind,
+      // Official sources only (brief section 2): fan uploads go to the report.
+      official: kind !== "UNKNOWN" || classification.uploaderIsOfficial,
+      ownerApproved: Boolean(rule || fromCatalogue),
+      excluded: isExcludedArtist(classification.mainArtists, excludedArtists),
+      classification: toDecisionInput(classification),
+      textGenres,
+      artistGenres: mbGenres,
+    },
     config,
   );
   return { decision, classification, textGenres, mbGenres };
@@ -544,7 +560,7 @@ async function runLane() {
     for (const rule of laneRules) if (lookups.get(nameKey(rule.name))?.searchedAt) reports.get(rule.name)!.search = "earlier run";
   }
 
-  // 3. Skip what is already a concert or already decided (UNCERTAIN and NOT_ELECTRONIC get a new look:
+  // 3. Skip what is already a concert or already decided (UNCERTAIN and NOT_ROCK get a new look:
   // these artists are now approved by the owner, which changes the outcome).
   const known = new Set<string>();
   const decided = new Set<string>();
@@ -554,7 +570,7 @@ async function runLane() {
     for (const slice of chunks(todo)) {
       (await db.concert.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => known.add(s.youtubeId));
     }
-    (await recentDecisions(db, todo, ttlDays, ["UNCERTAIN", "NOT_ELECTRONIC"])).forEach((id) => decided.add(id));
+    (await recentDecisions(db, todo, ttlDays, ["UNCERTAIN", "NOT_ROCK"])).forEach((id) => decided.add(id));
     const ask = todo.filter((id) => !known.has(id) && !decided.has(id));
     // 50 at a time, so the videos read before the units run out are kept.
     for (let i = 0; i < ask.length; i += 50) {
@@ -701,7 +717,7 @@ async function runLane() {
     }
     const base = o ?? toFullClassification(h!, "", !t.otherChannel);
     const { decision, classification } = await decideFor(t.video, t.kind, base, knownArtists);
-    // No view threshold only for the lane's artists: a concert by someone else (e.g. another DJ on a lane
+    // No view threshold only for the lane's artists: a concert by someone else (e.g. a support band on a lane
     // artist's channel) is left to the main collector and its view threshold. No verdict is recorded.
     if (!findArtistRule(expandGroups(classification.mainArtists, groups), laneRules)) {
       rep.verdicts.OTHER_ARTIST = (rep.verdicts.OTHER_ARTIST ?? 0) + 1;

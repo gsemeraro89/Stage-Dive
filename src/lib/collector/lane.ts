@@ -3,7 +3,7 @@
 // Pure functions only, so the free filters, the budget and the search order can be tested.
 //
 // Free filters, in this order (owner): already a concert or decided -> skip; YouTube/product rules (40
-// minutes, public, embeddable, not for kids, processed, not live) -> drop; the artist's name not in
+// minutes, public, embeddable, not for kids, processed, not live, not blocked in a key country) -> drop; the artist's name not in
 // the title -> drop; excluded words in the title -> drop; not an official channel -> report only.
 // Only what is left is sent to Claude.
 
@@ -64,36 +64,39 @@ export function artistsInTitle<T extends Pick<ArtistRule, "name" | "aka">>(title
 // ---------- 2. Words that say "not a concert" ----------
 
 /**
- * Extra words for the lane (owner, 17 Nov 2026), on top of titleSaysNotAConcert (trailer, teaser,
- * aftermovie, interview, documentary, recap, behind the scenes). With no view threshold many more
- * videos come in, so these are dropped before Claude is asked.
+ * Extra words for the lane, on top of titleSaysNotAConcert (trailer, teaser, aftermovie, interview,
+ * documentary, recap, behind the scenes, reaction, cover, tutorial, lyrics, full album; brief section 2).
+ * With no view threshold many more videos come in, so these are dropped before Claude is asked.
+ * "album" alone stays allowed: rock shows are often billed by album ("plays the Black Album live").
  */
 const LANE_EXCLUDED: { word: string; pattern: RegExp }[] = [
   { word: "podcast", pattern: /\bpodcasts?\b/i },
-  { word: "album", pattern: /\balbums?\b/i },
   { word: "compilation", pattern: /\bcompilations?\b/i },
   { word: "best of", pattern: /\bbest of\b/i },
-  { word: "1 hour", pattern: /\b(1|one)[\s-]?(hour|hr)\b/i },
+  { word: "greatest hits", pattern: /\bgreatest hits\b/i },
 ];
+
+const NOT_A_CONCERT_WORD =
+  /\b(trailer|teaser|after ?movie|interview|documentary|recap|behind the scenes|reaction|reacts?|cover|tutorial|lesson|lyrics?|full album)\b/i;
 
 /** The excluded word a title contains, or null. */
 export function excludedTitleWord(title: string): string | null {
   if (titleSaysNotAConcert(title)) {
-    const m = title.match(/\b(trailer|teaser|after ?movie|interview|documentary|recap|behind the scenes)\b/i);
+    const m = title.match(NOT_A_CONCERT_WORD);
     return (m?.[1] ?? "trailer").toLowerCase();
   }
   return LANE_EXCLUDED.find((x) => x.pattern.test(title))?.word ?? null;
 }
 
 /**
- * On the artist's own channel a title may skip the name ("Live at Awakenings 2024"), but it must then
- * say what the video is: a concert, a stream, a place or event. A bare title like "HI!" is a gaming or chat
- * stream, not a concert (owner, 17 Nov 2026, Steve Aoki).
+ * On the band's own channel a title may skip the name ("Live at The Metro, Chicago 1983"), but it must
+ * then say what the video is: a concert, a show, a place or a year. A bare title is a promo or a
+ * chat stream, not a concert.
  */
-const SET_HINT =
-  /\b(concert|concerts|live|mix|mixed|dj|session|sessions|stream|livestream|festival|fest|tour|show|b2b|b3b|vs|stage|mainstage|club|radio|episode|takeover|closing|opening|warm[- ]?up|sunrise|sunset|open air|boiler room|cercle|weekend|w1|w2|ade|edc|ultra|tomorrowland|awakenings|time warp|20\d\d|19\d\d)\b|@|\bat\b/i;
+const CONCERT_HINT =
+  /\b(concert|concerts|gig|live|show|tour|festival|fest|stage|session|sessions|stream|livestream|unplugged|full|set|arena|stadium|hall|theatre|theater|club|19\d\d|20\d\d)\b|@|\bat\b/i;
 export function titleSaysWhatItIs(title: string): boolean {
-  return SET_HINT.test(title);
+  return CONCERT_HINT.test(title);
 }
 
 // ---------- 3. Official channels ----------
@@ -135,6 +138,7 @@ export type LaneDrop =
   | "rule:made-for-kids"
   | "rule:live-or-upcoming"
   | "rule:not-processed"
+  | "rule:region-blocked"
   | "name-not-in-title"
   | "own-channel-title-not-a-concert"
   | `excluded-word:${string}`;
@@ -154,6 +158,8 @@ export interface LaneVideoFacts {
   madeForKids: boolean;
   liveBroadcastContent: string;
   uploadStatus: string;
+  /** Key countries where the video is blocked (rules.ts KEY_REGIONS). */
+  blockedIn: string[];
 }
 
 /**
@@ -185,6 +191,7 @@ export function laneFilter(
   if (video.madeForKids) return { outcome: "drop", reason: "rule:made-for-kids" };
   if (video.liveBroadcastContent !== "none") return { outcome: "drop", reason: "rule:live-or-upcoming" };
   if (video.uploadStatus !== "processed") return { outcome: "drop", reason: "rule:not-processed" };
+  if (video.blockedIn.length) return { outcome: "drop", reason: "rule:region-blocked" };
   if (video.durationSeconds < ctx.minDurationSeconds) return { outcome: "drop", reason: "rule:too-short" };
   if (!titleHasArtist(video.title, ctx.names)) {
     if (!ctx.onOwnChannel) return { outcome: "drop", reason: "name-not-in-title" };
@@ -223,9 +230,9 @@ export function searchesThatFit(unitsLeft: number, reserve = 100): number {
   return Math.max(0, Math.floor((unitsLeft - reserve) / 101));
 }
 
-/** The search query (owner): the artist's name in quotes, then "concert". */
+/** The search query: the band's name in quotes, then "full concert". */
 export function searchQuery(name: string): string {
-  return `"${name.replace(/"/g, "")}" concert`;
+  return `"${name.replace(/"/g, "")}" full concert`;
 }
 
 // ---------- 6. Claude budget ----------

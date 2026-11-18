@@ -9,7 +9,7 @@ import { slugify } from "../slug";
 export interface CollectorConfig {
   /** Minimum length of a concert, in seconds. Product rule: a full concert is normally at least 40 minutes. */
   minDurationSeconds: number;
-  /** Minimum YouTube views to enter the catalogue. Owner decision, 12 Nov 2026: 10,000,000 to start. */
+  /** Minimum YouTube views to enter the catalogue. STAGEDIVE: none (brief section 2), so 0 by default. */
   viewThreshold: number;
   /** Classifier confidence needed for its answer to count as a "yes". */
   minConfidence: number;
@@ -17,7 +17,7 @@ export interface CollectorConfig {
 
 export const DEFAULT_CONFIG: CollectorConfig = {
   minDurationSeconds: 40 * 60,
-  viewThreshold: 10_000_000,
+  viewThreshold: 0,
   minConfidence: 0.75,
 };
 
@@ -94,10 +94,11 @@ export type RuleFailure =
  * Titles that say the video is not a concert, so it is left out without asking the classifier.
  * Kept narrow on purpose: words a concert title practically never contains.
  */
-const NOT_A_SET_TITLE = /\b(official )?(trailer|teaser|after ?movie|aftermovie|interview|documentary|recap|behind the scenes)\b/i;
+const NOT_A_CONCERT_TITLE =
+  /\b(official )?(trailer|teaser|after ?movie|aftermovie|interview|documentary|recap|behind the scenes|reaction|reacts?|cover|tutorial|lesson|lyrics?|full album)\b/i;
 
 export function titleSaysNotAConcert(title: string): boolean {
-  return NOT_A_SET_TITLE.test(title);
+  return NOT_A_CONCERT_TITLE.test(title);
 }
 
 /**
@@ -190,29 +191,35 @@ export function genresInText(...texts: (string | string[] | null | undefined)[])
   return GENRES.filter((g) => found.has(g));
 }
 
-// ---------- 3. Is an artist electronic, according to MusicBrainz genres? ----------
+// ---------- 3. Is a band rock, according to MusicBrainz genres? ----------
 
-const ELECTRONIC_WORDS = [
-  "electronic", "techno", "house", "trance", "electronica", "edm", "dance", "drum and bass", "jungle",
-  "dubstep", "ambient", "electro", "breakbeat", "breaks", "garage", "hardstyle", "idm", "downtempo",
-  "minimal", "disco", "psytrance", "psychedelic trance", "goa", "synth", "club", "bass music", "acid",
+const ROCK_WORDS = [
+  "rock", "punk", "metal", "grunge", "indie", "alternative", "post-punk", "new wave", "synth-pop", "synthpop",
+  "shoegaze", "stoner", "garage", "emo", "hardcore", "post-hardcore", "britpop", "gothic", "darkwave",
+  "noise", "psychedelic", "sludge", "doom", "thrash", "grindcore", "screamo", "math rock", "krautrock",
 ];
 
-export function isElectronicGenreList(genres: string[]): boolean {
+export function isRockGenreList(genres: string[]): boolean {
   return genres.some((g) => {
     const name = g.toLowerCase();
-    return ELECTRONIC_WORDS.some((word) => name === word || name.includes(word));
+    return ROCK_WORDS.some((word) => name === word || name.includes(word));
   });
 }
 
 // ---------- 4. The decision ----------
 
-export type ChannelKindName = "ELECTRONIC_ONLY" | "ARTIST" | "MIXED" | "UNKNOWN";
+/**
+ * ARCHIVE: a festival or broadcaster archive (Pinkpop Archive, Rock in Rio, Primavera Sound, Arte
+ * Concert): official, read first (docs/SUPPLY-CHECK.md). ARTIST: a band's official channel. MIXED: an
+ * official channel that posts several kinds of music (a label, a broadcaster). UNKNOWN: found through
+ * search, normally a fan upload.
+ */
+export type ChannelKindName = "ARCHIVE" | "ARTIST" | "MIXED" | "UNKNOWN";
 
 /** What the classifier said about a video (see classify.ts). */
 export interface Classification {
   isFullConcert: boolean;
-  isElectronic: boolean;
+  isRock: boolean;
   confidence: number;
   genres: string[];
   mainArtists: string[];
@@ -220,8 +227,15 @@ export interface Classification {
 
 export interface DecisionInput {
   channelKind: ChannelKindName;
+  /**
+   * The upload comes from an official source: an artist, label, festival or broadcaster channel
+   * (any channel kind but UNKNOWN, or the classifier recognised the uploader as one).
+   */
+  official: boolean;
   /** The main artist is on the owner's list (data/artist-rules.json): accepted whenever it is a full concert. */
   ownerApproved?: boolean;
+  /** The main artist is on the owner's exclude list (e.g. The Rolling Stones, 17 Nov 2026). */
+  excluded?: boolean;
   classification: Classification;
   /** Genres found in the video's own title, description and tags. */
   textGenres: string[];
@@ -229,53 +243,56 @@ export interface DecisionInput {
   artistGenres: string[] | null;
 }
 
-export type Verdict = "ACCEPTED" | "NOT_A_SET" | "NOT_ELECTRONIC" | "UNCERTAIN";
+export type Verdict = "ACCEPTED" | "NOT_A_CONCERT" | "NOT_ROCK" | "NOT_OFFICIAL" | "EXCLUDED" | "UNCERTAIN";
 
 export interface Decision {
   verdict: Verdict;
   reason: string;
-  /** Independent signals that said "electronic", for the admin page and the accuracy report. */
+  /** Independent signals that said "rock", for the admin page and the accuracy report. */
   signals: string[];
 }
 
 /**
- * Owner rule (12 Nov 2026): nothing enters without being sure it is electronic music in our genres.
- * In doubt, the video stays out. There is no manual approval step.
+ * Owner rules (brief section 2): official, free sources only; nothing enters without being sure it is
+ * one band's full concert in our genres. In doubt, the video stays out.
  *
- * - Channels that only post electronic music (and official artist channels): the classifier must say
- *   "full concert, electronic" with high confidence and give at least one of our genres.
- * - Mixed channels and unknown channels (fan uploads): in addition, at least two independent signals
- *   must agree: the classifier, MusicBrainz genres for the artist, genre words in the video's own text.
+ * - Fan uploads are never published: they appear in the report only (verdict NOT_OFFICIAL).
+ * - Archive and artist channels: the classifier must say "full concert, rock" with high confidence and
+ *   give at least one of our genres.
+ * - Mixed official channels (labels, broadcasters): in addition, a second independent signal must
+ *   agree: MusicBrainz genres for the band, or genre words in the video's own text.
  */
 export function decide(input: DecisionInput, config: CollectorConfig): Decision {
   const c = input.classification;
   const confident = c.confidence >= config.minConfidence;
   const signals: string[] = [];
-  if (c.isElectronic && confident) signals.push("classifier");
-  if (input.artistGenres && isElectronicGenreList(input.artistGenres)) signals.push("musicbrainz");
+  if (c.isRock && confident) signals.push("classifier");
+  if (input.artistGenres && isRockGenreList(input.artistGenres)) signals.push("musicbrainz");
   if (input.textGenres.length > 0) signals.push("video text");
 
   if (!c.isFullConcert) {
-    return { verdict: confident ? "NOT_A_SET" : "UNCERTAIN", reason: "not a single full concert", signals };
+    return { verdict: confident ? "NOT_A_CONCERT" : "UNCERTAIN", reason: "not one band's full concert", signals };
   }
   if (c.mainArtists.length === 0) {
-    return { verdict: "UNCERTAIN", reason: "artist not identified", signals };
+    return { verdict: "UNCERTAIN", reason: "band not identified", signals };
   }
+  if (input.excluded) return { verdict: "EXCLUDED", reason: "band on the owner's exclude list", signals };
+  if (!input.official) return { verdict: "NOT_OFFICIAL", reason: "fan upload: report only (official sources only)", signals };
   if (input.ownerApproved) {
-    if (c.genres.length === 0) return { verdict: "UNCERTAIN", reason: "artist approved by owner, but no genre", signals };
-    return { verdict: "ACCEPTED", reason: "artist approved by owner", signals: [...signals, "owner"] };
+    if (c.genres.length === 0) return { verdict: "UNCERTAIN", reason: "band approved by owner, but no genre", signals };
+    return { verdict: "ACCEPTED", reason: "band approved by owner", signals: [...signals, "owner"] };
   }
-  if (!c.isElectronic) {
+  if (!c.isRock) {
     return {
-      verdict: confident ? "NOT_ELECTRONIC" : "UNCERTAIN",
-      reason: "classifier: not electronic music in our genres",
+      verdict: confident ? "NOT_ROCK" : "UNCERTAIN",
+      reason: "classifier: not rock in our genres",
       signals,
     };
   }
   if (!confident) return { verdict: "UNCERTAIN", reason: `low confidence (${c.confidence})`, signals };
   if (c.genres.length === 0) return { verdict: "UNCERTAIN", reason: "none of our genres fits", signals };
 
-  const trusted = input.channelKind === "ELECTRONIC_ONLY" || input.channelKind === "ARTIST";
+  const trusted = input.channelKind === "ARCHIVE" || input.channelKind === "ARTIST";
   const needed = trusted ? 1 : 2;
   if (signals.length < needed) {
     return {
@@ -421,13 +438,25 @@ export function findArtistRule(mainArtists: string[], rules: ArtistRule[]): Arti
  */
 export function genresForApprovedArtist(classifierGenres: string[], rule: ArtistRule): string[] {
   const ours = new Set<string>(GENRES);
-  // The owner's genres win when they include an artist-only genre (e.g. Big Room / EDM): the
-  // classifier cannot give those and would otherwise stretch one of ours.
-  const site = new Set<string>(SITE_GENRES);
-  const owner = rule.genres.filter((g) => site.has(g));
-  if (owner.some((g) => !ours.has(g))) return owner;
+  const owner = rule.genres.filter((g) => ours.has(g));
   const fromClassifier = classifierGenres.filter((g) => ours.has(g));
   return fromClassifier.length ? fromClassifier : owner;
+}
+
+/**
+ * A band the owner keeps off the site, whatever the source (data/artist-rules.json "exclude").
+ * The Rolling Stones, 17 Nov 2026: no official full shows, only fan uploads (docs/SUPPLY-CHECK.md).
+ */
+export interface ArtistExclusion {
+  name: string;
+  aka?: string[];
+  reason: string;
+  since: string;
+}
+
+export function isExcludedArtist(mainArtists: string[], excludes: ArtistExclusion[]): boolean {
+  const wanted = new Set(mainArtists.map(slugify).filter(Boolean));
+  return excludes.some((r) => [r.name, ...(r.aka ?? [])].some((n) => wanted.has(slugify(n))));
 }
 
 /** Compare channel names loosely: "Hï Ibiza" ~ "hi ibiza", "Be-At.TV" ~ "beat tv". */
@@ -453,4 +482,34 @@ export function genresWithFallback(classifierGenres: string[], fallback: string[
   const fromClassifier = classifierGenres.filter((g) => ours.has(g));
   const site = new Set<string>(SITE_GENRES);
   return fromClassifier.length ? fromClassifier : fallback.filter((g) => site.has(g)).slice(0, 3);
+}
+
+/**
+ * When a concert was played, from the classifier's "performed" (YYYY, YYYY-MM or YYYY-MM-DD).
+ * Anything unreadable or impossible gives nulls: a decade page never shows a guessed year.
+ */
+export function readPerformed(value: string | undefined | null, now = new Date()): { performedYear: number | null; performedOn: Date | null } {
+  const m = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(value?.trim() ?? "");
+  const none = { performedYear: null, performedOn: null };
+  if (!m) return none;
+  const year = Number(m[1]);
+  if (year < 1950 || year > now.getUTCFullYear()) return none;
+  if (!m[3]) return { performedYear: year, performedOn: null };
+  const day = new Date(`${m[0]}T00:00:00Z`);
+  const real = !Number.isNaN(day.getTime()) && day.toISOString().slice(0, 10) === m[0] && day <= now;
+  return { performedYear: year, performedOn: real ? day : null };
+}
+
+/**
+ * Reading order of sources (owner, 18 Nov 2026): festival and broadcaster archives first (Pinkpop
+ * Archive, Rock in Rio, Primavera Sound, Arte Concert: docs/SUPPLY-CHECK.md), then artist channels,
+ * then other official channels, then everything else.
+ */
+export function sourceRank(kind: ChannelKindName): number {
+  return { ARCHIVE: 0, ARTIST: 1, MIXED: 2, UNKNOWN: 3 }[kind];
+}
+
+/** Channel entries in reading order: archives first, the file's order kept within each kind. */
+export function inReadingOrder<T extends { kind: ChannelKindName }>(channels: T[]): T[] {
+  return channels.map((c, i) => ({ c, i })).sort((a, b) => sourceRank(a.c.kind) - sourceRank(b.c.kind) || a.i - b.i).map((x) => x.c);
 }

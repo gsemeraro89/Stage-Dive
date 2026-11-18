@@ -29,19 +29,21 @@ enum CreditRole {
   WITH // a collaborator, shown as "NTO with Sofiane Pamart"
 }
 
-/// How far the collector trusts a channel's uploads to be electronic music.
+/// How far the collector trusts a channel's uploads to be official rock concerts.
 enum ChannelKind {
-  ELECTRONIC_ONLY // festival, club or media channel that only posts electronic music
-  ARTIST // the official channel of an electronic artist
-  MIXED // posts several kinds of music (e.g. Boiler Room)
+  ARCHIVE // festival or broadcaster archive (Pinkpop Archive, Rock in Rio, Arte Concert): official, read first
+  ARTIST // a band's official channel
+  MIXED // an official channel that posts several kinds of music (a label, a broadcaster)
   UNKNOWN // found through search, e.g. a fan upload
 }
 
 /// What the collector decided about a video it classified.
 enum VideoVerdict {
   ACCEPTED // published as a concert
-  NOT_A_SET // a clip, track, trailer, talk or compilation
-  NOT_ELECTRONIC // a concert, but not in one of our genres
+  NOT_A_CONCERT // a clip, track, trailer, talk or compilation
+  NOT_ROCK // a concert, but not in one of our genres
+  NOT_OFFICIAL // a full concert, but a fan upload: listed in the report only (official sources only)
+  EXCLUDED // a band on the owner's exclude list (data/artist-rules.json)
   UNCERTAIN // not enough agreement to publish; kept out, visible in the admin page
   DUPLICATE // the same concert already exists (official upload preferred)
   ERROR // classification failed; retried on the next run

@@ -1,5 +1,7 @@
 # YouTube rule: stored data must be refreshed or deleted at least every 30 days.
-# Runs daily; each set is refreshed once it is 25 days old, and its setlist re-read.
+# Runs daily; each concert is refreshed once it is 25 days old, and its setlist re-read.
+# A video that is gone, private, not embeddable or blocked in ES/IT/GB/US/DE hides its concert (status
+# REMOVED): a normal outcome, not a failure. Removed concerts are checked every night and come back if the video does.
 # Sets never checked for a setlist are always included (the first run after this fills them all).
 name: Refresh YouTube data
 
@@ -9,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       all:
-        description: "Refresh every set now, not only those due"
+        description: "Refresh every concert now, not only those due"
         type: boolean
         default: false
 

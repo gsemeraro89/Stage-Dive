@@ -33,7 +33,7 @@ function cls(overrides: Partial<FullClassification> = {}): FullClassification {
   return {
     isFullConcert: true,
     notConcertReason: "",
-    isElectronic: true,
+    isRock: true,
     confidence: 0.95,
     mainArtists: ["Marsh"],
     collaborators: [],
@@ -42,7 +42,7 @@ function cls(overrides: Partial<FullClassification> = {}): FullClassification {
     country: "Germany",
     venueKind: "Festival",
     genres: ["metal"],
-    liveAct: false,
+    performed: "2024",
     uploaderIsOfficial: false,
     writeUp: "Marsh plays a long melodic house concert outdoors.",
     ...overrides,
@@ -153,8 +153,8 @@ describe.skipIf(!url)("saveConcert (database)", () => {
 
   it("keeps clear verdicts longer so the classifier is not paid again", async () => {
     const old = (days: number) => new Date(Date.now() - days * 86_400_000);
-    await store.recordDecision(db, "NOTASET0001", "NOT_A_SET", "a clip");
-    await store.recordDecision(db, "NOTELEC0001", "NOT_ELECTRONIC", "rock");
+    await store.recordDecision(db, "NOTASET0001", "NOT_A_CONCERT", "a clip");
+    await store.recordDecision(db, "NOTELEC0001", "NOT_ROCK", "rock");
     await store.recordDecision(db, "UNSURE00001", "UNCERTAIN", "unsure");
     await db.videoDecision.updateMany({ where: { youtubeId: { in: ["NOTASET0001", "NOTELEC0001", "UNSURE00001"] } }, data: { decidedAt: old(100) } });
     expect([...(await store.recentDecisions(db, ["NOTASET0001", "NOTELEC0001", "UNSURE00001"], 30))].sort()).toEqual(["NOTASET0001", "NOTELEC0001"]);
@@ -181,7 +181,7 @@ describe.skipIf(!url)("saveConcert (database)", () => {
 
   it("handles a full re-read: tens of thousands of IDs in one call (Postgres parameter limit)", async () => {
     const many = Array.from({ length: 40_000 }, (_, i) => `BULK${String(i).padStart(7, "0")}`);
-    await store.recordDecision(db, many[39_999], "NOT_A_SET", "clip");
+    await store.recordDecision(db, many[39_999], "NOT_A_CONCERT", "clip");
     expect([...(await store.recentDecisions(db, many, 30))]).toEqual([many[39_999]]);
     await db.longVideo.deleteMany();
     await store.rememberLongVideos(db, many.map((youtubeId) => ({ youtubeId, channelId: "UC1" })));
