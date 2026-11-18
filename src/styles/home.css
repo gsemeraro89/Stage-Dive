@@ -349,6 +349,317 @@
   }
 }
 
+/* ----- Options on trial (/?nb=b, c, d). The default (a) is the box and the scrap above. ----- */
+
+/* b. The sticker sheet: no typing, peel a band you love. */
+.hm-next[data-option="b"] {
+  display: block;
+}
+
+.hm-pick-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 28px;
+  margin-bottom: 22px;
+}
+
+.hm-pick-head .zn-marker {
+  font-size: 22px;
+}
+
+.hm .hm-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 18px;
+  padding: 22px clamp(14px, 2vw, 26px);
+  border: var(--cut);
+}
+
+.hm-sticker {
+  font-size: 18px;
+}
+
+.hm-sticker[data-hand="heavy"] {
+  min-height: 54px;
+  font-family: var(--font-strip);
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  outline-width: var(--frame);
+  outline-offset: calc(-1 * var(--frame));
+}
+
+.hm-pick-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 30px;
+  margin-top: 16px;
+}
+
+.hm-pick-foot .hm-next-text {
+  max-width: 62ch;
+}
+
+/* c. Band of the day: a flyer with its neighbours as tear-off tabs along the foot. */
+.hm-next[data-option="c"],
+.hm-next[data-option="d"] {
+  align-items: start;
+}
+
+.hm-flyer {
+  position: relative;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  rotate: 0.7deg;
+}
+
+.hm-flyer-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 34px clamp(16px, 2.4vw, 30px) 6px;
+}
+
+.hm-flyer-body > p {
+  margin: 0;
+}
+
+.hm-flyer-data {
+  font-size: 16px;
+}
+
+.hm-flyer-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 24px;
+  margin-top: 6px;
+}
+
+/* Black, not pink: the gig of the week above owns the page's pink button. */
+.hm-flyer-play {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-flyer-play[data-current] {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+.hm-flyer-take {
+  margin: 14px 0 0;
+  padding: 0 clamp(16px, 2.4vw, 30px) 8px;
+}
+
+.hm-flyer-take .zn-marker {
+  font-size: 21px;
+}
+
+/* The tabs: cut apart with scissors, still hanging from the sheet. Typed sideways, as on a real flyer. */
+.hm .hm-tabs {
+  display: flex;
+  border-top: var(--cut);
+}
+
+.hm-tabs li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.hm-tabs li + li {
+  border-left: var(--cut);
+}
+
+.hm-tab {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: var(--touch);
+  height: 230px;
+  padding: 14px 0 12px;
+  color: var(--toner);
+  text-decoration: none;
+  font: 400 16px/1.15 var(--font-type);
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.hm-tab span {
+  writing-mode: vertical-rl;
+  max-height: 100%;
+  overflow-wrap: anywhere;
+}
+
+.hm-tab:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.hm-tab:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: -6px;
+}
+
+.hm-tab:hover:focus-visible {
+  outline-color: var(--paper);
+}
+
+/* d. The crossroads: you are here, four signs out. */
+.hm-cross {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 24px clamp(14px, 2vw, 26px) 16px;
+  border: var(--cut);
+}
+
+.hm-cross-here {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--touch);
+  padding: 10px 22px 8px;
+  background: var(--toner);
+  color: var(--paper);
+  box-shadow: var(--shadow-rest);
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+}
+
+.hm-cross-here .zn-label {
+  color: var(--toner-soft);
+}
+
+.hm-cross-name {
+  font-family: var(--font-strip);
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.hm .hm-cross ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+  width: 100%;
+}
+
+/* A sign: the way on a black strip, the band on white under it. */
+.hm-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  height: 100%;
+  min-height: var(--touch);
+  padding: 0 12px 10px 0;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-rest);
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+}
+
+.hm-sign-word {
+  padding: 8px 12px 5px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-size: 16px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.hm-sign-name {
+  padding: 4px 0 0 12px;
+  font-family: var(--font-type);
+  font-size: clamp(18px, 1.7vw, 23px);
+  line-height: 1.2;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.hm-sign-note {
+  padding-left: 12px;
+  font-size: 13px;
+  color: var(--label-grey);
+}
+
+.hm-sign:focus-visible,
+.hm-cross-here:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.hm-cross-hint {
+  align-self: flex-end;
+  font-size: 19px;
+}
+
+@media (max-width: 760px) {
+  .hm .hm-pick {
+    gap: 12px 12px;
+    padding: 18px 12px;
+  }
+
+  .hm-pick li:nth-child(n + 11) {
+    display: none;
+  }
+
+  .hm-sticker {
+    font-size: 16px;
+  }
+
+  .hm-sticker[data-hand="heavy"] {
+    font-size: 17px;
+  }
+
+  .hm-flyer {
+    rotate: none;
+  }
+
+  .hm-flyer-play {
+    width: 100%;
+  }
+
+  .hm-tabs li:nth-child(n + 7) {
+    display: none;
+  }
+
+  .hm-tab {
+    height: 210px;
+    font-size: 15px;
+  }
+
+  .hm .hm-cross ul {
+    gap: 14px 12px;
+  }
+
+  .hm-sign-name {
+    font-size: 16px;
+  }
+
+  .hm-cross-hint {
+    align-self: flex-start;
+  }
+}
+
 /* ---------- 2. Fresh off the copier ---------- */
 
 .hm-cards {

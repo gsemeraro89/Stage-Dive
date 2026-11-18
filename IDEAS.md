@@ -81,3 +81,10 @@ Each idea: date, the idea, why it fits the zine, effort.
 **Why it fits.** The whole brand is a flyer taped to a wall; this is the one page of the site that can become one. It is also something to share that is not a screenshot.
 
 **Effort.** Small. A print stylesheet for the map page; no new data.
+
+### 10. Four layouts on trial for the homepage's "Find your next band"
+**Idea.** Built behind a switch so they can be compared: `/` (A, the box + a scrap of the wall), `/?nb=b` (the sticker sheet), `/?nb=c` (band of the day with tear-off tabs), `/?nb=d` (the crossroads: louder, softer, older, newer). Nothing changes for visitors until one is picked; the others are then removed.
+
+**Why it fits.** Each one is a real zine object (a wall, a sticker sheet, a flyer with tabs, a signpost) doing the same job in a different way.
+
+**Effort.** Done as a trial. Picking one and deleting the rest is small.
