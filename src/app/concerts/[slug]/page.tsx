@@ -11,7 +11,7 @@ import { OnNowMark } from "@/components/gig/OnNowMark";
 import { Crumbs, SectionTitle } from "@/components/gig/PageHead";
 import { bandName, cutName, gigs, kindWord, mainArtist, placeYear, playedOn, playedOnLong } from "@/components/gig/words";
 import { PlayerSlot } from "@/components/player/PlayerSlot";
-import { PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
@@ -66,6 +66,8 @@ export default async function ConcertPage({ params }: Props) {
   const band = mainArtist(concert);
   const name = bandName(concert);
   const more = moreFromArtist.slice(0, 3);
+  // Three similar bands, named right under the title; the full list stays lower down (#also-like).
+  const tryNext = similarCards.slice(0, 3);
   const upNext = queue.filter((c) => !more.some((m) => m.id === c.id)).slice(0, 4);
 
   const songs = setlist?.tracks ?? [];
@@ -105,6 +107,27 @@ export default async function ConcertPage({ params }: Props) {
           <p className="cp-note zn-label" data-od="player-note">
             <span>Plays right here</span>
           </p>
+          {tryNext.length > 0 && (
+            <nav className="cp-try" aria-label="If you like this, try" data-od="try-next">
+              <span className="zn-marker cp-try-ask" aria-hidden="true">
+                if you like this, try:
+              </span>
+              <ul>
+                {tryNext.map((a, i) => (
+                  <li key={a.slug}>
+                    <CutOut href={`/artists/${a.slug}`} tone={i === 1 ? "black" : "white"} tilt={[-1.5, 1, -1][i]}>
+                      {a.name}
+                    </CutOut>
+                  </li>
+                ))}
+              </ul>
+              {band?.hasPage && (
+                <Link href={`/map?artist=${band.slug}`} className="hm-more cp-try-more">
+                  MORE LIKE {band.name} &gt;&gt;
+                </Link>
+              )}
+            </nav>
+          )}
         </div>
 
         <Sheet
@@ -291,6 +314,11 @@ export default async function ConcertPage({ params }: Props) {
                   </li>
                 ))}
               </ul>
+              {band?.hasPage && (
+                <Link href={`/map?artist=${band.slug}`} className="hm-more">
+                  THE WHOLE WALL &gt;&gt;
+                </Link>
+              )}
             </section>
           )}
         </div>

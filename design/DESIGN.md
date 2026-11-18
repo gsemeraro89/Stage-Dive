@@ -206,7 +206,7 @@ Fixed lines. Use them exactly:
 | Search label | find a gig: (placeholder: band / venue / year) |
 | Manifesto | No login. No algorithm. No “recommended for you”. We’ve got scissors, glue and every full gig we could find. Free, like the flyer on the venue wall. One click. Jump in. |
 
-Navigation: Bands · Fields + Rooms · Decades · Genres · Tours.
+Navigation: Bands · Fields + Rooms · Decades · Genres · Tours · **Next band?** (the wall of similar bands, `/map`). The last one is a sticker: heavy type on white, black edge, 4 px shadow. It is never pink at rest, only when you are on the wall.
 
 ## 12. Accessibility
 
@@ -256,6 +256,7 @@ Rules the pages add:
 - **One pink thing per page.** On a page that has its label pink in the header (Bands, Decades, Genres…), nothing else is pink at rest: data strips are black, play labels are black and turn pink only for the gig that is playing. On the concert page (no pink label in the header) the date strip is pink, as on the board.
 - **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
 - **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.
+- **Find your next band** has three ways in besides the footer: the sticker in the header, the block under the homepage's black band (`hm-next`: a box to type a band into, plus a scrap of today's wall, names only, bigger = more alike), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
 - **Nothing is invented.** No story, quote or song note that is not stored. An empty pile says "Nothing. Not even a bootleg." and points somewhere full.
 
 ## 15. The bridge (what is left of it)

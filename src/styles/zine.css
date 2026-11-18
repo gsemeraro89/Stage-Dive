@@ -1330,6 +1330,21 @@ button.zn-cutout {
   outline-offset: calc(-1 * var(--keyline));
 }
 
+/* "Next band?": the last label is a sticker (the wall of similar bands). Never pink at rest. */
+.zn-head-nav .zn-head-pick {
+  margin-left: 6px;
+  box-shadow: var(--shadow-rest);
+}
+
+.zn-head-nav a.zn-head-pick[data-tone="white"] {
+  outline: 0;
+}
+
+.zn-head-nav a.zn-head-pick[data-tone="white"]:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
 .zn-head-item {
   position: relative;
   display: inline-flex;
@@ -1411,6 +1426,7 @@ button.zn-cutout {
 
 /* "find a gig:" Dead straight: you type into it. */
 .zn-head-search {
+  flex: 0 1 384px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1495,7 +1511,7 @@ button.zn-cutout {
 }
 
 /* The nav takes its own row before it gets squeezed. */
-@media (max-width: 1240px) {
+@media (max-width: 1560px) {
   .zn-head-nav {
     order: 3;
     flex: 1 0 100%;
@@ -1520,6 +1536,7 @@ button.zn-cutout {
   .zn-head-search {
     display: none;
     flex: 1 0 100%;
+    max-width: none;
     padding: 6px 0 8px;
   }
 
@@ -1534,6 +1551,10 @@ button.zn-cutout {
 
   .zn-head-item {
     position: static;
+  }
+
+  .zn-head-nav .zn-head-pick {
+    margin-left: 0;
   }
 
   .zn-head-panel {

@@ -47,27 +47,6 @@
   display: none !important;
 }
 
-/* Home: the line is the whole section, so it is set large. */
-.od-mapsearch--lead {
-  font-size: clamp(28px, 4.8vw, 72px);
-  gap: 10px 28px;
-  padding-bottom: 8px;
-}
-
-.od-mapsearch--lead input {
-  flex-basis: 5em;
-  max-width: none;
-}
-
-.od-mapsearch--lead input {
-  border-bottom-width: 2px;
-}
-
-.od-mapsearch--lead .od-play {
-  align-self: flex-end;
-  margin-bottom: 0.08em;
-}
-
 /* ---------- Map page ---------- */
 
 .od-map-head {

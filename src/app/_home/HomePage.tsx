@@ -1,5 +1,5 @@
 // The homepage (brand book board 04, phones board 07). Sections, top to bottom: gig of the week with
-// its typewriter setlist, Fresh off the copier, Pick a decade, Where it happened, Most played,
+// its typewriter setlist, Find your next band, Fresh off the copier, Pick a decade, Where it happened, Most played,
 // the night that…, Sort by noise. The issue strip, header, footer and player live in the layout.
 // Data: src/lib/home.ts. Styles: src/styles/home.css. A section with nothing to show is left out.
 //
@@ -11,13 +11,14 @@ import type { CSSProperties, ReactNode } from "react";
 import { PlayButton } from "@/components/player/PlayButton";
 import { GigCard } from "@/components/gig/GigCard";
 import { YouTubePicture } from "@/components/gig/GigPicture";
+import { MapSearch } from "@/components/ui/MapSearch";
 import { bandName, cutName, mainArtist, playedOn } from "@/components/gig/words";
 import { PaperStrip, PhotoFrame, PlayableSetlist, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { homeData, type HomeData } from "@/lib/home";
 import { toTrack } from "@/lib/player-types";
 import type { BandPhotoView } from "@/lib/photos/view";
-import type { ConcertView } from "@/lib/queries";
+import { defaultMapArtist, getMap, mapArtistIndex, type ArtistCard, type ConcertView, type MapArtist } from "@/lib/queries";
 import { compactNumber } from "@/lib/site";
 
 function SectionTitle({ id, children, tone = "black" }: { id: string; children: ReactNode; tone?: "black" | "pink" }) {
@@ -153,6 +154,75 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
   );
 }
 
+// ---------- 2. Find your next band ----------
+
+/** How many bands the scrap of wall shows around today's band. */
+const WALL_SIZE = 6;
+const WALL_TILTS = [-2.5, 1.5, -1, 2.5, -1.5, 2];
+
+/**
+ * The way in to the wall of similar bands (/map): a box to type a band into, and a scrap of the wall
+ * around today's band. Names only, cut out and pinned; the nearer the band, the bigger its cut-out.
+ * Every name opens the wall from that band.
+ */
+function NextBand({ bands, wall }: { bands: { slug: string; name: string }[]; wall: { centre: ArtistCard; artists: MapArtist[] } | null }) {
+  // getMap gives the neighbours nearest first. Around the centre they go left, right, left… so the
+  // nearest ones sit next to it; on the scrap they keep their size by rank.
+  const near = (wall?.artists ?? []).slice(0, WALL_SIZE).map((a, i) => ({ ...a, rank: i }));
+  const before = near.filter((_, i) => i % 2 === 1).reverse();
+  const after = near.filter((_, i) => i % 2 === 0);
+  const pin = (a: (typeof near)[number]) => (
+    <li key={a.slug}>
+      <Link
+        href={`/map?artist=${a.slug}`}
+        className="hm-wall-name zn-lift"
+        data-near={a.rank < 2 ? 1 : a.rank < 4 ? 2 : 3}
+        data-tone={a.rank % 3 === 1 ? "black" : "white"}
+        style={{ "--tilt": `${WALL_TILTS[a.rank % WALL_TILTS.length]}deg` } as CSSProperties}
+      >
+        {a.name}
+      </Link>
+    </li>
+  );
+
+  return (
+    <section className="hm-section hm-next" aria-labelledby="hm-next" data-od="next-band">
+      <div className="hm-next-ask">
+        <SectionTitle id="hm-next">Find your next band</SectionTitle>
+        <p className="hm-next-text">Name one band you love. We pin up the ones standing right next to them. Every name is a whole gig.</p>
+        <MapSearch artists={bands} id="hm-next-q" lead />
+      </div>
+
+      {wall && near.length > 0 && (
+        <div className="hm-wall">
+          <Tape at="top-left" tilt={-5} />
+          <p className="zn-label hm-wall-label">
+            TODAY&rsquo;S WALL /// {near.length} OF {wall.artists.length} AROUND {wall.centre.name}
+          </p>
+          <ul className="hm-wall-names" aria-label={`Bands like ${wall.centre.name}`}>
+            {before.map(pin)}
+            <li>
+              <Link href={`/map?artist=${wall.centre.slug}`} className="hm-wall-name hm-wall-centre zn-lift" style={{ "--tilt": "-1deg" } as CSSProperties}>
+                <span className="od-sr">Today&rsquo;s band: </span>
+                {wall.centre.name}
+              </Link>
+            </li>
+            {after.map(pin)}
+          </ul>
+          <div className="hm-wall-foot">
+            <span className="zn-marker" style={{ "--tilt": "-2deg" } as CSSProperties}>
+              bigger = more alike
+            </span>
+            <Link href={`/map?artist=${wall.centre.slug}`} className="hm-more">
+              THE WHOLE WALL &gt;&gt;
+            </Link>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ---------- 5. Most played ----------
 
 function ChartRow({ concert, rank, note }: { concert: ConcertView; rank: number; note: string }) {
@@ -191,7 +261,14 @@ const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 const NOISE_TONES = ["white", "black", "white", "black"] as const;
 
 export default async function HomePage() {
-  const data = await homeData();
+  // The wall of similar bands is an extra: if it cannot be read, the page goes out without it.
+  const [data, bands, wall] = await Promise.all([
+    homeData(),
+    mapArtistIndex().catch(() => []),
+    defaultMapArtist()
+      .then((slug) => (slug ? getMap(slug) : null))
+      .catch(() => null),
+  ]);
   const { gigOfTheWeek: gig, fresh, decades, fields, rooms, mostPlayed, mostPlayedBy, nightThat, noise } = data;
 
   // A band photo is used once on the page.
@@ -220,8 +297,10 @@ export default async function HomePage() {
         ONE CLICK AND THE GIG STARTS <span>IT KEEPS PLAYING</span> WHILE YOU DIG THROUGH THE REST
       </p>
 
+      {bands.length > 0 && <NextBand bands={bands} wall={wall} />}
+
       {freshCards.length > 0 && (
-        <section className="hm-section" aria-labelledby="hm-fresh" data-od="fresh">
+        <section className={bands.length > 0 ? "hm-section hm-section--cut" : "hm-section"} aria-labelledby="hm-fresh" data-od="fresh">
           <div className="hm-head">
             <SectionTitle id="hm-fresh">Fresh off the copier</SectionTitle>
             <Link href="/concerts" className="hm-more">

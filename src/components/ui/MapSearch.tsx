@@ -3,9 +3,9 @@
 import Form from "next/form";
 
 /**
- * "If you like ___": type an artist, open the map from there. One left-aligned line of display
- * type with an underlined field (DESIGN.md section 8, Map search). `lead` is the large version
- * on the home page; without it the line is the compact one at the top of the map.
+ * "If you like ___": type a band, open the map from there. Without `lead` it is the compact line
+ * at the top of the map. `lead` is the homepage's version, in the zine's own pieces: a marker label,
+ * a framed field you type into and a black press button, all dead straight (styles: home.css, hm-next).
  * Focusing the field selects what is in it, so a new name can be typed straight away.
  */
 export function MapSearch({
@@ -24,17 +24,17 @@ export function MapSearch({
   children?: React.ReactNode;
 }) {
   return (
-    <Form action="/map" role="search" className={`od-mapsearch${lead ? " od-mapsearch--lead" : ""}`} data-od="map-search">
-      <label htmlFor={id} className="display">
-        If you like
+    <Form action="/map" role="search" className={lead ? "hm-next-form" : "od-mapsearch"} data-od="map-search">
+      <label htmlFor={id} className={lead ? "zn-marker" : "display"}>
+        {lead ? "if you like:" : "If you like"}
       </label>
       <input
         id={id}
         name="q"
-        className="display"
+        className={lead ? undefined : "display"}
         list={`${id}-list`}
         defaultValue={value}
-        placeholder="An artist"
+        placeholder={lead ? "Type a band you love…" : "A band"}
         autoComplete="off"
         maxLength={80}
         required
@@ -47,9 +47,15 @@ export function MapSearch({
         ))}
       </datalist>
       {children}
-      <button type="submit" className="od-play">
-        {lead ? "Find bands" : "Show"}
-      </button>
+      {lead ? (
+        <button type="submit" className="zn-btn" data-tone="black">
+          Find bands
+        </button>
+      ) : (
+        <button type="submit" className="od-play">
+          Show
+        </button>
+      )}
     </Form>
   );
 }

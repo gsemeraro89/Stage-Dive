@@ -56,3 +56,28 @@ Each idea: date, the idea, why it fits the zine, effort.
 **Why it fits.** Thin pages are the honest state of a new zine; this turns "we only have one" into a reason to come back, and feeds the newsletter with people who told us exactly which band they care about.
 
 **Effort.** Medium. Needs the newsletter sign-up to exist first, plus a tag per band on the subscriber. The page slot and the copy are already there.
+
+---
+
+## 2026-11-18 · after "Find your next band" got its three ways in
+
+### 7. String on the wall
+**Idea.** On the wall (`/map`) and on the homepage scrap, join today's band to its neighbours with "string": thin black hand-drawn lines pinned at both ends, like a detective's board. The thicker the string, the more alike. The names stay links; the string is decoration.
+
+**Why it fits.** It is made with pins and thread, it says "these belong together" without a score, and it turns a list of names into a picture you want to poke at.
+
+**Effort.** Small to medium. One inline SVG behind the names on the homepage scrap; on `/map` it needs the positions the map already computes, so a little work with the main agent.
+
+### 8. "Next band?" after the last song
+**Idea.** When a gig ends (or in its last minute), the player bar's marker line changes from "now playing" to "next band?" with one similar band's name on a cut-out beside it. One name, not a carousel.
+
+**Why it fits.** It asks at the only moment the fan is actually looking for something new, in the zine's voice, and it keeps "one live thing per view".
+
+**Effort.** Medium. The similar bands are already loaded by the player (`suggestions`); the timing lives in player logic, so it is a job for the main agent with a small design pass.
+
+### 9. The wall as a poster
+**Idea.** A "print this wall" link on `/map`: one A4 page, today's band in the middle, its twelve neighbours around it, the wordmark and the address at the bottom. Black and paper only, made for a real photocopier.
+
+**Why it fits.** The whole brand is a flyer taped to a wall; this is the one page of the site that can become one. It is also something to share that is not a screenshot.
+
+**Effort.** Small. A print stylesheet for the map page; no new data.

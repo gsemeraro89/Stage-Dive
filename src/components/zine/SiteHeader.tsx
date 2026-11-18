@@ -10,19 +10,24 @@ import { IconButton, SearchGlyph } from "./Icons";
 /** A decade in the menu's list, with how many gigs were played in it. */
 export type NavDecade = { start: number; label: string; count: number };
 
-/** Brief section 3: Bands / Fields + Rooms / Decades / Genres / Tours. Tilts alternate, as neighbours must. */
-const NAV = [
+/**
+ * Brief section 3: Bands / Fields + Rooms / Decades / Genres / Tours, then the wall of similar bands
+ * (/map). Tilts alternate, as neighbours must. `pick` is the one label that is a sticker: heavy type
+ * on white with a black edge and a shadow, so it stands out without being a second pink thing.
+ */
+const NAV: readonly { href: string; label: string; tilt: number; pick?: boolean }[] = [
   { href: "/artists", label: "Bands", tilt: -1.5 },
   { href: "/venues", label: "Fields + Rooms", tilt: 1 },
   { href: "/decades", label: "Decades", tilt: -1 },
   { href: "/genres", label: "Genres", tilt: 1.5 },
   { href: "/tours", label: "Tours", tilt: -1 },
-] as const;
+  { href: "/map", label: "Next band?", tilt: 2, pick: true },
+];
 
 const DECADES_ID = "zn-head-decades";
 
 /**
- * The site header (brand book boards 04 and 07): the wordmark, five cut-out nav labels and the
+ * The site header (brand book boards 04 and 07): the wordmark, the cut-out nav labels and the
  * "find a gig:" search. On a phone the nav and the search fold behind two 48px labels.
  * `logo` is passed in so the wordmark's drawing stays out of the browser bundle.
  */
@@ -94,7 +99,14 @@ export function SiteHeader({ logo, decades }: { logo: ReactNode; decades: NavDec
       <nav aria-label="Main" className="zn-head-nav">
         {NAV.map((item) => {
           const label = (
-            <CutOut href={item.href} tilt={item.tilt} tone={under(item.href) ? "pink" : "black"} current={under(item.href)}>
+            <CutOut
+              href={item.href}
+              tilt={item.tilt}
+              tone={under(item.href) ? "pink" : item.pick ? "white" : "black"}
+              sticker={item.pick}
+              current={under(item.href)}
+              className={item.pick ? "zn-head-pick" : undefined}
+            >
               {item.label}
             </CutOut>
           );

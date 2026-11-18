@@ -169,6 +169,186 @@
   white-space: nowrap;
 }
 
+/* ---------- 1b. Find your next band: the box you type into, and a scrap of the wall ---------- */
+
+.hm-next {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 30px clamp(30px, 4.5vw, 72px);
+  align-items: center;
+}
+
+.hm-next-ask {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.hm-next-text {
+  margin: 0;
+  max-width: 38ch;
+  font-size: var(--text-body);
+  line-height: var(--leading-body, 1.6);
+}
+
+/* Dead straight: you type into it and you press it. */
+.hm-next-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+  width: 100%;
+}
+
+.hm-next-form label {
+  flex: 1 0 100%;
+  font-size: 22px;
+}
+
+.hm-next-form input {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 56px;
+  padding: 5px 14px 0;
+  border: var(--frame) solid var(--toner);
+  background: var(--sheet);
+  color: var(--toner);
+  font: 400 18px/1.2 var(--font-type);
+}
+
+.hm-next-form input::placeholder {
+  color: var(--label-grey);
+  opacity: 1;
+}
+
+/* The browser's own list arrow is not part of the zine. */
+.hm-next-form input::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+/* The scrap of wall: cut out along the dashed line, taped on at one corner. */
+.hm-wall {
+  position: relative;
+  padding: 22px clamp(14px, 2vw, 26px) 12px;
+  border: var(--cut);
+  rotate: 0.6deg;
+}
+
+.hm-wall-label {
+  margin: 0 0 14px;
+  text-align: right;
+}
+
+.hm .hm-wall-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 4px 0 6px;
+}
+
+/* One band: a cut-out you can pick up. A finger tall, never smaller than the type allows. */
+.hm-wall-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  max-width: 100%;
+  padding: 7px 14px 4px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-rest);
+  font-family: var(--font-type);
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: none;
+  rotate: var(--tilt, 0deg);
+}
+
+.hm-wall-name[data-tone="black"] {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+}
+
+.hm-wall-name[data-near="2"] {
+  font-size: 19px;
+}
+
+.hm-wall-name[data-near="1"] {
+  min-height: 54px;
+  font-size: 23px;
+}
+
+/* Today's band, in the middle: the heavy hand, on black. */
+.hm-wall-centre {
+  min-height: 62px;
+  padding: 8px 18px 6px;
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+  font-family: var(--font-strip);
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.hm-wall-name:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.hm-wall-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 20px;
+  margin-top: 10px;
+}
+
+.hm-wall-foot .zn-marker {
+  font-size: 19px;
+}
+
+@media (max-width: 900px) {
+  .hm-next {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hm-wall {
+    rotate: none;
+  }
+
+  .hm-wall-label {
+    text-align: left;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .hm-next-form .zn-btn {
+    flex: 1 0 100%;
+  }
+
+  .hm .hm-wall-names {
+    gap: 12px 12px;
+  }
+
+  .hm-wall-name[data-near="1"] {
+    font-size: 20px;
+  }
+
+  .hm-wall-name[data-near="2"] {
+    font-size: 17px;
+  }
+}
+
 /* ---------- 2. Fresh off the copier ---------- */
 
 .hm-cards {
