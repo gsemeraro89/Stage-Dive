@@ -150,7 +150,9 @@
   position: relative;
   container-type: inline-size;
   height: clamp(640px, calc(100vh - 290px), 880px);
-  overflow: hidden;
+  /* Shadows and tilted corners may hang a little over the edge of the field. */
+  overflow: clip;
+  overflow-clip-margin: 14px;
 }
 
 .od-map-field ol {
@@ -193,81 +195,175 @@
   max-width: 60%;
 }
 
+/* ---- The pictures, framed the way the zine frames a picture (design/DESIGN.md sections 5-6) ----
+   Each picture keeps its own shape (16:9 concert thumbnail, square avatar) and is never cropped,
+   filtered or written on. The zine happens round it: a 4px black frame with a black mount under
+   the picture, a solid shadow, a slight tilt, and the name on a paper strip that bites into the
+   mount, never the picture. The tilt is on the link, so MapView's placing is not disturbed. */
 .od-map-node,
 .od-map-centre {
   display: block;
-  background: var(--ground);
-  line-height: 0.95;
+  line-height: 1.1;
+  text-decoration: none;
+}
+
+.od-map-node {
+  rotate: -1.5deg;
+}
+
+.od-map-field li:nth-child(even) .od-map-node {
+  rotate: 1.5deg;
+}
+
+.od-map-field li:nth-child(3n) .od-map-node {
+  rotate: -2.5deg;
+}
+
+.od-map-field li:nth-child(4n) .od-map-node {
+  rotate: 2deg;
 }
 
 .od-map-pic {
   position: relative;
   display: block;
-  aspect-ratio: 1 / 1;
+  box-sizing: content-box;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: var(--hover-row);
+  background: var(--toner);
+  border: var(--frame) solid var(--toner);
+  /* The mount: the strip bites into this, not into the picture. */
+  border-bottom-width: 16px;
+  box-shadow: var(--shadow-rest);
 }
 
-/* The picture uses the shared portrait crop (components.css, Artist squares). */
+.od-map-pic[data-portrait] {
+  aspect-ratio: 1 / 1;
+}
 
+/* No picture: the band's first letter on a clean sheet, in the same frame. */
 .od-map-pic--plain {
   display: grid;
   place-items: center;
-  background: var(--ground);
-  border: 1px solid var(--line);
-  font-size: 40px;
+  background: var(--sheet);
+  color: var(--toner);
+  font-size: clamp(22px, 4cqw, 40px);
+  line-height: 1;
 }
 
 /* Three sizes by distance; they shrink with the field so twelve always fit. */
 .od-map-node .od-map-pic {
-  width: clamp(60px, 9.5cqw, 96px);
+  width: clamp(72px, 11.5cqw, 116px);
 }
 
 .od-map-field li[data-tier="2"] .od-map-pic {
-  width: clamp(72px, 12cqw, 120px);
+  width: clamp(86px, 14cqw, 140px);
 }
 
 .od-map-field li[data-tier="1"] .od-map-pic {
-  width: clamp(88px, 15cqw, 148px);
+  width: clamp(100px, 17cqw, 168px);
 }
 
-/* The name is under the picture, on the ground, never on the photo (section 7). */
+/* A square avatar is narrower, so it does not tower over its 16:9 neighbours. */
+.od-map-field li .od-map-pic[data-portrait] {
+  width: clamp(60px, 9.5cqw, 96px);
+}
+
+/* The name: typed on a strip of clean paper that bites into the mount. */
 .od-map-name {
+  position: relative;
+  z-index: 1;
   display: block;
-  max-width: clamp(120px, 18cqw, 170px);
-  padding: 8px 0 4px;
-  font-size: clamp(12px, 1.6cqw, 14px);
-  line-height: 1.05;
-  overflow-wrap: anywhere;
+  width: fit-content;
+  max-width: clamp(120px, 18cqw, 176px);
+  margin: -11px 0 0 8px;
+  padding: 5px 8px 2px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-type);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+  rotate: 1deg;
 }
 
-/* The centre block is as wide as its picture, so the picture sits on the crosshair. */
+/* The centre band: a poster taped to the wall. A clean sheet, the picture in its frame, the name in
+   the heavy hand on a black strip, one piece of tape across the top edge. */
 .od-map-centre {
-  width: min(210px, 23cqw);
+  width: min(250px, 27cqw);
+  padding: 9px 9px 10px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  rotate: -1.5deg;
+}
+
+.od-map-centre::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: -15px;
+  width: 42%;
+  height: 26px;
+  margin-left: -21%;
+  background: var(--tape);
+  opacity: 0.93;
+  border-left: 2px dashed var(--tape-edge);
+  border-right: 2px dashed var(--tape-edge);
+  rotate: -3deg;
 }
 
 .od-map-centre .od-map-pic {
-  width: 100%;
+  width: auto;
+  box-shadow: none;
 }
 
 .od-map-centre .od-map-name {
-  max-width: none;
-  /* Small enough for a long word ("Kalkbrenner") to stay whole under the picture. */
-  font-size: clamp(14px, 2.1cqw, 20px);
-  line-height: 0.95;
+  max-width: 100%;
+  margin-left: 6px;
+  padding: 6px 9px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+  font-family: var(--font-strip);
+  font-size: clamp(15px, 2.1cqw, 20px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  rotate: -1deg;
 }
 
-.od-map-node:hover img,
-.od-map-node[data-selected] img,
-.od-map-centre:hover img {
-  filter: none;
+/* Pointed at or picked: the paper lifts, and the name goes on pink (the one live thing here). */
+.od-map-node:hover .od-map-pic,
+.od-map-node[data-selected] .od-map-pic {
+  translate: -2px -2px;
+  box-shadow: 8px 8px 0 var(--toner);
 }
 
 .od-map-node:hover .od-map-name,
 .od-map-node[data-selected] .od-map-name,
-.od-map-centre:hover .od-map-name {
-  background-color: var(--acid);
-  color: var(--on-acid);
+.od-map-centre:hover .od-map-name,
+.od-map-centre[data-selected] .od-map-name {
+  background-color: var(--pink);
+  color: var(--toner);
+}
+
+.od-map-node:focus-visible,
+.od-map-centre:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 5px;
+}
+
+/* The side rail's picture of the band pointed at: the same frame, the picture whole on its mount. */
+.od-map-rail .od-aline-pic,
+.od-map-pickpic .od-map-pic {
+  border: var(--frame) solid var(--toner);
+  box-shadow: var(--shadow-rest);
 }
 
 /* Tablet: the field on top, the selected artist below it. */
@@ -393,15 +489,15 @@
   }
 
   .od-map-field[data-size="xl"] .od-map-node .od-map-pic {
-    width: 14cqw;
+    width: 18cqw;
   }
 
   .od-map-field[data-size="xl"] li[data-tier="2"] .od-map-pic {
-    width: 17cqw;
+    width: 21cqw;
   }
 
   .od-map-field[data-size="xl"] li[data-tier="1"] .od-map-pic {
-    width: 20cqw;
+    width: 24cqw;
   }
 
   .od-map-field[data-size="s"] {
@@ -409,37 +505,59 @@
   }
 
   .od-map-node .od-map-pic {
-    width: 15cqw;
+    width: 23cqw;
   }
 
   .od-map-field li[data-tier="2"] .od-map-pic {
-    width: 18.5cqw;
+    width: 26cqw;
   }
 
   .od-map-field li[data-tier="1"] .od-map-pic {
-    width: 22cqw;
+    width: 30cqw;
+  }
+
+  .od-map-field li .od-map-pic[data-portrait] {
+    width: 17cqw;
+  }
+
+  /* Smaller pieces: a thinner mount and shadow, the strip in 13px type. */
+  .od-map-pic {
+    border-width: 3px;
+    border-bottom-width: 12px;
+    box-shadow: 3px 3px 0 var(--toner);
   }
 
   .od-map-name {
     max-width: 33cqw;
-    padding: 5px 0 2px;
-    font-size: 11px;
+    margin: -9px 0 0 5px;
+    padding: 4px 6px 1px;
+    outline-width: 2px;
+    outline-offset: -2px;
+    font-size: 13px;
   }
 
-  /* Wide enough for an eleven-letter word ("Kalkbrenner") to stay whole under the picture. */
   .od-map-centre {
-    width: 33cqw;
+    width: 42cqw;
+    padding: 6px 6px 8px;
+    box-shadow: var(--shadow-rest);
   }
 
   .od-map-centre .od-map-name {
-    font-size: 11px;
+    margin-left: 2px;
+    padding: 5px 6px 3px;
+    font-size: 15px;
+  }
+
+  /* The tape moves over so the "Start" label can be read. */
+  .od-map-centre::before {
+    left: 68%;
   }
 
   /* Who the map starts from: a mono word on the ground above the centre picture, never on it. */
   .od-map-here {
     display: block;
-    padding-bottom: 3px;
-    font-size: 11px;
+    padding-bottom: 4px;
+    font-size: 13px;
     line-height: 1.2;
     color: var(--ink);
   }
@@ -451,7 +569,7 @@
     bottom: 0;
     z-index: 3;
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
     gap: 10px 12px;
     align-items: start;
     padding: 12px var(--pad-x);
@@ -470,7 +588,12 @@
   }
 
   .od-map-pickpic .od-map-pic {
-    width: 72px;
+    width: auto;
+    border-bottom-width: 3px;
+  }
+
+  .od-map-pickpic .od-map-pic[data-portrait] {
+    width: 64px;
   }
 
   .od-map-pickpic img {

@@ -133,10 +133,10 @@
   display: block;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: var(--hover-row);
+  background: var(--toner);
 }
 
-/* The picture uses the shared portrait crop (see Artist squares). */
+/* The picture is shown whole on its black mount (see "Square artist pictures" above). */
 
 .od-aline:hover .od-aline-pic img {
   filter: none;

@@ -257,6 +257,7 @@ Rules the pages add:
 - **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
 - **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.
 - **Find your next band** has three ways in besides the footer: the sticker in the header, the crossroads under the homepage's black band (`hm-next`, `src/app/_home/NextBand.tsx`: "you are here" on today's band, then four signs, Louder / Softer / Older / Newer, up to three bands each with their genre; every name opens the wall from that band), and "if you like this, try:" under the concert page's title (`cp-try`: the marker asks, three cut-outs are the links). None of them is pink.
+- **The wall (`/map`)**: every band's picture keeps its own shape (a 16:9 concert thumbnail, a square channel avatar) in the 4 px black frame with a black mount, a solid shadow and a slight tilt; the name is typed on a paper strip that bites into the mount. Three sizes: nearer is bigger. The band in the middle is a poster: a clean sheet, taped, its name in the heavy hand. The name of the band pointed at goes on pink. A band with no picture gets its first letter on a clean sheet in the same frame.
 - **Nothing is invented.** No story, quote or song note that is not stored. An empty pile says "Nothing. Not even a bootleg." and points somewhere full.
 
 ## 15. The bridge (what is left of it)

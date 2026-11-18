@@ -8,6 +8,21 @@ export type MapArtistLine = ArtistLineData & { x: number; y: number };
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+/**
+ * The 16:9 files of a concert thumbnail. YouTube's small and medium "default" files are 4:3 with
+ * black bars baked in; "mqdefault" (320x180, always there) and "maxresdefault" (1280x720, when the
+ * stored thumbnail says it exists) are the picture alone. Both are YouTube's own files, untouched.
+ */
+function wide(t: ArtistLineData["mostWatched"]["thumbnail"]): { src: string; srcSet?: string } {
+  const id = t.src.match(/^https:\/\/i\.ytimg\.com\/vi\/([^/]+)\//)?.[1];
+  if (!id) return { src: t.src, srcSet: t.srcSet };
+  const file = (name: string) => `https://i.ytimg.com/vi/${id}/${name}.jpg`;
+  return {
+    src: file("mqdefault"),
+    srcSet: t.width >= 1280 ? `${file("mqdefault")} 320w, ${file("maxresdefault")} 1280w` : undefined,
+  };
+}
+
 /** How far an artist is from the centre: 1 = nearest third, 3 = farthest. Concerts the size of the picture. */
 function tier(a: { x: number; y: number }): 1 | 2 | 3 {
   const d = Math.hypot(a.x, a.y);
@@ -43,8 +58,8 @@ function placeOnce(field: HTMLElement): boolean {
     el.style.top = `${Math.round(cy - h / 2)}px`;
   };
   if (centre) {
-    // A little wider than it is, so the nearest pictures do not crowd the centre.
-    placed.push({ cx: W / 2, cy: H / 2, w: centre.offsetWidth + 16, h: centre.offsetHeight + 16 });
+    // A little wider than it is, so the nearest pictures do not crowd the centre (or its shadow and tape).
+    placed.push({ cx: W / 2, cy: H / 2, w: centre.offsetWidth + 28, h: centre.offsetHeight + 36 });
     put(centre, W / 2, H / 2, centre.offsetWidth, centre.offsetHeight);
   }
   const free = (cx: number, cy: number, w: number, h: number, gap: number) =>
@@ -165,12 +180,13 @@ export function MapView({
   // The field is taller on a phone the more pictures it has to hold.
   const size = artists.length <= 3 ? "s" : artists.length <= 7 ? "m" : artists.length <= 9 ? "l" : "xl";
 
-  // `width` is the widest the square gets; a cropped concert thumbnail needs a file 2.35 times that.
+  // `width` is the widest the picture gets on the page. Each picture keeps its own shape: a concert
+  // thumbnail is 16:9, a channel avatar is square. Nothing is cropped, filtered or drawn on it.
   const picture = (a: ArtistLineData, width: number) =>
     a.cover ? (
       <span className="od-map-pic" data-portrait={a.cover.portrait || undefined}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={a.cover.thumbnail.src} srcSet={a.cover.thumbnail.srcSet} sizes={`${Math.round(width * (a.cover.portrait ? 1 : 2.35))}px`} alt="" decoding="async" />
+        <img {...(a.cover.portrait ? a.cover.thumbnail : wide(a.cover.thumbnail))} sizes={`${width}px`} alt="" decoding="async" />
       </span>
     ) : (
       <span className="od-map-pic od-map-pic--plain display">{a.name.slice(0, 1)}</span>
@@ -186,7 +202,7 @@ export function MapView({
           {...pick(centre.slug)}
         >
           <span className="od-map-here meta">Start</span>
-          {picture(centre, 210)}
+          {picture(centre, 250)}
           <span className="od-map-name">{centre.name}</span>
         </Link>
         <ol aria-label={`Artists like ${centre.name}`} data-od="map-artists">
@@ -200,7 +216,7 @@ export function MapView({
               style={{ "--x": a.x, "--y": a.y } as React.CSSProperties}
             >
               <Link href={`/artists/${a.slug}`} className="od-map-node display" {...pick(a.slug)}>
-                {picture(a, 148)}
+                {picture(a, 170)}
                 <span className="od-map-name">{a.name}</span>
               </Link>
             </li>
@@ -211,7 +227,7 @@ export function MapView({
       {/* Phones: the selected artist and the two ways on, kept at the foot of the screen. */}
       <div className="od-map-pick" aria-live="polite" data-od="map-pick">
         <Link href={`/artists/${current.slug}`} className="od-map-pickpic" tabIndex={-1} aria-hidden="true" key={current.slug}>
-          {picture(current, 72)}
+          {picture(current, 104)}
         </Link>
         <div className="od-map-pickid">
           <p className="meta od-muted">{kicker}</p>
