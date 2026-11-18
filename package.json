@@ -25,8 +25,6 @@
     "tracklists": "tsx scripts/tracklists.ts",
     "artist-images": "tsx scripts/artist-images.ts",
     "artist-lane": "tsx scripts/artist-lane.ts",
-    "track-stats": "tsx scripts/track-stats.ts",
-    "store-check": "tsx scripts/store-check.ts",
     "admin-ops": "tsx scripts/admin-ops.ts"
   },
   "dependencies": {

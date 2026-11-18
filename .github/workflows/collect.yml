@@ -48,10 +48,6 @@ on:
       only_channel:
         description: "Read only this channel (name as in data/channels.json, e.g. Cercle); no searches"
         default: ""
-      store_check:
-        description: "Only check how many tracklist tracks are on Beatport / iTunes (one-off, read-only)"
-        type: boolean
-        default: false
       similarity_only:
         description: "Only update similar artists (asks ListenBrainz; no YouTube quota, no Claude cost)"
         type: boolean
@@ -111,19 +107,16 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
-      - name: Store check only
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.store_check && !inputs.admin_ops }}
-        run: npm run store-check
       - name: One-off fixes only
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.admin_ops }}
         env:
           ADMIN_OPS: ${{ inputs.admin_ops }}
         run: npm run admin-ops -- "$ADMIN_OPS"
       - name: Similar artists only
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.similarity_only && !(inputs.store_check || inputs.admin_ops) }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.similarity_only && !(inputs.admin_ops) }}
         run: npm run similarity
       - name: Artist search / Haiku test only
-        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.artist_search || inputs.haiku_test) && !(inputs.similarity_only || inputs.store_check || inputs.admin_ops) }}
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.artist_search || inputs.haiku_test) && !(inputs.similarity_only || inputs.admin_ops) }}
         env:
           CLAUDE_BUDGET_USD: ${{ inputs.claude_budget || vars.CLAUDE_BUDGET_USD || '3' }}
           LANE_CLASSIFIER: ${{ inputs.lane_classifier }}
@@ -140,7 +133,7 @@ jobs:
             npm run artist-lane -- $NO_BATCH
           fi
       - name: Collect
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test) || (inputs.store_check || inputs.admin_ops)) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test) || (inputs.admin_ops)) }}
         # Scheduled runs only publish once the owner sets the repository variable COLLECTOR_PUBLISH to "true"
         # (Settings -> Secrets and variables -> Actions -> Variables). Until then they are dry runs.
         run: |
@@ -159,13 +152,13 @@ jobs:
             npm run collect
           fi
       - name: Artist profiles (short bios for new artists)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.store_check || inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run profiles
       - name: Artist pictures (official YouTube channel avatars)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.store_check || inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run artist-images
       - name: Similar artists (recompute with the new sets)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.store_check || inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run similarity -- --no-fetch
       - name: Keep the report (deleted after 30 days, YouTube storage rule)
         if: always()

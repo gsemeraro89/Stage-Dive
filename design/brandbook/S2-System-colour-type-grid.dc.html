@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stagedive — colour, type, grid</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Special+Elite&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+
+.sd{font-family:'Special Elite','Courier 10 Pitch','Courier New',monospace;color:#0A0A0A;background:radial-gradient(rgba(10,10,10,.075) 1px,transparent 1.3px) 0 0/11px 13px,radial-gradient(rgba(10,10,10,.05) 1px,transparent 1.4px) 5px 7px/17px 19px,#ECEAE4;position:relative;box-sizing:border-box;overflow:hidden}
+.sd *{box-sizing:border-box}
+.sd button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;text-align:left}
+.sd a{color:inherit}
+.sd .x{font-family:'Archivo Black','Arial Black',Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:-.01em}
+.sd .m{font-family:'Permanent Marker','Comic Sans MS',cursive}
+.sd .ph{display:block;position:relative;overflow:hidden;background:#0A0A0A;border:4px solid #0A0A0A}
+.sd .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.sd .tape{position:absolute;width:118px;height:34px;background:#D8D2B4;opacity:.93;border-left:2px dashed rgba(10,10,10,.22);border-right:2px dashed rgba(10,10,10,.22);z-index:3}
+.sd .k{background:#0A0A0A;color:#ECEAE4}
+.sd .w{background:#FBFAF6;color:#0A0A0A;outline:3px solid #0A0A0A;outline-offset:-3px}
+.sd .p{background:#FF2D7A;color:#0A0A0A}
+.sd .st{display:inline-block;line-height:1}
+.sd .sh{box-shadow:7px 7px 0 #0A0A0A}
+.sd .lb{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#4F4D48}
+.sd .stp{display:block;width:30px;height:6px;background:linear-gradient(180deg,#bdbbb4,#77756f);box-shadow:0 1px 0 #0A0A0A;position:absolute;z-index:4}
+.sd .row{display:flex;align-items:center;gap:16px;width:100%;padding:11px 6px;border-bottom:3px dashed #0A0A0A}
+.sd .tx{font-family:'Special Elite','Courier 10 Pitch',monospace}
+</style>
+</helmet>
+<div class="sd" style="width:1440px;height:1000px;padding:40px 44px;display:grid;grid-template-columns:372px 440px minmax(0,1fr);gap:40px">
+<div style="display:flex;flex-direction:column;gap:13px">
+<div class="lb" style="">02 THE SYSTEM /// COLOUR</div>
+<div class="k" style="padding:13px 14px 11px;transform:rotate(-0.8deg);color:#ECEAE4;"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="x" style="font-size:17px">Toner black</span><span style="font-size:15px">#0A0A0A</span></div><div style="font-size:13.5px;line-height:1.35;margin-top:4px">Text, photos, strips, the player. A quarter of any page.</div></div>
+<div class="w" style="padding:13px 14px 11px;transform:rotate(0.6deg);color:#0A0A0A;"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="x" style="font-size:17px">Copier paper</span><span style="font-size:15px">#ECEAE4</span></div><div style="font-size:13.5px;line-height:1.35;margin-top:4px">The ground, always speckled. Never pure white, never flat.</div></div>
+<div class="w" style="padding:13px 14px 11px;transform:rotate(-0.5deg);color:#0A0A0A;"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="x" style="font-size:17px">Clean sheet</span><span style="font-size:15px">#FBFAF6</span></div><div style="font-size:13.5px;line-height:1.35;margin-top:4px">Labels, setlists, anything glued on top of the page.</div></div>
+<div class="p" style="padding:13px 14px 11px;transform:rotate(1deg);color:#0A0A0A;"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="x" style="font-size:17px">Highlighter pink</span><span style="font-size:15px">#FF2D7A</span></div><div style="font-size:13.5px;line-height:1.35;margin-top:4px">A block behind black words: one live thing per view. Never text, never on a photo.</div></div>
+<div style="background:#D8D2B4;padding:13px 14px 11px;transform:rotate(-.6deg);border-left:2px dashed rgba(10,10,10,.25);border-right:2px dashed rgba(10,10,10,.25)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="x" style="font-size:17px">Masking tape</span><span style="font-size:15px">#D8D2B4</span></div><div style="font-size:13.5px;line-height:1.35;margin-top:4px">Decoration only. Holds things down. Never carries words.</div></div>
+<div class="lb" style="margin-top:8px">How much of each</div>
+<div style="display:flex;height:44px;outline:3px solid #0A0A0A;outline-offset:-3px"><span style="flex:58;background:#ECEAE4"></span><span style="flex:25;background:#0A0A0A"></span><span style="flex:11;background:#FBFAF6;border-left:3px solid #0A0A0A"></span><span style="flex:6;background:#FF2D7A"></span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>PAPER 58</span><span>TONER 25</span><span>SHEET 11</span><span>PINK 6</span></div>
+<div style="font-size:14.5px;line-height:1.5;margin-top:4px">Contrast: black on paper 17:1, black on pink 5.4:1, paper on black 17:1. Pink on paper fails, which is why it is never ink.</div>
+<div style="margin-top:auto;position:relative;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;padding:16px 16px 12px;transform:rotate(1deg)"><span class="tape" aria-hidden="true" style="top:-16px;right:26px;width:96px;transform:rotate(4deg)"></span><div class="m" style="font-size:20px;line-height:1.25">if two things are pink,<br>one of them is wrong.</div></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="lb" style="">Type /// three hands, one job each</div>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px"><span class="st w x" style="font-size:48px;padding:15px 26px 12px;transform:rotate(-1.5deg);">Play it</span><span class="st k x" style="font-size:48px;padding:15px 26px 12px;transform:rotate(1deg);margin-left:30px">loud</span></div>
+<div style="font-size:13.5px;line-height:1.4;border-bottom:3px dashed #0A0A0A;padding-bottom:10px">ARCHIVO BLACK, CAPS /// H1 56–74 px on a cut strip, one strip per line, alternate white and black. H2 34–42. Names 22–26. Never below 15.</div>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px"><span class="st k x" style="font-size:32px;padding:10px 18px 8px;transform:rotate(-1deg);">Fresh off the copier</span><div style="display:flex;gap:10px;align-items:center"><span class="st w x" style="font-size:24px;padding:8px 13px 6px;transform:rotate(0deg);">Fontaines D.C.</span><span style="font-size:13px">← name label, 24</span></div></div>
+<div style="font-size:17px;line-height:1.55">Pinkpop, 1992. Nobody has told them to behave. Forty-eight minutes, start to finish.</div>
+<div style="font-size:13.5px;line-height:1.4;border-bottom:3px dashed #0A0A0A;padding-bottom:10px">SPECIAL ELITE /// everything you read. Body 16–18 / 1.6. Data in caps with triple slashes: GLASTONBURY 2024 /// 1:14:20. Labels 13, tracked.</div>
+<div class="m" style="font-size:27px;line-height:1.1;transform:rotate(-1.5deg)">click any song = jump straight to it</div>
+<div style="font-size:13.5px;line-height:1.4;border-bottom:3px dashed #0A0A0A;padding-bottom:10px">PERMANENT MARKER /// someone wrote on the page afterwards. Hints, asides, arrows. 17–27, tilted, lower case. Never navigation, never more than one line.</div>
+<div class="lb" style="margin-top:2px">Hierarchy on a real entry</div>
+<div style="position:relative;padding-top:6px"><span class="ph" style="height:112px;width:78%"><img src="/_blob/b9462f8deff8c89f63556397c2b86de8" alt=""></span>
+<div style="position:relative;z-index:2;margin:-26px 0 0 14px"><span class="st w x" style="font-size:26px;padding:8px 14px 6px;transform:rotate(-1deg);">The Cure</span><div style="font-size:16px;margin-top:8px">ROSKILDE 2019 /// 2:18:40</div><div class="m" style="font-size:17px">27 songs. yes, twenty-seven</div></div>
+<div style="position:absolute;right:0;top:20px;width:19%;font-size:13px;line-height:1.5">1 photo<br>2 name strip<br>3 typed data<br>4 one marker line</div></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<div class="lb" style="">The paste-up grid /// twelve columns you are allowed to disobey by 4°</div>
+<div style="position:relative;height:540px;background:repeating-linear-gradient(90deg,rgba(255,45,122,.16) 0 30px,transparent 30px 44px),#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;overflow:hidden">
+<div style="position:absolute;left:22px;top:34px;width:300px;transform:rotate(-1.5deg)"><span class="tape" aria-hidden="true" style="top:-15px;left:30px;width:100px;transform:rotate(-5deg)"></span><span class="ph" style="height:200px;box-shadow:7px 7px 0 #0A0A0A"><img src="/_blob/04a1db0f0071b73f79dbdecf8d52fe67" alt=""></span></div>
+<div style="position:absolute;left:44px;top:204px;z-index:3"><span class="st w x" style="font-size:26px;padding:8px 14px 6px;transform:rotate(-2deg);">Rage Against</span></div>
+<div style="position:absolute;left:70px;top:246px;z-index:3"><span class="st k x" style="font-size:26px;padding:8px 14px 6px;transform:rotate(1.2deg);outline:3px solid #FBFAF6;outline-offset:-3px">The Machine</span></div>
+<div style="position:absolute;right:18px;top:60px;width:178px;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;box-shadow:7px 7px 0 #0A0A0A;padding:18px 12px 12px;transform:rotate(2deg)"><span class="stp" aria-hidden="true" style="top:8px;left:10px;transform:rotate(-8deg)"></span><div class="x" style="font-size:16px;border-bottom:3px solid #0A0A0A;padding-bottom:4px">Setlist</div><div style="font-size:13.5px;line-height:1.55;margin-top:6px">01. TESTIFY<br>02. BOMBTRACK<br><span style="background:#FF2D7A;padding:1px 4px 0">03. PEOPLE OF…</span><br>04. KNOW YOUR…</div></div>
+<div style="position:absolute;left:0;right:0;top:318px;border-top:3px dashed #0A0A0A"></div>
+<div style="position:absolute;left:18px;top:300px;font-size:13px;background:#FBFAF6;padding:0 6px">✂ cut here = new section</div>
+<div style="position:absolute;left:22px;right:18px;top:346px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+<div style="transform:rotate(-1.2deg)"><span class="ph" style="height:92px"><img src="/_blob/de2090e2f7e4ff7ed011cb69004caa56" alt=""></span><div style="position:relative;z-index:2;margin:-14px 0 0 8px"><span class="st w x" style="font-size:15px;padding:5px 8px 4px;transform:rotate(0deg);">IDLES</span></div></div><div style="transform:rotate(1deg)"><span class="ph" style="height:92px"><img src="/_blob/4de09a1d8f88d87c56de68f3afee99cb" alt=""></span><div style="position:relative;z-index:2;margin:-14px 0 0 8px"><span class="st w x" style="font-size:15px;padding:5px 8px 4px;transform:rotate(0deg);">Fontaines D.C.</span></div></div><div style="transform:rotate(-0.8deg)"><span class="ph" style="height:92px"><img src="/_blob/ed2d65d38700f38a12cab327493480d4" alt=""></span><div style="position:relative;z-index:2;margin:-14px 0 0 8px"><span class="st w x" style="font-size:15px;padding:5px 8px 4px;transform:rotate(0deg);">The Cure</span></div></div>
+</div>
+<div class="m" style="position:absolute;left:330px;top:26px;font-size:16px;transform:rotate(3deg);width:120px;line-height:1.15">tape always bridges two things</div>
+<div class="m" style="position:absolute;left:300px;top:226px;font-size:16px;transform:rotate(-3deg);width:150px;line-height:1.15">← strips overlap the photo by a third</div>
+<div class="m" style="position:absolute;right:22px;top:262px;font-size:16px;transform:rotate(-2deg)">staple = stacked sheets</div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:#0A0A0A;color:#ECEAE4;font-size:13px;padding:9px 14px 6px;letter-spacing:.04em">THE PLAYER IS THE ONLY THING THAT SITS DEAD STRAIGHT</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;font-size:14.5px;line-height:1.45">
+<div><span class="x" style="font-size:14px">Tilt</span> 1–4° for cut-outs, 0° for anything you type into or press twice. Alternate direction with each neighbour.</div>
+<div><span class="x" style="font-size:14px">Shadow</span> 7 px right, 7 px down, solid black, no blur. Only on sheets that sit on top of other things.</div>
+<div><span class="x" style="font-size:14px">Edges</span> square, always. Photos get a 4 px black frame; white paper gets a 3 px keyline.</div>
+<div><span class="x" style="font-size:14px">Overlap</span> things touch. A strip bites 20–30 px into its photo; tape crosses one edge; nothing floats alone.</div>
+<div><span class="x" style="font-size:14px">Sections</span> end with a dashed cut line or a full-bleed black band, never with empty space.</div>
+<div><span class="x" style="font-size:14px">Margins</span> 40 px desktop, 16 px mobile. Gutters 14 px. Photos may break the margin; type may not.</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stagedive — motion and interaction</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Special+Elite&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+
+.sd{font-family:'Special Elite','Courier 10 Pitch','Courier New',monospace;color:#0A0A0A;background:radial-gradient(rgba(10,10,10,.075) 1px,transparent 1.3px) 0 0/11px 13px,radial-gradient(rgba(10,10,10,.05) 1px,transparent 1.4px) 5px 7px/17px 19px,#ECEAE4;position:relative;box-sizing:border-box;overflow:hidden}
+.sd *{box-sizing:border-box}
+.sd button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;text-align:left}
+.sd a{color:inherit}
+.sd .x{font-family:'Archivo Black','Arial Black',Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:-.01em}
+.sd .m{font-family:'Permanent Marker','Comic Sans MS',cursive}
+.sd .ph{display:block;position:relative;overflow:hidden;background:#0A0A0A;border:4px solid #0A0A0A}
+.sd .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.sd .tape{position:absolute;width:118px;height:34px;background:#D8D2B4;opacity:.93;border-left:2px dashed rgba(10,10,10,.22);border-right:2px dashed rgba(10,10,10,.22);z-index:3}
+.sd .k{background:#0A0A0A;color:#ECEAE4}
+.sd .w{background:#FBFAF6;color:#0A0A0A;outline:3px solid #0A0A0A;outline-offset:-3px}
+.sd .p{background:#FF2D7A;color:#0A0A0A}
+.sd .st{display:inline-block;line-height:1}
+.sd .sh{box-shadow:7px 7px 0 #0A0A0A}
+.sd .lb{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#4F4D48}
+.sd .stp{display:block;width:30px;height:6px;background:linear-gradient(180deg,#bdbbb4,#77756f);box-shadow:0 1px 0 #0A0A0A;position:absolute;z-index:4}
+.sd .row{display:flex;align-items:center;gap:16px;width:100%;padding:11px 6px;border-bottom:3px dashed #0A0A0A}
+
+.mo .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mo .pn{position:relative;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;overflow:hidden}
+.mo .tag{position:absolute;left:0;top:0;background:#0A0A0A;color:#ECEAE4;font-size:13px;letter-spacing:.08em;padding:8px 12px 5px;z-index:6}
+.mo .btn{display:inline-flex;align-items:center;gap:12px;min-height:56px;padding:0 22px;background:#FF2D7A;color:#0A0A0A;border:4px solid #0A0A0A;box-shadow:6px 6px 0 #0A0A0A;cursor:pointer;transition:transform .09s,box-shadow .09s;font-size:19px}
+.mo .btn:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 #0A0A0A}
+.mo .btn:active{transform:translate(4px,4px);box-shadow:2px 2px 0 #0A0A0A}
+.mo .vh:focus-visible + .tag + * .btn,.mo .vh:focus-visible ~ .foc{outline:4px dashed #0A0A0A;outline-offset:4px}
+/* 1. press play: light bar, stamp, marker strikes, player */
+.mo .mph img{filter:contrast(.55) brightness(1.35);transition:filter .25s linear .75s}
+.mo .bar{position:absolute;top:-6%;bottom:-6%;left:-28%;width:22%;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,#fff 60%,rgba(255,255,255,0));z-index:2;opacity:0}
+.mo .stamp{position:absolute;right:18px;top:16px;z-index:4;transform:rotate(-7deg) scale(3);opacity:0}
+.mo .ply{position:absolute;left:0;right:0;bottom:0;transform:translateY(102%);transition:transform .22s cubic-bezier(.2,1.4,.4,1) 1s;z-index:7}
+.mo .sl li{position:relative;padding:7px 6px 3px;font-size:17px;list-style:none}
+.mo .sl i{position:absolute;left:2px;top:50%;height:6px;width:0;background:#0A0A0A;transform:rotate(-1.2deg);transform-origin:left;border-radius:0}
+.mo .on{display:none}
+#mo-pl:checked ~ .stg .mph img{filter:none}
+#mo-pl:checked ~ .stg .bar{animation:mo-bar .9s linear .05s 1 both}
+#mo-pl:checked ~ .stg .stamp{animation:mo-stamp .32s cubic-bezier(.3,1.6,.5,1) .95s 1 both}
+#mo-pl:checked ~ .ply{transform:translateY(0)}
+#mo-pl:checked ~ .stg .off{display:none}
+#mo-pl:checked ~ .stg .on{display:inline-flex}
+#mo-pl:checked ~ .sheet .sl li:nth-child(1) i{animation:mo-strike .35s steps(5) 1.6s both}
+#mo-pl:checked ~ .sheet .sl li:nth-child(2) i{animation:mo-strike .35s steps(5) 2.9s both}
+#mo-pl:checked ~ .sheet .sl li:nth-child(3) i{animation:mo-strike .35s steps(5) 4.2s both}
+#mo-pl:checked ~ .sheet .sl li:nth-child(4){animation:mo-now .01s linear 4.6s both}
+@keyframes mo-bar{0%{left:-28%;opacity:1}100%{left:108%;opacity:1}}
+@keyframes mo-stamp{0%{transform:rotate(-7deg) scale(3);opacity:0}60%{transform:rotate(-7deg) scale(.92);opacity:1}80%{transform:rotate(-5deg) scale(1.04) translate(2px,-1px);opacity:1}100%{transform:rotate(-7deg) scale(1);opacity:1}}
+@keyframes mo-strike{from{width:0}to{width:96%}}
+@keyframes mo-now{to{background:#FF2D7A}}
+/* 2. strips slap on */
+.mo .s1,.mo .s2,.mo .s3,.mo .s4,.mo .s5{animation:mo-slapA .26s cubic-bezier(.2,1.5,.4,1) both}
+.mo .s1{animation-delay:.25s}.mo .s2{animation-delay:.33s}.mo .s3{animation-delay:.41s}.mo .s4{animation-delay:.52s}.mo .s5{animation-delay:.64s}
+#mo-r1:checked ~ .slap .s1,#mo-r1:checked ~ .slap .s2,#mo-r1:checked ~ .slap .s3,#mo-r1:checked ~ .slap .s4,#mo-r1:checked ~ .slap .s5{animation-name:mo-slapB}
+#mo-r2:checked ~ .slap .s1,#mo-r2:checked ~ .slap .s2,#mo-r2:checked ~ .slap .s3,#mo-r2:checked ~ .slap .s4,#mo-r2:checked ~ .slap .s5{animation-name:mo-slapC}
+@keyframes mo-slapA{0%{transform:translateY(-70px) rotate(-14deg) scale(1.5);opacity:0}70%{opacity:1}100%{transform:var(--t);opacity:1}}
+@keyframes mo-slapB{0%{transform:translateY(-70px) rotate(12deg) scale(1.5);opacity:0}70%{opacity:1}100%{transform:var(--t);opacity:1}}
+@keyframes mo-slapC{0%{transform:translateY(-70px) rotate(-10deg) scale(1.5);opacity:0}70%{opacity:1}100%{transform:var(--t);opacity:1}}
+.mo .la{display:none}
+#mo-r1:checked ~ .lb1{display:none}#mo-r1:checked ~ .lb2{display:inline-flex}
+#mo-r2:checked ~ .lb1{display:inline-flex}#mo-r2:checked ~ .lb2{display:none}
+/* 3. paper lifts */
+.mo .lift{display:block;position:relative;transition:transform .09s ease-out,box-shadow .09s ease-out;box-shadow:4px 4px 0 #0A0A0A;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;text-decoration:none}
+.mo .lift .tape{transition:transform .12s ease-out;transform-origin:left center}
+.mo .lift:hover,.mo .lift:focus-visible,.mo .lift.dm{transform:translate(-6px,-7px) rotate(var(--r));box-shadow:13px 14px 0 #0A0A0A}
+.mo .lift:hover .tape,.mo .lift:focus-visible .tape,.mo .lift.dm .tape{transform:rotate(-16deg) translateY(-5px)}
+.mo .lift:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #0A0A0A}
+/* 4. zine page flip */
+.mo .book{position:absolute;left:50%;top:54px;width:188px;height:268px;perspective:1100px}
+.mo .leaf{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.1,.2,1)}
+.mo .leaf > div{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;outline:3px solid #0A0A0A;outline-offset:-3px;padding:14px 12px}
+.mo .leaf .bk{transform:rotateY(180deg)}
+#mo-fl:checked ~ .book .leaf{transform:rotateY(-180deg)}
+#mo-fl:checked ~ div .fwd{display:none}#mo-fl:checked ~ div .back{display:inline-flex}
+@media (prefers-reduced-motion:reduce){
+.mo *{animation-duration:.01ms !important;animation-delay:0s !important;transition-duration:.01ms !important;transition-delay:0s !important}
+.mo .bar{display:none}
+}
+
+</style>
+</helmet>
+<div class="sd mo" style="width:1440px;height:1000px;padding:40px 44px;display:grid;grid-template-columns:minmax(0,1fr) 430px;grid-template-rows:auto 462px minmax(0,1fr);gap:16px 20px">
+<div style="grid-column:1 / -1;display:flex;justify-content:space-between;align-items:baseline;gap:20px"><div class="lb" style="">03 MOTION /// paper that moves. Everything here is live: press Play on this artboard, then click things.</div><span class="m" style="font-size:19px;transform:rotate(-1.5deg)">nothing fades. things get slapped, stamped, struck and lifted.</span></div>
+
+<div class="pn" style="padding:44px 22px 0">
+<input type="checkbox" id="mo-pl" class="vh" aria-label="Play the concert">
+<span class="tag">1 /// PRESS PLAY: LIGHT BAR, STAMP, MARKER STRIKES, PLAYER DOCKS</span>
+<div class="stg" style="position:absolute;left:22px;top:52px;width:548px">
+<span class="ph mph" style="height:160px;transform:rotate(-.8deg)"><img src="/_blob/03b1504a787f4f55a04ab9e7b5cf80c1" alt="Arena crowd with fists in the air"><span class="bar"></span><span class="stamp"><span class="st p x" style="font-size:30px;padding:10px 16px 7px;transform:rotate(0deg);border:4px solid #0A0A0A">On now</span></span></span>
+<div style="position:relative;z-index:3;margin:-30px 0 0 16px;display:flex;flex-direction:column;align-items:flex-start;gap:5px"><span class="st w x" style="font-size:30px;padding:10px 16px 7px;transform:rotate(-2deg);">Rage Against</span><span class="st k x" style="font-size:30px;padding:10px 16px 7px;transform:rotate(1.2deg);outline:3px solid #FBFAF6;outline-offset:-3px;margin-left:22px">The Machine</span></div>
+<div style="display:flex;align-items:center;gap:16px;margin-top:14px"><label for="mo-pl" class="btn x off"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><polygon points="9,4 41,23 10,45" fill="#0A0A0A"></polygon></svg>Play it loud</label><label for="mo-pl" class="btn x on" style="background:#0A0A0A;color:#ECEAE4"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><polygon points="8,5 20,4 21,44 9,45" fill="#ECEAE4"></polygon><polygon points="28,4 41,5 40,45 29,44" fill="#ECEAE4"></polygon></svg>Stop the tape</label><span class="m" style="font-size:18px;transform:rotate(-2deg)">← 1 click. watch the right side.</span></div>
+</div>
+<div class="sheet" style="position:absolute;right:26px;top:60px;width:300px;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;box-shadow:8px 8px 0 #0A0A0A;padding:24px 16px 12px;transform:rotate(1.2deg)"><span class="tape" aria-hidden="true" style="top:-16px;left:96px;width:100px;transform:rotate(-3deg)"></span>
+<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid #0A0A0A;padding-bottom:6px"><span class="x" style="font-size:24px">Setlist</span><span style="font-size:13px">TIME-LAPSE DEMO</span></div>
+<ol class="sl" style="margin:8px 0 0;padding:0"><li>01. TESTIFY<i></i></li><li>02. BOMBTRACK<i></i></li><li>03. PEOPLE OF THE SUN<i></i></li><li>04. KNOW YOUR ENEMY<i></i></li><li>05. BULLS ON PARADE<i></i></li><li>06. TOWNSHIP REBELLION<i></i></li></ol>
+<div class="m" style="font-size:16px;margin-top:6px;transform:rotate(-1.5deg)">played = crossed out. now = pink.</div></div>
+<div class="m" style="position:absolute;left:24px;bottom:22px;font-size:19px;transform:rotate(-1.5deg)">↓ the player docks down here, and stays for every page after</div>
+<div class="ply"><div style="position:relative;width:100%;background:#0A0A0A;color:#ECEAE4;border-top:5px solid #FF2D7A;z-index:8"><div style="height:8px;background:#3A3936"><div style="width:42%;height:8px;background:#FF2D7A"></div></div><div style="display:flex;align-items:center;gap:18px;padding:10px 40px"><span class="ph" style="width:92px;height:54px;flex:none;border:2px solid #ECEAE4"><img src="/_blob/de2090e2f7e4ff7ed011cb69004caa56" alt=""></span><div style="flex:1;min-width:0"><div class="m" style="font-size:14px;line-height:1.1"><span style="background:#FF2D7A;color:#0A0A0A;padding:1px 6px">now playing</span></div><div class="x" style="font-size:19px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px">Rage Against the Machine</div></div><div style="font-size:14px;text-align:right;line-height:1.5;flex:none">SONG 04 /// KNOW YOUR ENEMY<br><span style="background:#FF2D7A;color:#0A0A0A;padding:2px 6px 0">0:21:10 / 1:17:45</span></div><div style="display:flex;gap:8px;flex:none"><button aria-label="Previous song" style="width:48px;height:48px;display:grid;place-items:center;background:none;border:3px solid #ECEAE4"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><polygon points="43,6 19,24 42,43" fill="#ECEAE4"></polygon><polygon points="5,6 16,5 15,43 6,44" fill="#ECEAE4"></polygon></svg></button><button aria-label="Pause" style="width:48px;height:48px;display:grid;place-items:center;background:#FF2D7A;border:3px solid #FF2D7A"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><polygon points="8,5 20,4 21,44 9,45" fill="#0A0A0A"></polygon><polygon points="28,4 41,5 40,45 29,44" fill="#0A0A0A"></polygon></svg></button><button aria-label="Next song" style="width:48px;height:48px;display:grid;place-items:center;background:none;border:3px solid #ECEAE4"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><polygon points="5,6 29,24 6,43" fill="#ECEAE4"></polygon><polygon points="32,5 43,6 42,44 33,43" fill="#ECEAE4"></polygon></svg></button><button style="height:48px;padding:3px 14px 0;border:3px solid #ECEAE4;font-size:14px;color:#ECEAE4">SETLIST</button></div></div></div></div>
+</div>
+
+<div class="pn" style="padding:44px 18px 16px">
+<input type="radio" name="mo-slap" id="mo-r1" class="vh" aria-label="Replay the load animation"><input type="radio" name="mo-slap" id="mo-r2" class="vh" aria-label="Replay the load animation again">
+<span class="tag">2 /// PAGE LOAD: STRIPS SLAP ON</span>
+<div class="slap" style="position:relative;height:300px;margin-top:6px">
+<div class="s1" style="--t:rotate(-1deg);position:absolute;left:0;top:6px;width:250px"><span class="ph" style="height:170px"><img src="/_blob/ed2d65d38700f38a12cab327493480d4" alt=""></span></div>
+<div class="s2" style="--t:rotate(-2deg);position:absolute;left:14px;top:150px;z-index:2"><span class="st w x" style="font-size:28px;padding:9px 15px 7px;transform:rotate(0deg);">Fresh off</span></div>
+<div class="s3" style="--t:rotate(1.5deg);position:absolute;left:40px;top:196px;z-index:2"><span class="st k x" style="font-size:28px;padding:9px 15px 7px;transform:rotate(0deg);">the copier</span></div>
+<div class="s4" style="--t:rotate(4deg);position:absolute;left:150px;top:-8px;z-index:3"><span class="tape" style="position:static;display:block"></span></div>
+<div class="s5" style="--t:rotate(3deg);position:absolute;right:0;top:40px;width:128px;background:#FF2D7A;padding:10px 10px 8px;border:4px solid #0A0A0A"><span class="x" style="font-size:16px;line-height:1.1;display:block">3 new gigs today</span></div>
+<div style="position:absolute;right:0;bottom:36px;width:140px;font-size:13.5px;line-height:1.5">photo, strip, strip, tape, sticker. 60–120 ms apart, each lands with a small overshoot.</div>
+</div>
+<label for="mo-r1" class="btn x lb1" style="font-size:16px;min-height:48px">Slap it on again</label><label for="mo-r2" class="btn x la lb2" style="font-size:16px;min-height:48px">And again</label>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;min-height:0">
+<div class="pn" style="padding:52px 22px 14px">
+<span class="tag">3 /// HOVER OR TAB: PAPER LIFTS</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px"><a href="#lift" class="lift " style="--r:-2deg;padding:10px 10px 12px"><span class="tape" aria-hidden="true" style="top:-14px;left:24px;width:84px;transform:rotate(-4deg)"></span><span class="ph" style="height:124px;border-width:3px"><img src="/_blob/de2090e2f7e4ff7ed011cb69004caa56" alt=""></span><span class="x" style="display:block;font-size:17px;margin-top:10px;line-height:1.1">IDLES</span><span style="display:block;font-size:13.5px;margin-top:5px">GLASTONBURY 2024</span></a><a href="#lift" class="lift dm" style="--r:1.5deg;padding:10px 10px 12px"><span class="tape" aria-hidden="true" style="top:-14px;left:24px;width:84px;transform:rotate(-4deg)"></span><span class="ph" style="height:124px;border-width:3px"><img src="/_blob/4de09a1d8f88d87c56de68f3afee99cb" alt=""></span><span class="x" style="display:block;font-size:17px;margin-top:10px;line-height:1.1">Fontaines D.C.</span><span style="display:block;font-size:13.5px;margin-top:5px">PRIMAVERA 2022</span></a><a href="#lift" class="lift " style="--r:-1.5deg;padding:10px 10px 12px"><span class="tape" aria-hidden="true" style="top:-14px;left:24px;width:84px;transform:rotate(-4deg)"></span><span class="ph" style="height:124px;border-width:3px"><img src="/_blob/04a1db0f0071b73f79dbdecf8d52fe67" alt=""></span><span class="x" style="display:block;font-size:17px;margin-top:10px;line-height:1.1">The Cure</span><span style="display:block;font-size:13.5px;margin-top:5px">ROSKILDE 2019</span></a></div>
+<div style="display:flex;justify-content:space-between;gap:14px;margin-top:14px;font-size:13.5px;line-height:1.45"><span>Shadow grows from 4 to 13 px, the sheet tilts, the tape lets go at one end. Press and it slams back down. The middle one is shown lifted.</span></div>
+</div>
+<div class="pn" style="padding:44px 18px 14px">
+<input type="checkbox" id="mo-fl" class="vh" aria-label="Turn the page">
+<span class="tag">4 /// NEXT PAGE = A PAGE TURN</span>
+<div style="position:absolute;left:18px;top:54px;width:calc(50% - 18px);height:268px;background:#0A0A0A;color:#ECEAE4;padding:14px 12px"><div class="x" style="font-size:17px;line-height:1.05">Stage<br>dive</div><div style="font-size:13px;line-height:1.5;margin-top:10px">ISSUE No.001<br>FREE</div></div>
+<div class="book"><div style="position:absolute;inset:0;background:#FBFAF6;outline:3px solid #0A0A0A;outline-offset:-3px;padding:14px 12px"><div style="font-size:12.5px;letter-spacing:.08em">P.3</div><div class="x" style="font-size:17px;line-height:1.05;margin-top:4px">Pick a decade</div><div class="x" style="font-size:34px;line-height:1.1;margin-top:10px">60 70 <span style="background:#FF2D7A">80</span> 90 00 10 20</div></div>
+<div class="leaf"><div style="background:#FBFAF6;color:#0A0A0A" class=""><div style="font-size:12.5px;letter-spacing:.08em">P.1</div><div class="x" style="font-size:17px;line-height:1.05;margin-top:4px">Fresh off the copier</div><div style="font-size:13.5px;line-height:1.75;margin-top:10px">IDLES<br>FONTAINES D.C.<br>THE CURE<br>ARCTIC MONKEYS<br>FOO FIGHTERS</div></div><div style="background:#0A0A0A;color:#ECEAE4" class="bk"><div style="font-size:12.5px;letter-spacing:.08em">P.2</div><div class="x" style="font-size:17px;line-height:1.05;margin-top:4px">Most played</div><div style="font-size:13.5px;line-height:1.75;margin-top:10px">1 NIRVANA<br>2 QUEEN<br>3 FOO FIGHTERS<br>4 METALLICA<br>5 RADIOHEAD</div></div></div></div>
+<div style="position:absolute;left:18px;right:18px;bottom:12px;display:flex;justify-content:flex-end"><label for="mo-fl" class="btn x fwd" style="font-size:15px;min-height:46px;padding:0 16px">Turn the page</label><label for="mo-fl" class="btn x la back" style="font-size:15px;min-height:46px;padding:0 16px">Turn it back</label></div>
+</div>
+</div>
+
+<div class="pn" style="padding:44px 18px 14px">
+<span class="tag">TIMINGS FOR THE BUILD</span>
+<div style="font-size:14.5px;line-height:1.5">
+<div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Slap-on</span><span>260 ms, overshoot, 60–120 ms stagger</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Light bar</span><span>900 ms linear, once per play</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Stamp</span><span>320 ms, one bounce, after the bar</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Marker strike</span><span>350 ms in 5 jerky steps</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Paper lift</span><span>90 ms up and down; press sinks 3 px</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Page turn</span><span>600 ms, hinged on the left edge</span></div><div style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;border-bottom:2px dashed #0A0A0A;padding:6px 0 3px"><span class="x" style="font-size:13px">Reduced motion</span><span>all of it lands at once; no bar, no turn</span></div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
