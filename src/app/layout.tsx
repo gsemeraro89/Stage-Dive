@@ -21,9 +21,9 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} — free electronic DJ concerts`, template: `%s — ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} — full rock gigs, free`, template: `%s — ${SITE_NAME}` },
   description:
-    "Full-length electronic DJ concerts and live acts from YouTube, organised by artist, festival, venue, genre and venueKind. Press play once and keep listening.",
+    "Full rock concerts from YouTube, free: the whole set, by band, festival, room, decade, genre and tour. Press play once and keep listening.",
 };
 
 export const viewport: Viewport = { themeColor: "#0B0B0F", colorScheme: "dark" };
@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Form action="/concerts" role="search" className="od-search" data-od="header-search">
               <label>
                 <span className="meta">Search</span>
-                <input type="search" name="q" placeholder="NTO, Cercle, Monegros" maxLength={80} />
+                <input type="search" name="q" placeholder="Metallica, Pinkpop, 1991" maxLength={80} />
               </label>
               <button type="submit" className="meta">
                 Go

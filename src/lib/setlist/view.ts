@@ -10,7 +10,7 @@ export interface TrackView {
   title: string;
   /** Not identified yet ("ID"). Shown as "ID" with an explanation on hover. */
   unidentified: boolean;
-  /** Slug of the artist's page on FullDJSet, when we have one. */
+  /** Slug of the artist's page on STAGEDIVE, when we have one. */
   artistSlug: string | null;
 }
 

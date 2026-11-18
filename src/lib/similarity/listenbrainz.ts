@@ -5,7 +5,8 @@
 import { nameKey } from "../collector/musicbrainz";
 
 const API = "https://labs.api.listenbrainz.org/similar-artists/json";
-const USER_AGENT = "FullDJSet/0.1 (+https://opendecks-bc0h.onrender.com)";
+// MusicBrainz and ListenBrainz ask every client to name itself with a way to reach it.
+const USER_AGENT = `STAGEDIVE/0.1 (+${process.env.SITE_URL || "https://stagedive-test.onrender.com"})`;
 /** The similarity dataset ListenBrainz currently publishes. Override with LISTENBRAINZ_ALGORITHM if it changes. */
 export const DEFAULT_ALGORITHM =
   "session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30";

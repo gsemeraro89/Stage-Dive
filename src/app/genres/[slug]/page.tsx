@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { genre, concerts } = page;
   const artists = [...new Set(concerts.flatMap((s) => s.artists.map((a) => a.name)))].slice(0, 4).join(", ");
   return {
-    title: `${genre.name} — full DJ concerts`,
+    title: `${genre.name} — full concerts`,
     description: `${concerts.length} full ${genre.name} ${concerts.length === 1 ? "concert" : "concerts"} to watch free${artists ? `, with ${artists}` : ""}.`,
     alternates: { canonical: `/genres/${genre.slug}` },
     // A genre with no concerts yet has nothing worth indexing.

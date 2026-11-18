@@ -38,10 +38,10 @@ export function FilterForm({
     <Form action="/concerts" role="search" data-od="filters" className="od-filters" key={JSON.stringify(filters)}>
       <label className="od-field" data-on={filters.q ? "" : undefined}>
         <span className="meta">Search</span>
-        <input type="search" name="q" defaultValue={filters.q ?? ""} placeholder="NTO, Cercle, Monegros" maxLength={80} />
+        <input type="search" name="q" defaultValue={filters.q ?? ""} placeholder="Metallica, Pinkpop, 1991" maxLength={80} />
       </label>
       {select("genre", "Genre", "Any genre", filters.genre, options.genres)}
-      {select("artist", "DJ", "Any DJ", filters.artist, options.artists)}
+      {select("artist", "Band", "Any band", filters.artist, options.artists)}
       {select("venue", "Venue or festival", "Any venue", filters.venue, options.venues)}
       {select("venueKind", "VenueKind", "Any venueKind", filters.venueKind, options.venueKinds)}
       <label className="od-field">

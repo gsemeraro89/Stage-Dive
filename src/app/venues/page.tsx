@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Festivals",
-  description: "Festivals with full-length DJ concerts on FullDJSet.",
+  description: "Festivals and rooms with full rock concerts on STAGEDIVE.",
   alternates: { canonical: "/venues" },
 };
 

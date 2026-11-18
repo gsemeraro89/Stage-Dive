@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { venue, concerts } = page;
   const artists = [...new Set(concerts.flatMap((s) => s.artists.map((a) => a.name)))].slice(0, 4).join(", ");
   return {
-    title: `${venue.name} — full DJ concerts`,
+    title: `${venue.name} — full concerts`,
     description:
       `${concerts.length} full ${concerts.length === 1 ? "concert" : "concerts"} recorded at ${venue.name}${where(venue) ? ` (${where(venue)})` : ""}` +
       `${artists ? `, with ${artists}` : ""}. Watch free.`,

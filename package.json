@@ -1,5 +1,5 @@
 {
-  "name": "opendecks",
+  "name": "stagedive",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -25,7 +25,8 @@
     "setlists": "tsx scripts/setlists.ts",
     "artist-images": "tsx scripts/artist-images.ts",
     "artist-lane": "tsx scripts/artist-lane.ts",
-    "admin-ops": "tsx scripts/admin-ops.ts"
+    "admin-ops": "tsx scripts/admin-ops.ts",
+    "seed-check": "tsx scripts/seed-check.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

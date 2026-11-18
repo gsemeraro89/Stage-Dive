@@ -61,7 +61,7 @@ const recrawl = args.includes("--recrawl");
 // threshold). Otherwise each is looked at again every LONG_RECHECK_DAYS days. Costs 1 unit per 50 videos.
 const recheckLong = args.includes("--recheck-long");
 const longRecheckDays = Number(process.env.LONG_RECHECK_DAYS ?? 7);
-// ONLY_CHANNEL="Cercle": read just this channel from data/channels.json (no artist channels, no searches).
+// ONLY_CHANNEL="Pinkpop Archive": read just this channel from data/channels.json (no artist channels, no searches).
 // For a small test run, e.g. trying a lower view threshold on one channel.
 const onlyChannel = process.env.ONLY_CHANNEL?.trim().toLowerCase() || "";
 // ONLY_VIDEOS="id1,id2": decide again on just these videos (e.g. after the owner approved their artists),

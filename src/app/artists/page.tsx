@@ -6,8 +6,8 @@ import { listArtists } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Artists — every DJ and live act",
-  description: "Every artist on FullDJSet with full-length DJ concerts and live acts you can watch free.",
+  title: "Bands — every band with a full gig",
+  description: "Every band on STAGEDIVE with a full concert you can watch free.",
   alternates: { canonical: "/artists" },
 };
 

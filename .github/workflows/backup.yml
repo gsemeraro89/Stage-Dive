@@ -18,10 +18,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           docker run --rm -e DATABASE_URL postgres:16 \
-            sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > opendecks.dump
-          test -s opendecks.dump
+            sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > stagedive.dump
+          test -s stagedive.dump
       - uses: actions/upload-artifact@v4
         with:
-          name: opendecks-db-${{ github.run_id }}
-          path: opendecks.dump
+          name: stagedive-db-${{ github.run_id }}
+          path: stagedive.dump
           retention-days: 30

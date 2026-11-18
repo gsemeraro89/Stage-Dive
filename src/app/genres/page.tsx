@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Genres",
-  description: "Browse full-length DJ concerts by genre: melodic techno, house, techno, progressive and more.",
+  description: "Full rock concerts by genre: punk, post-punk, metal, grunge, shoegaze and more.",
   alternates: { canonical: "/genres" },
 };
 

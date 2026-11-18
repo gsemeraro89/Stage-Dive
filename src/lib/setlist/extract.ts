@@ -20,7 +20,7 @@ const AnswerSchema = z.object({
   ),
 });
 
-const SYSTEM = `You copy setlists out of YouTube descriptions and comments for FullDJSet, a catalogue of DJ concerts.
+const SYSTEM = `You copy setlists out of YouTube descriptions and comments for STAGEDIVE, a catalogue of full rock concerts.
 - Copy only what the text says, in the order given. Never add, guess or correct tracks, times or names.
 - "ID" means an unidentified or unreleased track: keep it as "ID".
 - Leave out anything that is not a track: links, social handles, credits, sponsors, chapter titles like "Intro".

@@ -8,9 +8,9 @@ import HomePage from "./_home/HomePage";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: { absolute: "FullDJSet — free full-length electronic DJ concerts" },
+  title: { absolute: "STAGEDIVE — full rock gigs, free" },
   description:
-    "Every free, full-length electronic DJ concert on YouTube, played right here: Cercle, Boiler Room, festivals and clubs, by artist, festival, genre and venueKind.",
+    "Every free, full rock concert on YouTube, played right here: festival archives and band channels, by band, festival, room, decade, genre and tour.",
   alternates: { canonical: "/" },
 };
 

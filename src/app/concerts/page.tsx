@@ -77,7 +77,7 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <main data-od="home">
       <div className="od-strip meta" data-od="latest-strip">
-        <h1>Free full-length electronic DJ concerts</h1>
+        <h1>Full rock gigs, free</h1>
         {newest && (
           <>
             <Link href={`/concerts/${newest.slug}`}>
@@ -131,7 +131,7 @@ export default async function HomePage({ searchParams }: Props) {
       </section>
 
       <section className="od-section" aria-labelledby="find-map" data-od="map-search-home">
-        <SectionHead id="find-map" title="Find your next DJ" note="Type an artist, find the ones around them" />
+        <SectionHead id="find-map" title="Find your next band" note="Type a band, find the ones around them" />
         <MapSearch artists={mapIndex} id="home-map-q" lead />
       </section>
 

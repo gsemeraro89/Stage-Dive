@@ -11,8 +11,8 @@ import { defaultMapArtist, filterOptions, findArtistByText, getMap, mapArtistInd
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Find your next DJ",
-  description: "Type an artist and find DJs and live acts like them. Every name plays a full concert in one click.",
+  title: "Find your next band",
+  description: "Type a band and find the ones like them. Every name plays a full concert in one click.",
 };
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -39,7 +39,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       <header className="od-map-head">
         <div className="od-map-top">
           <div className="od-rail meta">
-            <h1>Find your next DJ</h1>
+            <h1>Find your next band</h1>
             {map && (
               <span>
                 {String(map.artists.length).padStart(2, "0")} {map.artists.length === 1 ? "artist" : "artists"} around {map.centre.name}

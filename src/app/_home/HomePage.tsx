@@ -61,7 +61,7 @@ export default async function HomePage() {
       word: "Genres",
       count: totals.genres,
       href: "/genres",
-      line: "From techno to afro house.",
+      line: "From punk to shoegaze.",
       links: data.genres.map((g) => ({ label: g.name, href: `/genres/${g.slug}` })),
       more: "All genres",
     },
@@ -79,22 +79,22 @@ export default async function HomePage() {
     <main data-od="home">
       <section className="od-places" aria-labelledby="home-title" data-od="hero">
         <h1 id="home-title">
-          <span className="meta od-acid">Free full-length electronic DJ concerts from</span>
+          <span className="meta od-acid">Full rock gigs, free, from</span>
           <span className="display">
             Festivals. <span className="od-outline">Clubs.</span> Rooftops. <span className="od-outline">Deserts.</span>
           </span>
         </h1>
         <div className="od-places-side">
           <p className="od-home-pitch">
-            FullDJSet is the index of full DJ concerts on YouTube: every one free, every one played on this page. Start
-            from a place, an artist, a festival or a genre, or tell us who you like and we find your next DJ.
+            STAGEDIVE is the fanzine of full rock gigs on YouTube: every one free, every one played on this page. Start
+            from a band, a festival, a decade or a genre, or tell us who you like and we find your next band.
           </p>
           <div className="od-home-actions">
             <Link href={SETS_HREF} className="od-play">
               Browse {totals.concerts} concerts
             </Link>
             <Link href="/map" className="od-link">
-              Find your next DJ
+              Find your next band
             </Link>
           </div>
         </div>

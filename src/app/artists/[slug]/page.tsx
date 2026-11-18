@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .join(" ")
     .slice(0, 300);
   return {
-    title: `${artist.name} — full DJ concerts and live acts`,
+    title: `${artist.name} — full concerts`,
     description,
     alternates: { canonical: `/artists/${artist.slug}` },
     openGraph: { title: artist.name, description, images: concerts[0] ? [concerts[0].thumbnail.src] : undefined },
@@ -180,7 +180,7 @@ export default async function ArtistPage({ params }: Props) {
         <section className="od-section od-section--bleed" aria-labelledby="similar" data-od="similar">
           <SectionHead id="similar" title={`If you like ${artist.name}`} note={count2(similar.length)}>
             <Link href={`/map?artist=${artist.slug}`} className="od-link">
-              Find your next DJ
+              Find your next band
             </Link>
           </SectionHead>
           {likeLines.length > 0 && (

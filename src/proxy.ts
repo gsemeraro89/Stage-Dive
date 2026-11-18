@@ -25,7 +25,7 @@ export function proxy(request: NextRequest) {
   }
   return new NextResponse("Password required", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="FullDJSet admin", charset="UTF-8"' },
+    headers: { "WWW-Authenticate": 'Basic realm="STAGEDIVE admin", charset="UTF-8"' },
   });
 }
 

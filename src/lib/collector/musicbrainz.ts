@@ -3,7 +3,8 @@
 import { isRockGenreList } from "./rules";
 
 const API = "https://musicbrainz.org/ws/2";
-const USER_AGENT = "FullDJSet/0.1 (+https://opendecks-bc0h.onrender.com)";
+// MusicBrainz and ListenBrainz ask every client to name itself with a way to reach it.
+const USER_AGENT = `STAGEDIVE/0.1 (+${process.env.SITE_URL || "https://stagedive-test.onrender.com"})`;
 
 export interface MusicBrainzArtist {
   mbid: string;

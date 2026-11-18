@@ -21,7 +21,7 @@ function Id() {
   return <abbr title={ID_HINT}>ID</abbr>;
 }
 
-/** "Artist – Title" for one setlist line. Artists with a page on FullDJSet are links. */
+/** "Artist – Title" for one setlist line. Artists with a page on STAGEDIVE are links. */
 function TrackName({ track }: { track: TrackView }) {
   const artistIsId = track.artist !== null && /^ID$/i.test(track.artist);
   return (

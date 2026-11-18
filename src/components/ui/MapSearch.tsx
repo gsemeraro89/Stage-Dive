@@ -48,7 +48,7 @@ export function MapSearch({
       </datalist>
       {children}
       <button type="submit" className="od-play">
-        {lead ? "Find DJs" : "Show"}
+        {lead ? "Find bands" : "Show"}
       </button>
     </Form>
   );
