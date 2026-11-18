@@ -1,4 +1,4 @@
-// The tracklist as the set page shows it. Reads the stored JSON defensively: anything that is not
+// The tracklist as the concert page shows it. Reads the stored JSON defensively: anything that is not
 // a well-formed track is left out rather than breaking the page.
 
 import { slugify } from "../slug";

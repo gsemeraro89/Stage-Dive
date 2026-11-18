@@ -1,8 +1,8 @@
-// A year of uploads, e.g. /sets/year/2026 (BRIEF 4.10): each month with its count and most watched sets.
+// A year of uploads, e.g. /concerts/year/2026 (BRIEF 4.10): each month with its count and most watched concerts.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChartList, SetRows } from "@/components/catalogue/SetTile";
+import { ChartList, ConcertRows } from "@/components/catalogue/ConcertTile";
 import { BigName } from "@/components/ui/BigName";
 import { MonthIndex } from "@/components/ui/MonthIndex";
 import { PeriodNav } from "@/components/ui/PeriodNav";
@@ -19,9 +19,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (year === null) return {};
   const overview = await yearOverview(year, 0);
   return {
-    title: `DJ sets of ${year}`,
-    description: `${overview.total} full-length electronic DJ sets and live acts uploaded in ${year}, month by month, free to watch in full.`,
-    alternates: { canonical: `/sets/year/${year}` },
+    title: `DJ concerts of ${year}`,
+    description: `${overview.total} full-length electronic DJ concerts and live acts uploaded in ${year}, month by month, free to watch in full.`,
+    alternates: { canonical: `/concerts/year/${year}` },
     robots: overview.total === 0 ? { index: false, follow: true } : undefined,
   };
 }
@@ -40,10 +40,10 @@ export default async function YearPage({ params }: Props) {
         <p className="od-period-rail meta">
           <span className="od-acid">{year === now.year ? "This year" : "Archive"}</span>
           <span className="od-muted" data-od="result-count">
-            {overview.total} {overview.total === 1 ? "set" : "sets"} uploaded
+            {overview.total} {overview.total === 1 ? "concert" : "concerts"} uploaded
           </span>
           {year > FIRST_YEAR && (
-            <Link href={`/sets/year/${year - 1}`} className="od-link">
+            <Link href={`/concerts/year/${year - 1}`} className="od-link">
               {year - 1}
             </Link>
           )}
@@ -55,10 +55,10 @@ export default async function YearPage({ params }: Props) {
       {overview.total === 0 && (
         <section className="od-section od-period-body" aria-labelledby="period-title">
           <div className="od-empty od-period-empty" data-od="empty">
-            <p className="display">No sets from {year} yet</p>
-            <p>No full set uploaded in {year} is in the archive right now.</p>
-            <Link href="/sets" className="od-link">
-              See the latest sets
+            <p className="display">No concerts from {year} yet</p>
+            <p>No full concert uploaded in {year} is in the archive right now.</p>
+            <Link href="/concerts" className="od-link">
+              See the latest concerts
             </Link>
           </div>
         </section>
@@ -72,15 +72,15 @@ export default async function YearPage({ params }: Props) {
             <SectionHead
               id={`m-${month}`}
               title={name}
-              note={total > 1 ? `${total} sets · most watched first` : "1 set"}
+              note={total > 1 ? `${total} concerts · most watched first` : "1 concert"}
               href={href}
               linkLabel={total > top.length ? `All ${total}` : "Open month"}
             />
-            {/* A chart needs something to compare: from three sets up, as on artist pages. */}
+            {/* A chart needs something to compare: from three concerts up, as on artist pages. */}
             {top.length >= 3 ? (
-              <ChartList sets={top} label={`Most watched in ${name} ${year}`} />
+              <ChartList concerts={top} label={`Most watched in ${name} ${year}`} />
             ) : (
-              <SetRows sets={top} label={`Most watched in ${name} ${year}`} />
+              <ConcertRows concerts={top} label={`Most watched in ${name} ${year}`} />
             )}
             {total > top.length && (
               <Link href={href} className="od-link od-period-more" data-od="year-month-more">
@@ -93,8 +93,8 @@ export default async function YearPage({ params }: Props) {
 
       <PeriodNav
         label="Other years"
-        earlier={year > FIRST_YEAR ? { kicker: "Earlier", label: String(year - 1), href: `/sets/year/${year - 1}` } : undefined}
-        later={year < now.year ? { kicker: "Later", label: String(year + 1), href: `/sets/year/${year + 1}` } : undefined}
+        earlier={year > FIRST_YEAR ? { kicker: "Earlier", label: String(year - 1), href: `/concerts/year/${year - 1}` } : undefined}
+        later={year < now.year ? { kicker: "Later", label: String(year + 1), href: `/concerts/year/${year + 1}` } : undefined}
       />
     </main>
   );

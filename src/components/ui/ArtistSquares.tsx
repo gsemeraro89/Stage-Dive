@@ -1,18 +1,18 @@
 import Link from "next/link";
-import type { SetView } from "@/lib/queries";
+import type { ConcertView } from "@/lib/queries";
 
 /**
  * The artist's picture (`cover` from the queries). `portrait` true: the artist's own square
  * picture (the avatar of their YouTube channel), shown whole. Otherwise the thumbnail of their
- * newest set, shown with the portrait crop.
+ * newest concert, shown with the portrait crop.
  */
-type Cover = { thumbnail: SetView["thumbnail"]; portrait?: boolean } | null;
+type Cover = { thumbnail: ConcertView["thumbnail"]; portrait?: boolean } | null;
 
 /**
- * Artist squares: a 1:1 picture with the set count and the name in a caption under it, on the
+ * Artist squares: a 1:1 picture with the concert count and the name in a caption under it, on the
  * page ground. Nothing is written on the photo: thumbnails carry their own titles and logos, and
  * a label on top of them collides with that text. The picture is the artist's own (shown whole)
- * or a set thumbnail cropped tight to the upper centre; greyscale, colour on hover.
+ * or a concert thumbnail cropped tight to the upper centre; greyscale, colour on hover.
  * Without a cover the square is typographic: the outlined initial inside hairlines.
  */
 export function ArtistSquares({
@@ -21,13 +21,13 @@ export function ArtistSquares({
   allTile,
   label,
 }: {
-  artists: { slug: string; name: string; sets: number; cover?: Cover }[];
+  artists: { slug: string; name: string; concerts: number; cover?: Cover }[];
   columns?: 4 | 5;
   /** Close the grid with the acid "All artists" tile. */
   allTile?: { count: number };
   label: string;
 }) {
-  // A set thumbnail is 2.35 times as wide as its square (the crop), so ask for a file that size.
+  // A concert thumbnail is 2.35 times as wide as its square (the crop), so ask for a file that size.
   // An artist's own picture is exactly as wide as the square.
   const sizes = (portrait?: boolean) =>
     portrait
@@ -52,7 +52,7 @@ export function ArtistSquares({
               )}
               <span className="od-square-cap">
                 <span className="od-square-count meta">
-                  {String(a.sets).padStart(2, "0")} {a.sets === 1 ? "set" : "sets"}
+                  {String(a.concerts).padStart(2, "0")} {a.concerts === 1 ? "concert" : "concerts"}
                 </span>
                 <span className="od-square-name display">{a.name}</span>
               </span>

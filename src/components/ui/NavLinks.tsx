@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { menuYear, monthHref, monthLabel, monthOf, shortMonthLabel, type PeriodIndex } from "@/lib/periods";
 
-/** One line of a drop-down list: a period, how many sets it has, and whether the visitor is in it. */
+/** One line of a drop-down list: a period, how many concerts it has, and whether the visitor is in it. */
 type Row = { href: string; label: string; full: string; count: number; here: boolean; exact: boolean };
 
 type More = { id: string; name: string; caption: string; rows: Row[] };
@@ -16,39 +16,39 @@ const under = (base: string) => (path: string) => path === base || path.startsWi
 
 /**
  * Main navigation. The section the visitor is in is shown in acid.
- * "Sets", "This month" and the year all live under /sets, so each one claims only its own pages:
- * a month or year page never lights "Sets", and a year other than the menu's lights nothing.
+ * "Concerts", "This month" and the year all live under /concerts, so each one claims only its own pages:
+ * a month or year page never lights "Concerts", and a year other than the menu's lights nothing.
  * "This month" and the year each carry a list of other months or years (DESIGN.md section 8).
  */
 function items(now: Date, path: string, periods: PeriodIndex): Item[] {
   const year = menuYear(now);
-  const yearHref = `/sets/year/${year}`;
-  const period = (p: string) => p === "/sets/this-month" || under("/sets/year")(p);
+  const yearHref = `/concerts/year/${year}`;
+  const period = (p: string) => p === "/concerts/this-month" || under("/concerts/year")(p);
   const current = monthHref(monthOf(now));
 
   const months: Row[] = periods.months.map((m) => {
     const href = monthHref(m);
-    const here = path === href || (path === "/sets/this-month" && href === current);
+    const here = path === href || (path === "/concerts/this-month" && href === current);
     return { href, label: shortMonthLabel(m), full: monthLabel(m), count: m.count, here, exact: path === href };
   });
   const years: Row[] = periods.years.map((y) => {
-    const href = `/sets/year/${y.year}`;
+    const href = `/concerts/year/${y.year}`;
     return { href, label: String(y.year), full: String(y.year), count: y.count, here: under(href)(path), exact: path === href };
   });
 
   return [
-    { href: "/sets", label: "Sets", active: (p) => under("/sets")(p) && !period(p) },
+    { href: "/concerts", label: "Concerts", active: (p) => under("/concerts")(p) && !period(p) },
     {
-      href: "/sets/this-month",
+      href: "/concerts/this-month",
       label: "This month",
-      active: (p) => p === "/sets/this-month",
-      more: { id: "od-nav-months", name: "More months", caption: "Last months with sets", rows: months },
+      active: (p) => p === "/concerts/this-month",
+      more: { id: "od-nav-months", name: "More months", caption: "Last months with concerts", rows: months },
     },
     {
       href: yearHref,
       label: String(year),
       active: under(yearHref),
-      more: { id: "od-nav-years", name: "Other years", caption: "Every year with sets", rows: years },
+      more: { id: "od-nav-years", name: "Other years", caption: "Every year with concerts", rows: years },
     },
     { href: "/artists", label: "Artists", active: under("/artists") },
     { href: "/venues", label: "Festivals", active: under("/venues") },
@@ -146,7 +146,7 @@ export function NavLinks({ periods }: { periods: PeriodIndex }) {
                           </span>
                           <span className="od-nav-count">
                             {row.count.toLocaleString("en-GB")}
-                            <span className="od-sr">{row.count === 1 ? " set" : " sets"}</span>
+                            <span className="od-sr">{row.count === 1 ? " concert" : " concerts"}</span>
                           </span>
                         </Link>
                       </li>

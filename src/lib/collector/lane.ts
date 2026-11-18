@@ -1,14 +1,14 @@
-// The per-artist lane (owner, 17 Nov 2026): find every official full set of a named list of artists
-// (data/artist-rules.json, "allSets": true), with no view threshold, as cheaply as possible.
+// The per-artist lane (owner, 17 Nov 2026): find every official full concert of a named list of artists
+// (data/artist-rules.json, "allConcerts": true), with no view threshold, as cheaply as possible.
 // Pure functions only, so the free filters, the budget and the search order can be tested.
 //
-// Free filters, in this order (owner): already a set or decided -> skip; YouTube/product rules (40
+// Free filters, in this order (owner): already a concert or decided -> skip; YouTube/product rules (40
 // minutes, public, embeddable, not for kids, processed, not live) -> drop; the artist's name not in
 // the title -> drop; excluded words in the title -> drop; not an official channel -> report only.
 // Only what is left is sent to Claude.
 
 import type { ArtistRule, ChannelKindName, Decision } from "./rules";
-import { titleSaysNotASet } from "./rules";
+import { titleSaysNotAConcert } from "./rules";
 
 // ---------- 1. Is the artist's name in the title? ----------
 
@@ -61,10 +61,10 @@ export function artistsInTitle<T extends Pick<ArtistRule, "name" | "aka">>(title
   return rules.filter((r) => titleHasArtist(title, artistNames(r)));
 }
 
-// ---------- 2. Words that say "not a set" ----------
+// ---------- 2. Words that say "not a concert" ----------
 
 /**
- * Extra words for the lane (owner, 17 Nov 2026), on top of titleSaysNotASet (trailer, teaser,
+ * Extra words for the lane (owner, 17 Nov 2026), on top of titleSaysNotAConcert (trailer, teaser,
  * aftermovie, interview, documentary, recap, behind the scenes). With no view threshold many more
  * videos come in, so these are dropped before Claude is asked.
  */
@@ -78,7 +78,7 @@ const LANE_EXCLUDED: { word: string; pattern: RegExp }[] = [
 
 /** The excluded word a title contains, or null. */
 export function excludedTitleWord(title: string): string | null {
-  if (titleSaysNotASet(title)) {
+  if (titleSaysNotAConcert(title)) {
     const m = title.match(/\b(trailer|teaser|after ?movie|interview|documentary|recap|behind the scenes)\b/i);
     return (m?.[1] ?? "trailer").toLowerCase();
   }
@@ -87,11 +87,11 @@ export function excludedTitleWord(title: string): string | null {
 
 /**
  * On the artist's own channel a title may skip the name ("Live at Awakenings 2024"), but it must then
- * say what the video is: a set, a stream, a place or event. A bare title like "HI!" is a gaming or chat
+ * say what the video is: a concert, a stream, a place or event. A bare title like "HI!" is a gaming or chat
  * stream, not a concert (owner, 17 Nov 2026, Steve Aoki).
  */
 const SET_HINT =
-  /\b(set|sets|live|mix|mixed|dj|session|sessions|stream|livestream|festival|fest|tour|show|b2b|b3b|vs|stage|mainstage|club|radio|episode|takeover|closing|opening|warm[- ]?up|sunrise|sunset|open air|boiler room|cercle|weekend|w1|w2|ade|edc|ultra|tomorrowland|awakenings|time warp|20\d\d|19\d\d)\b|@|\bat\b/i;
+  /\b(concert|concerts|live|mix|mixed|dj|session|sessions|stream|livestream|festival|fest|tour|show|b2b|b3b|vs|stage|mainstage|club|radio|episode|takeover|closing|opening|warm[- ]?up|sunrise|sunset|open air|boiler room|cercle|weekend|w1|w2|ade|edc|ultra|tomorrowland|awakenings|time warp|20\d\d|19\d\d)\b|@|\bat\b/i;
 export function titleSaysWhatItIs(title: string): boolean {
   return SET_HINT.test(title);
 }
@@ -106,12 +106,12 @@ export interface OfficialChannels {
   listed: Map<string, ChannelKindName>;
   /** Each lane artist's own official channel (MusicBrainz link or owner override). */
   artistChannels: Map<string, string>;
-  /** Other channels already marked official in our channels table (e.g. a channel of an earlier set). */
+  /** Other channels already marked official in our channels table (e.g. a channel of an earlier concert). */
   approved: Map<string, ChannelKindName>;
 }
 
 /**
- * Owner rule (17 Nov 2026): only official sets are published. A video is official when it is on a
+ * Owner rule (17 Nov 2026): only official concerts are published. A video is official when it is on a
  * channel of our list, on a lane artist's own channel, or on a channel already approved as official.
  * Anything else (fan uploads) is not sent to Claude and only goes in the report.
  */
@@ -127,7 +127,7 @@ export function officialChannel(channelId: string, ch: OfficialChannels): { reas
 // ---------- 4. The free filters, together ----------
 
 export type LaneDrop =
-  | "already-a-set"
+  | "already-a-concert"
   | "already-decided"
   | "rule:too-short"
   | "rule:not-embeddable"
@@ -136,7 +136,7 @@ export type LaneDrop =
   | "rule:live-or-upcoming"
   | "rule:not-processed"
   | "name-not-in-title"
-  | "own-channel-title-not-a-set"
+  | "own-channel-title-not-a-concert"
   | `excluded-word:${string}`;
 
 export type LaneFilterResult =
@@ -165,7 +165,7 @@ export function laneFilter(
   video: LaneVideoFacts,
   ctx: {
     names: string[];
-    isSet: boolean;
+    isConcert: boolean;
     decided: boolean;
     channels: OfficialChannels;
     minDurationSeconds: number;
@@ -177,7 +177,7 @@ export function laneFilter(
     otherChannelsOk?: boolean;
   },
 ): LaneFilterResult {
-  if (ctx.isSet) return { outcome: "drop", reason: "already-a-set" };
+  if (ctx.isConcert) return { outcome: "drop", reason: "already-a-concert" };
   if (ctx.decided) return { outcome: "drop", reason: "already-decided" };
   // YouTube rules (CLAUDE.md 1) and the 40-minute rule. No view threshold in this lane.
   if (!video.embeddable) return { outcome: "drop", reason: "rule:not-embeddable" };
@@ -188,7 +188,7 @@ export function laneFilter(
   if (video.durationSeconds < ctx.minDurationSeconds) return { outcome: "drop", reason: "rule:too-short" };
   if (!titleHasArtist(video.title, ctx.names)) {
     if (!ctx.onOwnChannel) return { outcome: "drop", reason: "name-not-in-title" };
-    if (!titleSaysWhatItIs(video.title)) return { outcome: "drop", reason: "own-channel-title-not-a-set" };
+    if (!titleSaysWhatItIs(video.title)) return { outcome: "drop", reason: "own-channel-title-not-a-concert" };
   }
   const word = excludedTitleWord(video.title);
   if (word) return { outcome: "drop", reason: `excluded-word:${word}` };
@@ -217,15 +217,15 @@ export function searchesToRun<T extends SearchState>(artists: T[], maxSearches: 
 
 /**
  * How many searches fit in the YouTube units left. Each search costs 100 units plus 1 unit to read
- * its 50 results with videos.list; `reserve` is kept for what comes after (tracklists of new sets).
+ * its 50 results with videos.list; `reserve` is kept for what comes after (tracklists of new concerts).
  */
 export function searchesThatFit(unitsLeft: number, reserve = 100): number {
   return Math.max(0, Math.floor((unitsLeft - reserve) / 101));
 }
 
-/** The search query (owner): the artist's name in quotes, then "set". */
+/** The search query (owner): the artist's name in quotes, then "concert". */
 export function searchQuery(name: string): string {
-  return `"${name.replace(/"/g, "")}" set`;
+  return `"${name.replace(/"/g, "")}" concert`;
 }
 
 // ---------- 6. Claude budget ----------
@@ -342,7 +342,7 @@ export function handleFor(name: string): string {
   return `@${matchText(name).replace(/ /g, "")}`;
 }
 
-/** YouTube's automatic "Artist - Topic" channels hold tracks, never sets. */
+/** YouTube's automatic "Artist - Topic" channels hold tracks, never concerts. */
 export function isTopicChannel(title: string): boolean {
   return /\s-\s*topic$/i.test(title.trim());
 }

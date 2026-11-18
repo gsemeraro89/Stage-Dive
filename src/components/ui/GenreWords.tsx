@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** Large display words flowing in lines, alternating solid and outlined, each with its set count. */
+/** Large display words flowing in lines, alternating solid and outlined, each with its concert count. */
 export function GenreWords({
   genres,
   size,
@@ -16,7 +16,7 @@ export function GenreWords({
             {g.name}
             <sup className="meta">
               {String(g.count).padStart(2, "0")}
-              <span className="od-sr"> {g.count === 1 ? "set" : "sets"}</span>
+              <span className="od-sr"> {g.count === 1 ? "concert" : "concerts"}</span>
             </sup>
           </Link>
         </li>

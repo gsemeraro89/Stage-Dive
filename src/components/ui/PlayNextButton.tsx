@@ -4,7 +4,7 @@ import { usePlayer } from "@/components/player/PlayerProvider";
 import type { Track } from "@/lib/player-types";
 
 /**
- * "Play next": puts a set first in the queue without stopping the one on deck.
+ * "Play next": puts a concert first in the queue without stopping the one on deck.
  * Shown only while something is playing. Once queued it reads "Next on deck" in acid.
  */
 export function PlayNextButton({ track }: { track: Track }) {

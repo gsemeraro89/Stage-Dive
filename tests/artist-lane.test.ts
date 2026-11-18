@@ -70,7 +70,7 @@ describe("artist name in the title", () => {
   });
 
   it("finds every lane artist in a b2b title, in list order", () => {
-    const lane = rules.filter((r) => r.allSets);
+    const lane = rules.filter((r) => r.allConcerts);
     expect(artistsInTitle("Adam Beyer b2b Ida Engberg b2b Joseph Capriati", lane).map((r) => r.name)).toEqual(["Adam Beyer", "Joseph Capriati"]);
   });
 });
@@ -88,7 +88,7 @@ describe("excluded words", () => {
     expect(excludedTitleWord("1 Hour of Mau P")).toBe("1 hour");
     expect(excludedTitleWord("Eric Prydz one-hour mix")).toBe("1 hour");
   });
-  it("keeps normal set titles", () => {
+  it("keeps normal concert titles", () => {
     expect(excludedTitleWord("Charlotte de Witte @ Tomorrowland 2024 Mainstage")).toBeNull();
     expect(excludedTitleWord("Boris Brejcha - 2 hours live at Grand Palais")).toBeNull();
     expect(excludedTitleWord("Ben Klock | Boiler Room Berlin")).toBeNull();
@@ -130,7 +130,7 @@ function video(overrides: Partial<LaneVideoFacts> = {}): LaneVideoFacts {
 }
 const ctx = (o: Partial<Parameters<typeof laneFilter>[1]> = {}) => ({
   names: names("Charlotte de Witte"),
-  isSet: false,
+  isConcert: false,
   decided: false,
   channels,
   minDurationSeconds: 40 * 60,
@@ -138,11 +138,11 @@ const ctx = (o: Partial<Parameters<typeof laneFilter>[1]> = {}) => ({
 });
 
 describe("laneFilter (free filters, in the owner's order)", () => {
-  it("sends an official full set to Claude, whatever its views", () => {
+  it("sends an official full concert to Claude, whatever its views", () => {
     expect(laneFilter(video(), ctx())).toEqual({ outcome: "classify", official: { reason: "channel-list", kind: "ELECTRONIC_ONLY" } });
   });
-  it("skips sets and decided videos first", () => {
-    expect(laneFilter(video({ durationSeconds: 60 }), ctx({ isSet: true }))).toEqual({ outcome: "drop", reason: "already-a-set" });
+  it("skips concerts and decided videos first", () => {
+    expect(laneFilter(video({ durationSeconds: 60 }), ctx({ isConcert: true }))).toEqual({ outcome: "drop", reason: "already-a-concert" });
     expect(laneFilter(video(), ctx({ decided: true }))).toEqual({ outcome: "drop", reason: "already-decided" });
   });
   it("drops on YouTube and length rules before looking at the title", () => {
@@ -161,10 +161,10 @@ describe("laneFilter (free filters, in the owner's order)", () => {
     const own = video({ title: "Live at Awakenings 2024", channelId: "UCartist00000000000000" });
     expect(laneFilter(own, ctx({ onOwnChannel: true }))).toEqual({ outcome: "classify", official: { reason: "artist-channel", kind: "ARTIST" } });
   });
-  it("on the artist's own channel a bare title (a gaming or chat stream) is not a set", () => {
+  it("on the artist's own channel a bare title (a gaming or chat stream) is not a concert", () => {
     const hi = video({ title: "HI!", channelId: "UCartist00000000000000" });
-    expect(laneFilter(hi, ctx({ onOwnChannel: true }))).toEqual({ outcome: "drop", reason: "own-channel-title-not-a-set" });
-    for (const title of ["Ultra Japan 2024 Mainstage", "Lockdown session at home", "Closing set @ Printworks", "B2B with Enrico"]) {
+    expect(laneFilter(hi, ctx({ onOwnChannel: true }))).toEqual({ outcome: "drop", reason: "own-channel-title-not-a-concert" });
+    for (const title of ["Ultra Japan 2024 Mainstage", "Lockdown session at home", "Closing concert @ Printworks", "B2B with Enrico"]) {
       expect(laneFilter(video({ title, channelId: "UCartist00000000000000" }), ctx({ onOwnChannel: true })).outcome).toBe("classify");
     }
   });
@@ -207,8 +207,8 @@ describe("searches: resume order and units", () => {
     expect(searchesThatFit(150)).toBe(0);
     expect(searchesThatFit(50)).toBe(0);
   });
-  it("searches the artist's name in quotes, then 'set'", () => {
-    expect(searchQuery("Charlotte de Witte")).toBe('"Charlotte de Witte" set');
+  it("searches the artist's name in quotes, then 'concert'", () => {
+    expect(searchQuery("Charlotte de Witte")).toBe('"Charlotte de Witte" concert');
   });
   it("takes each channel's uploads playlist from YouTube, 50 channels per unit", async () => {
     const calls: string[] = [];
@@ -298,13 +298,13 @@ describe("Haiku or Haiku + Opus", () => {
 });
 
 describe("Haiku/Opus agreement", () => {
-  const cls = (o: Partial<Classification>): Classification => ({ isFullSet: true, isElectronic: true, confidence: 0.9, genres: ["Techno"], mainArtists: ["X"], ...o });
+  const cls = (o: Partial<Classification>): Classification => ({ isFullConcert: true, isElectronic: true, confidence: 0.9, genres: ["Techno"], mainArtists: ["X"], ...o });
   const d = (c: Classification) => decide({ channelKind: "ELECTRONIC_ONLY", classification: c, textGenres: [], artistGenres: null }, DEFAULT_CONFIG);
 
   it("compares the accept/reject outcome of the same decide()", () => {
     const pairs = [
       { youtubeId: "a", title: "A", opus: d(cls({})), haiku: d(cls({ confidence: 0.8 })) }, // both accept
-      { youtubeId: "b", title: "B", opus: d(cls({ isFullSet: false })), haiku: d(cls({ isFullSet: false, confidence: 0.5 })) }, // both reject (different reasons)
+      { youtubeId: "b", title: "B", opus: d(cls({ isFullConcert: false })), haiku: d(cls({ isFullConcert: false, confidence: 0.5 })) }, // both reject (different reasons)
       { youtubeId: "c", title: "C", opus: d(cls({})), haiku: d(cls({ confidence: 0.6 })) }, // Haiku unsure
       { youtubeId: "d", title: "D", opus: d(cls({ isElectronic: false })), haiku: d(cls({})) }, // Haiku too generous
     ];
@@ -376,7 +376,7 @@ describe("namesakes on MusicBrainz", () => {
 });
 
 describe("data/artist-rules.json (owner, 17 Nov 2026)", () => {
-  const lane = rules.filter((r) => r.allSets);
+  const lane = rules.filter((r) => r.allConcerts);
   it("has the 90 lane artists, once each", () => {
     expect(lane).toHaveLength(90);
     const keys = rules.map((r) => matchText(r.name));
@@ -390,7 +390,7 @@ describe("data/artist-rules.json (owner, 17 Nov 2026)", () => {
     expect(rule("Vini Vici").genres).toEqual(["Trance"]);
     for (const n of ["Timmy Trumpet", "Hardwell", "W&W"]) expect(rule(n).genres).toEqual(["Big Room / EDM"]);
   });
-  it("a hard techno artist's set gets Hard Techno even though the classifier cannot give it", () => {
+  it("a hard techno artist's concert gets Hard Techno even though the classifier cannot give it", () => {
     const r = findArtistRule(["Sara Landry"], rules)!;
     expect(genresForApprovedArtist(["Techno"], r)).toEqual(["Hard Techno"]);
   });
@@ -415,7 +415,7 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.classifierBatch.deleteMany();
   });
 
-  const answer = { isFullSet: true, notSetReason: "", isElectronic: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", setting: "Club" as const, genres: ["Techno" as const], liveAct: false };
+  const answer = { isFullConcert: true, notConcertReason: "", isElectronic: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", setting: "Club" as const, genres: ["Techno" as const], liveAct: false };
 
   it("stores Haiku answers by prompt version and reuses them (a dry run's answers serve the real run)", async () => {
     await haiku.storeLaneAnswer(db, "LANEVID0001", "classify", haiku.LANE_CLASSIFY_VERSION, answer);

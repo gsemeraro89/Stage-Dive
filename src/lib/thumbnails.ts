@@ -26,7 +26,7 @@ export interface ThumbnailSources {
   height: number;
 }
 
-/** src and srcset for a set, offering every size up to the best one known to exist. */
+/** src and srcset for a concert, offering every size up to the best one known to exist. */
 export function thumbnailSources(youtubeId: string, stored: string | null | undefined): ThumbnailSources {
   const best = bestKnownSize(stored);
   const from = THUMBNAIL_SIZES.findIndex((s) => s.name === best);

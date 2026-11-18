@@ -14,7 +14,7 @@
         "Tech House",
         "Deep House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "The Martinez Brothers",
@@ -75,7 +75,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Dimitri Vegas & Like Mike",
@@ -85,7 +85,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Swedish House Mafia",
@@ -98,7 +98,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "NERVO",
@@ -111,7 +111,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Marshmello",
@@ -124,7 +124,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Axwell Λ Ingrosso",
@@ -142,7 +142,7 @@
       "genres": [
         "Trance"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Purple Disco Machine",
@@ -174,7 +174,7 @@
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "I Hate Models",
@@ -182,14 +182,14 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Amelie Lens",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Reinier Zonneveld",
@@ -197,7 +197,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Joseph Capriati",
@@ -205,21 +205,21 @@
         "Techno",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Enrico Sangiuliano",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Patrick Mason",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Indira Paganotto",
@@ -227,21 +227,21 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Nina Kraviz",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Charlotte de Witte",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Héctor Oáks",
@@ -252,7 +252,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Vintage Culture",
@@ -260,7 +260,7 @@
         "Tech House",
         "Melodic House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Joris Voorn",
@@ -268,7 +268,7 @@
         "Techno",
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "999999999",
@@ -276,14 +276,14 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Nico Moreno",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "FJAAK",
@@ -291,7 +291,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Kölsch",
@@ -303,7 +303,7 @@
         "Melodic Techno",
         "Melodic House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Richie Hawtin",
@@ -313,28 +313,28 @@
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Sara Landry",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Jamie Jones",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Adiel",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Miss Monique",
@@ -342,21 +342,21 @@
         "Progressive House",
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Hardwell",
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Kevin de Vries",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Kobosil",
@@ -364,7 +364,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Eric Prydz",
@@ -376,28 +376,28 @@
         "Progressive House",
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Daria Kolosova",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Anfisa Letyago",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Mind Against",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Oliver Heldens",
@@ -405,14 +405,14 @@
         "Big Room / EDM",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Mau P",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Pan-Pot",
@@ -423,14 +423,14 @@
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Dax J",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "AZYR",
@@ -438,7 +438,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Ogazón",
@@ -449,21 +449,21 @@
         "Techno",
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Timmy Trumpet",
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Ben Klock",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "CamelPhat",
@@ -474,7 +474,7 @@
         "Tech House",
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "W&W",
@@ -485,7 +485,7 @@
       "genres": [
         "Big Room / EDM"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Clara Cuvé",
@@ -495,21 +495,21 @@
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Stephan Bodzin",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Jeff Mills",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Artbat",
@@ -517,14 +517,14 @@
         "Melodic Techno",
         "Melodic House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Dom Dolla",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Solomun",
@@ -532,7 +532,7 @@
         "Melodic House",
         "Deep House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Carl Cox",
@@ -540,7 +540,7 @@
         "Techno",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Freddy K",
@@ -548,28 +548,28 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Juliet Fox",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Vini Vici",
       "genres": [
         "Trance"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "FISHER",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Seth Troxler",
@@ -577,28 +577,28 @@
         "Deep House",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Funk Tribu",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Marcel Dettmann",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Mochakk",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Chris Stussy",
@@ -606,7 +606,7 @@
         "Deep House",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Klangkuenstler",
@@ -617,7 +617,7 @@
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Paco Osuna",
@@ -625,21 +625,21 @@
         "Techno",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Franky Rizardo",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Joyhauser",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "VTSS",
@@ -647,7 +647,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Adriatique",
@@ -655,7 +655,7 @@
         "Melodic Techno",
         "Melodic House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Hot Since 82",
@@ -663,28 +663,28 @@
         "Tech House",
         "Deep House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Massano",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Quest",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Tale Of Us",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Eli Brown",
@@ -692,7 +692,7 @@
         "Tech House",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Maddix",
@@ -700,7 +700,7 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Rødhåd",
@@ -711,7 +711,7 @@
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Maceo Plex",
@@ -719,14 +719,14 @@
         "Techno",
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Boris Brejcha",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Dixon",
@@ -734,14 +734,14 @@
         "Melodic House",
         "Deep House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Ellen Allien",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "KETTAMA",
@@ -749,42 +749,42 @@
         "Techno",
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Loco Dice",
       "genres": [
         "Tech House"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Mathame",
       "genres": [
         "Melodic Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Charlie Sparks",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Elli Acula",
       "genres": [
         "Hard Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Helena Hauff",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Anetha",
@@ -792,35 +792,35 @@
         "Hard Techno",
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Olympe",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "ANNA",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Ilario Alicante",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     },
     {
       "name": "Bart Skils",
       "genres": [
         "Techno"
       ],
-      "allSets": true
+      "allConcerts": true
     }
   ],
   "groups": [

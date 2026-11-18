@@ -7,7 +7,7 @@
 // like a tracklist but fail them are reported as "unclear" so they can be handed to Claude.
 
 export interface Track {
-  /** Seconds from the start of the set, when the text gives a time. */
+  /** Seconds from the start of the concert, when the text gives a time. */
   time: number | null;
   /** Null when the line names no artist (e.g. a chapter such as "00:00 Intro"). */
   artist: string | null;
@@ -192,7 +192,7 @@ export function validateTracks(tracks: Track[], durationSeconds?: number): strin
     for (let i = 1; i < times.length; i++) {
       if (times[i]! < times[i - 1]!) return "times go backwards";
     }
-    if (durationSeconds && times[times.length - 1]! > durationSeconds + 60) return "times run past the end of the set";
+    if (durationSeconds && times[times.length - 1]! > durationSeconds + 60) return "times run past the end of the concert";
   }
   return null;
 }

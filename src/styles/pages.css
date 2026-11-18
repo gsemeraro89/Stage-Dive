@@ -233,7 +233,7 @@
 }
 
 /* The latest upload, named at the foot of the column, level with the foot of its image. */
-.od-profile-set {
+.od-profile-concert {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -241,29 +241,29 @@
   padding-top: 30px;
 }
 
-.od-profile-set h2 {
+.od-profile-concert h2 {
   margin: 8px 0 0;
   font-size: clamp(20px, 2.1vw, 32px);
   line-height: 1.04;
   overflow-wrap: anywhere;
 }
 
-.od-profile-set h2 a:hover {
+.od-profile-concert h2 a:hover {
   color: var(--acid);
 }
 
-.od-profile-set-meta {
+.od-profile-concert-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0 20px;
   margin: 10px 0 0;
 }
 
-.od-profile-set .od-credit {
+.od-profile-concert .od-credit {
   padding-top: 0;
 }
 
-.od-profile-set .od-play {
+.od-profile-concert .od-play {
   margin-top: 18px;
 }
 
@@ -284,7 +284,7 @@
     grid-column: auto;
   }
 
-  .od-profile-set {
+  .od-profile-concert {
     padding-top: 28px;
   }
 
@@ -349,7 +349,7 @@
   min-width: 0;
 }
 
-.od-setgrid > .od-set-title {
+.od-setgrid > .od-concert-title {
   grid-area: title;
 }
 
@@ -374,7 +374,7 @@
 
 /* The player is the hero of this page; the title supports it. Sized so a long title
    (about 40 characters) takes two lines on a desktop and three on a phone. */
-.od-set-title {
+.od-concert-title {
   margin: 18px 0 0;
   font-size: clamp(24px, 3.4vw, 56px);
   line-height: 0.95;

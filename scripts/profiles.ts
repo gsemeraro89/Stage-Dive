@@ -22,11 +22,11 @@ try {
         { OR: [{ profileCheckedAt: null }, { profileCheckedAt: { lt: retryBefore } }] },
       ],
     },
-    include: { credits: { take: 2, include: { set: { select: { title: true } } } } },
+    include: { credits: { take: 2, include: { concert: { select: { title: true } } } } },
     take: limit,
   });
   for (const artist of artists) {
-    const hint = artist.credits.map((c) => c.set.title).join("; ");
+    const hint = artist.credits.map((c) => c.concert.title).join("; ");
     try {
       // Free facts first; the web is searched only when MusicBrainz does not know enough.
       let facts = null;

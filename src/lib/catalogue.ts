@@ -2,7 +2,7 @@
 
 /**
  * Genres shown on the site (owner decision, 12 Nov 2026: these 9 only, for now).
- * "Live Act" is an attribute, not a genre (see Set.liveAct).
+ * "Live Act" is an attribute, not a genre (see Concert.liveAct).
  */
 export const GENRES = [
   "Techno",
@@ -29,7 +29,7 @@ export const SITE_GENRES = [...GENRES, ...ARTIST_ONLY_GENRES] as const;
 
 /**
  * Genres that were on the original list (docs/BRIEF.md 4.2) and were taken off by the owner.
- * In the seed data they are dropped quietly; a set keeps its other genres.
+ * In the seed data they are dropped quietly; a concert keeps its other genres.
  */
 export const RETIRED_GENRES = [
   "Hard Techno",
@@ -42,7 +42,7 @@ export const RETIRED_GENRES = [
   "Neo-Classical",
 ] as const;
 
-/** The "Live Act" label in source data. Stored as Set.liveAct, not as a genre. */
+/** The "Live Act" label in source data. Stored as Concert.liveAct, not as a genre. */
 export const LIVE_ACT = "Live Act";
 
 /** Settings from docs/BRIEF.md section 4 (owner approved, 12 Nov 2026). */

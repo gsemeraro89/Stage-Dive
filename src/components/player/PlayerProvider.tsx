@@ -1,11 +1,11 @@
 "use client";
 
 // The one YouTube player of the site. It lives in the root layout, so it keeps playing while
-// the visitor moves between pages. The same player is shown either inside the set page
-// (when that page's set is the one playing) or docked in the bottom bar.
+// the visitor moves between pages. The same player is shown either inside the concert page
+// (when that page's concert is the one playing) or docked in the bottom bar.
 //
 // YouTube rules followed here (CLAUDE.md): one player per page, never hidden while playing,
-// never smaller than 200x200, nothing drawn on top of it, `origin` set, playback starts
+// never smaller than 200x200, nothing drawn on top of it, `origin` concert, playback starts
 // from a click, and auto-advance only happens in this always-visible player.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +17,7 @@ export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "error";
 interface PlayerState {
   current: Track | null;
   queue: Track[];
-  /** "You might also like" for what is playing: similar artists, each with a set to play. */
+  /** "You might also like" for what is playing: similar artists, each with a concert to play. */
   suggestions: RecommendedArtist[];
   hasPrevious: boolean;
   status: PlayerStatus;
@@ -30,16 +30,16 @@ interface PlayerState {
 
 interface PlayerActions {
   play: (track: Track) => void;
-  /** Play a set from a given second (tracklist times). Starts the set first if another one is playing. */
+  /** Play a concert from a given second (tracklist times). Starts the concert first if another one is playing. */
   playFrom: (track: Track, seconds: number) => void;
-  /** Put a set first in the queue without stopping the current one (plays now if nothing is playing). */
+  /** Put a concert first in the queue without stopping the current one (plays now if nothing is playing). */
   playNext: (track: Track) => void;
   toggle: () => void;
   next: () => void;
   previous: () => void;
   /** Stop playback and close the player (bar and video disappear until the next play). */
   close: () => void;
-  /** A set page offers its player area; the player moves there if that set is playing. */
+  /** A concert page offers its player area; the player moves there if that concert is playing. */
   registerSlot: (youtubeId: string, element: HTMLElement | null) => void;
   /** The bottom bar offers the place where the docked video sits. */
   registerDock: (element: HTMLElement | null) => void;
@@ -130,7 +130,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const historyRef = useRef<Track[]>([]);
   const advanceRef = useRef<() => void>(() => {});
-  /** Where the set being started should begin (a tracklist time), 0 for the start. */
+  /** Where the concert being started should begin (a tracklist time), 0 for the start. */
   const startAtRef = useRef(0);
 
   const start = useCallback((track: Track, at = 0) => {
@@ -180,7 +180,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           events: {
             onReady: () => {
               playerRef.current = player;
-              // The visitor may have picked another set while the player was loading.
+              // The visitor may have picked another concert while the player was loading.
               const wanted = currentRef.current;
               if (wanted && wanted.youtubeId !== first.youtubeId) player.loadVideoById(wanted.youtubeId, startAtRef.current);
               else {
@@ -330,7 +330,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const inPage = Boolean(current && slot && slot.youtubeId === current.youtubeId);
   const target = inPage ? slot!.element : dock;
 
-  // Keep the player exactly over its target: the set page's player area, or the bottom bar.
+  // Keep the player exactly over its target: the concert page's player area, or the bottom bar.
   // The iframe itself is never moved in the page (that would restart the video).
   useEffect(() => {
     const frame = frameRef.current;

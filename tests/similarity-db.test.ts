@@ -20,9 +20,9 @@ describe.skipIf(!url)("similar artists (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, artist_lookups, job_runs, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
     job = await import("../src/lib/similarity/job");
     q = await import("../src/lib/queries");
   });
@@ -35,7 +35,7 @@ describe.skipIf(!url)("similar artists (database)", () => {
     expect(rows.length).toBe(ranked.length);
     expect(rows.some((r) => r.artistId === r.similarId)).toBe(false);
     for (const r of rows) expect(rows.some((x) => x.artistId === r.similarId && x.similarId === r.artistId)).toBe(true);
-    // Guests without a set of their own have no page and are never suggested (owner rule).
+    // Guests without a concert of their own have no page and are never suggested (owner rule).
     const nto = await q.similarArtistIds([await id("nto")]);
     expect(nto).not.toContain(await id("sofiane-pamart"));
   });
@@ -72,25 +72,25 @@ describe.skipIf(!url)("similar artists (database)", () => {
 
   it("the player's suggestions and queue use the similar artists", async () => {
     const ntoId = await id("nto");
-    const ntoSet = await db.set.findFirstOrThrow({ where: { credits: { some: { artistId: ntoId, role: "MAIN" } } } });
-    const cards = await q.recommendationsFor(ntoSet.youtubeId);
+    const ntoConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artistId: ntoId, role: "MAIN" } } } });
+    const cards = await q.recommendationsFor(ntoConcert.youtubeId);
     expect(cards!.length).toBeGreaterThan(0);
     expect(cards!.length).toBeLessThanOrEqual(4);
-    // Most similar first; an artist whose only set is with NTO (Sofiane Pamart) is not suggested.
+    // Most similar first; an artist whose only concert is with NTO (Sofiane Pamart) is not suggested.
     const order = await q.similarArtistIds([ntoId]);
     const slugs = await Promise.all(order.map(async (i) => (await db.artist.findUniqueOrThrow({ where: { id: i } })).slug));
     const positions = cards!.map((c) => slugs.indexOf(c.slug));
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(cards!.map((c) => c.slug)).not.toContain("sofiane-pamart");
     for (const c of cards!) {
-      expect(c.sets).toBeGreaterThan(0);
+      expect(c.concerts).toBeGreaterThan(0);
       expect(c.mostWatched.artists.some((a) => a.slug === c.slug)).toBe(true);
       expect(c.mostWatched.artists.some((a) => a.slug === "nto")).toBe(false);
     }
     expect(await q.recommendationsFor("xxxxxxxxxxx")).toBeNull();
 
-    // After NTO's own sets, the queue goes on with the most similar artist.
-    const queue = (await q.getQueue(ntoSet.youtubeId))!;
+    // After NTO's own concerts, the queue goes on with the most similar artist.
+    const queue = (await q.getQueue(ntoConcert.youtubeId))!;
     const firstOther = queue.find((s) => !s.artists.some((a) => a.slug === "nto"));
     expect(firstOther?.artists.some((a) => a.slug === cards![0].slug)).toBe(true);
   });
@@ -101,9 +101,9 @@ describe.skipIf(!url)("similar artists (database)", () => {
     expect(page!.similarCards[0].latest).toBeTruthy();
   });
 
-  it("the set page has artist cards for You might also like", async () => {
-    const ntoSet = await db.set.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "nto" }, role: "MAIN" } } } });
-    const page = await q.getSetPage(ntoSet.slug);
+  it("the concert page has artist cards for You might also like", async () => {
+    const ntoConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "nto" }, role: "MAIN" } } } });
+    const page = await q.getConcertPage(ntoConcert.slug);
     expect(page!.similarCards.length).toBeGreaterThan(0);
     expect(page!.similarCards.length).toBeLessThanOrEqual(4);
     expect(page!.similarCards.some((c) => c.slug === "nto")).toBe(false);
@@ -124,7 +124,7 @@ describe.skipIf(!url)("similar artists (database)", () => {
     expect((await q.findArtistByText("kalkb"))?.slug).toBe("paul-kalkbrenner");
     expect(await q.findArtistByText("zzzz")).toBeNull();
 
-    const genre = await db.genre.findFirstOrThrow({ where: { sets: { some: {} } } });
+    const genre = await db.genre.findFirstOrThrow({ where: { concerts: { some: {} } } });
     const filtered = (await q.getMap("nto", [genre.slug]))!;
     for (const a of filtered.artists) expect(a.genres.length).toBeGreaterThan(0);
     expect(filtered.artists.length).toBeLessThanOrEqual(map.artists.length);

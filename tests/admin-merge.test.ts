@@ -18,21 +18,21 @@ describe.skipIf(!url)("admin fixes (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, artist_lookups, job_runs, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
     admin = await import("../src/lib/admin/merge");
   });
   afterAll(async () => db?.$disconnect());
 
   it("moves every credit to one page, keeps the other name as aka, deletes the extra page", async () => {
     const into = await db.artist.findUniqueOrThrow({ where: { slug: "nto" }, include: { credits: true } });
-    const set = await db.set.findFirstOrThrow({ where: { credits: { some: { artistId: into.id } } } });
+    const concert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artistId: into.id } } } });
     const dup = await db.artist.create({ data: { slug: "n-to", name: "N'to", origin: "Marseille" } });
-    // One set credited to both (stays one credit), one set only on the duplicate (moves).
-    await db.setArtist.create({ data: { setId: set.id, artistId: dup.id, role: "MAIN" } });
-    const other = await db.set.findFirstOrThrow({ where: { credits: { none: { artistId: into.id } } } });
-    await db.setArtist.create({ data: { setId: other.id, artistId: dup.id, role: "MAIN", position: 1 } });
+    // One concert credited to both (stays one credit), one concert only on the duplicate (moves).
+    await db.concertArtist.create({ data: { concertId: concert.id, artistId: dup.id, role: "MAIN" } });
+    const other = await db.concert.findFirstOrThrow({ where: { credits: { none: { artistId: into.id } } } });
+    await db.concertArtist.create({ data: { concertId: other.id, artistId: dup.id, role: "MAIN", position: 1 } });
 
     const r = await admin.mergeArtists(db, "n-to", "nto");
     expect(r).toMatchObject({ creditsMoved: 1, creditsDropped: 1 });
@@ -43,24 +43,24 @@ describe.skipIf(!url)("admin fixes (database)", () => {
     await expect(admin.mergeArtists(db, "nto", "nto")).rejects.toThrow();
   });
 
-  it("splits a group page into its members and hides a set", async () => {
-    const set = await db.set.findFirstOrThrow({ where: { status: "PUBLISHED" } });
+  it("splits a group page into its members and hides a concert", async () => {
+    const concert = await db.concert.findFirstOrThrow({ where: { status: "PUBLISHED" } });
     const group = await db.artist.create({ data: { slug: "three-of-us", name: "Three Of Us" } });
     const a = await db.artist.create({ data: { slug: "member-a", name: "Member A" } });
     const b = await db.artist.create({ data: { slug: "member-b", name: "Member B" } });
-    await db.setArtist.create({ data: { setId: set.id, artistId: group.id, role: "MAIN" } });
-    expect(await admin.splitArtist(db, "three-of-us", ["member-a", "member-b"])).toEqual({ sets: 1 });
+    await db.concertArtist.create({ data: { concertId: concert.id, artistId: group.id, role: "MAIN" } });
+    expect(await admin.splitArtist(db, "three-of-us", ["member-a", "member-b"])).toEqual({ concerts: 1 });
     expect(await db.artist.findUnique({ where: { slug: "three-of-us" } })).toBeNull();
-    for (const m of [a, b]) expect(await db.setArtist.findUnique({ where: { setId_artistId: { setId: set.id, artistId: m.id } } })).toMatchObject({ role: "MAIN" });
-    expect(await admin.hideSet(db, set.slug)).toBe(set.slug);
-    expect((await db.set.findUniqueOrThrow({ where: { id: set.id } })).status).toBe("HIDDEN");
+    for (const m of [a, b]) expect(await db.concertArtist.findUnique({ where: { concertId_artistId: { concertId: concert.id, artistId: m.id } } })).toMatchObject({ role: "MAIN" });
+    expect(await admin.hideConcert(db, concert.slug)).toBe(concert.slug);
+    expect((await db.concert.findUniqueOrThrow({ where: { id: concert.id } })).status).toBe("HIDDEN");
   });
 
-  it("closes review items whose video is already a set, and older copies of the same video", async () => {
-    const set = await db.set.findFirstOrThrow();
+  it("closes review items whose video is already a concert, and older copies of the same video", async () => {
+    const concert = await db.concert.findFirstOrThrow();
     await db.reviewItem.createMany({
       data: [
-        { youtubeId: set.youtubeId, payload: {}, reason: "x", confidence: 0.5 },
+        { youtubeId: concert.youtubeId, payload: {}, reason: "x", confidence: 0.5 },
         { youtubeId: "WAITING0001", payload: {}, reason: "x", confidence: 0.5 },
         { youtubeId: "WAITING0001", payload: {}, reason: "x", confidence: 0.5 },
       ],

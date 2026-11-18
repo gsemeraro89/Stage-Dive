@@ -7,7 +7,7 @@ import { slugify } from "../slug";
 import type { NormalizedSeed } from "./normalize";
 
 export interface ImportSummary {
-  sets: number;
+  concerts: number;
   artists: number;
   venues: number;
   channels: number;
@@ -28,7 +28,7 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
         });
         genreIds.set(name, row.id);
       }
-      // Genres no longer on the list are removed, with their links to sets. Artist-only genres are
+      // Genres no longer on the list are removed, with their links to concerts. Artist-only genres are
       // created by the collector on first use and kept.
       await tx.genre.deleteMany({ where: { name: { notIn: [...SITE_GENRES] } } });
 
@@ -75,50 +75,50 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
         artistIds.set(artist.slug, row.id);
       }
 
-      for (const set of seed.sets) {
+      for (const concert of seed.concerts) {
         const data = {
-          slug: set.slug,
-          title: set.title,
-          durationSeconds: set.durationSeconds,
-          viewCount: set.viewCount,
-          publishedAt: set.publishedAt,
-          city: set.city,
-          country: set.country,
-          liveAct: set.liveAct,
-          writeUp: set.writeUp,
+          slug: concert.slug,
+          title: concert.title,
+          durationSeconds: concert.durationSeconds,
+          viewCount: concert.viewCount,
+          publishedAt: concert.publishedAt,
+          city: concert.city,
+          country: concert.country,
+          liveAct: concert.liveAct,
+          writeUp: concert.writeUp,
           embeddable: true,
           privacyStatus: "public",
-          ytCheckedAt: set.checkedAt,
-          ytRefreshedAt: set.checkedAt,
-          channelId: channelIds.get(set.channelName)!,
-          venueId: set.venueSlug ? venueIds.get(set.venueSlug)! : null,
-          settingId: settingIds.get(set.setting)!,
+          ytCheckedAt: concert.checkedAt,
+          ytRefreshedAt: concert.checkedAt,
+          channelId: channelIds.get(concert.channelName)!,
+          venueId: concert.venueSlug ? venueIds.get(concert.venueSlug)! : null,
+          settingId: settingIds.get(concert.setting)!,
         };
-        // status and curated are only set on first import, so later edits by the owner survive a re-run.
-        const row = await tx.set.upsert({
-          where: { youtubeId: set.youtubeId },
-          create: { youtubeId: set.youtubeId, source: "SEED", curated: true, status: "PUBLISHED", ...data },
+        // status and curated are only concert on first import, so later edits by the owner survive a re-run.
+        const row = await tx.concert.upsert({
+          where: { youtubeId: concert.youtubeId },
+          create: { youtubeId: concert.youtubeId, source: "SEED", curated: true, status: "PUBLISHED", ...data },
           update: data,
         });
 
-        await tx.setArtist.deleteMany({ where: { setId: row.id } });
-        await tx.setArtist.createMany({
-          data: set.credits.map((c) => ({
-            setId: row.id,
+        await tx.concertArtist.deleteMany({ where: { concertId: row.id } });
+        await tx.concertArtist.createMany({
+          data: concert.credits.map((c) => ({
+            concertId: row.id,
             artistId: artistIds.get(c.artistSlug)!,
             role: c.role,
             creditNote: c.creditNote,
             position: c.position,
           })),
         });
-        await tx.setGenre.deleteMany({ where: { setId: row.id } });
-        await tx.setGenre.createMany({
-          data: set.genres.map((name) => ({ setId: row.id, genreId: genreIds.get(name)! })),
+        await tx.concertGenre.deleteMany({ where: { concertId: row.id } });
+        await tx.concertGenre.createMany({
+          data: concert.genres.map((name) => ({ concertId: row.id, genreId: genreIds.get(name)! })),
         });
       }
 
       return {
-        sets: seed.sets.length,
+        concerts: seed.concerts.length,
         artists: seed.artists.length,
         venues: seed.venues.length,
         channels: seed.channels.length,

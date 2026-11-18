@@ -15,14 +15,14 @@ import { useMiniPlayer } from "./useMiniPlayer";
  * because YouTube does not allow a video to play hidden or smaller than 200x200.
  * "You might also like" opens the bar upward into a sheet of suggested artists: the sheet is part
  * of the bar and sits above the row with the video, so it never touches the video. On the page of
- * the set that is playing (video in the page) the button scrolls to the page's own section instead.
+ * the concert that is playing (video in the page) the button scrolls to the page's own section instead.
  * "Mini player", the button touching the right edge of the video, collapses the bar into the mini-player: a small window with only the video and, above
  * it, a strip to drag it by, with "expand" and "close". It is this same <section>, restyled
- * (`data-mini`); the video is never taken out of the page, so the set does not restart.
- * On the set page of the set that is playing the video is in the page and the bar is slim; there the
- * X hides the bar only and the set keeps playing in the page (`barHidden`, kept here, not in the
+ * (`data-mini`); the video is never taken out of the page, so the concert does not restart.
+ * On the concert page of the concert that is playing the video is in the page and the bar is slim; there the
+ * X hides the bar only and the concert keeps playing in the page (`barHidden`, kept here, not in the
  * player). The bar is back as soon as the video is no longer in the page: the visitor left, or the
- * next set started. Everywhere else the X stops the music.
+ * next concert started. Everywhere else the X stops the music.
  * Sizes and layout are in src/styles/deck.css.
  */
 export function PlayerDock() {
@@ -35,7 +35,7 @@ export function PlayerDock() {
   const sheetRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLButtonElement>(null);
   const hasMore = suggestions.length > 0;
-  // No mini-player while the video is inside the set page: there the bar is already slim.
+  // No mini-player while the video is inside the concert page: there the bar is already slim.
   const { mini, setMinimised, windowRef, handle } = useMiniPlayer(Boolean(current) && !inPage);
   const sheetOpen = open && hasMore && !inPage && !mini && Boolean(current);
   const minimiseRef = useRef<HTMLButtonElement>(null);
@@ -46,7 +46,7 @@ export function PlayerDock() {
   // The sheet closes when the visitor moves to another page.
   useEffect(() => setOpen(false), [path]);
 
-  // The bar comes back when the video leaves the page (another page, or the next set), and for a new set.
+  // The bar comes back when the video leaves the page (another page, or the next concert), and for a new concert.
   const currentId = current?.youtubeId;
   useEffect(() => setBarHidden(false), [inPage, currentId]);
 
@@ -181,7 +181,7 @@ export function PlayerDock() {
                 On deck
               </div>
             </div>
-            <Link href={`/sets/${current.slug}`} className="od-dock-title title" data-od="dock-title">
+            <Link href={`/concerts/${current.slug}`} className="od-dock-title title" data-od="dock-title">
               {current.title}
             </Link>
             <div className="od-dock-credits meta" data-od="dock-credits">
@@ -217,11 +217,11 @@ export function PlayerDock() {
           </div>
           {upNext && (
             <span className="od-dock-next meta" data-od="dock-next">
-              Next: <Link href={`/sets/${upNext.slug}`} className="title">{upNext.title}</Link>
+              Next: <Link href={`/concerts/${upNext.slug}`} className="title">{upNext.title}</Link>
             </span>
           )}
           <div className="od-dock-controls" data-od="dock-controls">
-            <button type="button" aria-label="Previous set" onClick={previous} disabled={!hasPrevious}>
+            <button type="button" aria-label="Previous concert" onClick={previous} disabled={!hasPrevious}>
               <PreviousIcon />
               <span className="od-sr">Previous</span>
             </button>
@@ -229,13 +229,13 @@ export function PlayerDock() {
               {playing ? <PauseIcon /> : <PlayIcon />}
               <span className="od-sr">{playing ? "Pause" : "Play"}</span>
             </button>
-            <button type="button" aria-label="Next set" onClick={next} disabled={!upNext}>
+            <button type="button" aria-label="Next concert" onClick={next} disabled={!upNext}>
               <NextIcon />
               <span className="od-sr">Next</span>
             </button>
             {/* Closing stops the music: YouTube does not allow playing with the video hidden. */}
             {inPage ? (
-              // In the page the video is on show, so the X only puts the bar away; the set plays on.
+              // In the page the video is on show, so the X only puts the bar away; the concert plays on.
               <button type="button" className="od-dock-close" data-od="dock-hide" aria-label="Hide bar" onClick={() => setBarHidden(true)}>
                 <CloseIcon />
                 <span className="od-sr">Hide bar</span>
@@ -249,7 +249,7 @@ export function PlayerDock() {
           </div>
           {status === "error" && (
             <p role="alert" className="od-dock-error meta" data-od="dock-error">
-              This set cannot be played right now.
+              This concert cannot be played right now.
             </p>
           )}
         </div>

@@ -1,24 +1,24 @@
 // Data for the home page. It only calls the existing queries. The hand-picked pictures come
 // from data/home-picks.json (YouTube IDs, in order of preference) and are loaded by ID; a pick
-// that is not in the database is skipped and the gap is filled with the most watched sets of
+// that is not in the database is skipped and the gap is filled with the most watched concerts of
 // the same setting, so the page never shows a hole.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   filterOptions,
-  latestSets,
+  latestConcerts,
   listArtists,
-  listSets,
+  listConcerts,
   listVenues,
   mapArtistIndex,
-  setsByYoutubeIds,
-  type SetView,
+  concertsByYoutubeIds,
+  type ConcertView,
 } from "@/lib/queries";
 
-/** Where the full list of sets lives. */
-export const SETS_HREF = "/sets";
+/** Where the full list of concerts lives. */
+export const SETS_HREF = "/concerts";
 
-export function setsHref(params: Record<string, string> = {}): string {
+export function concertsHref(params: Record<string, string> = {}): string {
   const query = new URLSearchParams(params).toString();
   return query ? `${SETS_HREF}?${query}` : SETS_HREF;
 }
@@ -35,7 +35,7 @@ function readPicks(): Picks {
       if (Array.isArray(list)) empty[key] = list.filter((p) => typeof p?.id === "string");
     }
   } catch {
-    // No file, or not valid: the page falls back to the most watched sets.
+    // No file, or not valid: the page falls back to the most watched concerts.
   }
   return empty;
 }
@@ -45,37 +45,37 @@ export const FESTIVAL = "festival";
 export const CLUB = "club";
 
 const mostWatchedIn = (setting: string | null, take: number) =>
-  listSets({ q: null, genre: null, artist: null, venue: null, setting, sort: "most-viewed" }, take);
+  listConcerts({ q: null, genre: null, artist: null, venue: null, setting, sort: "most-viewed" }, take);
 
 export async function homeData() {
   const picks = readPicks();
   const pickIds = [...picks.cover, ...picks.places, ...picks.festival, ...picks.club].map((p) => p.id);
   const [picked, chart, special, festival, club, latest, artists, venues, options, mapIndex] = await Promise.all([
-    setsByYoutubeIds(pickIds),
-    // The chart, and the number of sets in the catalogue.
+    concertsByYoutubeIds(pickIds),
+    // The chart, and the number of concerts in the catalogue.
     mostWatchedIn(null, 6),
     // Fallbacks for the pictures: enough to fill the band and the atlas without any pick.
     mostWatchedIn(SPECIAL, 24),
     mostWatchedIn(FESTIVAL, 8),
     mostWatchedIn(CLUB, 8),
-    latestSets(5),
+    latestConcerts(5),
     listArtists(),
     listVenues(),
     filterOptions(),
     mapArtistIndex(),
   ]);
   const byId = new Map(picked.map((s) => [s.youtubeId, s]));
-  const fallback: Record<string, SetView[]> = { [SPECIAL]: special.sets, [FESTIVAL]: festival.sets, [CLUB]: club.sets };
+  const fallback: Record<string, ConcertView[]> = { [SPECIAL]: special.concerts, [FESTIVAL]: festival.concerts, [CLUB]: club.concerts };
   const used = new Set<string>();
 
   /**
-   * The first `n` picks that exist, then the most watched sets of `setting`. A picture is never
-   * shown twice on the page; `listed` is for text lists, which may name a set that also has a
+   * The first `n` picks that exist, then the most watched concerts of `setting`. A picture is never
+   * shown twice on the page; `listed` is for text lists, which may name a concert that also has a
    * picture elsewhere (so a small catalogue still gets its list).
    */
-  const take = (list: PickList, n: number, setting: string, listed = false): SetView[] => {
-    const out: SetView[] = [];
-    const add = (s: SetView | undefined) => {
+  const take = (list: PickList, n: number, setting: string, listed = false): ConcertView[] => {
+    const out: ConcertView[] = [];
+    const add = (s: ConcertView | undefined) => {
       if (!s || out.length >= n || out.some((o) => o.youtubeId === s.youtubeId)) return;
       if (!listed) {
         if (used.has(s.youtubeId)) return;
@@ -92,16 +92,16 @@ export async function homeData() {
     take,
     picks,
     latest,
-    mostWatched: chart.sets,
+    mostWatched: chart.concerts,
     artists,
-    // The nine artists with the most sets; the tenth square is the "All artists" tile.
-    topArtists: [...artists].sort((a, b) => b.sets - a.sets || a.name.localeCompare(b.name)).slice(0, 9),
-    topVenues: [...venues].sort((a, b) => b.sets - a.sets || a.name.localeCompare(b.name)),
+    // The nine artists with the most concerts; the tenth square is the "All artists" tile.
+    topArtists: [...artists].sort((a, b) => b.concerts - a.concerts || a.name.localeCompare(b.name)).slice(0, 9),
+    topVenues: [...venues].sort((a, b) => b.concerts - a.concerts || a.name.localeCompare(b.name)),
     genres: options.genres,
     settings: options.settings,
     mapIndex,
     totals: {
-      sets: chart.total,
+      concerts: chart.total,
       artists: artists.length,
       festivals: venues.length,
       genres: options.genres.length,

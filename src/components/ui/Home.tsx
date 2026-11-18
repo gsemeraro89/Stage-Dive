@@ -1,46 +1,46 @@
 // Parts of the home page (src/app/_home/HomePage.tsx).
 // DESIGN.md section 8, "Home page parts". Nothing here is written on a photo except the
-// duration label of a set thumbnail: every caption sits on the ground under its picture.
+// duration label of a concert thumbnail: every caption sits on the ground under its picture.
 import Link from "next/link";
-import { Credits, PlayThumb, SIZES } from "@/components/catalogue/SetTile";
+import { Credits, PlayThumb, SIZES } from "@/components/catalogue/ConcertTile";
 import { formatDate, formatDuration } from "@/lib/format";
-import type { SetView } from "@/lib/queries";
+import type { ConcertView } from "@/lib/queries";
 import { compactNumber } from "@/lib/site";
 import { Reel } from "./Reel";
 
-/** The place a set was played, short: "Salar de Uyuni", else the city, else the country. */
-export function placeName(set: SetView): string {
-  return set.venue?.name ?? set.city ?? set.country ?? set.title;
+/** The place a concert was played, short: "Salar de Uyuni", else the city, else the country. */
+export function placeName(concert: ConcertView): string {
+  return concert.venue?.name ?? concert.city ?? concert.country ?? concert.title;
 }
 
 /** "Cappadocia, Turkey", without repeating what placeName already says. */
-export function placeRest(set: SetView): string {
-  const name = placeName(set);
-  return [set.city, set.country].filter((p) => p && p !== name).join(", ");
+export function placeRest(concert: ConcertView): string {
+  const name = placeName(concert);
+  return [concert.city, concert.country].filter((p) => p && p !== name).join(", ");
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
- * Plate: a set shown for where it was played. A set tile with the place as its title:
+ * Plate: a concert shown for where it was played. A concert tile with the place as its title:
  * image, a mono row (city and country left, views right), the place in title type, the artist
  * in acid mono. No box. `kicker` adds a muted mono line above the place (a link when it has an href).
  */
 export function Plate({
-  set,
+  concert,
   sizes,
   priority,
   kicker,
 }: {
-  set: SetView;
+  concert: ConcertView;
   sizes?: string;
   priority?: boolean;
   kicker?: { label: string; href?: string };
 }) {
-  const rest = placeRest(set);
+  const rest = placeRest(concert);
   return (
     <article className="od-tile od-plate" data-od="plate">
-      <PlayThumb set={set} sizes={sizes ?? SIZES.tile} priority={priority} />
+      <PlayThumb concert={concert} sizes={sizes ?? SIZES.tile} priority={priority} />
       <p className="od-tile-meta meta" data-od="meta">
         {kicker ? (
           kicker.href ? (
@@ -51,56 +51,56 @@ export function Plate({
             <span>{kicker.label}</span>
           )
         ) : (
-          <span>{rest || set.setting?.name}</span>
+          <span>{rest || concert.setting?.name}</span>
         )}
-        <span>{compactNumber(set.viewCount)} views</span>
+        <span>{compactNumber(concert.viewCount)} views</span>
       </p>
       <h3 className="title">
-        <Link href={`/sets/${set.slug}`}>{placeName(set)}</Link>
+        <Link href={`/concerts/${concert.slug}`}>{placeName(concert)}</Link>
       </h3>
       {kicker && rest && <p className="od-plate-rest meta od-muted">{rest}</p>}
-      <Credits set={set} place={false} />
+      <Credits concert={concert} place={false} />
     </article>
   );
 }
 
 /** The acid band that announces the newest upload. */
-export function LatestStrip({ newest, sets, artists }: { newest?: SetView; sets: number; artists: number }) {
+export function LatestStrip({ newest, concerts, artists }: { newest?: ConcertView; concerts: number; artists: number }) {
   if (!newest) return null;
   return (
     <div className="od-strip od-strip--inset meta" data-od="latest-strip">
-      <Link href={`/sets/${newest.slug}`}>
+      <Link href={`/concerts/${newest.slug}`}>
         Latest upload: {newest.credits}
         {newest.venue ? ` — ${newest.venue.name}` : ""}
       </Link>
       <span>{formatDate(newest.publishedAt)}</span>
       <span className="od-strip-end">
-        {sets} sets · {artists} artists
+        {concerts} concerts · {artists} artists
       </span>
     </div>
   );
 }
 
-/** One picture of the reel: the set, and the setting it stands for (a link to that setting's sets). */
+/** One picture of the reel: the concert, and the setting it stands for (a link to that setting's concerts). */
 export interface ReelFrame {
-  set: SetView;
+  concert: ConcertView;
   kicker: { label: string; href: string };
 }
 
 /**
  * Reel: the band of pictures at the top of the home page. Every frame has the same format and
  * size (16:9), a 2px seam between them, and its caption under it, on the ground: the setting
- * with its count (a link), the place, the artist. The picture opens the set page. Arrows and
+ * with its count (a link), the place, the artist. The picture opens the concert page. Arrows and
  * swipe: see `Reel`.
  */
 export function PlaceReel({ frames }: { frames: ReelFrame[] }) {
   if (frames.length === 0) return null;
   return (
-    <Reel label="Sets by setting">
-      {frames.map(({ set, kicker }, i) => (
-        <li key={set.id}>
+    <Reel label="Concerts by setting">
+      {frames.map(({ concert, kicker }, i) => (
+        <li key={concert.id}>
           <article className="od-reel-frame" data-od="plate">
-            <PlayThumb set={set} sizes="(min-width: 1001px) 31vw, (min-width: 761px) 45vw, 86vw" priority={i === 0} />
+            <PlayThumb concert={concert} sizes="(min-width: 1001px) 31vw, (min-width: 761px) 45vw, 86vw" priority={i === 0} />
             <div className="od-reel-cap">
               <p className="meta">
                 <Link href={kicker.href} className="od-plate-kicker">
@@ -108,9 +108,9 @@ export function PlaceReel({ frames }: { frames: ReelFrame[] }) {
                 </Link>
               </p>
               <h2 className="title">
-                <Link href={`/sets/${set.slug}`}>{placeName(set)}</Link>
+                <Link href={`/concerts/${concert.slug}`}>{placeName(concert)}</Link>
               </h2>
-              <Credits set={set} place={false} />
+              <Credits concert={concert} place={false} />
             </div>
           </article>
         </li>
@@ -119,24 +119,24 @@ export function PlaceReel({ frames }: { frames: ReelFrame[] }) {
   );
 }
 
-/** Atlas rows: a text list of sets by place. Country, place, artist, length. One link per row. */
-export function AtlasRows({ sets, label }: { sets: SetView[]; label: string }) {
-  const sorted = [...sets].sort(
+/** Atlas rows: a text list of concerts by place. Country, place, artist, length. One link per row. */
+export function AtlasRows({ concerts, label }: { concerts: ConcertView[]; label: string }) {
+  const sorted = [...concerts].sort(
     (a, b) => (a.country ?? "~").localeCompare(b.country ?? "~") || placeName(a).localeCompare(placeName(b)),
   );
   return (
     <ol className="od-atlas" aria-label={label} data-od="atlas">
-      {sorted.map((set, i) => {
-        const firstOfCountry = i === 0 || sorted[i - 1].country !== set.country;
+      {sorted.map((concert, i) => {
+        const firstOfCountry = i === 0 || sorted[i - 1].country !== concert.country;
         return (
-          <li key={set.id}>
-            <Link href={`/sets/${set.slug}`} className="od-atlas-row">
+          <li key={concert.id}>
+            <Link href={`/concerts/${concert.slug}`} className="od-atlas-row">
               <span className="od-atlas-country meta">
-                {firstOfCountry ? (set.country ?? "") : <span className="od-sr">{set.country}</span>}
+                {firstOfCountry ? (concert.country ?? "") : <span className="od-sr">{concert.country}</span>}
               </span>
-              <span className="od-atlas-place title">{placeName(set)}</span>
-              <span className="od-atlas-artist meta">{set.credits}</span>
-              <span className="od-atlas-dur meta">{formatDuration(set.durationSeconds)}</span>
+              <span className="od-atlas-place title">{placeName(concert)}</span>
+              <span className="od-atlas-artist meta">{concert.credits}</span>
+              <span className="od-atlas-dur meta">{formatDuration(concert.durationSeconds)}</span>
             </Link>
           </li>
         );

@@ -1,5 +1,5 @@
-// What plays after a set ends: the same artist's other sets first (newest first), then the
-// best set of each similar artist (most similar first), then sets that share a genre
+// What plays after a concert ends: the same artist's other concerts first (newest first), then the
+// best concert of each similar artist (most similar first), then concerts that share a genre
 // (most shared genres first, then most viewed).
 
 export interface QueueCandidate {
@@ -12,8 +12,8 @@ export interface QueueCandidate {
 
 export const QUEUE_LENGTH = 20;
 
-/** For each similar artist, in order, their most viewed set not already taken. */
-export function bestSetPerArtist<T extends QueueCandidate>(artistIds: number[], pool: T[], taken = new Set<number>()): T[] {
+/** For each similar artist, in order, their most viewed concert not already taken. */
+export function bestConcertPerArtist<T extends QueueCandidate>(artistIds: number[], pool: T[], taken = new Set<number>()): T[] {
   const out: T[] = [];
   for (const artistId of artistIds) {
     const best = pool
@@ -42,7 +42,7 @@ export function buildQueue<T extends QueueCandidate>(
     .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id);
   const taken = new Set(sameArtist.map((s) => s.id));
 
-  const similar = bestSetPerArtist(
+  const similar = bestConcertPerArtist(
     similarArtistIds.filter((id) => !currentArtists.has(id)),
     others,
     taken,
@@ -57,8 +57,8 @@ export function buildQueue<T extends QueueCandidate>(
 }
 
 /**
- * "You might also like": one set from each similar artist (most similar first), topped up with
- * sets that share a genre. Never the same artist.
+ * "You might also like": one concert from each similar artist (most similar first), topped up with
+ * concerts that share a genre. Never the same artist.
  */
 export function relatedByGenre<T extends QueueCandidate>(
   current: T,

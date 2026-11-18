@@ -2,9 +2,9 @@
 //
 // Signals (owner decision 13 Nov 2026: the site shows the ranking only, never the reasons):
 // - genres they play (rarer genres count more),
-// - places they played: venues, festivals and the channels that published the set (rarer count more),
+// - places they played: venues, festivals and the channels that published the concert (rarer count more),
 // - the same label or collective,
-// - sets they played together (b2b, "with"),
+// - concerts they played together (b2b, "with"),
 // - "listeners of A also listen to B" from an outside source (ListenBrainz).
 // Later: our own plays ("who listens to A also listens to B") once the site has traffic.
 
@@ -14,11 +14,11 @@ export interface ArtistSignals {
   nameKeys: string[];
   /** Label or collective as written in the profile, e.g. "Afterlife" or "Keinemusik, Watergate". */
   label: string | null;
-  /** Genre ID -> number of the artist's sets in that genre. */
+  /** Genre ID -> number of the artist's concerts in that genre. */
   genres: Map<number, number>;
-  /** "v:<venueId>" or "c:<channelId>" -> number of sets there. */
+  /** "v:<venueId>" or "c:<channelId>" -> number of concerts there. */
   places: Map<string, number>;
-  setIds: Set<number>;
+  concertIds: Set<number>;
   /** Outside source: nameKey of a similar artist -> 0..1. Empty when the source had nothing. */
   external: Map<string, number>;
 }
@@ -82,7 +82,7 @@ export function scorePair(
     genres: weightedCosine(a.genres, b.genres, idfs.genres),
     places: weightedCosine(a.places, b.places, idfs.places),
     label: [...labelParts(b.label)].some((p) => la.has(p)) ? 1 : 0,
-    together: [...a.setIds].some((id) => b.setIds.has(id)) ? 1 : 0,
+    together: [...a.concertIds].some((id) => b.concertIds.has(id)) ? 1 : 0,
     external: externalScore(a, b),
   };
   // When neither artist is known to the outside source, its weight is shared among the others,

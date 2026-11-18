@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Find your next DJ",
-  description: "Type an artist and find DJs and live acts like them. Every name plays a full set in one click.",
+  description: "Type an artist and find DJs and live acts like them. Every name plays a full concert in one click.",
 };
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -84,7 +84,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
               </Link>
             ) : (
               <Link href={`/artists/${map.centre.slug}`} className="od-link">
-                Sets by {map.centre.name}
+                Concerts by {map.centre.name}
               </Link>
             )}
           </div>

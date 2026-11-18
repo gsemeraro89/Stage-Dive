@@ -5,7 +5,7 @@ import type { Track } from "@/lib/player-types";
 import { usePlayer } from "./PlayerProvider";
 
 /**
- * A tracklist time ("12:30") that plays the set from that point, in the site's own player.
+ * A tracklist time ("12:30") that plays the concert from that point, in the site's own player.
  * Unstyled: the designer gives it its look. `data-current` marks the track playing now.
  */
 export function TrackTime({

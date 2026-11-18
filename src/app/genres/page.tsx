@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SIZES } from "@/components/catalogue/SetTile";
+import { SIZES } from "@/components/catalogue/ConcertTile";
 import { GenreWords } from "@/components/ui/GenreWords";
 import { count2, SectionHead } from "@/components/ui/SectionHead";
 import { listGenres } from "@/lib/queries";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Genres",
-  description: "Browse full-length DJ sets by genre: melodic techno, house, techno, progressive and more.",
+  description: "Browse full-length DJ concerts by genre: melodic techno, house, techno, progressive and more.",
   alternates: { canonical: "/genres" },
 };
 
@@ -30,9 +30,9 @@ export default async function GenresPage() {
       {genres.length > 0 && (
         <section className="od-section" aria-labelledby="latest-by-genre">
           <SectionHead id="latest-by-genre" title="Latest in each" />
-          <ul className="od-rows" aria-label="Latest set in each genre">
+          <ul className="od-rows" aria-label="Latest concert in each genre">
             {genres.map((g) => {
-              // The picture is the genre's most recent set.
+              // The picture is the genre's most recent concert.
               const image = g.cover?.thumbnail;
               return (
                 <li key={g.slug}>
@@ -51,7 +51,7 @@ export default async function GenresPage() {
                     </span>
                     <span className="od-index-count display">
                       {String(g.count).padStart(2, "0")}
-                      <small className="meta">{g.count === 1 ? "set" : "sets"}</small>
+                      <small className="meta">{g.count === 1 ? "concert" : "concerts"}</small>
                     </span>
                   </Link>
                 </li>

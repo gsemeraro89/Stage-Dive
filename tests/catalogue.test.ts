@@ -34,7 +34,7 @@ describe("parseFilters", () => {
 });
 
 describe("buildWhere / buildOrderBy", () => {
-  it("always limits to published, public, embeddable sets", () => {
+  it("always limits to published, public, embeddable concerts", () => {
     expect(buildWhere(parseFilters({}))).toMatchObject({ status: "PUBLISHED", embeddable: true, privacyStatus: "public" });
   });
   it("adds one condition per filter and per search word", () => {
@@ -67,10 +67,10 @@ describe("buildQueue (up next)", () => {
   const unrelated = candidate(7, [23], [999], "2025-01-01", 99_000_000);
   const all = [unrelated, oneSharedGenreSmall, oneSharedGenreBig, twoSharedGenres, sameArtistOld, sameArtistNew, current];
 
-  it("plays the same artist first (newest first), then shared genres, and never the current set", () => {
+  it("plays the same artist first (newest first), then shared genres, and never the current concert", () => {
     expect(buildQueue(current, all).map((s) => s.id)).toEqual([3, 2, 4, 5, 6]);
   });
-  it("leaves out sets with nothing in common", () => {
+  it("leaves out concerts with nothing in common", () => {
     expect(buildQueue(current, all).some((s) => s.id === 7)).toBe(false);
   });
   it("respects the limit", () => {
@@ -85,15 +85,15 @@ describe("buildQueue (up next)", () => {
 });
 
 describe("artist stats", () => {
-  const sets = [
+  const concerts = [
     { durationSeconds: 5140, viewCount: 4_413_755, publishedAt: new Date("2017-09-26"), country: "France" },
     { durationSeconds: 7416, viewCount: 66_693, publishedAt: new Date("2026-09-30"), country: "Belgium" },
     { durationSeconds: 3001, viewCount: 445_740, publishedAt: new Date("2021-08-26"), country: "France" },
     { durationSeconds: 2442, viewCount: 418_110, publishedAt: new Date("2024-06-14"), country: null },
   ];
-  it("adds up sets, hours, views, years and countries", () => {
-    expect(computeArtistStats(sets)).toMatchObject({
-      sets: 4,
+  it("adds up concerts, hours, views, years and countries", () => {
+    expect(computeArtistStats(concerts)).toMatchObject({
+      concerts: 4,
       totalSeconds: 17999,
       hours: 5,
       totalViews: 5_344_298,
@@ -103,11 +103,11 @@ describe("artist stats", () => {
       countries: 2,
     });
   });
-  it("handles an artist with no sets", () => {
-    expect(computeArtistStats([])).toMatchObject({ sets: 0, hours: 0, yearsOnYouTube: 0, firstYear: null });
+  it("handles an artist with no concerts", () => {
+    expect(computeArtistStats([])).toMatchObject({ concerts: 0, hours: 0, yearsOnYouTube: 0, firstYear: null });
   });
   it("groups by year, newest first", () => {
-    expect(groupByYear(sets).map((g) => [g.year, g.sets.length])).toEqual([[2026, 1], [2024, 1], [2021, 1], [2017, 1]]);
+    expect(groupByYear(concerts).map((g) => [g.year, g.concerts.length])).toEqual([[2026, 1], [2024, 1], [2021, 1], [2017, 1]]);
   });
 });
 
@@ -168,7 +168,7 @@ describe("daily rotation", () => {
 });
 
 describe("parseSiteSources", () => {
-  it("reads the list of set sources a site shows", () => {
+  it("reads the list of concert sources a site shows", () => {
     expect(parseSiteSources("SEED")).toEqual(["SEED"]);
     expect(parseSiteSources(" seed , collector,SEED")).toEqual(["SEED", "COLLECTOR"]);
   });

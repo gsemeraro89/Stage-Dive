@@ -232,7 +232,7 @@ export class YouTubeClient {
    * The per-artist lane's search (100 units): long, embeddable videos, most relevant first, 50 results
    * (owner, 17 Nov 2026).
    */
-  async searchArtistSets(query: string): Promise<string[]> {
+  async searchArtistConcerts(query: string): Promise<string[]> {
     const data = await this.get("search", {
       part: "id",
       q: query,

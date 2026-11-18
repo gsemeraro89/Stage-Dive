@@ -1,14 +1,14 @@
-// Which set thumbnail is an artist's picture (owner decision 13 Nov 2026): set thumbnails come first;
-// among an artist's sets, Claude Haiku picks the one that shows a person with the least baked-in
+// Which concert thumbnail is an artist's picture (owner decision 13 Nov 2026): concert thumbnails come first;
+// among an artist's concerts, Claude Haiku picks the one that shows a person with the least baked-in
 // text. When every thumbnail is only graphics and text, the channel avatar is used instead (if any).
-// Asked once per artist, again only when the artist's sets change. The owner's own pick is never changed.
+// Asked once per artist, again only when the artist's concerts change. The owner's own pick is never changed.
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { PrismaClient } from "../../generated/prisma/client";
 
 export const COVER_MODEL = "claude-haiku-5-5";
-/** Thumbnails shown to the model per artist (most viewed sets). */
+/** Thumbnails shown to the model per artist (most viewed concerts). */
 export const MAX_CANDIDATES = 6;
 
 export const CoverChoiceSchema = z.object({
@@ -16,7 +16,7 @@ export const CoverChoiceSchema = z.object({
   best: z.number().int().min(0).max(MAX_CANDIDATES),
 });
 
-const SYSTEM = `You choose the picture that represents a DJ or live act on a music site. You are shown numbered thumbnails of the artist's sets. The site shows the picture as a square cut from the upper centre of the image, in black and white.
+const SYSTEM = `You choose the picture that represents a DJ or live act on a music site. You are shown numbered thumbnails of the artist's concerts. The site shows the picture as a square cut from the upper centre of the image, in black and white.
 Pick the thumbnail that works best as the portrait of the named artist: that artist (if you can tell who they are; otherwise the person at the decks) clearly visible near the upper centre and as little printed text, logos and graphics as possible. A photo with a small logo in a corner is fine.
 Answer 0 only when no thumbnail shows a person at all (pure title cards, logos, graphics, landscapes with big titles).`;
 
@@ -72,8 +72,8 @@ export interface CoverStats {
 
 /**
  * Choose every artist's cover. A thumbnail must show the artist, not someone else:
- * - only the artist's own sets count when they have any (a b2b thumbnail may show the other DJ);
- * - an artist with only shared sets (e.g. Marco Carola, whose one set is a b2b with Richie Hawtin)
+ * - only the artist's own concerts count when they have any (a b2b thumbnail may show the other DJ);
+ * - an artist with only shared concerts (e.g. Marco Carola, whose one concert is a b2b with Richie Hawtin)
  *   never takes a thumbnail another artist already uses; their channel photo is used instead, and a
  *   shared thumbnail only when there is nothing else.
  */
@@ -81,7 +81,7 @@ export async function chooseCovers(db: PrismaClient, choose: Choose, limit = 100
   const stats: CoverStats = { chosen: [], avatar: [], noPerson: [], skipped: 0, errors: [] };
   const VISIBLE_SET = { status: "PUBLISHED" as const, embeddable: true, privacyStatus: "public" };
   const artists = await db.artist.findMany({
-    where: { credits: { some: { role: "MAIN", set: VISIBLE_SET } } },
+    where: { credits: { some: { role: "MAIN", concert: VISIBLE_SET } } },
     orderBy: { id: "asc" },
     select: {
       id: true,
@@ -92,19 +92,19 @@ export async function chooseCovers(db: PrismaClient, choose: Choose, limit = 100
       coverUseAvatar: true,
       coverLocked: true,
       credits: {
-        where: { role: "MAIN", set: VISIBLE_SET },
-        orderBy: { set: { viewCount: "desc" } },
-        select: { set: { select: { youtubeId: true, credits: { where: { role: "MAIN" }, select: { artistId: true } } } } },
+        where: { role: "MAIN", concert: VISIBLE_SET },
+        orderBy: { concert: { viewCount: "desc" } },
+        select: { concert: { select: { youtubeId: true, credits: { where: { role: "MAIN" }, select: { artistId: true } } } } },
       },
     },
   });
   const plan = artists.map((a) => {
-    const sets = a.credits.map((c) => c.set);
-    const solo = sets.filter((s) => s.credits.every((c) => c.artistId === a.id)).map((s) => s.youtubeId);
-    const shared = sets.filter((s) => !solo.includes(s.youtubeId)).map((s) => s.youtubeId);
+    const concerts = a.credits.map((c) => c.concert);
+    const solo = concerts.filter((s) => s.credits.every((c) => c.artistId === a.id)).map((s) => s.youtubeId);
+    const shared = concerts.filter((s) => !solo.includes(s.youtubeId)).map((s) => s.youtubeId);
     return { a, solo, shared };
   });
-  // Thumbnails in use as some artist's cover; artists with their own sets choose first.
+  // Thumbnails in use as some artist's cover; artists with their own concerts choose first.
   const taken = new Map<string, number>();
   const use = (id: string | null, artistId: number) => id && taken.set(id, artistId);
   for (const p of plan) if (p.a.coverLocked) use(p.a.coverYoutubeId, p.a.id);
@@ -126,7 +126,7 @@ export async function chooseCovers(db: PrismaClient, choose: Choose, limit = 100
         stats.skipped++;
         continue;
       }
-      // Only shared sets: a b2b thumbnail may well show the other DJ (Marco Carola's shows Richie
+      // Only shared concerts: a b2b thumbnail may well show the other DJ (Marco Carola's shows Richie
       // Hawtin), so the artist's own channel photo wins whenever there is one. Otherwise a shared
       // thumbnail no one else uses, and only as a last resort one that is already in use.
       if (!solo.length && a.imageUrl) {

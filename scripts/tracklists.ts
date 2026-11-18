@@ -1,8 +1,8 @@
-// Measures how many published sets have a readable tracklist, and where it comes from
+// Measures how many published concerts have a readable tracklist, and where it comes from
 // (description, the channel's own comment, a viewer comment). Read-only: nothing is saved to the
 // database. Run with: npm run tracklists [-- --claude] [-- --limit 200]
 //   --claude   also ask Claude about texts that look like a tracklist but the rules could not read
-// YouTube quota: 1 unit per 50 sets (descriptions) + 1 unit per set without a tracklist there (comments).
+// YouTube quota: 1 unit per 50 concerts (descriptions) + 1 unit per concert without a tracklist there (comments).
 import "dotenv/config";
 import { appendFile, writeFile } from "node:fs/promises";
 import { createPrismaClient } from "../src/lib/db";
@@ -37,27 +37,27 @@ const rows: Row[] = [];
 const errors: string[] = [];
 
 try {
-  const sets = await db.set.findMany({
+  const concerts = await db.concert.findMany({
     where: { status: "PUBLISHED" },
     select: { slug: true, youtubeId: true, durationSeconds: true, channel: { select: { name: true } } },
     orderBy: { viewCount: "desc" },
     take: limit,
   });
-  const videos = await yt.videos(sets.map((s) => s.youtubeId));
+  const videos = await yt.videos(concerts.map((s) => s.youtubeId));
 
-  for (const set of sets) {
-    const row: Row = { slug: set.slug, channel: set.channel.name, outcome: "NONE", tracks: 0, timed: false, ids: 0, commentsOff: false };
+  for (const concert of concerts) {
+    const row: Row = { slug: concert.slug, channel: concert.channel.name, outcome: "NONE", tracks: 0, timed: false, ids: 0, commentsOff: false };
     rows.push(row);
-    const video = videos.get(set.youtubeId);
+    const video = videos.get(concert.youtubeId);
     if (!video) {
       row.outcome = "GONE"; // the refresh job deals with these
       continue;
     }
-    const duration = video.durationSeconds || set.durationSeconds;
+    const duration = video.durationSeconds || concert.durationSeconds;
     let choice = fromDescription(video.description, duration);
     if (!choice.chosen) {
       try {
-        const comments = await yt.topComments(set.youtubeId);
+        const comments = await yt.topComments(concert.youtubeId);
         row.commentsOff = comments.length === 0;
         const fromThread = fromComments(
           comments.map((c) => ({ text: c.text, likeCount: c.likeCount, byChannel: c.authorChannelId === video.channelId })),
@@ -69,7 +69,7 @@ try {
           row.outcome = "NOT_CHECKED";
           continue;
         }
-        errors.push(`${set.slug}: ${(error as Error).message}`);
+        errors.push(`${concert.slug}: ${(error as Error).message}`);
       }
     }
 
@@ -82,7 +82,7 @@ try {
           tracks = await extractor.extract(choice.unclear[0].text, duration);
           if (tracks) row.outcome = "CLAUDE";
         } catch (error) {
-          errors.push(`${set.slug} (Claude): ${(error as Error).message}`);
+          errors.push(`${concert.slug} (Claude): ${(error as Error).message}`);
         }
       }
     }
@@ -105,14 +105,14 @@ const count = (o: Outcome) => rows.filter((r) => r.outcome === o).length;
 const found = rows.filter((r) => r.tracks > 0);
 const checked = rows.filter((r) => r.outcome !== "GONE" && r.outcome !== "NOT_CHECKED").length;
 const pct = (n: number) => (checked ? `${Math.round((n / checked) * 100)}%` : "-");
-const byChannel = new Map<string, { sets: number; found: number }>();
+const byChannel = new Map<string, { concerts: number; found: number }>();
 for (const r of rows) {
-  const c = byChannel.get(r.channel) ?? { sets: 0, found: 0 };
-  c.sets++;
+  const c = byChannel.get(r.channel) ?? { concerts: 0, found: 0 };
+  c.concerts++;
   if (r.tracks) c.found++;
   byChannel.set(r.channel, c);
 }
-const channels = [...byChannel.entries()].sort((a, b) => b[1].sets - a[1].sets);
+const channels = [...byChannel.entries()].sort((a, b) => b[1].concerts - a[1].concerts);
 const fmt = (t: Track) =>
   `${t.time === null ? "" : `${Math.floor(t.time / 60)}:${String(t.time % 60).padStart(2, "0")} `}${t.artist ? `${t.artist} - ` : ""}${t.title}`;
 const samples = (o: Outcome) =>
@@ -123,7 +123,7 @@ const samples = (o: Outcome) =>
     .join("\n");
 
 const summary = {
-  setsChecked: checked,
+  concertsChecked: checked,
   withTracklist: found.length,
   fromDescription: count("DESCRIPTION"),
   fromChannelComment: count("CHANNEL_COMMENT"),
@@ -145,11 +145,11 @@ console.log(JSON.stringify(summary, null, 2));
 await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Object.fromEntries(channels), rows }, null, 2));
 
 {
-  const md = `## Tracklists: how many sets have one
+  const md = `## Tracklists: how many concerts have one
 
-**${found.length} of ${checked} sets (${pct(found.length)})** have a tracklist we can show.
+**${found.length} of ${checked} concerts (${pct(found.length)})** have a tracklist we can show.
 
-| Where it came from | Sets | Share |
+| Where it came from | Concerts | Share |
 |---|---|---|
 | Video description | ${summary.fromDescription} | ${pct(summary.fromDescription)} |
 | Comment by the channel itself | ${summary.fromChannelComment} | ${pct(summary.fromChannelComment)} |
@@ -163,8 +163,8 @@ await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Obj
 - YouTube units used: ${summary.youtubeUnits}${extractor ? ` · Claude calls: ${summary.claudeCalls}` : ""}
 ${errors.length ? `- Errors: ${errors.length} (see the log)` : ""}
 
-### By channel (sets with a tracklist / sets)
-${channels.map(([name, c]) => `- ${name}: ${c.found} / ${c.sets}`).join("\n")}
+### By channel (concerts with a tracklist / concerts)
+${channels.map(([name, c]) => `- ${name}: ${c.found} / ${c.concerts}`).join("\n")}
 
 ### Examples to check by eye
 - From descriptions:

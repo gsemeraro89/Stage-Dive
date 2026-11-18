@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const sets = await getDb().set.count({ where: { status: "PUBLISHED" } });
-    return Response.json({ ok: true, sets });
+    const concerts = await getDb().concert.count({ where: { status: "PUBLISHED" } });
+    return Response.json({ ok: true, concerts });
   } catch (error) {
     console.error("Health check failed", error);
     return Response.json({ ok: false, error: "database unreachable" }, { status: 503 });

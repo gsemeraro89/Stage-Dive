@@ -1,4 +1,4 @@
-// "You might also like" for the set that is playing: similar artists, each with a set to play.
+// "You might also like" for the concert that is playing: similar artists, each with a concert to play.
 // Called by the player. Only the ranking is sent, never scores or reasons (owner decision).
 import { toTrack } from "@/lib/player-types";
 import { recommendationsFor } from "@/lib/queries";

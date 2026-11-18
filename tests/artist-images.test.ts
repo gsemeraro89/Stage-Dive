@@ -30,9 +30,9 @@ describe.skipIf(!url)("artist pictures (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, artist_lookups, job_runs, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
     q = await import("../src/lib/queries");
     images = await import("../src/lib/collector/artist-images");
   });
@@ -57,7 +57,7 @@ describe.skipIf(!url)("artist pictures (database)", () => {
     expect(stats.withPicture.sort()).toEqual(["NTO", "Paul Kalkbrenner"]);
     expect(stats.noChannel.length).toBe(stats.checked - 2);
 
-    // Owner decision: the set thumbnail stays the artist's picture; the avatar is only a fallback.
+    // Owner decision: the concert thumbnail stays the artist's picture; the avatar is only a fallback.
     const artists = await q.listArtists();
     expect(artists.find((a) => a.slug === "nto")!.cover!.portrait).toBe(false);
     expect(q.avatarSources("https://yt3.ggpht.com/nto=s800-c-k").src).toBe("https://yt3.ggpht.com/nto=s400-c-k");
@@ -74,16 +74,16 @@ describe.skipIf(!url)("artist pictures (database)", () => {
     expect((await db.artist.findUniqueOrThrow({ where: { slug: "nto" } })).imageUrl).toBeNull();
   });
 
-  it("chooses the cover among the artist's set thumbnails; avatar only when none shows a person", async () => {
+  it("chooses the cover among the artist's concert thumbnails; avatar only when none shows a person", async () => {
     const covers = await import("../src/lib/collector/covers");
-    const nto = await db.artist.findUniqueOrThrow({ where: { slug: "nto" }, include: { credits: { include: { set: true } } } });
-    const byViews = [...nto.credits].sort((a, b) => b.set.viewCount - a.set.viewCount).map((c) => c.set.youtubeId);
+    const nto = await db.artist.findUniqueOrThrow({ where: { slug: "nto" }, include: { credits: { include: { concert: true } } } });
+    const byViews = [...nto.credits].sort((a, b) => b.concert.viewCount - a.concert.viewCount).map((c) => c.concert.youtubeId);
     await db.artist.update({ where: { slug: "eric-prydz" }, data: { imageUrl: "https://yt3.ggpht.com/ep=s800" } });
 
     const seen: string[][] = [];
     const stats = await covers.chooseCovers(db, async (urls) => {
       seen.push(urls);
-      if (urls[0] === covers.judgeUrl(byViews[0])) return 2; // NTO: the second most viewed set
+      if (urls[0] === covers.judgeUrl(byViews[0])) return 2; // NTO: the second most viewed concert
       return 0; // everyone else asked: only graphics
     });
     expect(seen.find((u) => u[0] === covers.judgeUrl(byViews[0]))!.length).toBe(Math.min(byViews.length, covers.MAX_CANDIDATES));
@@ -93,7 +93,7 @@ describe.skipIf(!url)("artist pictures (database)", () => {
     const artists = await q.listArtists();
     expect(artists.find((a) => a.slug === "nto")!.cover).toMatchObject({ portrait: false, youtubeId: byViews[1] });
     expect(artists.find((a) => a.slug === "eric-prydz")!.cover!.portrait).toBe(true);
-    // An artist with one set and no avatar keeps that thumbnail, without asking.
+    // An artist with one concert and no avatar keeps that thumbnail, without asking.
     expect(artists.find((a) => a.slug === "indira-paganotto")!.cover!.portrait).toBe(false);
 
     // Asked once: nothing changed, nothing is asked again. The owner's pick is never touched.
@@ -108,29 +108,29 @@ describe.skipIf(!url)("artist pictures (database)", () => {
 
   it("never gives a b2b partner the other artist's thumbnail", async () => {
     const covers = await import("../src/lib/collector/covers");
-    // Host: an artist with sets of their own. Partner: only a b2b with the host.
+    // Host: an artist with concerts of their own. Partner: only a b2b with the host.
     const host = await db.artist.findUniqueOrThrow({ where: { slug: "paul-kalkbrenner" } });
     const partner = await db.artist.create({ data: { slug: "b2b-partner", name: "B2B Partner" } });
-    const hostSets = await db.set.findMany({ where: { credits: { some: { artistId: host.id, role: "MAIN" } } }, orderBy: { viewCount: "desc" } });
-    const b2b = hostSets[0];
-    await db.setArtist.create({ data: { setId: b2b.id, artistId: partner.id, role: "MAIN", position: 1 } });
+    const hostConcerts = await db.concert.findMany({ where: { credits: { some: { artistId: host.id, role: "MAIN" } } }, orderBy: { viewCount: "desc" } });
+    const b2b = hostConcerts[0];
+    await db.concertArtist.create({ data: { concertId: b2b.id, artistId: partner.id, role: "MAIN", position: 1 } });
     await db.artist.updateMany({ data: { coverChosenFrom: null, coverLocked: false } });
 
-    // The host picks the b2b thumbnail (it is one of the host's sets, but no longer a solo one).
+    // The host picks the b2b thumbnail (it is one of the host's concerts, but no longer a solo one).
     const asked: { name: string; urls: string[] }[] = [];
     await covers.chooseCovers(db, async (urls, name) => (asked.push({ name, urls }), 1));
     const hostAsk = asked.find((x) => x.name === "Paul Kalkbrenner");
-    // Only the host's solo sets are offered to the host; the b2b is left out.
+    // Only the host's solo concerts are offered to the host; the b2b is left out.
     if (hostAsk) expect(hostAsk.urls).not.toContain(covers.judgeUrl(b2b.youtubeId));
     const hostRow = await db.artist.findUniqueOrThrow({ where: { id: host.id } });
     expect(hostRow.coverYoutubeId).not.toBe(b2b.youtubeId);
 
-    // The partner's only set is the b2b, not used by the host, and no channel photo: it is theirs, without asking.
+    // The partner's only concert is the b2b, not used by the host, and no channel photo: it is theirs, without asking.
     const partnerRow = await db.artist.findUniqueOrThrow({ where: { id: partner.id } });
     expect(partnerRow.coverYoutubeId).toBe(b2b.youtubeId);
     expect(asked.some((x) => x.name === "B2B Partner")).toBe(false);
 
-    // With a channel photo, an artist with only shared sets always shows it (the b2b may show the other DJ).
+    // With a channel photo, an artist with only shared concerts always shows it (the b2b may show the other DJ).
     await db.artist.update({ where: { id: partner.id }, data: { imageUrl: "https://yt3.ggpht.com/p=s800" } });
     const stats = await covers.chooseCovers(db, async () => 1);
     expect(stats.avatar).toContain("B2B Partner");

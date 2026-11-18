@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Artists — every DJ and live act",
-  description: "Every artist on FullDJSet with full-length DJ sets and live acts you can watch free.",
+  description: "Every artist on FullDJSet with full-length DJ concerts and live acts you can watch free.",
   alternates: { canonical: "/artists" },
 };
 

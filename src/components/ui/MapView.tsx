@@ -8,7 +8,7 @@ export type MapArtistLine = ArtistLineData & { x: number; y: number };
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/** How far an artist is from the centre: 1 = nearest third, 3 = farthest. Sets the size of the picture. */
+/** How far an artist is from the centre: 1 = nearest third, 3 = farthest. Concerts the size of the picture. */
 function tier(a: { x: number; y: number }): 1 | 2 | 3 {
   const d = Math.hypot(a.x, a.y);
   return d < 0.45 ? 1 : d < 0.75 ? 2 : 3;
@@ -165,7 +165,7 @@ export function MapView({
   // The field is taller on a phone the more pictures it has to hold.
   const size = artists.length <= 3 ? "s" : artists.length <= 7 ? "m" : artists.length <= 9 ? "l" : "xl";
 
-  // `width` is the widest the square gets; a cropped set thumbnail needs a file 2.35 times that.
+  // `width` is the widest the square gets; a cropped concert thumbnail needs a file 2.35 times that.
   const picture = (a: ArtistLineData, width: number) =>
     a.cover ? (
       <span className="od-map-pic" data-portrait={a.cover.portrait || undefined}>

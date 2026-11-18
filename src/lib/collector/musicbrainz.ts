@@ -170,7 +170,7 @@ export interface IdentityCandidate {
  * Which of several MusicBrainz artists with exactly this name is ours (ANNA, Quest, Dixon...): the one
  * whose genres are electronic; among several electronic ones, the only one with a YouTube channel.
  * A single namesake with no genres at all is taken; one whose genres are clearly not electronic is not.
- * Null when it cannot be told: the owner can then set "mbid" in data/artist-rules.json.
+ * Null when it cannot be told: the owner can then concert "mbid" in data/artist-rules.json.
  */
 export function pickArtist(candidates: IdentityCandidate[]): IdentityCandidate | null {
   const electronic = candidates.filter((c) => c.genres.length > 0 && isElectronicGenreList(c.genres));

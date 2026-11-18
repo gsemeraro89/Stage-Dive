@@ -7,8 +7,8 @@ import type { ThumbnailSources } from "@/lib/thumbnails";
 import { PlayIcon } from "./Icons";
 import { PlayNextButton } from "./PlayNextButton";
 
-/** One set of a suggested artist: what the player needs, plus every thumbnail size. */
-interface LineSet {
+/** One concert of a suggested artist: what the player needs, plus every thumbnail size. */
+interface LineConcert {
   track: Track;
   thumbnail: ThumbnailSources;
 }
@@ -21,11 +21,11 @@ export interface ArtistLineData {
   bornYear: number | null;
   style: string | null;
   genres: { slug: string; name: string }[];
-  sets: number;
-  /** `portrait` true: the artist's own square picture, shown whole. Otherwise a set thumbnail, cropped. */
+  concerts: number;
+  /** `portrait` true: the artist's own square picture, shown whole. Otherwise a concert thumbnail, cropped. */
   cover: { thumbnail: ThumbnailSources; portrait?: boolean } | null;
-  mostWatched: LineSet;
-  latest: LineSet;
+  mostWatched: LineConcert;
+  latest: LineConcert;
 }
 
 /** From a page query (`similarCards`, the map). */
@@ -48,7 +48,7 @@ export function lineFromSuggestion(artist: RecommendedArtist): ArtistLineData {
 
 /**
  * Artist line (DESIGN.md section 8): one suggested artist as a row on the page ground.
- * Picture, name and facts, the most watched set (its thumbnail plays it) and the latest set,
+ * Picture, name and facts, the most watched concert (its thumbnail plays it) and the latest concert,
  * each with "Play next". It never says why the artist is suggested.
  * The layout follows the width of the place it is put in (page, deck sheet, map rail).
  */
@@ -63,11 +63,11 @@ export function ArtistLine({
   children?: React.ReactNode;
 }) {
   const { mostWatched, latest } = artist;
-  const oneSet = mostWatched.track.youtubeId === latest.track.youtubeId;
+  const oneConcert = mostWatched.track.youtubeId === latest.track.youtubeId;
   const facts = [
     artist.origin,
     artist.bornYear ? `Born ${artist.bornYear}` : null,
-    `${artist.sets} ${artist.sets === 1 ? "set" : "sets"}`,
+    `${artist.concerts} ${artist.concerts === 1 ? "concert" : "concerts"}`,
   ].filter(Boolean);
   const image = artist.cover?.thumbnail;
 
@@ -127,19 +127,19 @@ export function ArtistLine({
           </span>
         </PlayButton>
         <div className="od-aline-settext">
-          <p className="meta od-muted">{artist.sets === 1 ? "The set" : oneSet ? "Most watched · Latest" : "Most watched"}</p>
+          <p className="meta od-muted">{artist.concerts === 1 ? "The concert" : oneConcert ? "Most watched · Latest" : "Most watched"}</p>
           <p className="od-aline-settitle title">
-            <Link href={`/sets/${mostWatched.track.slug}`}>{mostWatched.track.title}</Link>
+            <Link href={`/concerts/${mostWatched.track.slug}`}>{mostWatched.track.title}</Link>
           </p>
           <PlayNextButton track={mostWatched.track} />
         </div>
       </div>
 
-      {!oneSet && (
+      {!oneConcert && (
         <div className="od-aline-latest" data-od="latest">
           <p className="meta od-muted">Latest</p>
           <p className="od-aline-settitle title">
-            <Link href={`/sets/${latest.track.slug}`}>{latest.track.title}</Link>
+            <Link href={`/concerts/${latest.track.slug}`}>{latest.track.title}</Link>
           </p>
           <p className="od-aline-actions">
             <PlayButton track={latest.track} className="od-link od-aline-play">

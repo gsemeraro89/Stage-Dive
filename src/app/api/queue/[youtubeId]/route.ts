@@ -1,4 +1,4 @@
-// The "up next" queue for a set: same artist first, then related sets. Called by the player.
+// The "up next" queue for a concert: same artist first, then related concerts. Called by the player.
 import { toTrack } from "@/lib/player-types";
 import { getQueue } from "@/lib/queries";
 

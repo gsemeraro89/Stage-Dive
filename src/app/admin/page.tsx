@@ -1,11 +1,11 @@
-// Admin: what the collector did, videos it was unsure about, and recently added sets.
+// Admin: what the collector did, videos it was unsure about, and recently added concerts.
 // Optional for the owner: nothing waits here for approval to keep the site running.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { formatDate, formatDuration } from "@/lib/format";
 import { compactNumber } from "@/lib/site";
-import { publishReviewItem, rejectReviewItem, setSetStatus } from "./actions";
+import { publishReviewItem, rejectReviewItem, setConcertStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -15,16 +15,16 @@ export default async function AdminPage() {
   const [runs, pending, recent, counts, tracklists, neverChecked] = await Promise.all([
     db.jobRun.findMany({ orderBy: { startedAt: "desc" }, take: 10 }),
     db.reviewItem.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 100 }),
-    db.set.findMany({
+    db.concert.findMany({
       where: { source: { not: "SEED" } },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, channel: true },
     }),
-    db.set.groupBy({ by: ["status", "source"], _count: true }),
-    // Published sets by where their tracklist came from (null = none found).
-    db.set.groupBy({ by: ["tracklistSource"], where: { status: "PUBLISHED" }, _count: true }),
-    db.set.count({ where: { status: "PUBLISHED", tracklistCheckedAt: null } }),
+    db.concert.groupBy({ by: ["status", "source"], _count: true }),
+    // Published concerts by where their tracklist came from (null = none found).
+    db.concert.groupBy({ by: ["tracklistSource"], where: { status: "PUBLISHED" }, _count: true }),
+    db.concert.count({ where: { status: "PUBLISHED", tracklistCheckedAt: null } }),
   ]);
   const published = tracklists.reduce((n, t) => n + t._count, 0);
   const withTracklist = tracklists.filter((t) => t.tracklistSource).reduce((n, t) => n + t._count, 0);
@@ -53,7 +53,7 @@ export default async function AdminPage() {
       <section aria-labelledby="tracklists" data-od="admin-tracklists">
         <h2 id="tracklists">Tracklists</h2>
         <p>
-          {withTracklist} of {published} published sets have a tracklist
+          {withTracklist} of {published} published concerts have a tracklist
           {published ? ` (${Math.round((withTracklist / published) * 100)}%)` : ""}.
         </p>
         <ul>
@@ -150,10 +150,10 @@ export default async function AdminPage() {
         <ul>
           {recent.map((s) => (
             <li key={s.id}>
-              <Link href={`/sets/${s.slug}`}>{s.title}</Link> · {s.credits.map((c) => c.artist.name).join(", ")} ·{" "}
+              <Link href={`/concerts/${s.slug}`}>{s.title}</Link> · {s.credits.map((c) => c.artist.name).join(", ")} ·{" "}
               {s.genres.map((g) => g.genre.name).join(", ")} · {s.channel.name}
               {s.channel.isOfficial ? "" : " (fan upload)"} · added {formatDate(s.createdAt)} · {s.status}
-              <form action={setSetStatus}>
+              <form action={setConcertStatus}>
                 <input type="hidden" name="id" value={s.id} />
                 <input type="hidden" name="status" value={s.status === "PUBLISHED" ? "HIDDEN" : "PUBLISHED"} />
                 <button type="submit">{s.status === "PUBLISHED" ? "Hide" : "Show again"}</button>

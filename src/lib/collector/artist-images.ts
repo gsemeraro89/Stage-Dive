@@ -1,5 +1,5 @@
 // Artist pictures: the avatar of the artist's official YouTube channel (owner decision 13 Nov 2026),
-// so artist squares no longer show set thumbnails with titles baked in. The channel comes from our
+// so artist squares no longer show concert thumbnails with titles baked in. The channel comes from our
 // own channels (an official channel with the artist's name) or from MusicBrainz links (free).
 // YouTube data: each picture is checked again every REFRESH_DAYS and cleared when the channel is gone.
 import type { PrismaClient } from "../../generated/prisma/client";
@@ -30,7 +30,7 @@ export async function refreshArtistImages(db: PrismaClient, deps: ImageDeps, lim
   const staleBefore = new Date(Date.now() - REFRESH_DAYS * 86_400_000);
   const artists = await db.artist.findMany({
     where: {
-      credits: { some: { set: { status: "PUBLISHED" } } },
+      credits: { some: { concert: { status: "PUBLISHED" } } },
       OR: [{ imageCheckedAt: null }, { imageCheckedAt: { lt: staleBefore } }],
     },
     orderBy: [{ imageCheckedAt: { sort: "asc", nulls: "first" } }, { id: "asc" }],

@@ -8,9 +8,9 @@ import { PlayButton } from "./PlayButton";
 import { usePlayer } from "./PlayerProvider";
 
 /**
- * The player area on a set page. Before playing: the thumbnail, an acid play square
+ * The player area on a concert page. Before playing: the thumbnail, an acid play square
  * bottom-left and the length bottom-right; the whole image is the button.
- * Once this set is playing: an empty 16:9 area that the site's player sits in.
+ * Once this concert is playing: an empty 16:9 area that the site's player sits in.
  * Nothing is ever drawn over the player itself. Sizes are in src/styles/deck.css (.od-slot).
  */
 export function PlayerSlot({ track, srcSet, alt }: { track: Track; srcSet?: string; alt: string }) {
@@ -31,7 +31,7 @@ export function PlayerSlot({ track, srcSet, alt }: { track: Track; srcSet?: stri
         <span className="od-poster-play">
           <PlayIcon size={28} />
         </span>
-        <span className="od-poster-label meta">Play set — {formatDuration(track.durationSeconds)}</span>
+        <span className="od-poster-label meta">Play concert — {formatDuration(track.durationSeconds)}</span>
       </PlayButton>
     </div>
   );

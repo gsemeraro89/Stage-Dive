@@ -1,16 +1,16 @@
-// Set page: the player, the facts, our write-up, and what to play next.
+// Concert page: the player, the facts, our write-up, and what to play next.
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LeadGrid, PlayThumb } from "@/components/catalogue/SetTile";
+import { LeadGrid, PlayThumb } from "@/components/catalogue/ConcertTile";
 import { PlayerSlot } from "@/components/player/PlayerSlot";
 import { TrackTime } from "@/components/player/TrackTime";
 import { ArtistLines, lineFromCard } from "@/components/ui/ArtistLine";
 import { count2, SectionHead } from "@/components/ui/SectionHead";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
-import { getSetPage } from "@/lib/queries";
+import { getConcertPage } from "@/lib/queries";
 import { compactNumber, placeLine } from "@/lib/site";
 import { sourceNote, type TrackView } from "@/lib/tracklist/view";
 
@@ -48,7 +48,7 @@ function TrackName({ track }: { track: TrackView }) {
 }
 
 // One database read per request, shared by the page and its title/description.
-const load = cache(getSetPage);
+const load = cache(getConcertPage);
 
 export const dynamic = "force-dynamic";
 
@@ -57,48 +57,48 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await load((await params).slug);
   if (!page) return {};
-  const { set } = page;
-  const place = placeLine(set);
+  const { concert } = page;
+  const place = placeLine(concert);
   const description = [
-    `Watch ${set.credits}${place ? ` at ${place}` : ""} in full (${formatDuration(set.durationSeconds)}).`,
-    set.writeUp,
+    `Watch ${concert.credits}${place ? ` at ${place}` : ""} in full (${formatDuration(concert.durationSeconds)}).`,
+    concert.writeUp,
   ]
     .filter(Boolean)
     .join(" ")
     .slice(0, 300);
   return {
-    title: set.title,
+    title: concert.title,
     description,
-    alternates: { canonical: `/sets/${set.slug}` },
-    openGraph: { title: set.title, description, type: "video.other", images: [set.thumbnail.src] },
+    alternates: { canonical: `/concerts/${concert.slug}` },
+    openGraph: { title: concert.title, description, type: "video.other", images: [concert.thumbnail.src] },
   };
 }
 
-export default async function SetPage({ params }: Props) {
+export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { set, queue, moreFromArtist, similarCards, tracklist } = page;
-  const track = toTrack(set);
-  const mainArtist = set.artists.find((a) => a.role === "MAIN") ?? set.artists[0];
+  const { concert, queue, moreFromArtist, similarCards, tracklist } = page;
+  const track = toTrack(concert);
+  const mainArtist = concert.artists.find((a) => a.role === "MAIN") ?? concert.artists[0];
   const upNext = queue.slice(0, 4);
 
   return (
-    <main data-od="set">
+    <main data-od="concert">
       {/* Desktop: the player with the tracklist beside it (so times can be clicked with the video in
           view), then the title and the facts under the player. Phones: player, title, tracklist,
           facts, up next. Without a tracklist the side column is "Up next" alone. Layout: pages.css. */}
       <div className="od-setgrid" data-tracklist={tracklist ? "" : undefined}>
         <div className="od-setplayer">
-          <PlayerSlot track={track} srcSet={set.thumbnail.srcSet} alt={`${set.credits} — ${placeLine(set) || set.title}`} />
+          <PlayerSlot track={track} srcSet={concert.thumbnail.srcSet} alt={`${concert.credits} — ${placeLine(concert) || concert.title}`} />
           <p className="od-player-note meta" data-od="player-note">
             <span className="od-muted">Plays here, on this page</span>
-            <a href={`https://www.youtube.com/watch?v=${set.youtubeId}`} rel="noopener" className="od-link">
+            <a href={`https://www.youtube.com/watch?v=${concert.youtubeId}`} rel="noopener" className="od-link">
               Open on YouTube
             </a>
           </p>
         </div>
 
-        <h1 className="od-set-title display">{set.title}</h1>
+        <h1 className="od-concert-title display">{concert.title}</h1>
 
         {(tracklist || upNext.length > 0) && (
           <div className="od-setside">
@@ -142,13 +142,13 @@ export default async function SetPage({ params }: Props) {
                 <h2 id="up-next" className="meta od-acid">
                   Up next
                 </h2>
-                <ol aria-label="Up next" data-od="set-list">
+                <ol aria-label="Up next" data-od="concert-list">
                   {upNext.map((s) => (
-                    <li key={s.id} data-od="set-tile">
-                      <PlayThumb set={s} sizes="(min-width: 1001px) 124px, 132px" />
+                    <li key={s.id} data-od="concert-tile">
+                      <PlayThumb concert={s} sizes="(min-width: 1001px) 124px, 132px" />
                       <div className="min-w-0">
                         <h3 className="title">
-                          <Link href={`/sets/${s.slug}`}>{s.title}</Link>
+                          <Link href={`/concerts/${s.slug}`}>{s.title}</Link>
                         </h3>
                         <p className="meta od-muted" style={{ margin: 0 }}>
                           {s.credits} · {compactNumber(s.viewCount)}
@@ -165,9 +165,9 @@ export default async function SetPage({ params }: Props) {
         <div className="od-setmain">
           <dl className="od-sheet" data-od="data-sheet">
             <div>
-              <dt className="meta">{set.artists.length > 1 ? "Artists" : "Artist"}</dt>
+              <dt className="meta">{concert.artists.length > 1 ? "Artists" : "Artist"}</dt>
               <dd>
-                {set.artists.map((a, i) => (
+                {concert.artists.map((a, i) => (
                   <span key={a.slug}>
                     {i > 0 && (a.role === "WITH" ? " with " : " & ")}
                     {a.hasPage ? (
@@ -183,26 +183,26 @@ export default async function SetPage({ params }: Props) {
                 ))}
               </dd>
             </div>
-            {set.venue && (
+            {concert.venue && (
               <div>
-                <dt className="meta">{set.setting?.name === "Festival" ? "Festival" : "Venue"}</dt>
+                <dt className="meta">{concert.setting?.name === "Festival" ? "Festival" : "Venue"}</dt>
                 <dd>
-                  <Link href={`/venues/${set.venue.slug}`} className="od-inline">
-                    {set.venue.name}
+                  <Link href={`/venues/${concert.venue.slug}`} className="od-inline">
+                    {concert.venue.name}
                   </Link>
                 </dd>
               </div>
             )}
-            {(set.city || set.country) && (
+            {(concert.city || concert.country) && (
               <div>
                 <dt className="meta">Location</dt>
-                <dd>{[set.city, set.country].filter(Boolean).join(", ")}</dd>
+                <dd>{[concert.city, concert.country].filter(Boolean).join(", ")}</dd>
               </div>
             )}
             <div>
               <dt className="meta">Genre</dt>
               <dd>
-                {set.genres.map((g, i) => (
+                {concert.genres.map((g, i) => (
                   <span key={g.slug}>
                     {i > 0 && " · "}
                     <Link href={`/genres/${g.slug}`} className="od-inline">
@@ -210,38 +210,38 @@ export default async function SetPage({ params }: Props) {
                     </Link>
                   </span>
                 ))}
-                {set.liveAct && `${set.genres.length ? " · " : ""}Live act`}
+                {concert.liveAct && `${concert.genres.length ? " · " : ""}Live act`}
               </dd>
             </div>
-            {set.setting && (
+            {concert.setting && (
               <div>
                 <dt className="meta">Setting</dt>
-                <dd>{set.setting.name}</dd>
+                <dd>{concert.setting.name}</dd>
               </div>
             )}
             <div>
               <dt className="meta">Uploaded</dt>
               <dd>
-                <time dateTime={set.publishedAt.toISOString().slice(0, 10)}>{formatDate(set.publishedAt)}</time>
+                <time dateTime={concert.publishedAt.toISOString().slice(0, 10)}>{formatDate(concert.publishedAt)}</time>
               </dd>
             </div>
             <div>
               <dt className="meta">Channel</dt>
-              <dd>{set.channel.name}</dd>
+              <dd>{concert.channel.name}</dd>
             </div>
             <div>
               <dt className="meta">Views</dt>
-              <dd>{set.viewCount.toLocaleString("en-US")}</dd>
+              <dd>{concert.viewCount.toLocaleString("en-US")}</dd>
             </div>
             <div>
               <dt className="meta">Length</dt>
-              <dd>{formatDuration(set.durationSeconds)}</dd>
+              <dd>{formatDuration(concert.durationSeconds)}</dd>
             </div>
           </dl>
 
-          {set.writeUp && (
+          {concert.writeUp && (
             <p className="od-writeup" data-od="write-up">
-              {set.writeUp}
+              {concert.writeUp}
             </p>
           )}
         </div>
@@ -254,13 +254,13 @@ export default async function SetPage({ params }: Props) {
             title={`More from ${mainArtist.name}`}
             note={count2(Math.min(moreFromArtist.length, 5))}
             href={`/artists/${mainArtist.slug}`}
-            linkLabel={`All sets by ${mainArtist.name}`}
+            linkLabel={`All concerts by ${mainArtist.name}`}
           />
-          <LeadGrid sets={moreFromArtist.slice(0, 5)} label={`More from ${mainArtist.name}`} />
+          <LeadGrid concerts={moreFromArtist.slice(0, 5)} label={`More from ${mainArtist.name}`} />
         </section>
       )}
       {similarCards.length > 0 && (
-        // Similar artists, each with a set to play. The deck bar's "You might also like" scrolls here.
+        // Similar artists, each with a concert to play. The deck bar's "You might also like" scrolls here.
         <section className="od-section" aria-labelledby="also-like" data-od="related">
           <SectionHead id="also-like" title="You might also like" note={count2(similarCards.length)} />
           <ArtistLines artists={similarCards.map(lineFromCard)} label="You might also like" />

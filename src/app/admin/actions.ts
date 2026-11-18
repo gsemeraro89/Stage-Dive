@@ -3,7 +3,7 @@
 // Admin actions. The page and these actions sit behind the password check in src/proxy.ts.
 import { revalidatePath } from "next/cache";
 import type { FullClassification } from "@/lib/collector/classify";
-import { recordDecision, saveSet } from "@/lib/collector/store";
+import { recordDecision, saveConcert } from "@/lib/collector/store";
 import { getDb } from "@/lib/db";
 
 interface ReviewPayload {
@@ -24,7 +24,7 @@ export async function publishReviewItem(formData: FormData) {
   if (!item || item.status !== "PENDING") return;
   const p = item.payload as unknown as ReviewPayload;
   if (!p.channelId || p.classification.mainArtists.length === 0 || p.classification.genres.length === 0) return;
-  const result = await saveSet(db, {
+  const result = await saveConcert(db, {
     video: {
       youtubeId: item.youtubeId,
       title: p.title,
@@ -48,7 +48,7 @@ export async function publishReviewItem(formData: FormData) {
   });
   if (result.status !== "duplicate") {
     // Count the 30-day refresh from when the data was fetched, not from now.
-    await db.set.update({ where: { id: result.setId }, data: { ytRefreshedAt: item.createdAt, ytCheckedAt: item.createdAt } });
+    await db.concert.update({ where: { id: result.concertId }, data: { ytRefreshedAt: item.createdAt, ytCheckedAt: item.createdAt } });
   }
   await db.reviewItem.update({ where: { id }, data: { status: "APPROVED", decidedAt: new Date() } });
   await recordDecision(db, item.youtubeId, result.status === "duplicate" ? "DUPLICATE" : "ACCEPTED", "approved in admin");
@@ -63,10 +63,10 @@ export async function rejectReviewItem(formData: FormData) {
   revalidatePath("/admin");
 }
 
-export async function setSetStatus(formData: FormData) {
+export async function setConcertStatus(formData: FormData) {
   const id = Number(formData.get("id"));
   const status = formData.get("status") === "PUBLISHED" ? "PUBLISHED" : "HIDDEN";
-  await getDb().set.update({ where: { id }, data: { status } });
+  await getDb().concert.update({ where: { id }, data: { status } });
   revalidatePath("/admin");
   revalidatePath("/");
 }

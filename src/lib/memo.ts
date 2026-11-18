@@ -9,7 +9,7 @@ const store = new Map<string, { expires: number; value: Promise<unknown> }>();
 const enabled = () => !process.env.VITEST && TTL_MS > 0;
 
 /**
- * Wrap an async function so its result is reused for TTL per set of arguments. A call that fails is
+ * Wrap an async function so its result is reused for TTL per concert of arguments. A call that fails is
  * not kept. Concurrent calls share one database round trip.
  */
 export function cached<A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>): (...args: A) => Promise<R> {

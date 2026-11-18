@@ -10,7 +10,7 @@ function artist(id: number, over: Partial<ArtistSignals> = {}): ArtistSignals {
     label: null,
     genres: new Map(),
     places: new Map(),
-    setIds: new Set(),
+    concertIds: new Set(),
     external: new Map(),
     ...over,
   };
@@ -43,9 +43,9 @@ describe("similarity score", () => {
     expect(labelParts("Self released").size).toBe(0);
   });
 
-  it("artists who played a set together are close", () => {
+  it("artists who played a concert together are close", () => {
     const idfs = idfsFor([]);
-    const r = scorePair(artist(1, { setIds: new Set([7]) }), artist(2, { setIds: new Set([7, 8]) }), idfs);
+    const r = scorePair(artist(1, { concertIds: new Set([7]) }), artist(2, { concertIds: new Set([7, 8]) }), idfs);
     expect(r.parts.together).toBe(1);
   });
 

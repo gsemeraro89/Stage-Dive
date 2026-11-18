@@ -3,7 +3,7 @@
 // The mini-player: the deck bar collapsed into a small window that the visitor can drag.
 // This hook only places that window. It is the same <section> as the bar, switched by CSS
 // (`data-mini`, src/styles/deck.css), and the YouTube iframe is never moved in the document,
-// so the set keeps playing. PlayerProvider keeps the iframe over the bar's video box; here we
+// so the concert keeps playing. PlayerProvider keeps the iframe over the bar's video box; here we
 // move that box and put the iframe over it at once instead of waiting for the provider's observer.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -57,7 +57,7 @@ function syncFrame(element: HTMLElement) {
 
 /**
  * @param available false while the mini-player cannot be shown (nothing playing, or the video
- * is inside the set page). The visitor's choice is kept and applies again afterwards.
+ * is inside the concert page). The visitor's choice is kept and applies again afterwards.
  */
 export function useMiniPlayer(available: boolean) {
   const [minimised, setMinimised] = useState(false);

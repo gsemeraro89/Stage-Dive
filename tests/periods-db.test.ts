@@ -19,9 +19,9 @@ describe.skipIf(!url)("period queries (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
     q = await import("../src/lib/queries");
     p = await import("../src/lib/periods");
   });
@@ -29,10 +29,10 @@ describe.skipIf(!url)("period queries (database)", () => {
 
   it("lists a month's uploads, newest first, and nothing outside it", async () => {
     const { start, end } = p.monthRange({ year: 2026, month: 10 });
-    const sets = await q.setsUploadedBetween(start, end);
-    expect(sets.length).toBeGreaterThan(0);
-    for (const s of sets) expect(s.publishedAt >= start && s.publishedAt < end).toBe(true);
-    const dates = sets.map((s) => s.publishedAt.getTime());
+    const concerts = await q.concertsUploadedBetween(start, end);
+    expect(concerts.length).toBeGreaterThan(0);
+    for (const s of concerts) expect(s.publishedAt >= start && s.publishedAt < end).toBe(true);
+    const dates = concerts.map((s) => s.publishedAt.getTime());
     expect([...dates].sort((a, b) => b - a)).toEqual(dates);
   });
 
@@ -47,6 +47,6 @@ describe.skipIf(!url)("period queries (database)", () => {
 
   it("an empty month is empty, not an error", async () => {
     const { start, end } = p.monthRange({ year: 2010, month: 1 });
-    expect(await q.setsUploadedBetween(start, end)).toEqual([]);
+    expect(await q.concertsUploadedBetween(start, end)).toEqual([]);
   });
 });

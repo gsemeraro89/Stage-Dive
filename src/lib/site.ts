@@ -1,7 +1,7 @@
 export const SITE_NAME = "FullDJSet";
-export const SITE_TAGLINE = "Free full-length electronic DJ sets, played right here";
+export const SITE_TAGLINE = "Free full-length electronic DJ concerts, played right here";
 
-/** Public address of the site, used for canonical links. Set SITE_URL on the server. */
+/** Public address of the site, used for canonical links. Concert SITE_URL on the server. */
 export function siteUrl(): string {
   return (process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }
@@ -13,6 +13,6 @@ export function compactNumber(n: number): string {
   return String(n);
 }
 
-export function placeLine(set: { venue: { name: string } | null; city: string | null; country: string | null }): string {
-  return [set.venue?.name, set.city, set.country].filter(Boolean).join(", ");
+export function placeLine(concert: { venue: { name: string } | null; city: string | null; country: string | null }): string {
+  return [concert.venue?.name, concert.city, concert.country].filter(Boolean).join(", ");
 }

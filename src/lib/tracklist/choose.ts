@@ -1,4 +1,4 @@
-// Picks one tracklist for a set from the video description and its most relevant comments.
+// Picks one tracklist for a concert from the video description and its most relevant comments.
 // Order (owner, 13 Nov 2026): the description first; then a comment by the uploading channel itself
 // (usually the pinned one); then the most liked comment; on equal likes, the most complete list.
 

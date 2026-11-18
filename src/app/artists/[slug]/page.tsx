@@ -1,9 +1,9 @@
-// Artist page: name, figures, profile (bio and facts) beside the latest upload, latest uploads, most watched, every set by year, similar artists.
+// Artist page: name, figures, profile (bio and facts) beside the latest upload, latest uploads, most watched, every concert by year, similar artists.
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArchiveRows, ChartList, Credits, Feature, LeadGrid, PlayThumb, SIZES } from "@/components/catalogue/SetTile";
+import { ArchiveRows, ChartList, Credits, Feature, LeadGrid, PlayThumb, SIZES } from "@/components/catalogue/ConcertTile";
 import { PlayButton } from "@/components/player/PlayButton";
 import { ArtistLines, lineFromCard } from "@/components/ui/ArtistLine";
 import { ArtistSquares } from "@/components/ui/ArtistSquares";
@@ -28,34 +28,34 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await load((await params).slug);
   if (!page) return {};
-  const { artist, sets } = page;
-  const stats = computeArtistStats(sets);
+  const { artist, concerts } = page;
+  const stats = computeArtistStats(concerts);
   const description = [
-    `${stats.sets} full ${stats.sets === 1 ? "set" : "sets"} by ${artist.name} to watch free: ${stats.hours} ${stats.hours === 1 ? "hour" : "hours"} of music.`,
+    `${stats.concerts} full ${stats.concerts === 1 ? "concert" : "concerts"} by ${artist.name} to watch free: ${stats.hours} ${stats.hours === 1 ? "hour" : "hours"} of music.`,
     artist.bio,
   ]
     .filter(Boolean)
     .join(" ")
     .slice(0, 300);
   return {
-    title: `${artist.name} — full DJ sets and live acts`,
+    title: `${artist.name} — full DJ concerts and live acts`,
     description,
     alternates: { canonical: `/artists/${artist.slug}` },
-    openGraph: { title: artist.name, description, images: sets[0] ? [sets[0].thumbnail.src] : undefined },
+    openGraph: { title: artist.name, description, images: concerts[0] ? [concerts[0].thumbnail.src] : undefined },
   };
 }
 
 export default async function ArtistPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { artist, sets, similar, similarCards } = page;
+  const { artist, concerts, similar, similarCards } = page;
   // "If you like X": the first four in full (artist lines), the others as squares.
   const likeLines = similarCards.slice(0, 4);
   const likeSquares = similar.filter((a) => !likeLines.some((c) => c.slug === a.slug));
-  const stats = computeArtistStats(sets);
-  const [latest, ...older] = sets;
+  const stats = computeArtistStats(concerts);
+  const [latest, ...older] = concerts;
   const moreLatest = older.slice(0, 3);
-  const mostWatched = [...sets].sort((a, b) => b.viewCount - a.viewCount || a.id - b.id).slice(0, 5);
+  const mostWatched = [...concerts].sort((a, b) => b.viewCount - a.viewCount || a.id - b.id).slice(0, 5);
 
   const years =
     stats.firstYear === null || stats.lastYear === null
@@ -87,7 +87,7 @@ export default async function ArtistPage({ params }: Props) {
         <BigName name={artist.name} max="13vw" maxPhone="20vw" lines={1} />
         <StatStrip
           stats={[
-            { label: stats.sets === 1 ? "Full set" : "Full sets", value: String(stats.sets).padStart(2, "0") },
+            { label: stats.concerts === 1 ? "Full concert" : "Full concerts", value: String(stats.concerts).padStart(2, "0") },
             { label: "Of music", value: `${stats.hours}h` },
             { label: "Total views", value: compactNumber(stats.totalViews) },
             { label: "On YouTube", value: years },
@@ -99,7 +99,7 @@ export default async function ArtistPage({ params }: Props) {
       {!latest ? (
         <section className="od-section">
           <div className="od-empty" data-od="empty">
-            <p className="display">No sets yet</p>
+            <p className="display">No concerts yet</p>
             <p>Nothing by {artist.name} is in the archive right now.</p>
           </div>
         </section>
@@ -126,52 +126,52 @@ export default async function ArtistPage({ params }: Props) {
                     ))}
                   </dl>
                 )}
-                <div className="od-profile-set" data-od="artist-actions">
+                <div className="od-profile-concert" data-od="artist-actions">
                   <p className="meta od-acid" style={{ margin: 0 }}>
                     Latest upload
                   </p>
                   <h2 className="title">
-                    <Link href={`/sets/${latest.slug}`}>{latest.title}</Link>
+                    <Link href={`/concerts/${latest.slug}`}>{latest.title}</Link>
                   </h2>
-                  <p className="od-profile-set-meta meta od-muted">
+                  <p className="od-profile-concert-meta meta od-muted">
                     <time dateTime={latest.publishedAt.toISOString().slice(0, 10)}>{formatDate(latest.publishedAt)}</time>
                     <span>{compactNumber(latest.viewCount)} views</span>
                   </p>
-                  <Credits set={latest} />
+                  <Credits concert={latest} />
                   <PlayButton track={toTrack(latest)} className="od-play">
                     <PlayIcon />
-                    Play latest set — {formatDuration(latest.durationSeconds)}
+                    Play latest concert — {formatDuration(latest.durationSeconds)}
                   </PlayButton>
                 </div>
               </div>
               <div className="od-intro-media">
-                <PlayThumb set={latest} sizes={SIZES.lead} priority />
+                <PlayThumb concert={latest} sizes={SIZES.lead} priority />
               </div>
             </section>
           ) : (
             // No profile yet: the latest upload takes the full width, with its own play button.
             <section className="od-section od-intro-solo" aria-label="Latest upload" data-od="latest">
-              <Feature set={latest} kicker={sets.length === 1 ? "The set" : "Latest upload"} />
+              <Feature concert={latest} kicker={concerts.length === 1 ? "The concert" : "Latest upload"} />
             </section>
           )}
 
           {moreLatest.length > 0 && (
             <section className="od-section" aria-labelledby="latest" data-od="more-latest">
               <SectionHead id="latest" title="Latest uploads" note={count2(moreLatest.length)} />
-              <LeadGrid sets={moreLatest} label="Latest uploads" />
+              <LeadGrid concerts={moreLatest} label="Latest uploads" />
             </section>
           )}
 
-          {sets.length >= 3 && (
+          {concerts.length >= 3 && (
             <section className="od-section" aria-labelledby="most-watched" data-od="most-watched">
               <SectionHead id="most-watched" title="Most watched" note="All-time" />
-              <ChartList sets={mostWatched} label="Most watched" />
+              <ChartList concerts={mostWatched} label="Most watched" />
             </section>
           )}
 
-          <section className="od-section" aria-labelledby="every-set" data-od="archive">
-            <SectionHead id="every-set" title="Every set" note={`${count2(sets.length)} · ${yearRange(sets)}`} />
-            <ArchiveRows sets={sets} label={`Every set by ${artist.name}`} />
+          <section className="od-section" aria-labelledby="every-concert" data-od="archive">
+            <SectionHead id="every-concert" title="Every concert" note={`${count2(concerts.length)} · ${yearRange(concerts)}`} />
+            <ArchiveRows concerts={concerts} label={`Every concert by ${artist.name}`} />
           </section>
         </>
       )}

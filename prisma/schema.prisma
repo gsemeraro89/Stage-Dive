@@ -10,15 +10,15 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Where a set entered the catalogue.
-enum SetSource {
-  SEED // data/seed-sets.json, hand-checked by the owner
+/// Where a concert entered the catalogue.
+enum ConcertSource {
+  SEED // data/seed-concerts.json, hand-checked by the owner
   COLLECTOR // added automatically by the YouTube collector (phase 3)
   MANUAL // added by hand in the admin page
 }
 
-/// Whether a set is shown on the site.
-enum SetStatus {
+/// Whether a concert is shown on the site.
+enum ConcertStatus {
   PUBLISHED
   HIDDEN // kept in the database but not shown (e.g. a decision on fan uploads)
   REMOVED // no longer public/embeddable on YouTube; kept only until the refresh job deletes it
@@ -39,11 +39,11 @@ enum ChannelKind {
 
 /// What the collector decided about a video it classified.
 enum VideoVerdict {
-  ACCEPTED // published as a set
+  ACCEPTED // published as a concert
   NOT_A_SET // a clip, track, trailer, talk or compilation
-  NOT_ELECTRONIC // a set, but not in one of our genres
+  NOT_ELECTRONIC // a concert, but not in one of our genres
   UNCERTAIN // not enough agreement to publish; kept out, visible in the admin page
-  DUPLICATE // the same set already exists (official upload preferred)
+  DUPLICATE // the same concert already exists (official upload preferred)
   ERROR // classification failed; retried on the next run
 }
 
@@ -72,28 +72,28 @@ model Artist {
   /// True when the bio was written by the profile job (owner-written bios are never overwritten).
   bioGenerated     Boolean                 @default(false) @map("bio_generated")
   profileCheckedAt DateTime?               @map("profile_checked_at")
-  /// Last time the collector searched YouTube for this artist's other sets. Null = never (searched first).
+  /// Last time the collector searched YouTube for this artist's other concerts. Null = never (searched first).
   lastSearchedAt   DateTime?               @map("last_searched_at")
   /// A guest (credited only with "with") that MusicBrainz knows as an artist. Guests get their own page
-  /// only when this is true or they have a set of their own (owner rule, 13 Nov 2026); otherwise their
-  /// name stays as plain text in the set's credits.
+  /// only when this is true or they have a concert of their own (owner rule, 13 Nov 2026); otherwise their
+  /// name stays as plain text in the concert's credits.
   guestVerified    Boolean                 @default(false) @map("guest_verified")
   /// The artist's own picture: the avatar of their official YouTube channel (owner decision 13 Nov 2026,
-  /// instead of set thumbnails with baked-in titles). YouTube data: refreshed or cleared within 30 days.
+  /// instead of concert thumbnails with baked-in titles). YouTube data: refreshed or cleared within 30 days.
   imageUrl         String?                 @map("image_url")
   imageCheckedAt   DateTime?               @map("image_checked_at")
   /// The artist's official YouTube channel (from our channels or MusicBrainz links).
   youtubeChannelId String?                 @map("youtube_channel_id")
-  /// The set whose thumbnail is the artist's picture, chosen automatically (a person, least baked-in
-  /// text) or by the owner. Null = the newest set.
+  /// The concert whose thumbnail is the artist's picture, chosen automatically (a person, least baked-in
+  /// text) or by the owner. Null = the newest concert.
   coverYoutubeId   String?                 @map("cover_youtube_id")
   /// True when every thumbnail is only graphics and text: the channel avatar is shown instead.
   coverUseAvatar   Boolean                 @default(false) @map("cover_use_avatar")
   /// True when the owner picked the cover by hand: the automatic choice never changes it.
   coverLocked      Boolean                 @default(false) @map("cover_locked")
-  /// The set IDs the choice was made among; the choice is made again when they change.
+  /// The concert IDs the choice was made among; the choice is made again when they change.
   coverChosenFrom  String?                 @map("cover_chosen_from")
-  credits          SetArtist[]
+  credits          ConcertArtist[]
   /// Artists most like this one, computed weekly by the similarity job (best first).
   similarTo        ArtistSimilarity[]      @relation("similarFrom")
   similarOf        ArtistSimilarity[]      @relation("similarTo")
@@ -123,7 +123,7 @@ model ArtistSimilarity {
 
 /// "Listeners of X also listen to Y" from an outside source (ListenBrainz, CC0). Kept so the scores
 /// can be recomputed after each collector run without asking the source again. Includes artists we
-/// have no sets for yet (a later idea: show them too).
+/// have no concerts for yet (a later idea: show them too).
 model ArtistExternalSimilar {
   artistId  Int      @map("artist_id")
   artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
@@ -147,7 +147,7 @@ model Venue {
   name      String
   city      String?
   country   String?
-  sets      Set[]
+  concerts      Concert[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -159,24 +159,24 @@ model Genre {
   slug      String     @unique
   name      String     @unique
   sortOrder Int        @default(0) @map("sort_order")
-  sets      SetGenre[]
+  concerts      ConcertGenre[]
 
   @@map("genres")
 }
 
-/// The kind of place a set was played in (Festival, Club, ...). A table rather than a
+/// The kind of place a concert was played in (Festival, Club, ...). A table rather than a
 /// fixed list so the owner can rename or add settings without a code change.
 model Setting {
   id        Int    @id @default(autoincrement())
   slug      String @unique
   name      String @unique
   sortOrder Int    @default(0) @map("sort_order")
-  sets      Set[]
+  concerts      Concert[]
 
   @@map("settings")
 }
 
-/// A YouTube channel that uploaded at least one set.
+/// A YouTube channel that uploaded at least one concert.
 model Channel {
   id                Int         @id @default(autoincrement())
   /// YouTube channel ID (UC...). Unknown for seed data until the collector fills it in.
@@ -190,14 +190,14 @@ model Channel {
   /// The channel's "uploads" playlist, read by the collector.
   uploadsPlaylistId String?     @map("uploads_playlist_id")
   lastCrawledAt     DateTime?   @map("last_crawled_at")
-  sets              Set[]
+  concerts              Concert[]
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
 
   @@map("channels")
 }
 
-model Set {
+model Concert {
   id                 Int       @id @default(autoincrement())
   youtubeId          String    @unique @map("youtube_id")
   slug               String    @unique
@@ -208,7 +208,7 @@ model Set {
   city               String?
   country            String?
   liveAct            Boolean   @default(false) @map("live_act")
-  /// Our own original text about the set (required before ads, YouTube policy III.G.1.d).
+  /// Our own original text about the concert (required before ads, YouTube policy III.G.1.d).
   writeUp            String?   @map("write_up")
   /// Tracklist as a list of { time, artist, title } (time in seconds or null; artist null for an
   /// untitled line). Read from the video description or its comments (src/lib/tracklist). It is
@@ -221,8 +221,8 @@ model Set {
   /// Best available thumbnail. Null = derive from the YouTube ID.
   thumbnailUrl       String?   @map("thumbnail_url")
 
-  source  SetSource
-  status  SetStatus @default(PUBLISHED)
+  source  ConcertSource
+  status  ConcertStatus @default(PUBLISHED)
   /// Hand-picked by the owner: kept even if it breaks the collector's automatic rules
   /// (shorter than 40 minutes, fewer views than the threshold).
   curated Boolean   @default(false)
@@ -243,8 +243,8 @@ model Set {
   settingId Int?     @map("setting_id")
   setting   Setting? @relation(fields: [settingId], references: [id])
 
-  credits SetArtist[]
-  genres  SetGenre[]
+  credits ConcertArtist[]
+  genres  ConcertGenre[]
   plays   Play[]
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -252,13 +252,13 @@ model Set {
 
   @@index([status, publishedAt])
   @@index([status, viewCount])
-  @@map("sets")
+  @@map("concerts")
 }
 
-/// Who played a set: the main artist and any collaborators.
-model SetArtist {
-  setId      Int        @map("set_id")
-  set        Set        @relation(fields: [setId], references: [id], onDelete: Cascade)
+/// Who played a concert: the main artist and any collaborators.
+model ConcertArtist {
+  concertId      Int        @map("concert_id")
+  concert        Concert        @relation(fields: [concertId], references: [id], onDelete: Cascade)
   artistId   Int        @map("artist_id")
   artist     Artist     @relation(fields: [artistId], references: [id], onDelete: Cascade)
   role       CreditRole
@@ -266,20 +266,20 @@ model SetArtist {
   creditNote String?    @map("credit_note")
   position   Int        @default(0)
 
-  @@id([setId, artistId])
+  @@id([concertId, artistId])
   @@index([artistId])
-  @@map("set_artists")
+  @@map("concert_artists")
 }
 
-model SetGenre {
-  setId   Int   @map("set_id")
-  set     Set   @relation(fields: [setId], references: [id], onDelete: Cascade)
+model ConcertGenre {
+  concertId   Int   @map("concert_id")
+  concert     Concert   @relation(fields: [concertId], references: [id], onDelete: Cascade)
   genreId Int   @map("genre_id")
   genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
-  @@id([setId, genreId])
+  @@id([concertId, genreId])
   @@index([genreId])
-  @@map("set_genres")
+  @@map("concert_genres")
 }
 
 /// One row per video the collector sent to the classifier, so it is not paid for twice.
@@ -325,7 +325,7 @@ model ClassificationCache {
 }
 
 /// Answers from the per-artist lane's cheap model (Claude Haiku): the short classification
-/// (kind "classify") and the original write-up of accepted sets (kind "writeup"). Reused while the
+/// (kind "classify") and the original write-up of accepted concerts (kind "writeup"). Reused while the
 /// prompt version matches and for at most DECISION_TTL_DAYS (YouTube 30-day rule), like
 /// classification_cache, which keeps the Opus answers.
 model LaneAnswer {
@@ -425,18 +425,18 @@ model ReviewItem {
   @@map("review_queue")
 }
 
-/// One row each time a visitor starts playing a set (phase 5 analytics).
+/// One row each time a visitor starts playing a concert (phase 5 analytics).
 model Play {
   id        BigInt   @id @default(autoincrement())
-  setId     Int      @map("set_id")
-  set       Set      @relation(fields: [setId], references: [id], onDelete: Cascade)
+  concertId     Int      @map("concert_id")
+  concert       Concert      @relation(fields: [concertId], references: [id], onDelete: Cascade)
   startedAt DateTime @default(now()) @map("started_at")
   /// Two-letter country code of the visitor, if known. No IP addresses are stored.
   country   String?  @db.Char(2)
-  /// Page the play started from, e.g. "set", "artist", "home", "autoplay".
+  /// Page the play started from, e.g. "concert", "artist", "home", "autoplay".
   source    String?
 
-  @@index([setId, startedAt])
+  @@index([concertId, startedAt])
   @@index([startedAt])
   @@map("plays")
 }

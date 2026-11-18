@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SIZES } from "@/components/catalogue/SetTile";
+import { SIZES } from "@/components/catalogue/ConcertTile";
 import { count2, SectionHead } from "@/components/ui/SectionHead";
 import { listVenues } from "@/lib/queries";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Festivals",
-  description: "Festivals with full-length DJ sets on FullDJSet.",
+  description: "Festivals with full-length DJ concerts on FullDJSet.",
   alternates: { canonical: "/venues" },
 };
 
@@ -25,7 +25,7 @@ export default async function VenuesPage() {
         ) : (
           <ul className="od-rows" aria-label="Festivals">
             {venues.map((v) => {
-              // The picture is the venue's most recent set.
+              // The picture is the venue's most recent concert.
               const image = v.cover?.thumbnail;
               return (
                 <li key={v.slug}>
@@ -44,8 +44,8 @@ export default async function VenuesPage() {
                       <span className="od-index-sub meta">{[v.city, v.country].filter(Boolean).join(", ") || "Location not listed"}</span>
                     </span>
                     <span className="od-index-count display">
-                      {String(v.sets).padStart(2, "0")}
-                      <small className="meta">{v.sets === 1 ? "set" : "sets"}</small>
+                      {String(v.concerts).padStart(2, "0")}
+                      <small className="meta">{v.concerts === 1 ? "concert" : "concerts"}</small>
                     </span>
                   </Link>
                 </li>

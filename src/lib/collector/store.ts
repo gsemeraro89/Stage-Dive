@@ -1,20 +1,20 @@
-// Database side of the collector: find duplicates, save accepted sets, record decisions, refresh.
+// Database side of the collector: find duplicates, save accepted concerts, record decisions, refresh.
 import type { PrismaClient } from "../../generated/prisma/client";
 import { SETTINGS, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
 import { thumbnailUrl, type ThumbnailName } from "../thumbnails";
 import type { FullClassification } from "./classify";
-import { isSameSet, resolveDuplicate, type SetIdentity } from "./rules";
+import { isSameConcert, resolveDuplicate, type ConcertIdentity } from "./rules";
 import type { YouTubeVideo } from "./youtube";
 
-export interface NewSet {
+export interface NewConcert {
   video: YouTubeVideo;
   classification: FullClassification;
   channel: { youtubeChannelId: string; name: string; isOfficial: boolean };
   thumbnail: ThumbnailName | null;
 }
 
-function identityOfNew(n: NewSet): SetIdentity {
+function identityOfNew(n: NewConcert): ConcertIdentity {
   return {
     youtubeId: n.video.youtubeId,
     artistSlugs: n.classification.mainArtists.map(slugify),
@@ -26,9 +26,9 @@ function identityOfNew(n: NewSet): SetIdentity {
   };
 }
 
-/** Existing sets by any of the same main artists, as identities for duplicate checks. */
+/** Existing concerts by any of the same main artists, as identities for duplicate checks. */
 async function candidatesForDuplicate(db: PrismaClient, artistSlugs: string[]) {
-  const rows = await db.set.findMany({
+  const rows = await db.concert.findMany({
     where: { credits: { some: { role: "MAIN", artist: { slug: { in: artistSlugs } } } } },
     include: { credits: { include: { artist: true } }, venue: true, channel: true },
   });
@@ -43,29 +43,29 @@ async function candidatesForDuplicate(db: PrismaClient, artistSlugs: string[]) {
       durationSeconds: r.durationSeconds,
       isOfficial: r.channel.isOfficial,
       channelId: r.channel.youtubeChannelId ?? `db:${r.channelId}`,
-    } satisfies SetIdentity,
+    } satisfies ConcertIdentity,
   }));
 }
 
 export type SaveResult =
-  | { status: "created"; setId: number; slug: string }
+  | { status: "created"; concertId: number; slug: string }
   | { status: "duplicate"; ofYoutubeId: string }
-  | { status: "replaced"; setId: number; slug: string; replacedYoutubeId: string };
+  | { status: "replaced"; concertId: number; slug: string; replacedYoutubeId: string };
 
 async function uniqueSlug(db: PrismaClient, base: string, youtubeId: string): Promise<string> {
-  const taken = await db.set.findUnique({ where: { slug: base }, select: { youtubeId: true } });
+  const taken = await db.concert.findUnique({ where: { slug: base }, select: { youtubeId: true } });
   if (!taken || taken.youtubeId === youtubeId) return base;
   return `${base}-${youtubeId.toLowerCase()}`;
 }
 
 /**
- * Save an accepted set, unless the same set is already listed.
- * A fan upload is replaced by the official upload of the same set; hand-picked sets are never replaced.
+ * Save an accepted concert, unless the same concert is already listed.
+ * A fan upload is replaced by the official upload of the same concert; hand-picked concerts are never replaced.
  */
-export async function saveSet(db: PrismaClient, n: NewSet): Promise<SaveResult> {
+export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<SaveResult> {
   const identity = identityOfNew(n);
   const existing = await candidatesForDuplicate(db, identity.artistSlugs);
-  const dup = existing.find((e) => isSameSet(e.identity, identity));
+  const dup = existing.find((e) => isSameConcert(e.identity, identity));
   if (dup) {
     if (dup.curated || resolveDuplicate(dup.identity, identity) === "keep-existing") {
       return { status: "duplicate", ofYoutubeId: dup.identity.youtubeId };
@@ -78,7 +78,7 @@ export async function saveSet(db: PrismaClient, n: NewSet): Promise<SaveResult> 
   const baseSlug = slugify([c.mainArtists[0], c.venue || v.title.slice(0, 40), year].join(" "));
 
   return db.$transaction(async (tx) => {
-    if (dup) await tx.set.delete({ where: { id: dup.id } });
+    if (dup) await tx.concert.delete({ where: { id: dup.id } });
 
     const channel = await tx.channel.upsert({
       where: { youtubeChannelId: n.channel.youtubeChannelId },
@@ -125,7 +125,7 @@ export async function saveSet(db: PrismaClient, n: NewSet): Promise<SaveResult> 
     }
     const now = new Date();
     const slug = await uniqueSlug(tx as unknown as PrismaClient, baseSlug, v.youtubeId);
-    const set = await tx.set.create({
+    const concert = await tx.concert.create({
       data: {
         youtubeId: v.youtubeId,
         slug,
@@ -154,8 +154,8 @@ export async function saveSet(db: PrismaClient, n: NewSet): Promise<SaveResult> 
       },
     });
     return dup
-      ? { status: "replaced" as const, setId: set.id, slug, replacedYoutubeId: dup.identity.youtubeId }
-      : { status: "created" as const, setId: set.id, slug };
+      ? { status: "replaced" as const, concertId: concert.id, slug, replacedYoutubeId: dup.identity.youtubeId }
+      : { status: "created" as const, concertId: concert.id, slug };
   });
 }
 
@@ -170,7 +170,7 @@ async function freeChannelName(db: PrismaClient, ch: { youtubeChannelId: string;
 /** Videos decided recently (skipped by the collector). Errors, and any verdicts in `lookAgain`, are not skipped. */
 /**
  * How long our own verdicts are kept. They hold no YouTube data (only the ID and our conclusion),
- * so a clear "not a set" is kept for a year and "not our genres" for six months: the classifier
+ * so a clear "not a concert" is kept for a year and "not our genres" for six months: the classifier
  * is not paid again for the same video every month. Uncertain and duplicate verdicts follow the
  * normal retention (default 30 days), so they get a fresh look.
  */

@@ -7,7 +7,7 @@ import { slugify } from "../slug";
 // ---------- Settings that control the rules ----------
 
 export interface CollectorConfig {
-  /** Minimum length of a set, in seconds. Product rule: a full set is normally at least 40 minutes. */
+  /** Minimum length of a concert, in seconds. Product rule: a full concert is normally at least 40 minutes. */
   minDurationSeconds: number;
   /** Minimum YouTube views to enter the catalogue. Owner decision, 12 Nov 2026: 10,000,000 to start. */
   viewThreshold: number;
@@ -65,15 +65,15 @@ export type RuleFailure =
   | "made-for-kids"
   | "live-or-upcoming"
   | "not-processed"
-  | "not-a-set-title";
+  | "not-a-concert-title";
 
 /**
- * Titles that say the video is not a set, so it is left out without asking the classifier.
- * Kept narrow on purpose: words a set title practically never contains.
+ * Titles that say the video is not a concert, so it is left out without asking the classifier.
+ * Kept narrow on purpose: words a concert title practically never contains.
  */
 const NOT_A_SET_TITLE = /\b(official )?(trailer|teaser|after ?movie|aftermovie|interview|documentary|recap|behind the scenes)\b/i;
 
-export function titleSaysNotASet(title: string): boolean {
+export function titleSaysNotAConcert(title: string): boolean {
   return NOT_A_SET_TITLE.test(title);
 }
 
@@ -90,7 +90,7 @@ export function checkRules(video: VideoFacts, config: CollectorConfig): RuleFail
   if (video.uploadStatus !== "processed") failures.push("not-processed");
   if (video.durationSeconds < config.minDurationSeconds) failures.push("too-short");
   if (video.viewCount < config.viewThreshold) failures.push("below-view-threshold");
-  if (titleSaysNotASet(video.title)) failures.push("not-a-set-title");
+  if (titleSaysNotAConcert(video.title)) failures.push("not-a-concert-title");
   return failures;
 }
 
@@ -99,8 +99,8 @@ const CAN_CHANGE: RuleFailure[] = ["below-view-threshold", "not-embeddable", "no
 
 /**
  * Whether a video that failed the rules is worth remembering for a cheap later look (long_videos):
- * long enough to be a set (length never changes), not a trailer or the like, and kept out only by
- * things that can change. Made-for-kids videos are never sets.
+ * long enough to be a concert (length never changes), not a trailer or the like, and kept out only by
+ * things that can change. Made-for-kids videos are never concerts.
  */
 export function worthRemembering(failures: RuleFailure[]): boolean {
   return failures.length > 0 && failures.every((f) => CAN_CHANGE.includes(f));
@@ -165,7 +165,7 @@ export type ChannelKindName = "ELECTRONIC_ONLY" | "ARTIST" | "MIXED" | "UNKNOWN"
 
 /** What the classifier said about a video (see classify.ts). */
 export interface Classification {
-  isFullSet: boolean;
+  isFullConcert: boolean;
   isElectronic: boolean;
   confidence: number;
   genres: string[];
@@ -174,7 +174,7 @@ export interface Classification {
 
 export interface DecisionInput {
   channelKind: ChannelKindName;
-  /** The main artist is on the owner's list (data/artist-rules.json): accepted whenever it is a full set. */
+  /** The main artist is on the owner's list (data/artist-rules.json): accepted whenever it is a full concert. */
   ownerApproved?: boolean;
   classification: Classification;
   /** Genres found in the video's own title, description and tags. */
@@ -197,7 +197,7 @@ export interface Decision {
  * In doubt, the video stays out. There is no manual approval step.
  *
  * - Channels that only post electronic music (and official artist channels): the classifier must say
- *   "full set, electronic" with high confidence and give at least one of our genres.
+ *   "full concert, electronic" with high confidence and give at least one of our genres.
  * - Mixed channels and unknown channels (fan uploads): in addition, at least two independent signals
  *   must agree: the classifier, MusicBrainz genres for the artist, genre words in the video's own text.
  */
@@ -209,8 +209,8 @@ export function decide(input: DecisionInput, config: CollectorConfig): Decision 
   if (input.artistGenres && isElectronicGenreList(input.artistGenres)) signals.push("musicbrainz");
   if (input.textGenres.length > 0) signals.push("video text");
 
-  if (!c.isFullSet) {
-    return { verdict: confident ? "NOT_A_SET" : "UNCERTAIN", reason: "not a single full set", signals };
+  if (!c.isFullConcert) {
+    return { verdict: confident ? "NOT_A_SET" : "UNCERTAIN", reason: "not a single full concert", signals };
   }
   if (c.mainArtists.length === 0) {
     return { verdict: "UNCERTAIN", reason: "artist not identified", signals };
@@ -243,7 +243,7 @@ export function decide(input: DecisionInput, config: CollectorConfig): Decision 
 
 // ---------- 5. De-duplication ----------
 
-export interface SetIdentity {
+export interface ConcertIdentity {
   youtubeId: string;
   /** Slugs of the main artists. */
   artistSlugs: string[];
@@ -264,17 +264,17 @@ function sameVenue(a: string | null, b: string | null): boolean {
 }
 
 /**
- * Two uploads are the same set when they share a main artist and either
+ * Two uploads are the same concert when they share a main artist and either
  * (a) were recorded at the same venue and were uploaded by another channel within a year (a fan
  *     re-upload), or by the same channel within 60 days with the same line-up and the same length
  *     (within 30 seconds: the same recording posted again), or
  * (b) were uploaded by another channel with the same length (within 90 seconds) within two years,
  *     unless both name a venue and the venues differ.
  * Not the same: the same channel a year later (Tomorrowland 2024 / 2025), weekend 1 and weekend 2 of
- * a festival (different tracks, owner 16 Nov 2026), a solo set and a b2b at the same festival, or two
+ * a festival (different tracks, owner 16 Nov 2026), a solo concert and a b2b at the same festival, or two
  * shows that happen to share a common slot length (2 hours) elsewhere.
  */
-export function isSameSet(a: SetIdentity, b: SetIdentity): boolean {
+export function isSameConcert(a: ConcertIdentity, b: ConcertIdentity): boolean {
   if (a.youtubeId === b.youtubeId) return true;
   if (!a.artistSlugs.some((s) => b.artistSlugs.includes(s))) return false;
   const days = Math.abs(a.publishedAt.getTime() - b.publishedAt.getTime()) / 86_400_000;
@@ -291,7 +291,7 @@ export function isSameSet(a: SetIdentity, b: SetIdentity): boolean {
 export type DuplicateAction = "keep-existing" | "replace-existing";
 
 /** Product rule: keep the official upload. Between two of the same kind, keep the one already listed. */
-export function resolveDuplicate(existing: SetIdentity, candidate: SetIdentity): DuplicateAction {
+export function resolveDuplicate(existing: ConcertIdentity, candidate: ConcertIdentity): DuplicateAction {
   return candidate.isOfficial && !existing.isOfficial ? "replace-existing" : "keep-existing";
 }
 
@@ -299,7 +299,7 @@ export function resolveDuplicate(existing: SetIdentity, candidate: SetIdentity):
 
 export type RefreshAction = "update" | "delete";
 
-/** What to do with a stored set after asking YouTube about it again. `null` = YouTube no longer has it. */
+/** What to do with a stored concert after asking YouTube about it again. `null` = YouTube no longer has it. */
 export function refreshAction(
   video: Pick<VideoFacts, "embeddable" | "privacyStatus"> | null,
 ): { action: RefreshAction; reason: string } {
@@ -309,7 +309,7 @@ export function refreshAction(
   return { action: "update", reason: "still public and embeddable" };
 }
 
-/** Sets due for a refresh: last refreshed more than `days` ago (kept below 30 for a safety margin). */
+/** Concerts due for a refresh: last refreshed more than `days` ago (kept below 30 for a safety margin). */
 export function isDueForRefresh(lastRefreshed: Date, now: Date, days = 25): boolean {
   return now.getTime() - lastRefreshed.getTime() >= days * 86_400_000;
 }
@@ -321,10 +321,10 @@ export interface ArtistRule {
   aka?: string[];
   genres: string[];
   /**
-   * Owner rule (17 Nov 2026): every official full set of this artist is looked for by the per-artist
+   * Owner rule (17 Nov 2026): every official full concert of this artist is looked for by the per-artist
    * lane (scripts/artist-lane.ts), with no view threshold.
    */
-  allSets?: boolean;
+  allConcerts?: boolean;
   /** Owner override: the artist's MusicBrainz ID, for names MusicBrainz cannot tell apart (ANNA, Quest). */
   mbid?: string;
   /** Owner override: the artist's official YouTube channel ID (UC...). Wins over MusicBrainz. */
@@ -346,14 +346,14 @@ export function expandGroups(artists: string[], groups: ArtistGroup[]): string[]
   return out;
 }
 
-/** Find the owner's rule for any of a set's main artists. Names are compared as slugs. */
+/** Find the owner's rule for any of a concert's main artists. Names are compared as slugs. */
 export function findArtistRule(mainArtists: string[], rules: ArtistRule[]): ArtistRule | null {
   const wanted = new Set(mainArtists.map(slugify).filter(Boolean));
   return rules.find((r) => [r.name, ...(r.aka ?? [])].some((n) => wanted.has(slugify(n)))) ?? null;
 }
 
 /**
- * Genres for a set by an owner-approved artist: the classifier's genres when it gave some of ours,
+ * Genres for a concert by an owner-approved artist: the classifier's genres when it gave some of ours,
  * otherwise the genres the owner listed for that artist (only those on our list).
  */
 export function genresForApprovedArtist(classifierGenres: string[], rule: ArtistRule): string[] {
@@ -381,9 +381,9 @@ export function channelMatches(title: string, expect: string): boolean {
 }
 
 /**
- * Owner rule (13 Nov 2026): once an artist is in the catalogue, all their other full sets that pass
- * the view threshold come in too. Genres for such a set: the classifier's (ours only), else the
- * genres the artist's sets already have on the site.
+ * Owner rule (13 Nov 2026): once an artist is in the catalogue, all their other full concerts that pass
+ * the view threshold come in too. Genres for such a concert: the classifier's (ours only), else the
+ * genres the artist's concerts already have on the site.
  */
 export function genresWithFallback(classifierGenres: string[], fallback: string[]): string[] {
   const ours = new Set<string>(GENRES);

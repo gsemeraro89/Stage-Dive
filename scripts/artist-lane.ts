@@ -1,5 +1,5 @@
-// The per-artist lane (owner, 17 Nov 2026): every official full set (40 minutes or more) of the artists
-// marked "allSets" in data/artist-rules.json, with no view threshold, as cheaply as possible.
+// The per-artist lane (owner, 17 Nov 2026): every official full concert (40 minutes or more) of the artists
+// marked "allConcerts" in data/artist-rules.json, with no view threshold, as cheaply as possible.
 //
 //   npm run artist-lane [-- --dry-run] [-- --no-batch]   the lane
 //   npm run artist-lane -- --haiku-test                  Haiku vs the stored Opus answers, nothing published
@@ -63,7 +63,7 @@ import {
   type ChannelKindName,
   type Decision,
 } from "../src/lib/collector/rules";
-import { chunks, recentDecisions, recordDecision, saveSet } from "../src/lib/collector/store";
+import { chunks, recentDecisions, recordDecision, saveConcert } from "../src/lib/collector/store";
 import { QuotaBudgetExceeded, YouTubeClient, type ChannelInfo, type YouTubeVideo } from "../src/lib/collector/youtube";
 import { slugify } from "../src/lib/slug";
 import { findBestThumbnail } from "../src/lib/thumbnails";
@@ -92,7 +92,7 @@ const opusEstimateUsd = (v: YouTubeVideo) =>
 const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) as { include: ArtistRule[]; groups?: ArtistGroup[] };
 const allRules = artistFile.include;
 const groups = artistFile.groups ?? [];
-const laneRules = allRules.filter((r) => r.allSets);
+const laneRules = allRules.filter((r) => r.allConcerts);
 const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as { channels: { name: string }[] };
 
 const db = createPrismaClient();
@@ -117,15 +117,15 @@ const round = (usd: number) => Math.round(usd * 1000) / 1000;
 
 // ---------- Shared: the decision for one video ----------
 
-/** Artists already in the catalogue, with their sets' genres (owner rule, 13 Nov 2026), as in collect.ts. */
+/** Artists already in the catalogue, with their concerts' genres (owner rule, 13 Nov 2026), as in collect.ts. */
 async function catalogueArtists() {
   const out = new Map<string, string[]>();
   for (const a of await db.artist.findMany({
-    where: { credits: { some: { role: "MAIN", set: { status: "PUBLISHED" } } } },
-    select: { slug: true, credits: { where: { role: "MAIN" }, select: { set: { select: { genres: { select: { genre: { select: { name: true } } } } } } } } },
+    where: { credits: { some: { role: "MAIN", concert: { status: "PUBLISHED" } } } },
+    select: { slug: true, credits: { where: { role: "MAIN" }, select: { concert: { select: { genres: { select: { genre: { select: { name: true } } } } } } } } },
   })) {
     const counts = new Map<string, number>();
-    for (const c of a.credits) for (const g of c.set.genres) counts.set(g.genre.name, (counts.get(g.genre.name) ?? 0) + 1);
+    for (const c of a.credits) for (const g of c.concert.genres) counts.set(g.genre.name, (counts.get(g.genre.name) ?? 0) + 1);
     out.set(a.slug, [...counts.entries()].sort((x, y) => y[1] - x[1]).map(([n]) => n));
   }
   return out;
@@ -449,7 +449,7 @@ async function runLane() {
     const rep = reports.get(r.name)!;
     const c = info.get(rep.channel!);
     if (c && isTopicChannel(c.title)) {
-      // An automatic "Artist - Topic" channel holds tracks, not sets: as good as no channel.
+      // An automatic "Artist - Topic" channel holds tracks, not concerts: as good as no channel.
       errors.push(`${r.name}: MusicBrainz channel is a YouTube Topic channel (${c.title}); ignored`);
       rep.channel = null;
       rep.channelFrom = null;
@@ -544,7 +544,7 @@ async function runLane() {
     for (const rule of laneRules) if (lookups.get(nameKey(rule.name))?.searchedAt) reports.get(rule.name)!.search = "earlier run";
   }
 
-  // 3. Skip what is already a set or already decided (UNCERTAIN and NOT_ELECTRONIC get a new look:
+  // 3. Skip what is already a concert or already decided (UNCERTAIN and NOT_ELECTRONIC get a new look:
   // these artists are now approved by the owner, which changes the outcome).
   const known = new Set<string>();
   const decided = new Set<string>();
@@ -552,7 +552,7 @@ async function runLane() {
   const fetchFresh = async (ids: string[]) => {
     const todo = ids.filter((id) => !videos.has(id) && !known.has(id) && !decided.has(id));
     for (const slice of chunks(todo)) {
-      (await db.set.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => known.add(s.youtubeId));
+      (await db.concert.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => known.add(s.youtubeId));
     }
     (await recentDecisions(db, todo, ttlDays, ["UNCERTAIN", "NOT_ELECTRONIC"])).forEach((id) => decided.add(id));
     const ask = todo.filter((id) => !known.has(id) && !decided.has(id));
@@ -574,7 +574,7 @@ async function runLane() {
     const fit = Math.min(maxSearchesSetting, searchesThatFit(unitBudget - yt.unitsUsed));
     for (const s of searchesToRun(states, fit)) {
       try {
-        const ids = await yt.searchArtistSets(searchQuery(s.name));
+        const ids = await yt.searchArtistConcerts(searchQuery(s.name));
         const key = nameKey(s.name);
         // Stored at once (dry runs too), so the search is never paid for again.
         await db.artistLookup.upsert({
@@ -601,7 +601,7 @@ async function runLane() {
     const sourceArtists = [...o.artists.keys()];
     if (known.has(id) || decided.has(id)) {
       const who = sourceArtists[0];
-      const reason = known.has(id) ? "already-a-set" : "already-decided";
+      const reason = known.has(id) ? "already-a-concert" : "already-decided";
       if (who) reports.get(who)!.dropped[reason] = (reports.get(who)!.dropped[reason] ?? 0) + 1;
       else totals.skippedKnown++;
       continue;
@@ -623,7 +623,7 @@ async function runLane() {
     const rule = laneRules.find((r) => r.name === artist)!;
     const result = laneFilter(video, {
       names: artistNames(rule),
-      isSet: false,
+      isConcert: false,
       decided: false,
       channels: official,
       minDurationSeconds: config.minDurationSeconds,
@@ -701,7 +701,7 @@ async function runLane() {
     }
     const base = o ?? toFullClassification(h!, "", !t.otherChannel);
     const { decision, classification } = await decideFor(t.video, t.kind, base, knownArtists);
-    // No view threshold only for the lane's artists: a set by someone else (e.g. another DJ on a lane
+    // No view threshold only for the lane's artists: a concert by someone else (e.g. another DJ on a lane
     // artist's channel) is left to the main collector and its view threshold. No verdict is recorded.
     if (!findArtistRule(expandGroups(classification.mainArtists, groups), laneRules)) {
       rep.verdicts.OTHER_ARTIST = (rep.verdicts.OTHER_ARTIST ?? 0) + 1;
@@ -712,7 +712,7 @@ async function runLane() {
     outcomes.push(ready);
   }
 
-  // 7. Original write-ups, only for accepted sets, in dry runs too (so the real run publishes at once).
+  // 7. Original write-ups, only for accepted concerts, in dry runs too (so the real run publishes at once).
   const needText = accepted.filter((a) => !a.fromOpus || !a.classification.writeUp);
   let texts = await storedLaneAnswers(db, needText.map((a) => a.t.video.youtubeId), "writeup", ttlDays);
   const textTodo = needText.filter((a) => !texts.has(a.t.video.youtubeId));
@@ -737,7 +737,7 @@ async function runLane() {
       totals.accepted++;
       const text = (texts.get(id) as { writeUp: string } | undefined)?.writeUp ?? (r.fromOpus ? classification.writeUp : "");
       if (!text) {
-        // No original text yet: the set waits for its write-up (next run) rather than going up without one.
+        // No original text yet: the concert waits for its write-up (next run) rather than going up without one.
         rep.waitingForWriteUp++;
         totals.waitingForWriteUp++;
         if (t.otherChannel) rep.viaOtherChannel.push({ title: t.video.title, url: url(id), channel: t.video.channelTitle, channelUrl: channelUrl(t.video.channelId), verdict: "ACCEPTED (waiting for write-up)" });
@@ -748,25 +748,25 @@ async function runLane() {
       totals.readyToPublish++;
     }
     if (verdict === "ACCEPTED" && !dryRun) {
-      const saved = await saveSet(db, {
+      const saved = await saveConcert(db, {
         video: t.video,
         classification,
-        // A video via another channel is not official: an official upload of the same set replaces it.
+        // A video via another channel is not official: an official upload of the same concert replaces it.
         channel: { youtubeChannelId: t.video.channelId, name: t.video.channelTitle, isOfficial: !t.otherChannel },
         thumbnail: await findBestThumbnail(id),
       });
       if (saved.status === "duplicate") {
         verdict = "DUPLICATE";
-        detail = `same set as ${saved.ofYoutubeId}`;
+        detail = `same concert as ${saved.ofYoutubeId}`;
         totals.duplicates++;
       } else {
         rep.created.push(saved.slug);
         totals.created.push(saved.slug);
         try {
           const found = await lookUpTracklist(yt, t.video, { extractor, claudeMax: 20 });
-          await db.set.update({ where: { id: saved.setId }, data: tracklistFields(found, new Date()) });
+          await db.concert.update({ where: { id: saved.concertId }, data: tracklistFields(found, new Date()) });
         } catch (error) {
-          // Never lose a new set over its tracklist: the refresh job looks again.
+          // Never lose a new concert over its tracklist: the refresh job looks again.
           if (!(error instanceof QuotaBudgetExceeded)) errors.push(`tracklist for ${saved.slug}: ${(error as Error).message}`);
         }
       }
@@ -854,13 +854,13 @@ function laneMarkdown(summary: Record<string, unknown> & { created: string[] }, 
     `- Classifier: ${summary.classifier} · sources: ${summary.sources}`,
     `- Artists with a readable official channel: ${summary.artistsWithReadableChannel} of ${summary.artists} (found by @handle this run: ${summary.channelsFoundByHandle}); the others take videos from any channel, marked "via other channel"`,
     `- Sent to Claude: ${summary.sentToClaude} (via other channel: ${summary.viaOtherChannel}; stored answers reused: ${summary.reusedAnswers}; Haiku asked now: ${summary.haikuAsked}; Opus: ${summary.opusAsked})`,
-    `- Accepted: ${summary.accepted} (ready to publish, with write-up: ${summary.readyToPublish}; waiting for a write-up: ${summary.waitingForWriteUp}; write-ups asked now: ${summary.writeUpsAsked}) · new sets: ${summary.created.length} · duplicates: ${summary.duplicates}`,
+    `- Accepted: ${summary.accepted} (ready to publish, with write-up: ${summary.readyToPublish}; waiting for a write-up: ${summary.waitingForWriteUp}; write-ups asked now: ${summary.writeUpsAsked}) · new concerts: ${summary.created.length} · duplicates: ${summary.duplicates}`,
     `- Waiting for a classification: ${summary.waitingForClassification} · left over budget: ${summary.overBudget} · report only (not official channels): ${summary.reportOnly}`,
     `- Claude cost: ~$${summary.claudeCostUsd} of $${summary.claudeBudgetUsd} · YouTube units: ${summary.youtubeUnits} · searches used: ${summary.searchesUsed}, left: ${summary.searchesLeft}`,
     ...(summary.stoppedEarly ? [`- Stopped early: ${summary.stoppedEarly}`] : []),
     ...((summary.errors as string[]).length ? [`- Errors: ${(summary.errors as string[]).length} (see the JSON)`] : []),
     "",
-    "| Artist | Channel | Search | Found (long / earlier / channel / search) | Dropped free | Sent to Claude | Via other channel | Accepted | Waiting (answer / write-up) | Report only | New sets |",
+    "| Artist | Channel | Search | Found (long / earlier / channel / search) | Dropped free | Sent to Claude | Via other channel | Accepted | Waiting (answer / write-up) | Report only | New concerts |",
     "|---|---|---|---|---|---|---|---|---|---|---|",
     ...reports.map(
       (r) =>

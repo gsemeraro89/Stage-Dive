@@ -5,10 +5,10 @@ import type { Track } from "@/lib/player-types";
 import { usePlayer } from "./PlayerProvider";
 
 /**
- * A set's thumbnail (or its "Play set" button) outside the set page: opens the set page. The visitor
- * starts the set there with the page's own play button (owner decision, 16 Nov 2026: nothing starts
+ * A concert's thumbnail (or its "Play concert" button) outside the concert page: opens the concert page. The visitor
+ * starts the concert there with the page's own play button (owner decision, 16 Nov 2026: nothing starts
  * by itself, and the video never flashes in the bottom bar on the way to the page).
- * When this set is already playing, the thumbnail shows it (data-current / data-status).
+ * When this concert is already playing, the thumbnail shows it (data-current / data-status).
  */
 export function PlayLink({
   track,
@@ -23,7 +23,7 @@ export function PlayLink({
   const isCurrent = current?.youtubeId === track.youtubeId;
   return (
     <Link
-      href={`/sets/${track.slug}`}
+      href={`/concerts/${track.slug}`}
       className={className}
       data-od="play"
       data-current={isCurrent || undefined}

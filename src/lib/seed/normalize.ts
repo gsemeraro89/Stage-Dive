@@ -1,12 +1,12 @@
-// Turns data/seed-sets.json into clean records ready for the database.
+// Turns data/seed-concerts.json into clean records ready for the database.
 // Pure functions only (no database), so the rules are easy to test.
 
 import { GENRES, LIVE_ACT, normalizeSetting, RETIRED_GENRES, type SettingName } from "../catalogue";
 import { slugify } from "../slug";
 
-// ---- Shape of data/seed-sets.json ----
+// ---- Shape of data/seed-concerts.json ----
 
-export interface SeedSet {
+export interface SeedConcert {
   id: string;
   artist: string;
   title: string;
@@ -35,7 +35,7 @@ export interface SeedArtistProfile {
 }
 
 export interface SeedFile {
-  sets: SeedSet[];
+  concerts: SeedConcert[];
   artists: Record<string, SeedArtistProfile>;
 }
 
@@ -73,7 +73,7 @@ export interface CreditRecord {
   position: number;
 }
 
-export interface SetRecord {
+export interface ConcertRecord {
   youtubeId: string;
   slug: string;
   title: string;
@@ -96,7 +96,7 @@ export interface NormalizedSeed {
   artists: ArtistRecord[];
   venues: VenueRecord[];
   channels: ChannelRecord[];
-  sets: SetRecord[];
+  concerts: ConcertRecord[];
 }
 
 /**
@@ -114,13 +114,13 @@ function clean(value: string | undefined | null): string | null {
   return trimmed ? trimmed : null;
 }
 
-function parseDate(value: string, field: string, setId: string): Date {
+function parseDate(value: string, field: string, concertId: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new Error(`Set ${setId}: ${field} "${value}" is not a YYYY-MM-DD date`);
+    throw new Error(`Concert ${concertId}: ${field} "${value}" is not a YYYY-MM-DD date`);
   }
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
-    throw new Error(`Set ${setId}: ${field} "${value}" is not a real date`);
+    throw new Error(`Concert ${concertId}: ${field} "${value}" is not a real date`);
   }
   return date;
 }
@@ -136,7 +136,7 @@ export function parseCollaborator(raw: string): { name: string; note: string | n
  * Split seed genres into real genres and the Live Act attribute.
  * Genres the owner took off the list are dropped; anything else unknown is an error.
  */
-export function splitGenres(labels: string[], setId: string): { genres: string[]; liveAct: boolean } {
+export function splitGenres(labels: string[], concertId: string): { genres: string[]; liveAct: boolean } {
   const known = new Set<string>(GENRES);
   const retired = new Set<string>(RETIRED_GENRES);
   const genres: string[] = [];
@@ -150,23 +150,23 @@ export function splitGenres(labels: string[], setId: string): { genres: string[]
     } else if (known.has(name)) {
       if (!genres.includes(name)) genres.push(name);
     } else {
-      throw new Error(`Set ${setId}: unknown genre "${name}". Add it to GENRES in src/lib/catalogue.ts.`);
+      throw new Error(`Concert ${concertId}: unknown genre "${name}". Add it to GENRES in src/lib/catalogue.ts.`);
     }
   }
   return { genres, liveAct };
 }
 
 /**
- * Readable set URL: "{artist} {venue} {year}", e.g. "nto-spectra-festival-2026".
- * If two sets would get the same slug, every one of them gets its YouTube ID appended,
+ * Readable concert URL: "{artist} {venue} {year}", e.g. "nto-spectra-festival-2026".
+ * If two concerts would get the same slug, every one of them gets its YouTube ID appended,
  * so a slug never depends on the order of the input.
  */
-export function buildSetSlugs(sets: Pick<SeedSet, "id" | "artist" | "venue" | "date">[]): Map<string, string> {
+export function buildConcertSlugs(concerts: Pick<SeedConcert, "id" | "artist" | "venue" | "date">[]): Map<string, string> {
   const base = new Map<string, string>();
   const counts = new Map<string, number>();
-  for (const set of sets) {
-    const slug = slugify([set.artist, set.venue, set.date.slice(0, 4)].filter(Boolean).join(" "));
-    base.set(set.id, slug);
+  for (const concert of concerts) {
+    const slug = slugify([concert.artist, concert.venue, concert.date.slice(0, 4)].filter(Boolean).join(" "));
+    base.set(concert.id, slug);
     counts.set(slug, (counts.get(slug) ?? 0) + 1);
   }
   const result = new Map<string, string>();
@@ -177,7 +177,7 @@ export function buildSetSlugs(sets: Pick<SeedSet, "id" | "artist" | "venue" | "d
 }
 
 export function normalizeSeed(seed: SeedFile): NormalizedSeed {
-  if (!Array.isArray(seed.sets)) throw new Error("Seed file has no 'sets' list");
+  if (!Array.isArray(seed.concerts)) throw new Error("Seed file has no 'concerts' list");
 
   const artists = new Map<string, ArtistRecord>();
   const venues = new Map<string, VenueRecord>();
@@ -203,20 +203,20 @@ export function normalizeSeed(seed: SeedFile): NormalizedSeed {
     };
   }
 
-  const slugs = buildSetSlugs(seed.sets);
-  const sets: SetRecord[] = [];
+  const slugs = buildConcertSlugs(seed.concerts);
+  const concerts: ConcertRecord[] = [];
 
-  for (const raw of seed.sets) {
+  for (const raw of seed.concerts) {
     const id = raw.id?.trim();
     if (!id || !YOUTUBE_ID.test(id)) throw new Error(`Invalid YouTube ID "${raw.id}"`);
-    if (seenIds.has(id)) throw new Error(`Set ${id} appears twice in the seed file`);
+    if (seenIds.has(id)) throw new Error(`Concert ${id} appears twice in the seed file`);
     seenIds.add(id);
 
-    if (!clean(raw.title)) throw new Error(`Set ${id}: missing title`);
-    if (!clean(raw.artist)) throw new Error(`Set ${id}: missing artist`);
-    if (!clean(raw.channel)) throw new Error(`Set ${id}: missing channel`);
-    if (!Number.isInteger(raw.secs) || raw.secs <= 0) throw new Error(`Set ${id}: invalid duration ${raw.secs}`);
-    if (!Number.isInteger(raw.views) || raw.views < 0) throw new Error(`Set ${id}: invalid view count ${raw.views}`);
+    if (!clean(raw.title)) throw new Error(`Concert ${id}: missing title`);
+    if (!clean(raw.artist)) throw new Error(`Concert ${id}: missing artist`);
+    if (!clean(raw.channel)) throw new Error(`Concert ${id}: missing channel`);
+    if (!Number.isInteger(raw.secs) || raw.secs <= 0) throw new Error(`Concert ${id}: invalid duration ${raw.secs}`);
+    if (!Number.isInteger(raw.views) || raw.views < 0) throw new Error(`Concert ${id}: invalid view count ${raw.views}`);
 
     const { genres, liveAct } = splitGenres(raw.genres ?? [], id);
 
@@ -237,7 +237,7 @@ export function normalizeSeed(seed: SeedFile): NormalizedSeed {
     let venueSlug: string | null = null;
     if (venueName) {
       venueSlug = slugify(venueName);
-      // First appearance wins; later sets fill in a missing city or country.
+      // First appearance wins; later concerts fill in a missing city or country.
       const existing = venues.get(venueSlug);
       if (!existing) venues.set(venueSlug, { slug: venueSlug, name: venueName, city, country });
       else {
@@ -251,7 +251,7 @@ export function normalizeSeed(seed: SeedFile): NormalizedSeed {
       channels.set(channelName, { name: channelName, isOfficial: !FAN_UPLOAD_CHANNELS.has(channelName) });
     }
 
-    sets.push({
+    concerts.push({
       youtubeId: id,
       slug: slugs.get(raw.id)!,
       title: raw.title.trim(),
@@ -275,6 +275,6 @@ export function normalizeSeed(seed: SeedFile): NormalizedSeed {
     artists: [...artists.values()],
     venues: [...venues.values()],
     channels: [...channels.values()],
-    sets,
+    concerts,
   };
 }

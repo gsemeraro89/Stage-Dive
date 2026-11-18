@@ -11,10 +11,10 @@ export default function NotFound() {
         404
       </p>
       <h1 className="display size-section">Page not found</h1>
-      <p className="od-notfound-text">That set, artist or page is not here.</p>
+      <p className="od-notfound-text">That concert, artist or page is not here.</p>
       <p className="od-notfound-links">
         <Link href="/" className="od-play">
-          Back to all sets
+          Back to all concerts
         </Link>
         <Link href="/artists" className="od-link">
           Artists

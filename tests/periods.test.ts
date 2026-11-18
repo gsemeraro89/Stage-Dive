@@ -29,7 +29,7 @@ describe("months", () => {
 
   it("labels and links", () => {
     expect(monthLabel({ year: 2026, month: 11 })).toBe("November 2026");
-    expect(monthHref({ year: 2026, month: 3 })).toBe("/sets/year/2026/03");
+    expect(monthHref({ year: 2026, month: 3 })).toBe("/concerts/year/2026/03");
   });
 
   it("year range", () => {

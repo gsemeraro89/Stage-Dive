@@ -1,5 +1,5 @@
 // Database side of the similarity job: read what we know about each artist, ask ListenBrainz
-// when needed, store the ranked lists. Scores cover every published set; pages then only
+// when needed, store the ranked lists. Scores cover every published concert; pages then only
 // show artists the visitor can actually play (SITE_SOURCES is applied when reading).
 
 import type { PrismaClient } from "../../generated/prisma/client";
@@ -11,10 +11,10 @@ export const EXTERNAL_SOURCE = "listenbrainz";
 /** Outside lists are asked again after this many days. */
 export const EXTERNAL_MAX_AGE_DAYS = 28;
 
-/** Sets that count: published and playable, whatever their source. */
+/** Concerts that count: published and playable, whatever their source. */
 const COUNTED = { status: "PUBLISHED" as const, embeddable: true, privacyStatus: "public" };
-/** Artists with a page (a set of their own): only they are ranked. */
-const RANKED = { credits: { some: { role: "MAIN" as const, set: COUNTED } } };
+/** Artists with a page (a concert of their own): only they are ranked. */
+const RANKED = { credits: { some: { role: "MAIN" as const, concert: COUNTED } } };
 
 export async function loadSignals(db: PrismaClient): Promise<ArtistSignals[]> {
   const artists = await db.artist.findMany({
@@ -22,8 +22,8 @@ export async function loadSignals(db: PrismaClient): Promise<ArtistSignals[]> {
     orderBy: { id: "asc" },
     include: {
       credits: {
-        where: { set: COUNTED },
-        include: { set: { select: { id: true, venueId: true, channelId: true, genres: { select: { genreId: true } } } } },
+        where: { concert: COUNTED },
+        include: { concert: { select: { id: true, venueId: true, channelId: true, genres: { select: { genreId: true } } } } },
       },
       externalSimilar: { select: { nameKey: true, score: true } },
     },
@@ -32,10 +32,10 @@ export async function loadSignals(db: PrismaClient): Promise<ArtistSignals[]> {
     const genres = new Map<number, number>();
     const places = new Map<string, number>();
     const bump = <K>(m: Map<K, number>, k: K) => m.set(k, (m.get(k) ?? 0) + 1);
-    for (const { set } of a.credits) {
-      for (const g of set.genres) bump(genres, g.genreId);
-      if (set.venueId) bump(places, `v:${set.venueId}`);
-      bump(places, `c:${set.channelId}`);
+    for (const { concert } of a.credits) {
+      for (const g of concert.genres) bump(genres, g.genreId);
+      if (concert.venueId) bump(places, `v:${concert.venueId}`);
+      bump(places, `c:${concert.channelId}`);
     }
     const external = new Map<string, number>();
     for (const e of a.externalSimilar) external.set(e.nameKey, Math.max(external.get(e.nameKey) ?? 0, e.score));
@@ -45,7 +45,7 @@ export async function loadSignals(db: PrismaClient): Promise<ArtistSignals[]> {
       label: a.label,
       genres,
       places,
-      setIds: new Set(a.credits.map((c) => c.set.id)),
+      concertIds: new Set(a.credits.map((c) => c.concert.id)),
       external,
     };
   });

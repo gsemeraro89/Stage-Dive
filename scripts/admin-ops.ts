@@ -1,11 +1,11 @@
 // One-off fixes asked by the owner, run from collect.yml (input admin_ops). Operations, separated by ";":
 //   merge:<from-slug>><into-slug>   two pages for the same artist become one
-//   tidy-review                     close review items whose video is already a set
+//   tidy-review                     close review items whose video is already a concert
 //   split:<group-slug>><slug>,<slug> a group page becomes credits for each member
-//   hide-set:<set-slug>             take a set off the site (kept in the database)
+//   hide-concert:<concert-slug>             take a concert off the site (kept in the database)
 //   reject-review:<id>,<id>         the owner said no to these videos in the review queue
 import "dotenv/config";
-import { closeStaleReviewItems, hideSet, mergeArtists, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
+import { closeStaleReviewItems, hideConcert, mergeArtists, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { recompute } from "../src/lib/similarity/job";
 
@@ -21,7 +21,7 @@ async function main() {
     else if (op.startsWith("split:")) {
       const [group, members] = op.slice(6).split(">");
       out.push({ split: group, ...(await splitArtist(db, group, members.split(",").map((x) => x.trim()))) });
-    } else if (op.startsWith("hide-set:")) out.push({ hidden: await hideSet(db, op.slice(9).trim()) });
+    } else if (op.startsWith("hide-concert:")) out.push({ hidden: await hideConcert(db, op.slice(9).trim()) });
     else if (op === "tidy-review") out.push({ reviewItemsClosed: await closeStaleReviewItems(db) });
     else throw new Error(`unknown operation: ${op}`);
   }

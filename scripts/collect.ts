@@ -1,6 +1,6 @@
 // The collector. Reads the channels in data/channels.json (plus a few discovery searches),
 // keeps long, popular, public, embeddable videos, asks Claude what each one is, and publishes
-// only the sets that pass every check. Run with: npm run collect [-- --dry-run] [-- --limit 50]
+// only the concerts that pass every check. Run with: npm run collect [-- --dry-run] [-- --limit 50]
 import "dotenv/config";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createPrismaClient } from "../src/lib/db";
@@ -32,7 +32,7 @@ import {
   recentDecisions,
   recordDecision,
   rememberLongVideos,
-  saveSet,
+  saveConcert,
 } from "../src/lib/collector/store";
 import { QuotaBudgetExceeded, YouTubeClient, type YouTubeVideo } from "../src/lib/collector/youtube";
 import { slugify } from "../src/lib/slug";
@@ -92,7 +92,7 @@ const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as 
 const db = createPrismaClient();
 const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", unitBudget);
 const run = dryRun ? null : await db.jobRun.create({ data: { job: "collect" } });
-// Tracklists for new sets (description, then comments, then Claude for odd formatting).
+// Tracklists for new concerts (description, then comments, then Claude for odd formatting).
 const tracklistExtractor = process.env.ANTHROPIC_API_KEY ? new TracklistExtractor() : null;
 const tracklistClaudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
 
@@ -106,7 +106,7 @@ const stats = {
   classified: 0,
   verdicts: {} as Record<string, number>,
   created: [] as string[],
-  /** New sets published with a tracklist, and those whose tracklist waits for the refresh job (quota). */
+  /** New concerts published with a tracklist, and those whose tracklist waits for the refresh job (quota). */
   tracklists: 0,
   tracklistsPostponed: 0,
   errors: [] as string[],
@@ -227,10 +227,10 @@ try {
     }
   }
 
-  // Searches for each catalogue artist's other sets: artists never searched first (so a newly added
+  // Searches for each catalogue artist's other concerts: artists never searched first (so a newly added
   // artist's back catalogue comes in on the next runs), then the ones searched longest ago.
   const artists = await db.artist.findMany({
-    where: { credits: { some: { role: "MAIN", set: { status: "PUBLISHED" } } } },
+    where: { credits: { some: { role: "MAIN", concert: { status: "PUBLISHED" } } } },
     orderBy: [{ lastSearchedAt: { sort: "asc", nulls: "first" } }, { id: "asc" }],
     select: { id: true, name: true },
     take: onlyChannel || onlyVideos.length ? 0 : Number(process.env.DISCOVERY_SEARCHES || channelFile.discovery.searchesPerRun),
@@ -269,7 +269,7 @@ try {
   stats.videosSeen = ids.length;
   const listed = new Set<string>();
   for (const slice of chunks(ids)) {
-    (await db.set.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => listed.add(s.youtubeId));
+    (await db.concert.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => listed.add(s.youtubeId));
   }
   // ONLY_VIDEOS: every earlier verdict is ignored (duplicate included); the owner asked for these again.
   const decided = onlyVideos.length
@@ -287,7 +287,7 @@ try {
     failures.forEach((f) => count(stats.ruleFailures, f));
     if (failures.length === 0) candidates.push(video);
     if (worthRemembering(failures)) remember.push(video);
-    // Never a set (too short, made for kids, a trailer): no need to look again. Videos that pass stay
+    // Never a concert (too short, made for kids, a trailer): no need to look again. Videos that pass stay
     // remembered until they have a verdict, so a classification left for the next run is not lost.
     else if (failures.length > 0) forget.push(video.youtubeId);
   }
@@ -388,17 +388,17 @@ try {
   }
   stats.channelsLeftForNextRun = readChannels.filter((ch) => unanswered.has(ch.youtubeChannelId)).length;
 
-  // Artists already in the catalogue (with a published set), with the genres their sets have.
+  // Artists already in the catalogue (with a published concert), with the genres their concerts have.
   const catalogueArtists = new Map<string, string[]>();
   for (const a of await db.artist.findMany({
-    where: { credits: { some: { role: "MAIN", set: { status: "PUBLISHED" } } } },
+    where: { credits: { some: { role: "MAIN", concert: { status: "PUBLISHED" } } } },
     select: {
       slug: true,
-      credits: { where: { role: "MAIN" }, select: { set: { select: { genres: { select: { genre: { select: { name: true } } } } } } } },
+      credits: { where: { role: "MAIN" }, select: { concert: { select: { genres: { select: { genre: { select: { name: true } } } } } } } },
     },
   })) {
     const counts = new Map<string, number>();
-    for (const c of a.credits) for (const g of c.set.genres) counts.set(g.genre.name, (counts.get(g.genre.name) ?? 0) + 1);
+    for (const c of a.credits) for (const g of c.concert.genres) counts.set(g.genre.name, (counts.get(g.genre.name) ?? 0) + 1);
     catalogueArtists.set(a.slug, [...counts.entries()].sort((x, y) => y[1] - x[1]).map(([name]) => name));
   }
 
@@ -409,7 +409,7 @@ try {
     // A group name that is not an artist ("3 Are Legend") is credited to each member.
     const answer = { ...stored, mainArtists: expandGroups(stored.mainArtists, artistGroups) };
     // Artists the owner confirmed, and artists already in the catalogue (owner rule, 13 Nov 2026):
-    // their full sets come in; genres fall back to the owner's list or to the artist's existing sets.
+    // their full concerts come in; genres fall back to the owner's list or to the artist's existing concerts.
     const rule = findArtistRule(answer.mainArtists, artistRules);
     const known = rule ? null : catalogueArtists.get(slugify(answer.mainArtists[0] ?? ""));
     const classification = rule
@@ -429,7 +429,7 @@ try {
 
     if (decision.verdict === "ACCEPTED" && !dryRun) {
       const thumbnail = await findBestThumbnail(video.youtubeId);
-      const saved = await saveSet(db, {
+      const saved = await saveConcert(db, {
         video,
         classification,
         // Channels found through search are fan uploads unless the classifier recognises the uploader
@@ -439,16 +439,16 @@ try {
       });
       if (saved.status === "duplicate") {
         verdict = "DUPLICATE";
-        detail = `same set as ${saved.ofYoutubeId}`;
+        detail = `same concert as ${saved.ofYoutubeId}`;
       } else {
         stats.created.push(saved.slug);
         if (saved.status === "replaced") detail += `; replaced fan upload ${saved.replacedYoutubeId}`;
         try {
           const found = await lookUpTracklist(yt, video, { extractor: tracklistExtractor, claudeMax: tracklistClaudeMax });
-          await db.set.update({ where: { id: saved.setId }, data: tracklistFields(found, new Date()) });
+          await db.concert.update({ where: { id: saved.concertId }, data: tracklistFields(found, new Date()) });
           if (found.tracks) stats.tracklists++;
         } catch (error) {
-          // Never lose a new set over its tracklist: the refresh job looks again (tracklist_checked_at stays empty).
+          // Never lose a new concert over its tracklist: the refresh job looks again (tracklist_checked_at stays empty).
           if (error instanceof QuotaBudgetExceeded) stats.tracklistsPostponed++;
           else stats.errors.push(`tracklist for ${saved.slug}: ${(error as Error).message}`);
         }
@@ -533,7 +533,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `## Collector ${dryRun ? "(dry run: nothing published)" : ""}`,
     `- Videos seen: ${stats.videosSeen} · already known: ${stats.alreadyKnown} · classified: ${stats.classified}`,
     `- Verdicts: ${Object.entries(stats.verdicts).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}`,
-    `- New sets: ${stats.created.length} (with a tracklist: ${stats.tracklists}${stats.tracklistsPostponed ? `; ${stats.tracklistsPostponed} left for the refresh job` : ""})`,
+    `- New concerts: ${stats.created.length} (with a tracklist: ${stats.tracklists}${stats.tracklistsPostponed ? `; ${stats.tracklistsPostponed} left for the refresh job` : ""})`,
     `- YouTube units: ${stats.youtubeUnits} · Claude cost: ~$${stats.claudeCostUsd}`,
     stats.stoppedEarly ? `- Stopped early: ${stats.stoppedEarly}` : "",
     stats.errors.length ? `- Errors: ${stats.errors.length} (see log)` : "",

@@ -1,6 +1,6 @@
 import Form from "next/form";
 import Link from "next/link";
-import { SORT_LABELS, SORTS, type SetFilters } from "@/lib/filters";
+import { SORT_LABELS, SORTS, type ConcertFilters } from "@/lib/filters";
 
 interface Option {
   slug: string;
@@ -9,7 +9,7 @@ interface Option {
 }
 
 /**
- * Search, filters and sorting for the set list. The choices go in the address
+ * Search, filters and sorting for the concert list. The choices go in the address
  * (?genre=techno&sort=longest), so every result can be shared as a link and works without
  * JavaScript. With JavaScript the page changes without a reload, so the music keeps playing.
  */
@@ -17,7 +17,7 @@ export function FilterForm({
   filters,
   options,
 }: {
-  filters: SetFilters;
+  filters: ConcertFilters;
   options: { genres: Option[]; artists: Option[]; venues: Option[]; settings: Option[] };
 }) {
   const select = (name: string, label: string, anyLabel: string, value: string | null, items: Option[]) => (
@@ -35,7 +35,7 @@ export function FilterForm({
   );
 
   return (
-    <Form action="/sets" role="search" data-od="filters" className="od-filters" key={JSON.stringify(filters)}>
+    <Form action="/concerts" role="search" data-od="filters" className="od-filters" key={JSON.stringify(filters)}>
       <label className="od-field" data-on={filters.q ? "" : undefined}>
         <span className="meta">Search</span>
         <input type="search" name="q" defaultValue={filters.q ?? ""} placeholder="NTO, Cercle, Monegros" maxLength={80} />
@@ -56,9 +56,9 @@ export function FilterForm({
       </label>
       <div className="od-filter-actions">
         <button type="submit" className="od-play">
-          Show sets
+          Show concerts
         </button>
-        <Link href="/sets" className="od-link">
+        <Link href="/concerts" className="od-link">
           Clear
         </Link>
       </div>

@@ -1,4 +1,4 @@
-// Saving collected sets: duplicates, official-over-fan, hand-picked sets protected. Needs TEST_DATABASE_URL.
+// Saving collected concerts: duplicates, official-over-fan, hand-picked concerts protected. Needs TEST_DATABASE_URL.
 import "dotenv/config";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -30,8 +30,8 @@ function ytVideo(overrides: Partial<YouTubeVideo> = {}): YouTubeVideo {
 
 function cls(overrides: Partial<FullClassification> = {}): FullClassification {
   return {
-    isFullSet: true,
-    notSetReason: "",
+    isFullConcert: true,
+    notConcertReason: "",
     isElectronic: true,
     confidence: 0.95,
     mainArtists: ["Marsh"],
@@ -43,12 +43,12 @@ function cls(overrides: Partial<FullClassification> = {}): FullClassification {
     genres: ["Melodic House"],
     liveAct: false,
     uploaderIsOfficial: false,
-    writeUp: "Marsh plays a long melodic house set outdoors.",
+    writeUp: "Marsh plays a long melodic house concert outdoors.",
     ...overrides,
   };
 }
 
-describe.skipIf(!url)("saveSet (database)", () => {
+describe.skipIf(!url)("saveConcert (database)", () => {
   let store: typeof import("../src/lib/collector/store");
   let db: ReturnType<typeof import("../src/lib/db").getDb>;
 
@@ -60,9 +60,9 @@ describe.skipIf(!url)("saveSet (database)", () => {
     const { normalizeSeed } = await import("../src/lib/seed/normalize");
     db = getDb();
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, video_decisions, long_videos, classification_cache, classifier_batches, artist_lookups, job_runs, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, video_decisions, long_videos, classification_cache, classifier_batches, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8"))));
+    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8"))));
     store = await import("../src/lib/collector/store");
   });
   afterAll(async () => db?.$disconnect());
@@ -70,44 +70,44 @@ describe.skipIf(!url)("saveSet (database)", () => {
   const fanChannel = { youtubeChannelId: "UCfan000000000000000000", name: "Some Fan", isOfficial: false };
   const officialChannel = { youtubeChannelId: "UCofficial0000000000000", name: "Somewhere Festival", isOfficial: true };
 
-  it("creates a new set with artist, venue, genres, setting and write-up", async () => {
-    const r = await store.saveSet(db, { video: ytVideo(), classification: cls(), channel: fanChannel, thumbnail: "maxresdefault" });
+  it("creates a new concert with artist, venue, genres, setting and write-up", async () => {
+    const r = await store.saveConcert(db, { video: ytVideo(), classification: cls(), channel: fanChannel, thumbnail: "maxresdefault" });
     expect(r.status).toBe("created");
-    const set = await db.set.findUniqueOrThrow({
+    const concert = await db.concert.findUniqueOrThrow({
       where: { youtubeId: "NEWSET00001" },
       include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, venue: true, setting: true, channel: true },
     });
-    expect(set.source).toBe("COLLECTOR");
-    expect(set.curated).toBe(false);
-    expect(set.credits.map((c) => c.artist.slug)).toEqual(["marsh"]); // existing artist reused
-    expect(set.genres.map((g) => g.genre.name)).toEqual(["Melodic House"]);
-    expect(set.venue?.name).toBe("Somewhere Open Air");
-    expect(set.setting?.name).toBe("Festival");
-    expect(set.channel.isOfficial).toBe(false);
-    expect(set.thumbnailUrl).toContain("maxresdefault");
-    expect(set.writeUp).toContain("melodic house");
+    expect(concert.source).toBe("COLLECTOR");
+    expect(concert.curated).toBe(false);
+    expect(concert.credits.map((c) => c.artist.slug)).toEqual(["marsh"]); // existing artist reused
+    expect(concert.genres.map((g) => g.genre.name)).toEqual(["Melodic House"]);
+    expect(concert.venue?.name).toBe("Somewhere Open Air");
+    expect(concert.setting?.name).toBe("Festival");
+    expect(concert.channel.isOfficial).toBe(false);
+    expect(concert.thumbnailUrl).toContain("maxresdefault");
+    expect(concert.writeUp).toContain("melodic house");
   });
 
-  it("does not add the same set twice", async () => {
-    const r = await store.saveSet(db, { video: ytVideo({ youtubeId: "NEWSET00002" }), classification: cls(), channel: fanChannel, thumbnail: null });
+  it("does not add the same concert twice", async () => {
+    const r = await store.saveConcert(db, { video: ytVideo({ youtubeId: "NEWSET00002" }), classification: cls(), channel: fanChannel, thumbnail: null });
     expect(r).toEqual({ status: "duplicate", ofYoutubeId: "NEWSET00001" });
   });
 
-  it("replaces a fan upload with the official upload of the same set", async () => {
-    const r = await store.saveSet(db, {
+  it("replaces a fan upload with the official upload of the same concert", async () => {
+    const r = await store.saveConcert(db, {
       video: ytVideo({ youtubeId: "OFFICIAL001", channelId: officialChannel.youtubeChannelId, channelTitle: officialChannel.name }),
       classification: cls(),
       channel: officialChannel,
       thumbnail: null,
     });
     expect(r.status).toBe("replaced");
-    expect(await db.set.findUnique({ where: { youtubeId: "NEWSET00001" } })).toBeNull();
-    expect((await db.set.findUniqueOrThrow({ where: { youtubeId: "OFFICIAL001" }, include: { channel: true } })).channel.isOfficial).toBe(true);
+    expect(await db.concert.findUnique({ where: { youtubeId: "NEWSET00001" } })).toBeNull();
+    expect((await db.concert.findUniqueOrThrow({ where: { youtubeId: "OFFICIAL001" }, include: { channel: true } })).channel.isOfficial).toBe(true);
   });
 
-  it("never replaces a hand-picked seed set", async () => {
+  it("never replaces a hand-picked seed concert", async () => {
     // Same artist, same venue, same year as the seed's NTO at Tour Saint-Jacques (Cercle, 2017).
-    const r = await store.saveSet(db, {
+    const r = await store.saveConcert(db, {
       video: ytVideo({ youtubeId: "COPYCAT0001", publishedAt: new Date("2017-10-01"), durationSeconds: 5140 }),
       classification: cls({ mainArtists: ["NTO"], venue: "Tour Saint-Jacques" }),
       channel: officialChannel,
@@ -117,16 +117,16 @@ describe.skipIf(!url)("saveSet (database)", () => {
   });
 
   it("creates new artists, collaborators and a unique slug", async () => {
-    const r = await store.saveSet(db, {
+    const r = await store.saveConcert(db, {
       video: ytVideo({ youtubeId: "NEWARTIST01", publishedAt: new Date("2024-01-01") }),
       classification: cls({ mainArtists: ["Brand New DJ"], collaborators: [{ name: "Guest Star", note: "as GS" }], venue: "Somewhere Open Air" }),
       channel: officialChannel,
       thumbnail: null,
     });
     expect(r.status).toBe("created");
-    const set = await db.set.findUniqueOrThrow({ where: { youtubeId: "NEWARTIST01" }, include: { credits: { include: { artist: true } } } });
-    expect(set.slug).toBe("brand-new-dj-somewhere-open-air-2024");
-    expect(set.credits.map((c) => [c.artist.name, c.role, c.creditNote])).toEqual([
+    const concert = await db.concert.findUniqueOrThrow({ where: { youtubeId: "NEWARTIST01" }, include: { credits: { include: { artist: true } } } });
+    expect(concert.slug).toBe("brand-new-dj-somewhere-open-air-2024");
+    expect(concert.credits.map((c) => [c.artist.name, c.role, c.creditNote])).toEqual([
       ["Brand New DJ", "MAIN", null],
       ["Guest Star", "WITH", "as GS"],
     ]);

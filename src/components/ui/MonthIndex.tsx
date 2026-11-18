@@ -2,11 +2,11 @@ import Link from "next/link";
 import { MONTH_NAMES, monthHref } from "@/lib/periods";
 
 /**
- * The twelve months of a year as one strip: short name, number of sets, and a 3px bar that
- * compares the months with each other. A month with sets is a link to its page; a month
- * without sets, or one that has not started, is muted text.
+ * The twelve months of a year as one strip: short name, number of concerts, and a 3px bar that
+ * compares the months with each other. A month with concerts is a link to its page; a month
+ * without concerts, or one that has not started, is muted text.
  *
- * @param counts  sets per month, keyed 1–12; months without sets may be missing
+ * @param counts  concerts per month, keyed 1–12; months without concerts may be missing
  * @param started the last month of this year that has begun (12 for a past year)
  */
 export function MonthIndex({
@@ -36,7 +36,7 @@ export function MonthIndex({
               ) : (
                 <>
                   {count}
-                  <span className="od-sr">{count === 1 ? " set" : " sets"}</span>
+                  <span className="od-sr">{count === 1 ? " concert" : " concerts"}</span>
                 </>
               )}
             </span>

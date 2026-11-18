@@ -1,7 +1,7 @@
 // YouTube rule 4 (CLAUDE.md): stored YouTube data must be refreshed or deleted at least every 30 days.
-// This job asks YouTube again about every set last refreshed 25+ days ago (all of them with --all),
-// updates title, views and length, and deletes sets that became private, deleted or non-embeddable.
-// It also records each set's channel ID and marks official artist channels for the collector.
+// This job asks YouTube again about every concert last refreshed 25+ days ago (all of them with --all),
+// updates title, views and length, and deletes concerts that became private, deleted or non-embeddable.
+// It also records each concert's channel ID and marks official artist channels for the collector.
 // Run with: npm run refresh [-- --all]
 import "dotenv/config";
 import { appendFile } from "node:fs/promises";
@@ -24,7 +24,7 @@ const stats = {
   updated: 0,
   deleted: [] as string[],
   artistChannels: 0,
-  /** Sets with a tracklist after this run, and sets whose tracklist was dropped because it disappeared. */
+  /** Concerts with a tracklist after this run, and concerts whose tracklist was dropped because it disappeared. */
   withTracklist: 0,
   tracklistsRemoved: 0,
   tracklistsNotChecked: 0,
@@ -37,24 +37,24 @@ const tracklistClaudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
 let tracklistQuotaLeft = true;
 
 try {
-  const sets = await db.set.findMany({
+  const concerts = await db.concert.findMany({
     include: { channel: true, credits: { where: { role: "MAIN" }, include: { artist: true } } },
   });
   // Due for the 30-day refresh, or never checked for a tracklist (e.g. the collector ran out of quota).
-  const due = sets.filter((s) => all || isDueForRefresh(s.ytRefreshedAt, now) || !s.tracklistCheckedAt);
+  const due = concerts.filter((s) => all || isDueForRefresh(s.ytRefreshedAt, now) || !s.tracklistCheckedAt);
   const facts = await yt.videos(due.map((s) => s.youtubeId));
 
-  for (const set of due) {
+  for (const concert of due) {
     stats.checked++;
-    const video = facts.get(set.youtubeId) ?? null;
+    const video = facts.get(concert.youtubeId) ?? null;
     const { action, reason } = refreshAction(video);
     if (action === "delete") {
-      await db.set.delete({ where: { id: set.id } });
-      stats.deleted.push(`${set.slug} (${reason})`);
+      await db.concert.delete({ where: { id: concert.id } });
+      stats.deleted.push(`${concert.slug} (${reason})`);
       continue;
     }
-    await db.set.update({
-      where: { id: set.id },
+    await db.concert.update({
+      where: { id: concert.id },
       data: {
         title: video!.title,
         viewCount: video!.viewCount,
@@ -72,9 +72,9 @@ try {
     if (tracklistQuotaLeft) {
       try {
         const found = await lookUpTracklist(yt, video!, { extractor: tracklistExtractor, claudeMax: tracklistClaudeMax });
-        await db.set.update({ where: { id: set.id }, data: tracklistFields(found, now) });
+        await db.concert.update({ where: { id: concert.id }, data: tracklistFields(found, now) });
         if (found.tracks) stats.withTracklist++;
-        else if (set.tracklist) stats.tracklistsRemoved++;
+        else if (concert.tracklist) stats.tracklistsRemoved++;
       } catch (error) {
         if (!(error instanceof QuotaBudgetExceeded)) throw error;
         tracklistQuotaLeft = false;
@@ -82,15 +82,15 @@ try {
     }
     if (!tracklistQuotaLeft) stats.tracklistsNotChecked++;
 
-    // Fill in the channel's YouTube ID (seed sets were imported without it).
-    if (!set.channel.youtubeChannelId && video!.channelId) {
+    // Fill in the channel's YouTube ID (seed concerts were imported without it).
+    if (!concert.channel.youtubeChannelId && video!.channelId) {
       const other = await db.channel.findUnique({ where: { youtubeChannelId: video!.channelId } });
-      if (other) await db.set.update({ where: { id: set.id }, data: { channelId: other.id } });
-      else await db.channel.update({ where: { id: set.channel.id }, data: { youtubeChannelId: video!.channelId } });
+      if (other) await db.concert.update({ where: { id: concert.id }, data: { channelId: other.id } });
+      else await db.channel.update({ where: { id: concert.channel.id }, data: { youtubeChannelId: video!.channelId } });
     }
-    // A channel named like the set's main artist is that artist's official channel: crawl it too.
+    // A channel named like the concert's main artist is that artist's official channel: crawl it too.
     const channel = await db.channel.findUnique({ where: { youtubeChannelId: video!.channelId } });
-    const isArtistChannel = set.credits.some((c) => slugify(c.artist.name) === slugify(video!.channelTitle));
+    const isArtistChannel = concert.credits.some((c) => slugify(c.artist.name) === slugify(video!.channelTitle));
     if (channel && isArtistChannel && channel.isOfficial && channel.kind !== "ARTIST") {
       const yc = await yt.channel({ id: video!.channelId });
       if (yc) {
@@ -113,6 +113,6 @@ console.log(JSON.stringify(stats, null, 2));
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(
     process.env.GITHUB_STEP_SUMMARY,
-    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · deleted: ${stats.deleted.length}\n${stats.deleted.map((d) => `  - ${d}`).join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Tracklists: ${stats.withTracklist} sets have one · removed (gone from YouTube): ${stats.tracklistsRemoved} · not checked (quota): ${stats.tracklistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
+    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · deleted: ${stats.deleted.length}\n${stats.deleted.map((d) => `  - ${d}`).join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Tracklists: ${stats.withTracklist} concerts have one · removed (gone from YouTube): ${stats.tracklistsRemoved} · not checked (quota): ${stats.tracklistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
   );
 }

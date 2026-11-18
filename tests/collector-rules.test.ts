@@ -7,14 +7,14 @@ import {
   genresInText,
   isDueForRefresh,
   isElectronicGenreList,
-  isSameSet,
+  isSameConcert,
   parseIsoDuration,
   refreshAction,
   resolveDuplicate,
-  titleSaysNotASet,
+  titleSaysNotAConcert,
   worthRemembering,
   type DecisionInput,
-  type SetIdentity,
+  type ConcertIdentity,
   type VideoFacts,
 } from "../src/lib/collector/rules";
 import { toVideo } from "../src/lib/collector/youtube";
@@ -53,10 +53,10 @@ describe("parseIsoDuration", () => {
 describe("titles and long videos (saving calls and tokens)", () => {
   it("leaves out trailers, aftermovies, interviews and documentaries without asking the classifier", () => {
     for (const t of ["Tomorrowland 2024 | Official Aftermovie", "Awakenings Trailer", "Interview with Charlotte de Witte", "Afterlife – The Documentary", "Weekend recap", "Teaser: NTO live"])
-      expect(titleSaysNotASet(t), t).toBe(true);
-    for (const t of ["Stephan Bodzin live at Cercle", "Anyma presents Afterlife Tulum (Full Set)", "Recapitulation live set", "Moviemaker b2b DJ"])
-      expect(titleSaysNotASet(t), t).toBe(false);
-    expect(checkRules(video({ title: "Time Warp 2024 Aftermovie" }), config)).toEqual(["not-a-set-title"]);
+      expect(titleSaysNotAConcert(t), t).toBe(true);
+    for (const t of ["Stephan Bodzin live at Cercle", "Anyma presents Afterlife Tulum (Full Concert)", "Recapitulation live concert", "Moviemaker b2b DJ"])
+      expect(titleSaysNotAConcert(t), t).toBe(false);
+    expect(checkRules(video({ title: "Time Warp 2024 Aftermovie" }), config)).toEqual(["not-a-concert-title"]);
   });
 
   it("remembers long videos kept out only by things that can change", () => {
@@ -126,7 +126,7 @@ describe("genresInText", () => {
   });
   it("does not count genres that are not on our list", () => {
     expect(genresInText("Live at the opera house")).toEqual([]);
-    expect(genresInText("Classic house music set")).toEqual([]);
+    expect(genresInText("Classic house music concert")).toEqual([]);
     expect(genresInText("Psytrance and hard techno night")).toEqual([]);
   });
 });
@@ -145,14 +145,14 @@ describe("isElectronicGenreList (MusicBrainz)", () => {
 describe("decide", () => {
   const base: DecisionInput = {
     channelKind: "ELECTRONIC_ONLY",
-    classification: { isFullSet: true, isElectronic: true, confidence: 0.9, genres: ["Melodic Techno"], mainArtists: ["NTO"] },
+    classification: { isFullConcert: true, isElectronic: true, confidence: 0.9, genres: ["Melodic Techno"], mainArtists: ["NTO"] },
     textGenres: [],
     artistGenres: null,
   };
   const with_ = (patch: Partial<DecisionInput>, cls: Partial<DecisionInput["classification"]> = {}) =>
     decide({ ...base, ...patch, classification: { ...base.classification, ...cls } }, config);
 
-  it("accepts a confident electronic set on an electronic-only channel", () => {
+  it("accepts a confident electronic concert on an electronic-only channel", () => {
     expect(with_({}).verdict).toBe("ACCEPTED");
     expect(with_({ channelKind: "ARTIST" }).verdict).toBe("ACCEPTED");
   });
@@ -169,12 +169,12 @@ describe("decide", () => {
     const d = with_({ channelKind: "MIXED", textGenres: ["Techno"], artistGenres: ["techno"] }, { confidence: 0.5 });
     expect(d.verdict).toBe("UNCERTAIN");
   });
-  it("rejects clips and non-electronic sets only when the classifier is sure", () => {
-    expect(with_({}, { isFullSet: false }).verdict).toBe("NOT_A_SET");
-    expect(with_({}, { isFullSet: false, confidence: 0.4 }).verdict).toBe("UNCERTAIN");
+  it("rejects clips and non-electronic concerts only when the classifier is sure", () => {
+    expect(with_({}, { isFullConcert: false }).verdict).toBe("NOT_A_SET");
+    expect(with_({}, { isFullConcert: false, confidence: 0.4 }).verdict).toBe("UNCERTAIN");
     expect(with_({}, { isElectronic: false }).verdict).toBe("NOT_ELECTRONIC");
   });
-  it("keeps out sets with no genre of ours or no identified artist", () => {
+  it("keeps out concerts with no genre of ours or no identified artist", () => {
     expect(with_({}, { genres: [] }).verdict).toBe("UNCERTAIN");
     expect(with_({}, { mainArtists: [] }).verdict).toBe("UNCERTAIN");
   });
@@ -185,7 +185,7 @@ describe("decide", () => {
 });
 
 describe("de-duplication", () => {
-  const official: SetIdentity = {
+  const official: ConcertIdentity = {
     youtubeId: "OFFICIAL000",
     artistSlugs: ["nto"],
     venueName: "Tour Saint-Jacques",
@@ -194,32 +194,32 @@ describe("de-duplication", () => {
     isOfficial: true,
     channelId: "UCcercle",
   };
-  it("same artist, same venue, same year is the same set", () => {
-    expect(isSameSet(official, { ...official, youtubeId: "FAN00000000", venueName: "Cercle - Tour Saint-Jacques", publishedAt: new Date("2018-01-10"), durationSeconds: 5000, isOfficial: false, channelId: "UCfan" })).toBe(true);
-    expect(isSameSet(official, { ...official, youtubeId: "SAME0000000", publishedAt: new Date("2017-10-20") })).toBe(true);
+  it("same artist, same venue, same year is the same concert", () => {
+    expect(isSameConcert(official, { ...official, youtubeId: "FAN00000000", venueName: "Cercle - Tour Saint-Jacques", publishedAt: new Date("2018-01-10"), durationSeconds: 5000, isOfficial: false, channelId: "UCfan" })).toBe(true);
+    expect(isSameConcert(official, { ...official, youtubeId: "SAME0000000", publishedAt: new Date("2017-10-20") })).toBe(true);
   });
-  it("a re-upload with the same length is the same set even if the venue is not named", () => {
-    expect(isSameSet(official, { ...official, youtubeId: "FAN00000000", venueName: null, publishedAt: new Date("2019-03-01"), durationSeconds: 5180, channelId: "UCfan" })).toBe(true);
+  it("a re-upload with the same length is the same concert even if the venue is not named", () => {
+    expect(isSameConcert(official, { ...official, youtubeId: "FAN00000000", venueName: null, publishedAt: new Date("2019-03-01"), durationSeconds: 5180, channelId: "UCfan" })).toBe(true);
   });
   it("the same festival channel a year later is a new show, even with the same slot length", () => {
     const tml = { ...official, artistSlugs: ["swedish-house-mafia"], venueName: "Tomorrowland", publishedAt: new Date("2024-08-01"), durationSeconds: 3600, channelId: "UCtml" };
-    expect(isSameSet(tml, { ...tml, youtubeId: "TML20250000", publishedAt: new Date("2025-08-05"), durationSeconds: 3620 })).toBe(false);
-    expect(isSameSet(tml, { ...tml, youtubeId: "TWORLD00000", venueName: "TomorrowWorld", publishedAt: new Date("2023-10-01"), durationSeconds: 3590 })).toBe(false);
+    expect(isSameConcert(tml, { ...tml, youtubeId: "TML20250000", publishedAt: new Date("2025-08-05"), durationSeconds: 3620 })).toBe(false);
+    expect(isSameConcert(tml, { ...tml, youtubeId: "TWORLD00000", venueName: "TomorrowWorld", publishedAt: new Date("2023-10-01"), durationSeconds: 3590 })).toBe(false);
   });
-  it("a solo set and a b2b, or weekend 1 and weekend 2, are different shows; the same recording posted twice is one", () => {
+  it("a solo concert and a b2b, or weekend 1 and weekend 2, are different shows; the same recording posted twice is one", () => {
     const solo = { ...official, artistSlugs: ["steve-aoki"], venueName: "Tomorrowland", publishedAt: new Date("2019-07-25"), durationSeconds: 3600, channelId: "UCtml" };
-    expect(isSameSet(solo, { ...solo, youtubeId: "B2B00000000", artistSlugs: ["dimitri-vegas-and-like-mike", "steve-aoki"], publishedAt: new Date("2019-07-28") })).toBe(false);
-    expect(isSameSet(solo, { ...solo, youtubeId: "WEEKEND2000", publishedAt: new Date("2019-08-02"), durationSeconds: 3500 })).toBe(false);
-    expect(isSameSet(solo, { ...solo, youtubeId: "HQVERSION00", publishedAt: new Date("2019-08-02"), durationSeconds: 3610 })).toBe(true);
+    expect(isSameConcert(solo, { ...solo, youtubeId: "B2B00000000", artistSlugs: ["dimitri-vegas-and-like-mike", "steve-aoki"], publishedAt: new Date("2019-07-28") })).toBe(false);
+    expect(isSameConcert(solo, { ...solo, youtubeId: "WEEKEND2000", publishedAt: new Date("2019-08-02"), durationSeconds: 3500 })).toBe(false);
+    expect(isSameConcert(solo, { ...solo, youtubeId: "HQVERSION00", publishedAt: new Date("2019-08-02"), durationSeconds: 3610 })).toBe(true);
   });
   it("two shows at different venues are different even with the same 2-hour length", () => {
     const tml = { ...official, artistSlugs: ["solomun"], venueName: "Tomorrowland", publishedAt: new Date("2018-08-01"), durationSeconds: 7200, channelId: "UCtml" };
-    expect(isSameSet(tml, { ...tml, youtubeId: "CERCLE00000", venueName: "Chambord", publishedAt: new Date("2019-05-17"), durationSeconds: 7210, channelId: "UCcercle" })).toBe(false);
+    expect(isSameConcert(tml, { ...tml, youtubeId: "CERCLE00000", venueName: "Chambord", publishedAt: new Date("2019-05-17"), durationSeconds: 7210, channelId: "UCcercle" })).toBe(false);
   });
-  it("different artists, or the same artist at another show, are different sets", () => {
-    expect(isSameSet(official, { ...official, youtubeId: "OTHER000000", artistSlugs: ["marsh"] })).toBe(false);
-    expect(isSameSet(official, { ...official, youtubeId: "OTHER000000", venueName: "Spectra Festival", durationSeconds: 7416 })).toBe(false);
-    expect(isSameSet(official, { ...official, youtubeId: "OTHER000000", publishedAt: new Date("2021-01-01"), durationSeconds: 3000 })).toBe(false);
+  it("different artists, or the same artist at another show, are different concerts", () => {
+    expect(isSameConcert(official, { ...official, youtubeId: "OTHER000000", artistSlugs: ["marsh"] })).toBe(false);
+    expect(isSameConcert(official, { ...official, youtubeId: "OTHER000000", venueName: "Spectra Festival", durationSeconds: 7416 })).toBe(false);
+    expect(isSameConcert(official, { ...official, youtubeId: "OTHER000000", publishedAt: new Date("2021-01-01"), durationSeconds: 3000 })).toBe(false);
   });
   it("keeps the official upload", () => {
     const fan = { ...official, youtubeId: "FAN00000000", isOfficial: false };
@@ -230,7 +230,7 @@ describe("de-duplication", () => {
 });
 
 describe("refresh (30-day rule)", () => {
-  it("deletes sets YouTube no longer allows us to show", () => {
+  it("deletes concerts YouTube no longer allows us to show", () => {
     expect(refreshAction(null).action).toBe("delete");
     expect(refreshAction({ embeddable: true, privacyStatus: "private" }).action).toBe("delete");
     expect(refreshAction({ embeddable: false, privacyStatus: "public" }).action).toBe("delete");
@@ -260,7 +260,7 @@ describe("YouTubeClient error handling", () => {
     expect((await yt.videos(["AAAAAAAAAAA"])).size).toBe(0);
     expect(yt.skippedBatches).toBe(1);
   });
-  it("in refresh mode, stops on errors so no set is deleted by mistake", async () => {
+  it("in refresh mode, stops on errors so no concert is deleted by mistake", async () => {
     const { YouTubeClient } = await import("../src/lib/collector/youtube");
     const fetchFn = (async () => new Response("down", { status: 503 })) as typeof fetch;
     const yt = new YouTubeClient("key", 100, fetchFn, 1);
@@ -319,16 +319,16 @@ describe("owner-approved artists", () => {
     const { GENRES, ARTIST_ONLY_GENRES } = await import("../src/lib/catalogue");
     for (const g of ARTIST_ONLY_GENRES) expect(GENRES as readonly string[]).not.toContain(g);
   });
-  it("accepts a full set by an approved artist on any channel, but never a clip", () => {
+  it("accepts a full concert by an approved artist on any channel, but never a clip", () => {
     const base = {
       channelKind: "MIXED" as const,
       ownerApproved: true,
-      classification: { isFullSet: true, isElectronic: false, confidence: 0.5, genres: ["Tech House"], mainArtists: ["Honey Dijon"] },
+      classification: { isFullConcert: true, isElectronic: false, confidence: 0.5, genres: ["Tech House"], mainArtists: ["Honey Dijon"] },
       textGenres: [],
       artistGenres: null,
     };
     expect(decide(base, config).verdict).toBe("ACCEPTED");
-    expect(decide({ ...base, classification: { ...base.classification, isFullSet: false, confidence: 0.9 } }, config).verdict).toBe("NOT_A_SET");
+    expect(decide({ ...base, classification: { ...base.classification, isFullConcert: false, confidence: 0.9 } }, config).verdict).toBe("NOT_A_SET");
     expect(decide({ ...base, classification: { ...base.classification, genres: [] } }, config).verdict).toBe("UNCERTAIN");
   });
 });
@@ -337,7 +337,7 @@ describe("artist profiles", () => {
   it("reads the JSON answer even with text around it", async () => {
     const { parseProfile } = await import("../src/lib/collector/profiles");
     const p = parseProfile(
-      'Here it is: {"origin":"Antwerp, Belgium","bornYear":1990,"style":"techno DJ","bio":"Belgian techno DJ and producer known for fast, hard-hitting sets and her own label.","confident":true,"sources":["https://example.org"]} done',
+      'Here it is: {"origin":"Antwerp, Belgium","bornYear":1990,"style":"techno DJ","bio":"Belgian techno DJ and producer known for fast, hard-hitting concerts and her own label.","confident":true,"sources":["https://example.org"]} done',
     );
     expect(p.origin).toBe("Antwerp, Belgium");
     expect(p.bornYear).toBe(1990);

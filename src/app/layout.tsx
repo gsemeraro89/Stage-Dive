@@ -21,15 +21,15 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} — free electronic DJ sets`, template: `%s — ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} — free electronic DJ concerts`, template: `%s — ${SITE_NAME}` },
   description:
-    "Full-length electronic DJ sets and live acts from YouTube, organised by artist, festival, venue, genre and setting. Press play once and keep listening.",
+    "Full-length electronic DJ concerts and live acts from YouTube, organised by artist, festival, venue, genre and setting. Press play once and keep listening.",
 };
 
 export const viewport: Viewport = { themeColor: "#0B0B0F", colorScheme: "dark" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Months and years with sets, for the menu's drop-down lists (cached, see src/lib/memo.ts).
+  // Months and years with concerts, for the menu's drop-down lists (cached, see src/lib/memo.ts).
   const periods = await periodIndex();
   return (
     <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               Full<span>DJSet</span>
             </Link>
             <NavLinks periods={periods} />
-            <Form action="/sets" role="search" className="od-search" data-od="header-search">
+            <Form action="/concerts" role="search" className="od-search" data-od="header-search">
               <label>
                 <span className="meta">Search</span>
                 <input type="search" name="q" placeholder="NTO, Cercle, Monegros" maxLength={80} />

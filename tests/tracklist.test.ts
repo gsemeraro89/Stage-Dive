@@ -126,7 +126,7 @@ describe("parseTracklist", () => {
     const backwards = "00:00 A - 1\n20:00 B - 2\n10:00 C - 3\n30:00 D - 4\n40:00 E - 5";
     expect(parseTracklist(backwards, HOUR)).toEqual({ kind: "unclear", reason: "times go backwards" });
     const tooLong = "00:00 A - 1\n20:00 B - 2\n40:00 C - 3\n1:30:00 D - 4\n2:00:00 E - 5";
-    expect(parseTracklist(tooLong, HOUR)).toEqual({ kind: "unclear", reason: "times run past the end of the set" });
+    expect(parseTracklist(tooLong, HOUR)).toEqual({ kind: "unclear", reason: "times run past the end of the concert" });
   });
 
   it("needs at least five tracks", () => {
@@ -173,7 +173,7 @@ describe("choosing a source", () => {
 
   it("returns nothing, and lists the unclear texts, when no comment is a tracklist", () => {
     const comments = [
-      { text: "What a set!!", likeCount: 1000, byChannel: false },
+      { text: "What a concert!!", likeCount: 1000, byChannel: false },
       { text: "00:00 Intro\n10:00 a\n20:00 b\n30:00 c\n40:00 d", likeCount: 5, byChannel: false },
     ];
     const choice = fromComments(comments, HOUR);
@@ -256,7 +256,7 @@ describe("lookUpTracklist", async () => {
   const video = (description: string) =>
     ({
       youtubeId: "VIDEO000001",
-      title: "Set",
+      title: "Concert",
       description,
       tags: [],
       channelId: "UCchannel",
@@ -339,7 +339,7 @@ describe("lookUpTracklist", async () => {
   });
 });
 
-describe("tracklist on the set page", async () => {
+describe("tracklist on the concert page", async () => {
   const { readTracklist, linkArtists, artistSlugsIn, sourceNote } = await import("../src/lib/tracklist/view");
 
   it("reads stored tracks and skips anything malformed", () => {
@@ -387,7 +387,7 @@ describe("fixes from the store check (13 Nov 2026)", () => {
     ]);
   });
 
-  it("leaves ordinary lists alone, even when the set's artist plays many of their own tracks", () => {
+  it("leaves ordinary lists alone, even when the concert's artist plays many of their own tracks", () => {
     const tracks = [0, 1, 2, 3, 4].map((i) => ({ time: i * 60, artist: "The Blaze", title: `Song ${i}` }));
     expect(fixSwapped(tracks)).toEqual(tracks);
   });

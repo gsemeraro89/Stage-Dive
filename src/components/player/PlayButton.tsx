@@ -3,7 +3,7 @@
 import type { Track } from "@/lib/player-types";
 import { usePlayer } from "./PlayerProvider";
 
-/** A button that plays a set in the site's player. Unstyled: the designer gives it its look. */
+/** A button that plays a concert in the site's player. Unstyled: the designer gives it its look. */
 export function PlayButton({
   track,
   children,

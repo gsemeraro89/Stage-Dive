@@ -9,7 +9,7 @@ import { importSeed } from "../src/lib/seed/import";
 import { normalizeSeed, type SeedFile } from "../src/lib/seed/normalize";
 
 const url = process.env.TEST_DATABASE_URL;
-const seed = normalizeSeed(JSON.parse(readFileSync("data/seed-sets.json", "utf8")) as SeedFile);
+const seed = normalizeSeed(JSON.parse(readFileSync("data/seed-concerts.json", "utf8")) as SeedFile);
 
 describe.skipIf(!url)("importSeed (database)", () => {
   const db = url ? createPrismaClient(url) : null!;
@@ -17,19 +17,19 @@ describe.skipIf(!url)("importSeed (database)", () => {
   beforeAll(async () => {
     execSync("npx prisma migrate deploy", { env: { ...process.env, DATABASE_URL: url }, stdio: "ignore" });
     await db.$executeRawUnsafe(
-      `TRUNCATE plays, review_queue, set_genres, set_artists, sets, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
+      `TRUNCATE plays, review_queue, concert_genres, concert_artists, concerts, artists, venues, genres, settings, channels RESTART IDENTITY CASCADE`,
     );
   });
   afterAll(async () => db.$disconnect());
 
-  it("imports every set with its links", async () => {
+  it("imports every concert with its links", async () => {
     await importSeed(db, seed);
-    expect(await db.set.count()).toBe(23);
+    expect(await db.concert.count()).toBe(23);
     expect(await db.artist.count()).toBe(seed.artists.length);
     expect(await db.genre.count()).toBe(9);
     expect(await db.setting.count()).toBe(5);
 
-    const sinners = await db.set.findUniqueOrThrow({
+    const sinners = await db.concert.findUniqueOrThrow({
       where: { youtubeId: "b_fKzTdMViQ" },
       include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, setting: true },
     });
@@ -48,15 +48,15 @@ describe.skipIf(!url)("importSeed (database)", () => {
 
   it("can run again without creating duplicates", async () => {
     await importSeed(db, seed);
-    expect(await db.set.count()).toBe(23);
-    expect(await db.setArtist.count()).toBe(seed.sets.reduce((n, s) => n + s.credits.length, 0));
-    expect(await db.setGenre.count()).toBe(seed.sets.reduce((n, s) => n + s.genres.length, 0));
+    expect(await db.concert.count()).toBe(23);
+    expect(await db.concertArtist.count()).toBe(seed.concerts.reduce((n, s) => n + s.credits.length, 0));
+    expect(await db.concertGenre.count()).toBe(seed.concerts.reduce((n, s) => n + s.genres.length, 0));
   });
 
   it("keeps the owner's edits to status on a re-run", async () => {
-    await db.set.update({ where: { youtubeId: "iybJn1SyXB0" }, data: { status: "HIDDEN" } });
+    await db.concert.update({ where: { youtubeId: "iybJn1SyXB0" }, data: { status: "HIDDEN" } });
     await importSeed(db, seed);
-    const set = await db.set.findUniqueOrThrow({ where: { youtubeId: "iybJn1SyXB0" } });
-    expect(set.status).toBe("HIDDEN");
+    const concert = await db.concert.findUniqueOrThrow({ where: { youtubeId: "iybJn1SyXB0" } });
+    expect(concert.status).toBe("HIDDEN");
   });
 });

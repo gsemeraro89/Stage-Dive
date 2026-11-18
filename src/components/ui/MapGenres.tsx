@@ -13,7 +13,7 @@ export function MapGenres({
   clearHref,
 }: {
   genres: { slug: string; name: string; href: string; on: boolean }[];
-  /** Set when at least one genre is on. */
+  /** Concert when at least one genre is on. */
   clearHref?: string;
 }) {
   const [open, setOpen] = useState(false);

@@ -1,6 +1,6 @@
 // Finds the tracklist of one video: description first, then its most relevant comments, then
 // (optionally) Claude for a text the rules could not read. Used by the collector when it publishes
-// a set, by the refresh job (YouTube's 30-day rule) and by the one-off fill of existing sets.
+// a concert, by the refresh job (YouTube's 30-day rule) and by the one-off fill of existing concerts.
 
 import { Prisma } from "../../generated/prisma/client";
 import { QuotaBudgetExceeded, type YouTubeClient, type YouTubeVideo } from "../collector/youtube";

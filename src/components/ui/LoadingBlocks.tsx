@@ -1,5 +1,5 @@
 // Loading placeholder: the section rule and flat blocks in the page grid (DESIGN.md section 8).
-// Not wired as app/loading.tsx on purpose: a root loading file makes missing set, artist, venue and
+// Not wired as app/loading.tsx on purpose: a root loading file makes missing concert, artist, venue and
 // genre pages answer 200 instead of 404. Use it inside a <Suspense> or a route group that has no 404.
 export function LoadingBlocks() {
   return (

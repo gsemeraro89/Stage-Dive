@@ -10,7 +10,7 @@ const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", Number(process.e
 try {
   const stats = await refreshArtistImages(db, { avatars: (refs) => yt.channelAvatars(refs), channelFromMusicBrainz: musicBrainzChannelFinder(db) });
   console.log(JSON.stringify({ ...stats, youtubeUnits: yt.unitsUsed }, null, 2));
-  // Then choose each artist's cover among their set thumbnails (Claude Haiku, once per artist).
+  // Then choose each artist's cover among their concert thumbnails (Claude Haiku, once per artist).
   const chooser = new CoverChooser();
   const covers = await chooseCovers(db, chooser.choose);
   console.log(JSON.stringify({ covers, costUsd: Math.round(chooser.estimatedCostUsd() * 1000) / 1000 }, null, 2));

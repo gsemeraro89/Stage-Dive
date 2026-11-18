@@ -1,7 +1,7 @@
-import type { SetView } from "./queries";
+import type { ConcertView } from "./queries";
 import type { ThumbnailSources } from "./thumbnails";
 
-/** The little a player needs to know about a set. */
+/** The little a player needs to know about a concert. */
 export interface Track {
   youtubeId: string;
   slug: string;
@@ -11,14 +11,14 @@ export interface Track {
   thumbnail: string;
 }
 
-export function toTrack(set: SetView): Track {
+export function toTrack(concert: ConcertView): Track {
   return {
-    youtubeId: set.youtubeId,
-    slug: set.slug,
-    title: set.title,
-    credits: set.credits,
-    durationSeconds: set.durationSeconds,
-    thumbnail: set.thumbnail.src,
+    youtubeId: concert.youtubeId,
+    slug: concert.slug,
+    title: concert.title,
+    credits: concert.credits,
+    durationSeconds: concert.durationSeconds,
+    thumbnail: concert.thumbnail.src,
   };
 }
 
@@ -37,7 +37,7 @@ export interface RecommendedArtist {
   bornYear: number | null;
   style: string | null;
   genres: { slug: string; name: string }[];
-  sets: number;
+  concerts: number;
   cover: { youtubeId: string; thumbnail: ThumbnailSources; portrait: boolean } | null;
   mostWatched: RecommendedTrack;
   latest: RecommendedTrack;

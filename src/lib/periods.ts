@@ -1,5 +1,5 @@
 // Calendar periods for "This month" and the year pages (owner, 17 Nov 2026, BRIEF 4.10).
-// Months and years follow the YouTube upload date (sets.published_at), in UTC.
+// Months and years follow the YouTube upload date (concerts.published_at), in UTC.
 
 export const MONTH_NAMES = [
   "January",
@@ -52,7 +52,7 @@ export function monthSlug(month: number): string {
 
 /** URL of a month page. */
 export function monthHref({ year, month }: Month): string {
-  return `/sets/year/${year}/${monthSlug(month)}`;
+  return `/concerts/year/${year}/${monthSlug(month)}`;
 }
 
 /** The month before. */
@@ -89,9 +89,9 @@ export function shortMonthLabel({ year, month }: Month): string {
 }
 
 export interface PeriodIndex {
-  /** Months that have sets, newest first, at most `maxMonths`. */
+  /** Months that have concerts, newest first, at most `maxMonths`. */
   months: (Month & { count: number })[];
-  /** Years that have sets, newest first. */
+  /** Years that have concerts, newest first. */
   years: { year: number; count: number }[];
 }
 

@@ -3,18 +3,18 @@ import { describe, expect, it } from "vitest";
 import { normalizeSetting } from "../src/lib/catalogue";
 import { formatCredits, formatDate, formatDuration } from "../src/lib/format";
 import {
-  buildSetSlugs,
+  buildConcertSlugs,
   normalizeSeed,
   parseCollaborator,
   splitGenres,
   type SeedFile,
-  type SeedSet,
+  type SeedConcert,
 } from "../src/lib/seed/normalize";
 import { slugify } from "../src/lib/slug";
 
-const seedFile = JSON.parse(readFileSync("data/seed-sets.json", "utf8")) as SeedFile;
+const seedFile = JSON.parse(readFileSync("data/seed-concerts.json", "utf8")) as SeedFile;
 
-function makeSet(overrides: Partial<SeedSet> = {}): SeedSet {
+function makeConcert(overrides: Partial<SeedConcert> = {}): SeedConcert {
   return {
     id: "AAAAAAAAAAA",
     artist: "Test Artist",
@@ -28,7 +28,7 @@ function makeSet(overrides: Partial<SeedSet> = {}): SeedSet {
     city: "Barcelona",
     country: "Spain",
     setting: "Club",
-    about: "A set.",
+    about: "A concert.",
     youtube_url: "https://www.youtube.com/watch?v=AAAAAAAAAAA",
     checked_embeddable_on: "2026-11-11",
     ...overrides,
@@ -79,38 +79,38 @@ describe("splitGenres", () => {
   });
 });
 
-describe("buildSetSlugs", () => {
+describe("buildConcertSlugs", () => {
   it("builds artist-venue-year slugs", () => {
-    const slugs = buildSetSlugs([{ id: "2is2o6_Hxe0", artist: "NTO", venue: "Spectra Festival", date: "2026-09-30" }]);
+    const slugs = buildConcertSlugs([{ id: "2is2o6_Hxe0", artist: "NTO", venue: "Spectra Festival", date: "2026-09-30" }]);
     expect(slugs.get("2is2o6_Hxe0")).toBe("nto-spectra-festival-2026");
   });
-  it("adds the YouTube ID to every set in a clash, whatever the order", () => {
+  it("adds the YouTube ID to every concert in a clash, whatever the order", () => {
     const a = { id: "AAAAAAAAAAA", artist: "X", venue: "Y", date: "2020-01-01" };
     const b = { id: "BBBBBBBBBBB", artist: "X", venue: "Y", date: "2020-06-01" };
-    const forward = buildSetSlugs([a, b]);
-    const backward = buildSetSlugs([b, a]);
+    const forward = buildConcertSlugs([a, b]);
+    const backward = buildConcertSlugs([b, a]);
     expect(forward.get(a.id)).toBe("x-y-2020-aaaaaaaaaaa");
     expect(forward.get(b.id)).toBe("x-y-2020-bbbbbbbbbbb");
     expect(backward).toEqual(forward);
   });
 });
 
-describe("normalizeSeed on data/seed-sets.json", () => {
+describe("normalizeSeed on data/seed-concerts.json", () => {
   const seed = normalizeSeed(seedFile);
 
-  it("keeps all 23 sets with unique IDs and slugs", () => {
-    expect(seed.sets).toHaveLength(23);
-    expect(new Set(seed.sets.map((s) => s.youtubeId)).size).toBe(23);
-    expect(new Set(seed.sets.map((s) => s.slug)).size).toBe(23);
+  it("keeps all 23 concerts with unique IDs and slugs", () => {
+    expect(seed.concerts).toHaveLength(23);
+    expect(new Set(seed.concerts.map((s) => s.youtubeId)).size).toBe(23);
+    expect(new Set(seed.concerts.map((s) => s.slug)).size).toBe(23);
   });
 
   it("only uses the five approved settings", () => {
-    const used = new Set(seed.sets.map((s) => s.setting));
+    const used = new Set(seed.concerts.map((s) => s.setting));
     expect([...used].every((s) => ["Festival", "Club", "Special location", "Studio-Session", "Livestream"].includes(s))).toBe(true);
   });
 
   it("credits collaborations", () => {
-    const sinners = seed.sets.find((s) => s.youtubeId === "b_fKzTdMViQ")!;
+    const sinners = seed.concerts.find((s) => s.youtubeId === "b_fKzTdMViQ")!;
     expect(sinners.credits).toEqual([
       { artistSlug: "nto", role: "MAIN", creditNote: null, position: 0 },
       { artistSlug: "joachim-pastor", role: "WITH", creditNote: "as Sinners", position: 1 },
@@ -131,7 +131,7 @@ describe("normalizeSeed on data/seed-sets.json", () => {
   });
 
   it("turns empty city/country into null", () => {
-    const pamart = seed.sets.find((s) => s.youtubeId === "0QnMv0bRyk0")!;
+    const pamart = seed.concerts.find((s) => s.youtubeId === "0QnMv0bRyk0")!;
     expect(pamart.city).toBeNull();
     expect(pamart.country).toBeNull();
   });
@@ -139,16 +139,16 @@ describe("normalizeSeed on data/seed-sets.json", () => {
 
 describe("normalizeSeed validation", () => {
   it("rejects a duplicate YouTube ID", () => {
-    expect(() => normalizeSeed({ sets: [makeSet(), makeSet()], artists: {} })).toThrow(/appears twice/);
+    expect(() => normalizeSeed({ concerts: [makeConcert(), makeConcert()], artists: {} })).toThrow(/appears twice/);
   });
   it("rejects a malformed YouTube ID", () => {
-    expect(() => normalizeSeed({ sets: [makeSet({ id: "short" })], artists: {} })).toThrow(/Invalid YouTube ID/);
+    expect(() => normalizeSeed({ concerts: [makeConcert({ id: "short" })], artists: {} })).toThrow(/Invalid YouTube ID/);
   });
   it("rejects an impossible date", () => {
-    expect(() => normalizeSeed({ sets: [makeSet({ date: "2025-02-30" })], artists: {} })).toThrow(/not a real date/);
+    expect(() => normalizeSeed({ concerts: [makeConcert({ date: "2025-02-30" })], artists: {} })).toThrow(/not a real date/);
   });
   it("rejects a zero duration", () => {
-    expect(() => normalizeSeed({ sets: [makeSet({ secs: 0 })], artists: {} })).toThrow(/invalid duration/);
+    expect(() => normalizeSeed({ concerts: [makeConcert({ secs: 0 })], artists: {} })).toThrow(/invalid duration/);
   });
 });
 
