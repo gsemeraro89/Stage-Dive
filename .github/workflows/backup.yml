@@ -17,6 +17,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          # A secret pasted with a trailing line break or spaces breaks pg_dump ("invalid channel_binding
+          # value"); strip whitespace from the address first.
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '[:space:]')"
+          export DATABASE_URL
           docker run --rm -e DATABASE_URL postgres:18 \
             sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > stagedive.dump
           test -s stagedive.dump
