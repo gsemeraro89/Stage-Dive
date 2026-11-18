@@ -42,20 +42,25 @@ export function thumbnailSources(youtubeId: string, stored: string | null | unde
 /**
  * Ask YouTube's image server which sizes exist and return the largest one.
  * A missing size answers 404 (with the 120x90 placeholder as its body), so the status is enough.
- * Returns null when the answer is unknown (network trouble), so nothing wrong gets stored.
+ * Returns null when the answer is unknown (network trouble or no answer within `timeoutMs`),
+ * so nothing wrong gets stored.
  */
 export async function findBestThumbnail(
   youtubeId: string,
   fetchFn: typeof fetch = fetch,
+  timeoutMs = 5_000,
 ): Promise<ThumbnailName | null> {
   for (const size of THUMBNAIL_SIZES) {
     if (size.name === "hqdefault") break;
     try {
-      const res = await fetchFn(thumbnailUrl(youtubeId, size.name), { method: "HEAD" });
+      const res = await fetchFn(thumbnailUrl(youtubeId, size.name), {
+        method: "HEAD",
+        signal: AbortSignal.timeout(timeoutMs),
+      });
       if (res.ok) return size.name;
       if (res.status !== 404) return null; // blocked or server trouble: unknown, try again later
     } catch {
-      return null; // network problem: unknown, try again later
+      return null; // network problem or too slow: unknown, try again later
     }
   }
   return "hqdefault";

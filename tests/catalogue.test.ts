@@ -3,6 +3,7 @@ import { computeArtistStats, groupByYear } from "../src/lib/artist-stats";
 import { buildOrderBy, buildWhere, filtersToQuery, hasActiveFilters, parseFilters, parseSiteSources } from "../src/lib/filters";
 import { dayNumber, pickForDay } from "../src/lib/rotation";
 import { compactNumber } from "../src/lib/site";
+import { runWithDeadline } from "../src/lib/deadline";
 import { bestKnownSize, findBestThumbnail, thumbnailSources } from "../src/lib/thumbnails";
 import { buildQueue, relatedByGenre, type QueueCandidate } from "../src/lib/upnext";
 
@@ -137,6 +138,44 @@ describe("thumbnails", () => {
     const blocked = (async () => new Response(null, { status: 403 })) as typeof fetch;
     expect(await findBestThumbnail("x", down)).toBeNull();
     expect(await findBestThumbnail("x", blocked)).toBeNull();
+  });
+  it("gives up on a request that hangs, so a slow image server never blocks start-up", async () => {
+    // Never answers; only stops when the request's time limit aborts it, like real fetch.
+    const hung = ((_url: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+      })) as typeof fetch;
+    const started = Date.now();
+    expect(await findBestThumbnail("x", hung, 20)).toBeNull();
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+  it("sends a time limit with every request", async () => {
+    const signals: (AbortSignal | null | undefined)[] = [];
+    const notFound = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+      signals.push(init?.signal);
+      return new Response(null, { status: 404 });
+    }) as typeof fetch;
+    expect(await findBestThumbnail("x", notFound)).toBe("hqdefault");
+    expect(signals).toHaveLength(2);
+    expect(signals.every((s) => s instanceof AbortSignal)).toBe(true);
+  });
+});
+
+describe("start-up step deadline", () => {
+  it("returns the result when the step finishes in time", async () => {
+    expect(await runWithDeadline(async () => 42, 1_000)).toEqual({ timedOut: false, value: 42 });
+  });
+  it("stops waiting for a step that hangs", async () => {
+    const started = Date.now();
+    expect(await runWithDeadline(() => new Promise<never>(() => {}), 20)).toEqual({ timedOut: true });
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+  it("passes errors through, so a real failure is still reported", async () => {
+    await expect(
+      runWithDeadline(async () => {
+        throw new Error("db down");
+      }, 1_000),
+    ).rejects.toThrow("db down");
   });
 });
 
