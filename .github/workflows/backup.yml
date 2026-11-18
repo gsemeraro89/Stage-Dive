@@ -1,6 +1,6 @@
 # Weekly database backup, kept as a private download of this repository for 30 days (YouTube storage rule).
-# Render deletes free databases after 30 days: restore from the latest backup into the new one
-# (see README, "Restore a backup").
+# The database is a Neon Postgres 18 project: pg_dump must be the same major version or newer.
+# To move or recover it, restore the latest backup into the new database (see README, "Restore a backup").
 name: Back up database
 
 on:
@@ -17,7 +17,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          docker run --rm -e DATABASE_URL postgres:16 \
+          docker run --rm -e DATABASE_URL postgres:18 \
             sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > stagedive.dump
           test -s stagedive.dump
       - uses: actions/upload-artifact@v4

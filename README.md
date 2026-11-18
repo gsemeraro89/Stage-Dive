@@ -42,7 +42,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 
 | Workflow | When | What |
 |---|---|---|
-| `Collect concerts` (`collect.yml`) | daily 08:47 UTC, or by hand | Reads festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band channels; free filters, then Claude. By hand it defaults to a **dry run**. |
+| `Collect concerts` (`collect.yml`) | by hand (daily schedule paused until step 6) | Reads festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band channels; free filters, then Claude. By hand it defaults to a **dry run**. |
 | `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. |
 | `Back up database` (`backup.yml`) | Mondays | `pg_dump` kept as a private download for 30 days. |
 | `Artist profiles`, `Similar artists`, `Setlist coverage` | by hand / weekly | Bios (Wikimedia/MusicBrainz), similar bands (ListenBrainz), setlist report. |
@@ -54,8 +54,16 @@ Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH`
 ## Secrets and settings
 
 GitHub → Settings → Secrets and variables → Actions:
-- Secrets: `DATABASE_URL` (the database's **External** URL), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY`
+- Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
 - Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `CLAUDE_BUDGET_USD` (`3`), `YOUTUBE_UNIT_BUDGET` (`8000`)
+
+### Restore a backup
+
+Download the latest `stagedive-db-…` artifact from the "Back up database" workflow, unzip it, then:
+
+```bash
+pg_restore --no-owner --no-privileges --clean --if-exists -d "<new database URL>" stagedive.dump
+```
 
 ## Deploy (Render, test service `stagedive-test`)
 
@@ -63,7 +71,8 @@ Web service (Node, Frankfurt), auto-deploys from `main`:
 - Build command: `npm ci && npm run build`
 - Start command: `npm run start:render` (migrations, seed import, thumbnails, then the app)
 - Health check path: `/api/health`
-- Environment: `DATABASE_URL` (Internal URL), `NODE_VERSION=22`, `ADMIN_PASSWORD`, `SITE_SOURCES` (empty on the test service = show everything)
+- Environment: `DATABASE_URL` (the Neon production branch, Frankfurt), `NODE_VERSION=22`; `ADMIN_PASSWORD` only when the admin page is wanted (without it `/admin` does not exist); `SITE_SOURCES` empty = show everything
+- Live at https://stagedive-test.onrender.com
 
 ## Admin
 
