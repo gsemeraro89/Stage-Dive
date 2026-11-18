@@ -4,7 +4,7 @@ import { buildOrderBy, buildWhere, VISIBLE, type ConcertFilters } from "./filter
 import { formatCredits } from "./format";
 import { thumbnailSources, type ThumbnailSources } from "./thumbnails";
 import { cached } from "./memo";
-import { buildPeriodIndex, monthRange, yearRange, type PeriodIndex } from "./periods";
+import { decadeOf } from "./catalogue";
 import { pickForDay } from "./rotation";
 import { artistSlugsIn, linkArtists, readSetlist, type SetlistView } from "./setlist/view";
 import { buildQueue, relatedByGenre } from "./upnext";
@@ -128,43 +128,54 @@ export async function concertsByYoutubeIds(ids: string[]): Promise<ConcertView[]
   return ids.map((id) => byId.get(id)).filter((s): s is ConcertView => Boolean(s));
 }
 
-// ---- Periods ("This month", year pages; BRIEF 4.10) ----
+// ---- Decades and tours (BRIEF section 1: browse by decade and tour) ----
 
-/** Visible concerts uploaded to YouTube in [start, end), newest first. */
-async function concertsUploadedBetweenUncached(start: Date, end: Date, take = 500): Promise<ConcertView[]> {
+/** Visible concerts played in a decade (1980 = 1980-1989), oldest first. */
+export async function getDecadePage(start: number) {
   const rows = await findConcerts({
-    where: { AND: [VISIBLE, { publishedAt: { gte: start, lt: end } }] },
-    orderBy: [{ publishedAt: "desc" }, { viewCount: "desc" }, { id: "asc" }],
-    take,
+    where: { AND: [VISIBLE, { performedYear: { gte: start, lte: start + 9 } }] },
+    orderBy: [{ performedYear: "asc" }, { performedOn: "asc" }, { id: "asc" }],
   });
-  return rows.map(toConcertView);
+  return { start, label: decadeOf(start), concerts: rows.map(toConcertView) };
 }
 
-/**
- * A year at a glance: how many concerts were uploaded each month, and the most watched few of each,
- * newest month first. Months without concerts are left out.
- */
-async function yearOverviewUncached(year: number, perMonth = 6) {
-  const { start, end } = yearRange(year);
-  const dates = await getDb().concert.findMany({
-    where: { AND: [VISIBLE, { publishedAt: { gte: start, lt: end } }] },
-    select: { publishedAt: true },
+/** Decades that have visible concerts, with counts, oldest first. Empty if the database cannot be reached. */
+async function decadeIndexUncached(): Promise<{ start: number; label: string; count: number }[]> {
+  try {
+    const rows = await getDb().concert.groupBy({
+      by: ["performedYear"],
+      where: { AND: [VISIBLE, { performedYear: { not: null } }] },
+      _count: { _all: true },
+    });
+    const counts = new Map<number, number>();
+    for (const r of rows) {
+      const start = Math.floor(r.performedYear! / 10) * 10;
+      counts.set(start, (counts.get(start) ?? 0) + r._count._all);
+    }
+    return [...counts.entries()].sort(([a], [b]) => a - b).map(([start, count]) => ({ start, label: decadeOf(start), count }));
+  } catch {
+    return [];
+  }
+}
+
+/** Tours with at least one visible concert, with their band and how many concerts. */
+async function listToursUncached() {
+  const tours = await getDb().tour.findMany({
+    where: { concerts: { some: VISIBLE } },
+    include: { artist: { select: { slug: true, name: true } }, _count: { select: { concerts: { where: VISIBLE } } } },
+    orderBy: { name: "asc" },
   });
-  const counts = new Map<number, number>();
-  for (const d of dates) counts.set(d.publishedAt.getUTCMonth() + 1, (counts.get(d.publishedAt.getUTCMonth() + 1) ?? 0) + 1);
-  const months = [...counts.keys()].sort((a, b) => b - a);
-  const sections = await Promise.all(
-    months.map(async (month) => {
-      const range = monthRange({ year, month });
-      const rows = await findConcerts({
-        where: { AND: [VISIBLE, { publishedAt: { gte: range.start, lt: range.end } }] },
-        orderBy: [{ viewCount: "desc" }, { id: "asc" }],
-        take: perMonth,
-      });
-      return { month, total: counts.get(month)!, top: rows.map(toConcertView) };
-    }),
-  );
-  return { year, total: dates.length, months: sections };
+  return tours.map((t) => ({ slug: t.slug, name: t.name, artist: t.artist, count: t._count.concerts }));
+}
+
+export async function getTourPage(slug: string) {
+  const tour = await getDb().tour.findUnique({ where: { slug }, include: { artist: { select: { slug: true, name: true } } } });
+  if (!tour) return null;
+  const rows = await findConcerts({
+    where: { ...VISIBLE, tourId: tour.id },
+    orderBy: [{ performedYear: "asc" }, { performedOn: "asc" }, { id: "asc" }],
+  });
+  return { tour, concerts: rows.map(toConcertView) };
 }
 
 async function mostWatchedConcertsUncached(take: number): Promise<ConcertView[]> {
@@ -643,22 +654,7 @@ export const listGenres = cached("listGenres", listGenresUncached);
 export const mapArtistIndex = cached("mapArtistIndex", mapArtistIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
-export const yearOverview = cached("yearOverview", yearOverviewUncached);
+export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
-export const concertsUploadedBetween = cached("concertsUploadedBetween", concertsUploadedBetweenUncached);
-
-/**
- * Months and years that have concerts, with counts, for the menu's "This month" and year lists.
- * Reads only upload dates; cached like the other lists. Returns an empty index if the database
- * cannot be reached (e.g. while the site is being built), so the menu still renders.
- */
-async function periodIndexUncached(): Promise<PeriodIndex> {
-  try {
-    const rows = await getDb().concert.findMany({ where: VISIBLE, select: { publishedAt: true } });
-    return buildPeriodIndex(rows.map((r) => r.publishedAt), new Date());
-  } catch {
-    return { months: [], years: [] };
-  }
-}
-export const periodIndex = cached("periodIndex", periodIndexUncached);
+export const listTours = cached("listTours", listToursUncached);

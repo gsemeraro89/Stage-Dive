@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PlayerDock } from "@/components/player/PlayerDock";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { NavLinks } from "@/components/ui/NavLinks";
-import { periodIndex } from "@/lib/queries";
+import { decadeIndex } from "@/lib/queries";
 import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -30,7 +30,7 @@ export const viewport: Viewport = { themeColor: "#0B0B0F", colorScheme: "dark" }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Months and years with concerts, for the menu's drop-down lists (cached, see src/lib/memo.ts).
-  const periods = await periodIndex();
+  const decades = await decadeIndex();
   return (
     <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
       <body>
@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="od-logo display" data-od="logo" aria-label={`${SITE_NAME} home`}>
               Full<span>DJSet</span>
             </Link>
-            <NavLinks periods={periods} />
+            <NavLinks decades={decades} />
             <Form action="/concerts" role="search" className="od-search" data-od="header-search">
               <label>
                 <span className="meta">Search</span>

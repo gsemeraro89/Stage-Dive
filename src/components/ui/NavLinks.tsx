@@ -3,57 +3,40 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
-import { menuYear, monthHref, monthLabel, monthOf, shortMonthLabel, type PeriodIndex } from "@/lib/periods";
 
-/** One line of a drop-down list: a period, how many concerts it has, and whether the visitor is in it. */
+/** One line of a drop-down list: a decade, how many concerts it has, and whether the visitor is in it. */
 type Row = { href: string; label: string; full: string; count: number; here: boolean; exact: boolean };
 
 type More = { id: string; name: string; caption: string; rows: Row[] };
 
 type Item = { href: string; label: string; active: (path: string) => boolean; more?: More };
 
+/** A decade in the menu's list, with how many concerts were played in it. */
+export type NavDecade = { start: number; label: string; count: number };
+
 const under = (base: string) => (path: string) => path === base || path.startsWith(`${base}/`);
 
 /**
- * Main navigation. The section the visitor is in is shown in acid.
- * "Concerts", "This month" and the year all live under /concerts, so each one claims only its own pages:
- * a month or year page never lights "Concerts", and a year other than the menu's lights nothing.
- * "This month" and the year each carry a list of other months or years (DESIGN.md section 8).
+ * Main navigation (brief section 3: Bands / Fields + Rooms / Decades / Genres / Tours).
+ * "Decades" carries a list of the decades that have concerts.
  */
-function items(now: Date, path: string, periods: PeriodIndex): Item[] {
-  const year = menuYear(now);
-  const yearHref = `/concerts/year/${year}`;
-  const period = (p: string) => p === "/concerts/this-month" || under("/concerts/year")(p);
-  const current = monthHref(monthOf(now));
-
-  const months: Row[] = periods.months.map((m) => {
-    const href = monthHref(m);
-    const here = path === href || (path === "/concerts/this-month" && href === current);
-    return { href, label: shortMonthLabel(m), full: monthLabel(m), count: m.count, here, exact: path === href };
+function items(path: string, decades: NavDecade[]): Item[] {
+  const rows: Row[] = decades.map((d) => {
+    const href = `/decades/${d.label}`;
+    return { href, label: d.label, full: `The ${d.label}`, count: d.count, here: path === href, exact: path === href };
   });
-  const years: Row[] = periods.years.map((y) => {
-    const href = `/concerts/year/${y.year}`;
-    return { href, label: String(y.year), full: String(y.year), count: y.count, here: under(href)(path), exact: path === href };
-  });
-
   return [
-    { href: "/concerts", label: "Concerts", active: (p) => under("/concerts")(p) && !period(p) },
+    { href: "/artists", label: "Bands", active: under("/artists") },
+    { href: "/venues", label: "Fields + Rooms", active: under("/venues") },
     {
-      href: "/concerts/this-month",
-      label: "This month",
-      active: (p) => p === "/concerts/this-month",
-      more: { id: "od-nav-months", name: "More months", caption: "Last months with concerts", rows: months },
+      href: "/decades",
+      label: "Decades",
+      active: under("/decades"),
+      more: { id: "od-nav-decades", name: "Pick a decade", caption: "Every decade with gigs", rows },
     },
-    {
-      href: yearHref,
-      label: String(year),
-      active: under(yearHref),
-      more: { id: "od-nav-years", name: "Other years", caption: "Every year with concerts", rows: years },
-    },
-    { href: "/artists", label: "Artists", active: under("/artists") },
-    { href: "/venues", label: "Festivals", active: under("/venues") },
     { href: "/genres", label: "Genres", active: under("/genres") },
-    { href: "/map", label: "Find your next DJ", active: under("/map") },
+    { href: "/tours", label: "Tours", active: under("/tours") },
+    { href: "/map", label: "Map", active: under("/map") },
   ];
 }
 
@@ -63,7 +46,7 @@ const FIRST_ROW = 4;
 /** From this many lines on, the desktop list is set in two columns. */
 const TWO_COLUMNS_FROM = 7;
 
-export function NavLinks({ periods }: { periods: PeriodIndex }) {
+export function NavLinks({ decades }: { decades: NavDecade[] }) {
   const path = usePathname();
   const [open, setOpen] = useState<string | null>(null);
   const nav = useRef<HTMLElement>(null);
@@ -96,7 +79,7 @@ export function NavLinks({ periods }: { periods: PeriodIndex }) {
 
   return (
     <nav aria-label="Main" className="od-nav meta" ref={nav}>
-      {items(new Date(), path, periods).map((item, i) => {
+      {items(path, decades).map((item, i) => {
         const link = (
           <Link href={item.href} aria-current={item.active(path) ? "page" : undefined}>
             {item.label}
@@ -146,7 +129,7 @@ export function NavLinks({ periods }: { periods: PeriodIndex }) {
                           </span>
                           <span className="od-nav-count">
                             {row.count.toLocaleString("en-GB")}
-                            <span className="od-sr">{row.count === 1 ? " concert" : " concerts"}</span>
+                            <span className="od-sr">{row.count === 1 ? " gig" : " gigs"}</span>
                           </span>
                         </Link>
                       </li>
