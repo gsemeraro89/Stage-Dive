@@ -55,8 +55,14 @@ function sorted(concerts: ConcertView[], sort: Sort): ConcertView[] {
   const list = [...concerts];
   if (sort === "length") return list.sort((a, b) => b.durationSeconds - a.durationSeconds || a.id - b.id);
   if (sort === "watched") return list.sort((a, b) => b.viewCount - a.viewCount || a.id - b.id);
-  return list.sort((a, b) => (a.performedYear ?? 9999) - (b.performedYear ?? 9999) || a.id - b.id);
+  // Chronological (owner, 18 Nov 2026): by year, then by the day it was played; a gig known only by
+  // its year comes first in that year.
+  const day = (c: ConcertView) => c.performedOn?.getTime() ?? -Infinity;
+  return list.sort((a, b) => (a.performedYear ?? 9999) - (b.performedYear ?? 9999) || day(a) - day(b) || a.id - b.id);
 }
+
+/** Gigs shown before "Show more" (owner, 18 Nov 2026). */
+const FIRST_GIGS = 10;
 
 const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 
@@ -227,7 +233,16 @@ export default async function ArtistPage({ params, searchParams }: Props) {
                   <span className="zn-label">{[yearSpan(concerts), hoursOf(concerts)].filter(Boolean).join(" /// ")}</span>
                 )}
               </div>
-              <GigRows concerts={rows} label={`Every full gig by ${artist.name}`} lead="year" name="place" />
+              <GigRows concerts={rows.slice(0, FIRST_GIGS)} label={`Every full gig by ${artist.name}`} lead="year" name="place" />
+              {rows.length > FIRST_GIGS && (
+                // Native <details>: the rest is in the page for search engines and works without JavaScript.
+                <details className="bp-more" data-od="more-gigs">
+                  <summary className="hm-more">
+                    SHOW MORE ({rows.length - FIRST_GIGS}) &gt;&gt;
+                  </summary>
+                  <GigRows concerts={rows.slice(FIRST_GIGS)} label={`More full gigs by ${artist.name}`} lead="year" name="place" />
+                </details>
+              )}
               {concerts.length === 1 && <p className="zn-marker bp-thin">one so far. more when we find them.</p>}
             </section>
           )}
