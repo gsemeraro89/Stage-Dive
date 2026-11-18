@@ -1,0 +1,27 @@
+# Weekly database backup, kept as a private download of this repository for 30 days (YouTube storage rule).
+# Render deletes free databases after 30 days: restore from the latest backup into the new one
+# (see README, "Restore a backup").
+name: Back up database
+
+on:
+  schedule:
+    - cron: "29 2 * * 1" # Mondays at 02:29 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          docker run --rm -e DATABASE_URL postgres:16 \
+            sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > opendecks.dump
+          test -s opendecks.dump
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opendecks-db-${{ github.run_id }}
+          path: opendecks.dump
+          retention-days: 30

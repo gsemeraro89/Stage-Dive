@@ -1,0 +1,811 @@
+/* Deck bar (mini-player) and the player area of the set page.
+   YouTube rules: the video is never smaller than 200x200 and nothing is ever drawn on it.
+   The player itself ([data-od="player-frame"]) is placed over .od-dock-video / .od-slot by
+   PlayerProvider; those boxes must stay empty and unobstructed. */
+
+.od-dock-spacer {
+  height: var(--deck-space);
+}
+
+.od-dock-spacer[data-in-page] {
+  height: var(--deck-space-slim);
+}
+
+.od-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: var(--ground);
+  color: var(--ink);
+  border-top: 1px solid var(--acid);
+}
+
+.od-dock-progress {
+  height: 3px;
+  background: var(--line);
+}
+
+.od-dock-progress > div {
+  height: 3px;
+  background: var(--acid);
+}
+
+/* Docked: video flush left, the rest of the bar reads like a now-playing panel. */
+.od-dock-row {
+  display: grid;
+  grid-template-columns: var(--deck-video-w) minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "video info next"
+    "video time controls";
+  column-gap: var(--col-gap);
+  padding-right: var(--pad-x);
+}
+
+.od-dock-video {
+  grid-area: video;
+  width: var(--deck-video-w);
+  height: var(--deck-video-h);
+  background: var(--hover-row);
+}
+
+.od-dock-info {
+  grid-area: info;
+  min-width: 0;
+  padding-top: 18px;
+}
+
+.od-dock-label {
+  padding-bottom: 6px;
+  color: var(--acid);
+}
+
+.od-dock-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: clamp(18px, 2vw, 30px);
+  line-height: 1.06;
+}
+
+.od-dock-title:hover {
+  color: var(--acid);
+}
+
+.od-dock-credits {
+  padding-top: 8px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Time, then the "You might also like" button, on the bottom line of the bar. */
+.od-dock-status {
+  grid-area: time;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 28px;
+  min-width: 0;
+  padding-bottom: 6px;
+}
+
+.od-dock-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.od-dock-more {
+  gap: 0.6em;
+  white-space: nowrap;
+}
+
+.od-dock-more[aria-expanded="true"] {
+  color: var(--acid);
+}
+
+.od-dock-more-short {
+  display: none;
+}
+
+.od-dock-next {
+  grid-area: next;
+  justify-self: end;
+  max-width: 300px;
+  padding-top: 18px;
+  text-align: right;
+  color: var(--muted);
+}
+
+.od-dock-next a {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  padding-top: 6px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.od-dock-next a:hover {
+  color: var(--acid);
+}
+
+.od-dock-controls {
+  grid-area: controls;
+  align-self: end;
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+  padding-bottom: 14px;
+}
+
+.od-dock-controls button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.od-dock-controls button:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.od-dock-controls button:disabled {
+  color: var(--line);
+}
+
+.od-dock-controls button.od-dock-toggle {
+  background: var(--acid);
+  border-color: var(--acid);
+  color: var(--ground);
+}
+
+.od-dock-controls button.od-dock-toggle:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* Close: the same square, set apart from previous / pause / next by a wider gap and a
+   hairline, so it is not hit by mistake. */
+.od-dock-controls button.od-dock-close {
+  position: relative;
+  margin-left: 20px;
+}
+
+.od-dock-controls button.od-dock-close::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -15px;
+  width: 1px;
+  background: var(--line);
+}
+
+.od-dock-error {
+  grid-column: 2 / -1;
+  margin: 0;
+  padding-bottom: 10px;
+}
+
+/* Slim bar: the video is playing inside the set page, so the bar holds text and controls only. */
+.od-dock[data-in-page] .od-dock-row {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto;
+  grid-template-areas: "info time next controls";
+  align-items: center;
+  padding: 10px var(--pad-x);
+}
+
+.od-dock[data-in-page] .od-dock-info {
+  padding-top: 0;
+}
+
+.od-dock[data-in-page] .od-dock-label {
+  padding-bottom: 0;
+}
+
+.od-dock[data-in-page] .od-dock-title {
+  -webkit-line-clamp: 1;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.od-dock[data-in-page] .od-dock-credits {
+  display: none;
+}
+
+.od-dock[data-in-page] .od-dock-status,
+.od-dock[data-in-page] .od-dock-controls {
+  align-self: center;
+  padding-bottom: 0;
+}
+
+.od-dock[data-in-page] .od-dock-status {
+  flex-wrap: nowrap;
+}
+
+.od-dock[data-in-page] .od-dock-next {
+  padding-top: 0;
+  max-width: 280px;
+}
+
+.od-dock[data-in-page] .od-dock-next a {
+  -webkit-line-clamp: 1;
+  padding-top: 0;
+  font-size: 14px;
+}
+
+.od-dock[data-in-page] .od-dock-error {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1000px) {
+  .od-dock .od-dock-next {
+    display: none;
+  }
+
+  .od-dock-row {
+    grid-template-columns: var(--deck-video-w) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "video info info"
+      "video time controls";
+  }
+
+  /* Less room beside the video: the time sits above a shorter button. */
+  .od-dock:not([data-in-page]) .od-dock-status {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 8px;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-more-long {
+    display: none;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-more-short {
+    display: inline;
+  }
+
+  .od-dock[data-in-page] .od-dock-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "info time controls";
+  }
+
+  .od-dock[data-in-page] .od-dock-status {
+    padding-bottom: 0;
+  }
+}
+
+/* Phone: the video at YouTube's minimum (200x200) on the left, everything else stacked
+   beside it. The bar is as low as the rule allows: 200px of video plus the 4px rule. */
+@media (max-width: 760px) {
+  .od-dock-row {
+    grid-template-columns: var(--deck-video-phone) minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+      "video info"
+      "video time"
+      "video controls";
+    column-gap: 12px;
+    padding-right: 12px;
+  }
+
+  .od-dock-video {
+    width: var(--deck-video-phone);
+    height: var(--deck-video-phone);
+  }
+
+  .od-dock-info {
+    padding-top: 10px;
+  }
+
+  .od-dock-label {
+    padding-bottom: 4px;
+  }
+
+  .od-dock-title {
+    -webkit-line-clamp: 3;
+    font-size: 15px;
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+
+  .od-dock-credits {
+    display: none;
+  }
+
+  .od-dock-status {
+    align-self: auto;
+    padding-bottom: 8px;
+  }
+
+  .od-dock-time {
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  /* With suggestions the column beside the 200px video holds five lines: "On deck", the title
+     (two lines instead of three), the time, the "Also like" button and the controls (44px).
+     Everything is kept; the bar stays 204px. */
+  .od-dock[data-more]:not([data-in-page]) .od-dock-status {
+    padding-bottom: 0;
+  }
+
+  .od-dock[data-more]:not([data-in-page]) .od-dock-title {
+    -webkit-line-clamp: 2;
+  }
+
+  .od-dock[data-more]:not([data-in-page]) .od-dock-controls {
+    padding-bottom: 6px;
+  }
+
+  .od-dock[data-more]:not([data-in-page]) .od-dock-controls button:not(.od-dock-close) {
+    width: var(--touch);
+    height: var(--touch);
+  }
+
+  /* Slim bar on phones: the page's own section is right below the player. */
+  .od-dock[data-in-page] .od-dock-more {
+    display: none;
+  }
+
+  .od-dock-controls {
+    justify-self: start;
+    gap: 4px;
+    padding-bottom: 8px;
+  }
+
+  /* Phone: no room for a fourth square beside a 200px video. Close goes to the top right
+     corner of the bar, on the "On deck" line, far from the other three. */
+  .od-dock:not([data-in-page]) .od-dock-row {
+    position: relative;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-controls button.od-dock-close {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    width: var(--touch);
+    height: var(--touch);
+    margin: 0;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-controls button.od-dock-close::before {
+    display: none;
+  }
+
+  /* Slim bar on phones: four 44px squares in one row. */
+  .od-dock[data-in-page] .od-dock-controls button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+
+  .od-dock[data-in-page] .od-dock-controls button.od-dock-close {
+    margin-left: 12px;
+  }
+
+  .od-dock[data-in-page] .od-dock-controls button.od-dock-close::before {
+    left: -9px;
+  }
+
+  .od-dock[data-in-page] .od-dock-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "info controls";
+    column-gap: 12px;
+    padding: 8px 12px;
+  }
+
+  .od-dock[data-in-page] .od-dock-status {
+    display: none;
+  }
+
+  .od-dock[data-in-page] .od-dock-title {
+    font-size: 15px;
+  }
+}
+
+/* Small phones: 44px squares, so the three controls stay inside the bar beside the video. */
+@media (max-width: 389px) {
+  .od-dock:not([data-in-page]) .od-dock-controls button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+}
+
+/* Very narrow phones: no room beside a 200px video, so it goes on top. */
+@media (max-width: 359px) {
+  .od-dock:not([data-in-page]) .od-dock-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "video video"
+      "info controls";
+    padding: 0;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-video {
+    width: 100%;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-label,
+  .od-dock:not([data-in-page]) .od-dock-time {
+    display: none;
+  }
+
+  /* A third line under the video: the button, with the time beside it. */
+  .od-dock:not([data-in-page]) .od-dock-status {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    flex-direction: row;
+    align-items: center;
+    gap: 0 20px;
+    padding: 0 12px 4px;
+  }
+
+  .od-dock[data-more]:not([data-in-page]) .od-dock-time {
+    display: inline;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-row {
+    grid-template-areas:
+      "video video"
+      "info controls"
+      "time time";
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-info,
+  .od-dock:not([data-in-page]) .od-dock-controls {
+    padding: 8px 12px;
+  }
+
+  /* The video is on top here and nothing may sit on it: close returns to the row. */
+  .od-dock:not([data-in-page]) .od-dock-controls button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-controls button.od-dock-close {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-left: 10px;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-controls button.od-dock-close::before {
+    display: block;
+    left: -8px;
+  }
+
+  .od-dock-spacer:not([data-in-page]) {
+    height: 276px;
+  }
+
+  /* One more line in the bar: the "Also like" button. */
+  .od-dock-spacer[data-more]:not([data-in-page]) {
+    height: 312px;
+  }
+}
+
+/* ---------- Deck sheet: "You might also like" ----------
+   The bar grows upward. The sheet is the first thing in the bar, above the progress line and the
+   row that holds the video, so it can never cover the video. It scrolls inside itself. */
+
+.od-sheet-more {
+  max-height: calc(100vh - var(--deck-space) - 8px);
+  max-height: calc(100dvh - var(--deck-space) - 8px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--pad-x);
+  outline-offset: -2px;
+}
+
+.od-sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 20px;
+  padding: 10px 0 6px;
+  background: var(--ground);
+}
+
+.od-sheet-head h2 {
+  margin: 0;
+  font-size: clamp(22px, 2.6vw, 36px);
+  line-height: 1;
+}
+
+.od-sheet-head .od-link {
+  margin-left: auto;
+}
+
+.od-sheet-more .od-alines {
+  border-bottom: 0;
+}
+
+.od-sheet-more .od-alines > li:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 359px) {
+  .od-sheet-more {
+    max-height: calc(100dvh - 330px);
+  }
+}
+
+/* ---------- Player area on the set page ---------- */
+
+.od-slot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  background: var(--hover-row);
+}
+
+.od-poster {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.od-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The 104px acid square, bottom-left of the image. */
+.od-poster-play {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: clamp(72px, 9vw, 104px);
+  height: clamp(72px, 9vw, 104px);
+  background: var(--acid);
+  color: var(--ground);
+}
+
+.od-poster:hover .od-poster-play {
+  background: var(--ink);
+}
+
+.od-poster-label {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 8px 12px;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+/* ---------- Minimise, and the mini-player ----------
+   "Mini player" on the bar turns this same element into a small window: a 44px strip (handle,
+   expand, close), the progress line and the video, nothing else. The strip is above the video;
+   nothing is ever on it. The window is placed by useMiniPlayer (--mini-x / --mini-y) and is
+   never smaller than the video: 356x200, or the full width of a narrower screen by 200. */
+
+/* "Mini player": a labelled button in the top left corner of the text column, touching the right
+   edge of the video (it reaches back across the column gap), so it is read as "this video,
+   smaller". Its icon lines up with the title below. Beside the video, never on it. */
+.od-dock:not([data-in-page]) .od-dock-info {
+  padding-top: 0;
+}
+
+.od-dock:not([data-in-page]) .od-dock-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: var(--touch);
+  margin: 0 0 12px calc(-1 * var(--deck-gap));
+}
+
+.od-dock:not([data-in-page]) .od-dock-label {
+  padding-bottom: 0;
+}
+
+.od-dock-row {
+  --deck-gap: var(--col-gap);
+}
+
+.od-dock-min {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--touch);
+  min-width: var(--touch);
+  padding: 0 16px 0 var(--deck-gap);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  outline-offset: -2px;
+}
+
+.od-dock-min:hover {
+  background: var(--hover-row);
+  border-color: var(--ink);
+  color: var(--acid);
+}
+
+.od-dock-min svg {
+  flex: none;
+}
+
+.od-dock-min-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .od-dock-row {
+    --deck-gap: 12px;
+  }
+
+  /* On the same line as close (6px down), boxed on three sides; the fourth is the video's edge. */
+  .od-dock:not([data-in-page]) .od-dock-head {
+    gap: 12px;
+    margin-top: 6px;
+    margin-bottom: 4px;
+  }
+
+  .od-dock-min {
+    padding-right: 12px;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Phones: the button and close fill the line; the acid rule and the title still say "on deck". */
+@media (max-width: 479px) {
+  .od-dock:not([data-in-page]) .od-dock-label {
+    display: none;
+  }
+}
+
+/* Small phones: no room for the words beside close. A 44px square with the icon, same place. */
+@media (max-width: 399px) {
+  .od-dock-min {
+    justify-content: center;
+    width: var(--touch);
+    padding: 0;
+  }
+
+  .od-dock-min-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* Very narrow phones: the video is already as wide as the screen, so a mini-player gains nothing. */
+@media (max-width: 359px) {
+  .od-dock:not([data-in-page]) .od-dock-head {
+    display: none;
+  }
+
+  .od-dock:not([data-in-page]) .od-dock-info {
+    padding-top: 8px;
+  }
+}
+
+.od-dock[data-mini] {
+  /* Set by useMiniPlayer before the first paint, always inside the viewport. */
+  top: var(--mini-y, 0);
+  left: var(--mini-x, 0);
+  right: auto;
+  bottom: auto;
+  width: min(calc(var(--deck-video-w) + 2px), 100vw);
+  border: 1px solid var(--line);
+  border-top-color: var(--acid);
+}
+
+.od-dock[data-mini] .od-dock-row {
+  display: block;
+  padding: 0;
+}
+
+.od-dock[data-mini] .od-dock-info,
+.od-dock[data-mini] .od-dock-status,
+.od-dock[data-mini] .od-dock-next,
+.od-dock[data-mini] .od-dock-controls {
+  display: none;
+}
+
+.od-dock[data-mini] .od-dock-video {
+  width: 100%;
+  height: var(--deck-video-h);
+}
+
+.od-dock[data-mini] .od-dock-error {
+  padding: 8px 12px;
+}
+
+/* The page no longer keeps room for a bar. */
+.od-dock-spacer[data-mini]:not([data-in-page]) {
+  height: 0;
+}
+
+.od-mini-strip {
+  display: flex;
+  height: var(--touch);
+}
+
+.od-mini-strip button {
+  outline-offset: -2px;
+}
+
+.od-mini-handle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--muted);
+  text-align: left;
+  cursor: grab;
+  /* A finger on the handle drags the window instead of scrolling the page. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.od-mini-handle:hover,
+.od-dock[data-dragging] .od-mini-handle {
+  background: var(--hover-row);
+  color: var(--ink);
+}
+
+.od-dock[data-dragging] .od-mini-handle {
+  cursor: grabbing;
+}
+
+.od-mini-handle svg {
+  flex: none;
+}
+
+.od-mini-label {
+  flex: none;
+  color: var(--acid);
+}
+
+.od-mini-credits {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.od-mini-strip button:not(.od-mini-handle) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.od-mini-strip button:not(.od-mini-handle):hover {
+  background: var(--hover-row);
+  color: var(--acid);
+}

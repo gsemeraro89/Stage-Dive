@@ -1,0 +1,442 @@
+// OpenDecks database schema (phase 1: foundation).
+// Table names are snake_case in Postgres; model names are PascalCase in code.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Where a set entered the catalogue.
+enum SetSource {
+  SEED // data/seed-sets.json, hand-checked by the owner
+  COLLECTOR // added automatically by the YouTube collector (phase 3)
+  MANUAL // added by hand in the admin page
+}
+
+/// Whether a set is shown on the site.
+enum SetStatus {
+  PUBLISHED
+  HIDDEN // kept in the database but not shown (e.g. a decision on fan uploads)
+  REMOVED // no longer public/embeddable on YouTube; kept only until the refresh job deletes it
+}
+
+enum CreditRole {
+  MAIN // the headline artist
+  WITH // a collaborator, shown as "NTO with Sofiane Pamart"
+}
+
+/// How far the collector trusts a channel's uploads to be electronic music.
+enum ChannelKind {
+  ELECTRONIC_ONLY // festival, club or media channel that only posts electronic music
+  ARTIST // the official channel of an electronic artist
+  MIXED // posts several kinds of music (e.g. Boiler Room)
+  UNKNOWN // found through search, e.g. a fan upload
+}
+
+/// What the collector decided about a video it classified.
+enum VideoVerdict {
+  ACCEPTED // published as a set
+  NOT_A_SET // a clip, track, trailer, talk or compilation
+  NOT_ELECTRONIC // a set, but not in one of our genres
+  UNCERTAIN // not enough agreement to publish; kept out, visible in the admin page
+  DUPLICATE // the same set already exists (official upload preferred)
+  ERROR // classification failed; retried on the next run
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Artist {
+  id               Int                     @id @default(autoincrement())
+  slug             String                  @unique
+  name             String
+  aka              String?
+  origin           String?
+  label            String?
+  bio              String?
+  /// Names of similar artists, as written in the profile. Linked to real artist pages in phase 2.
+  similarNames     String[]                @map("similar_names")
+  /// Birth year, only when a source states it (for "age" on the artist page).
+  bornYear         Int?                    @map("born_year")
+  /// Short description of the music the artist plays, e.g. "melodic techno live act".
+  style            String?
+  /// Pages the generated bio was checked against.
+  bioSources       String[]                @map("bio_sources")
+  /// True when the bio was written by the profile job (owner-written bios are never overwritten).
+  bioGenerated     Boolean                 @default(false) @map("bio_generated")
+  profileCheckedAt DateTime?               @map("profile_checked_at")
+  /// Last time the collector searched YouTube for this artist's other sets. Null = never (searched first).
+  lastSearchedAt   DateTime?               @map("last_searched_at")
+  /// A guest (credited only with "with") that MusicBrainz knows as an artist. Guests get their own page
+  /// only when this is true or they have a set of their own (owner rule, 13 Nov 2026); otherwise their
+  /// name stays as plain text in the set's credits.
+  guestVerified    Boolean                 @default(false) @map("guest_verified")
+  /// The artist's own picture: the avatar of their official YouTube channel (owner decision 13 Nov 2026,
+  /// instead of set thumbnails with baked-in titles). YouTube data: refreshed or cleared within 30 days.
+  imageUrl         String?                 @map("image_url")
+  imageCheckedAt   DateTime?               @map("image_checked_at")
+  /// The artist's official YouTube channel (from our channels or MusicBrainz links).
+  youtubeChannelId String?                 @map("youtube_channel_id")
+  /// The set whose thumbnail is the artist's picture, chosen automatically (a person, least baked-in
+  /// text) or by the owner. Null = the newest set.
+  coverYoutubeId   String?                 @map("cover_youtube_id")
+  /// True when every thumbnail is only graphics and text: the channel avatar is shown instead.
+  coverUseAvatar   Boolean                 @default(false) @map("cover_use_avatar")
+  /// True when the owner picked the cover by hand: the automatic choice never changes it.
+  coverLocked      Boolean                 @default(false) @map("cover_locked")
+  /// The set IDs the choice was made among; the choice is made again when they change.
+  coverChosenFrom  String?                 @map("cover_chosen_from")
+  credits          SetArtist[]
+  /// Artists most like this one, computed weekly by the similarity job (best first).
+  similarTo        ArtistSimilarity[]      @relation("similarFrom")
+  similarOf        ArtistSimilarity[]      @relation("similarTo")
+  externalSimilar  ArtistExternalSimilar[]
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+
+  @@map("artists")
+}
+
+/// How much two artists are alike, 0 to 1. Internal only: the site shows the ranking, never the score
+/// or the reasons (owner decision, 13 Nov 2026). One row per direction (A->B and B->A).
+model ArtistSimilarity {
+  artistId   Int      @map("artist_id")
+  artist     Artist   @relation("similarFrom", fields: [artistId], references: [id], onDelete: Cascade)
+  similarId  Int      @map("similar_id")
+  similar    Artist   @relation("similarTo", fields: [similarId], references: [id], onDelete: Cascade)
+  score      Float
+  /// Position in the artist's list, 1 = most similar.
+  rank       Int
+  computedAt DateTime @default(now()) @map("computed_at")
+
+  @@id([artistId, similarId])
+  @@index([artistId, rank])
+  @@map("artist_similarity")
+}
+
+/// "Listeners of X also listen to Y" from an outside source (ListenBrainz, CC0). Kept so the scores
+/// can be recomputed after each collector run without asking the source again. Includes artists we
+/// have no sets for yet (a later idea: show them too).
+model ArtistExternalSimilar {
+  artistId  Int      @map("artist_id")
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  source    String
+  /// nameKey() of the similar artist's name, to match it with our artists.
+  nameKey   String   @map("name_key")
+  name      String
+  mbid      String?
+  /// 0 to 1, 1 = the source's strongest match for this artist.
+  score     Float
+  fetchedAt DateTime @default(now()) @map("fetched_at")
+
+  @@id([artistId, source, nameKey])
+  @@map("artist_external_similar")
+}
+
+/// A venue, festival or special location.
+model Venue {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  name      String
+  city      String?
+  country   String?
+  sets      Set[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("venues")
+}
+
+model Genre {
+  id        Int        @id @default(autoincrement())
+  slug      String     @unique
+  name      String     @unique
+  sortOrder Int        @default(0) @map("sort_order")
+  sets      SetGenre[]
+
+  @@map("genres")
+}
+
+/// The kind of place a set was played in (Festival, Club, ...). A table rather than a
+/// fixed list so the owner can rename or add settings without a code change.
+model Setting {
+  id        Int    @id @default(autoincrement())
+  slug      String @unique
+  name      String @unique
+  sortOrder Int    @default(0) @map("sort_order")
+  sets      Set[]
+
+  @@map("settings")
+}
+
+/// A YouTube channel that uploaded at least one set.
+model Channel {
+  id                Int         @id @default(autoincrement())
+  /// YouTube channel ID (UC...). Unknown for seed data until the collector fills it in.
+  youtubeChannelId  String?     @unique @map("youtube_channel_id")
+  name              String      @unique
+  /// Official channel of an artist, festival, venue or music media. False = fan upload.
+  isOfficial        Boolean     @default(true) @map("is_official")
+  /// Whether the collector should crawl this channel's uploads (phase 3).
+  crawl             Boolean     @default(false)
+  kind              ChannelKind @default(MIXED)
+  /// The channel's "uploads" playlist, read by the collector.
+  uploadsPlaylistId String?     @map("uploads_playlist_id")
+  lastCrawledAt     DateTime?   @map("last_crawled_at")
+  sets              Set[]
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("channels")
+}
+
+model Set {
+  id                 Int       @id @default(autoincrement())
+  youtubeId          String    @unique @map("youtube_id")
+  slug               String    @unique
+  title              String
+  durationSeconds    Int       @map("duration_seconds")
+  viewCount          Int       @map("view_count")
+  publishedAt        DateTime  @map("published_at") @db.Date
+  city               String?
+  country            String?
+  liveAct            Boolean   @default(false) @map("live_act")
+  /// Our own original text about the set (required before ads, YouTube policy III.G.1.d).
+  writeUp            String?   @map("write_up")
+  /// Tracklist as a list of { time, artist, title } (time in seconds or null; artist null for an
+  /// untitled line). Read from the video description or its comments (src/lib/tracklist). It is
+  /// YouTube data: re-read by the refresh job at least every 30 days, removed when it disappears.
+  tracklist          Json?
+  /// Where the tracklist came from: DESCRIPTION, CHANNEL_COMMENT, COMMENT (a viewer) or CLAUDE.
+  tracklistSource    String?   @map("tracklist_source")
+  /// Last time the description and comments were read for a tracklist. Null = never.
+  tracklistCheckedAt DateTime? @map("tracklist_checked_at")
+  /// Best available thumbnail. Null = derive from the YouTube ID.
+  thumbnailUrl       String?   @map("thumbnail_url")
+
+  source  SetSource
+  status  SetStatus @default(PUBLISHED)
+  /// Hand-picked by the owner: kept even if it breaks the collector's automatic rules
+  /// (shorter than 40 minutes, fewer views than the threshold).
+  curated Boolean   @default(false)
+
+  // YouTube status (CLAUDE.md rules 1 and 4)
+  embeddable    Boolean
+  privacyStatus String   @map("privacy_status")
+  madeForKids   Boolean? @map("made_for_kids")
+  /// Last time embeddable/privacy status was confirmed.
+  ytCheckedAt   DateTime @map("yt_checked_at")
+  /// Last time YouTube data (title, stats) was refreshed. Must be under 30 days old.
+  ytRefreshedAt DateTime @map("yt_refreshed_at")
+
+  channelId Int      @map("channel_id")
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  venueId   Int?     @map("venue_id")
+  venue     Venue?   @relation(fields: [venueId], references: [id])
+  settingId Int?     @map("setting_id")
+  setting   Setting? @relation(fields: [settingId], references: [id])
+
+  credits SetArtist[]
+  genres  SetGenre[]
+  plays   Play[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, publishedAt])
+  @@index([status, viewCount])
+  @@map("sets")
+}
+
+/// Who played a set: the main artist and any collaborators.
+model SetArtist {
+  setId      Int        @map("set_id")
+  set        Set        @relation(fields: [setId], references: [id], onDelete: Cascade)
+  artistId   Int        @map("artist_id")
+  artist     Artist     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  role       CreditRole
+  /// Extra credit text, e.g. "as Sinners".
+  creditNote String?    @map("credit_note")
+  position   Int        @default(0)
+
+  @@id([setId, artistId])
+  @@index([artistId])
+  @@map("set_artists")
+}
+
+model SetGenre {
+  setId   Int   @map("set_id")
+  set     Set   @relation(fields: [setId], references: [id], onDelete: Cascade)
+  genreId Int   @map("genre_id")
+  genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([setId, genreId])
+  @@index([genreId])
+  @@map("set_genres")
+}
+
+/// One row per video the collector sent to the classifier, so it is not paid for twice.
+/// Holds only the video ID and our own verdict. Rows expire after DECISION_TTL_DAYS (default 30,
+/// in line with YouTube's 30-day storage rule), after which the video is looked at again.
+model VideoDecision {
+  id        Int          @id @default(autoincrement())
+  youtubeId String       @unique @map("youtube_id")
+  verdict   VideoVerdict
+  reason    String
+  decidedAt DateTime     @default(now()) @map("decided_at")
+
+  @@index([decidedAt])
+  @@map("video_decisions")
+}
+
+/// Videos of at least the minimum length that failed only rules that can change (mostly too few
+/// views). Lets the collector look at them again, cheaply (videos.list, 50 per unit), when the
+/// view threshold is lowered or views grow, without re-reading whole channels. Only the ID and
+/// our own note are kept; views are always fetched fresh (YouTube 30-day rule).
+model LongVideo {
+  youtubeId        String   @id @map("youtube_id")
+  youtubeChannelId String   @map("youtube_channel_id")
+  firstSeenAt      DateTime @default(now()) @map("first_seen_at")
+  checkedAt        DateTime @default(now()) @map("checked_at")
+
+  @@index([checkedAt])
+  @@map("long_videos")
+}
+
+/// What the classifier said about a video, kept so a dry run's work is reused by the next real run
+/// and a video is never paid for twice. Only reused while promptVersion matches (rules unchanged)
+/// and for at most DECISION_TTL_DAYS (YouTube 30-day rule).
+model ClassificationCache {
+  id            Int      @id @default(autoincrement())
+  youtubeId     String   @unique @map("youtube_id")
+  promptVersion String   @map("prompt_version")
+  result        Json
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("classification_cache")
+}
+
+/// Answers from the per-artist lane's cheap model (Claude Haiku): the short classification
+/// (kind "classify") and the original write-up of accepted sets (kind "writeup"). Reused while the
+/// prompt version matches and for at most DECISION_TTL_DAYS (YouTube 30-day rule), like
+/// classification_cache, which keeps the Opus answers.
+model LaneAnswer {
+  id            Int      @id @default(autoincrement())
+  youtubeId     String   @map("youtube_id")
+  kind          String
+  promptVersion String   @map("prompt_version")
+  result        Json
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([youtubeId, promptVersion])
+  @@index([createdAt])
+  @@map("lane_answers")
+}
+
+/// Videos the per-artist lane matched to one of its artists (IDs and our own note only), so a later
+/// pass can read just these again instead of all remembered long videos.
+model LaneMatch {
+  youtubeId String   @id @map("youtube_id")
+  artist    String
+  foundAt   DateTime @default(now()) @map("found_at")
+
+  @@map("lane_matches")
+}
+
+/// A batch of classifications sent to Anthropic's Batch API (half price, answers within hours).
+model ClassifierBatch {
+  id            Int       @id @default(autoincrement())
+  batchId       String    @unique @map("batch_id")
+  promptVersion String    @map("prompt_version")
+  youtubeIds    String[]  @map("youtube_ids")
+  status        String    @default("PENDING") // PENDING, DONE, FAILED
+  /// Which job sent it: "collect" (the main collector, Opus answers in classification_cache) or
+  /// "lane-classify" / "lane-writeup" (the per-artist lane, Haiku answers in lane_answers).
+  lane          String    @default("collect")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  endedAt       DateTime? @map("ended_at")
+
+  @@index([status])
+  @@map("classifier_batches")
+}
+
+/// Genres found for an artist name in MusicBrainz (open data), used as an independent check.
+model ArtistLookup {
+  id               Int       @id @default(autoincrement())
+  nameKey          String    @unique @map("name_key")
+  mbid             String?
+  genres           String[]
+  checkedAt        DateTime  @default(now()) @map("checked_at")
+  /// Last time ListenBrainz was asked for similar artists (or skipped for lack of an ID).
+  similarCheckedAt DateTime? @map("similar_checked_at")
+  /// The artist's official YouTube channel (UC...), from MusicBrainz links or the owner's override in
+  /// data/artist-rules.json. Used by the per-artist lane (owner, 17 Nov 2026).
+  youtubeChannelId String?   @map("youtube_channel_id")
+  /// Last time MusicBrainz was asked for the artist's identity and channel. Null = never.
+  channelCheckedAt DateTime? @map("channel_checked_at")
+  /// When the per-artist lane searched YouTube for this artist (100 units). Null = not yet: the next
+  /// run searches these first, and a search is never repeated (a dry run's search is reused).
+  searchedAt       DateTime? @map("searched_at")
+  /// Video IDs that search returned (IDs only; titles and stats are always fetched fresh).
+  searchResultIds  String[]  @default([]) @map("search_result_ids")
+  /// Where youtubeChannelId came from: "musicbrainz" or "youtube-handle" (@name looked up on YouTube).
+  channelFrom      String?   @map("channel_from")
+  /// When YouTube was asked for an @handle with the artist's name (1 unit; not repeated for 90 days).
+  handleCheckedAt  DateTime? @map("handle_checked_at")
+
+  @@map("artist_lookups")
+}
+
+/// A record of each collector or refresh run, shown in the admin page.
+model JobRun {
+  id         Int       @id @default(autoincrement())
+  job        String
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  ok         Boolean?
+  summary    Json?
+
+  @@index([job, startedAt])
+  @@map("job_runs")
+}
+
+/// Videos the collector was not sure about, waiting for the owner's decision (phase 3).
+model ReviewItem {
+  id         Int          @id @default(autoincrement())
+  youtubeId  String       @map("youtube_id")
+  /// Everything the collector found: YouTube data plus the LLM's classification.
+  payload    Json
+  reason     String
+  confidence Float?
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  decidedAt  DateTime?    @map("decided_at")
+
+  @@index([status, createdAt])
+  @@index([youtubeId])
+  @@map("review_queue")
+}
+
+/// One row each time a visitor starts playing a set (phase 5 analytics).
+model Play {
+  id        BigInt   @id @default(autoincrement())
+  setId     Int      @map("set_id")
+  set       Set      @relation(fields: [setId], references: [id], onDelete: Cascade)
+  startedAt DateTime @default(now()) @map("started_at")
+  /// Two-letter country code of the visitor, if known. No IP addresses are stored.
+  country   String?  @db.Char(2)
+  /// Page the play started from, e.g. "set", "artist", "home", "autoplay".
+  source    String?
+
+  @@index([setId, startedAt])
+  @@index([startedAt])
+  @@map("plays")
+}

@@ -1,0 +1,180 @@
+// Measures how many published sets have a readable tracklist, and where it comes from
+// (description, the channel's own comment, a viewer comment). Read-only: nothing is saved to the
+// database. Run with: npm run tracklists [-- --claude] [-- --limit 200]
+//   --claude   also ask Claude about texts that look like a tracklist but the rules could not read
+// YouTube quota: 1 unit per 50 sets (descriptions) + 1 unit per set without a tracklist there (comments).
+import "dotenv/config";
+import { appendFile, writeFile } from "node:fs/promises";
+import { createPrismaClient } from "../src/lib/db";
+import { QuotaBudgetExceeded, YouTubeClient } from "../src/lib/collector/youtube";
+import { fromComments, fromDescription, type TracklistSource } from "../src/lib/tracklist/choose";
+import { TracklistExtractor } from "../src/lib/tracklist/extract";
+import { isUnidentified, type Track } from "../src/lib/tracklist/parse";
+
+const args = process.argv.slice(2);
+const useClaude = args.includes("--claude");
+const limitArg = args.indexOf("--limit");
+const limit = limitArg >= 0 ? Number(args[limitArg + 1]) : undefined;
+const sampleCount = Number(process.env.TRACKLIST_SAMPLES ?? 3);
+const claudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
+
+type Outcome = TracklistSource | "CLAUDE" | "UNCLEAR" | "NONE" | "GONE" | "NOT_CHECKED";
+interface Row {
+  slug: string;
+  channel: string;
+  outcome: Outcome;
+  tracks: number;
+  timed: boolean;
+  ids: number;
+  commentsOff: boolean;
+  sample?: Track[];
+}
+
+const db = createPrismaClient();
+const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", Number(process.env.YOUTUBE_UNIT_BUDGET ?? 3000));
+const extractor = useClaude ? new TracklistExtractor() : null;
+const rows: Row[] = [];
+const errors: string[] = [];
+
+try {
+  const sets = await db.set.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true, youtubeId: true, durationSeconds: true, channel: { select: { name: true } } },
+    orderBy: { viewCount: "desc" },
+    take: limit,
+  });
+  const videos = await yt.videos(sets.map((s) => s.youtubeId));
+
+  for (const set of sets) {
+    const row: Row = { slug: set.slug, channel: set.channel.name, outcome: "NONE", tracks: 0, timed: false, ids: 0, commentsOff: false };
+    rows.push(row);
+    const video = videos.get(set.youtubeId);
+    if (!video) {
+      row.outcome = "GONE"; // the refresh job deals with these
+      continue;
+    }
+    const duration = video.durationSeconds || set.durationSeconds;
+    let choice = fromDescription(video.description, duration);
+    if (!choice.chosen) {
+      try {
+        const comments = await yt.topComments(set.youtubeId);
+        row.commentsOff = comments.length === 0;
+        const fromThread = fromComments(
+          comments.map((c) => ({ text: c.text, likeCount: c.likeCount, byChannel: c.authorChannelId === video.channelId })),
+          duration,
+        );
+        choice = { chosen: fromThread.chosen, unclear: [...choice.unclear, ...fromThread.unclear] };
+      } catch (error) {
+        if (error instanceof QuotaBudgetExceeded) {
+          row.outcome = "NOT_CHECKED";
+          continue;
+        }
+        errors.push(`${set.slug}: ${(error as Error).message}`);
+      }
+    }
+
+    let tracks = choice.chosen?.tracks ?? null;
+    if (choice.chosen) row.outcome = choice.chosen.source;
+    else if (choice.unclear.length) {
+      row.outcome = "UNCLEAR";
+      if (extractor && extractor.calls < claudeMax) {
+        try {
+          tracks = await extractor.extract(choice.unclear[0].text, duration);
+          if (tracks) row.outcome = "CLAUDE";
+        } catch (error) {
+          errors.push(`${set.slug} (Claude): ${(error as Error).message}`);
+        }
+      }
+    }
+    if (tracks) {
+      row.tracks = tracks.length;
+      row.timed = tracks[0].time !== null;
+      row.ids = tracks.filter(isUnidentified).length;
+      row.sample = tracks.slice(0, 4);
+    }
+  }
+} catch (error) {
+  errors.push((error as Error).stack ?? String(error));
+  process.exitCode = 1;
+} finally {
+  await db.$disconnect();
+}
+
+// ---- Report ----
+const count = (o: Outcome) => rows.filter((r) => r.outcome === o).length;
+const found = rows.filter((r) => r.tracks > 0);
+const checked = rows.filter((r) => r.outcome !== "GONE" && r.outcome !== "NOT_CHECKED").length;
+const pct = (n: number) => (checked ? `${Math.round((n / checked) * 100)}%` : "-");
+const byChannel = new Map<string, { sets: number; found: number }>();
+for (const r of rows) {
+  const c = byChannel.get(r.channel) ?? { sets: 0, found: 0 };
+  c.sets++;
+  if (r.tracks) c.found++;
+  byChannel.set(r.channel, c);
+}
+const channels = [...byChannel.entries()].sort((a, b) => b[1].sets - a[1].sets);
+const fmt = (t: Track) =>
+  `${t.time === null ? "" : `${Math.floor(t.time / 60)}:${String(t.time % 60).padStart(2, "0")} `}${t.artist ? `${t.artist} - ` : ""}${t.title}`;
+const samples = (o: Outcome) =>
+  found
+    .filter((r) => r.outcome === o)
+    .slice(0, sampleCount)
+    .map((r) => `  - **${r.slug}** (${r.tracks} tracks): ${r.sample!.map(fmt).join(" · ")}`)
+    .join("\n");
+
+const summary = {
+  setsChecked: checked,
+  withTracklist: found.length,
+  fromDescription: count("DESCRIPTION"),
+  fromChannelComment: count("CHANNEL_COMMENT"),
+  fromViewerComment: count("COMMENT"),
+  fromClaude: count("CLAUDE"),
+  unclearNotRead: count("UNCLEAR"),
+  none: count("NONE"),
+  commentsSwitchedOff: rows.filter((r) => r.commentsOff).length,
+  goneFromYouTube: count("GONE"),
+  notCheckedQuota: count("NOT_CHECKED"),
+  timed: found.filter((r) => r.timed).length,
+  withIdTracks: found.filter((r) => r.ids > 0).length,
+  youtubeUnits: yt.unitsUsed,
+  claudeCalls: extractor?.calls ?? 0,
+  claudeTokens: extractor ? { input: extractor.inputTokens, output: extractor.outputTokens } : null,
+  errors,
+};
+console.log(JSON.stringify(summary, null, 2));
+await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Object.fromEntries(channels), rows }, null, 2));
+
+{
+  const md = `## Tracklists: how many sets have one
+
+**${found.length} of ${checked} sets (${pct(found.length)})** have a tracklist we can show.
+
+| Where it came from | Sets | Share |
+|---|---|---|
+| Video description | ${summary.fromDescription} | ${pct(summary.fromDescription)} |
+| Comment by the channel itself | ${summary.fromChannelComment} | ${pct(summary.fromChannelComment)} |
+| Viewer comment | ${summary.fromViewerComment} | ${pct(summary.fromViewerComment)} |
+| Read by Claude (odd formatting) | ${summary.fromClaude} | ${pct(summary.fromClaude)} |
+| Looks like a tracklist, could not be read | ${summary.unclearNotRead} | ${pct(summary.unclearNotRead)} |
+| Nothing found | ${summary.none} | ${pct(summary.none)} |
+
+- With times (clickable later): ${summary.timed} · with at least one "ID" track: ${summary.withIdTracks}
+- Comments switched off: ${summary.commentsSwitchedOff} · gone from YouTube: ${summary.goneFromYouTube} · not checked (quota): ${summary.notCheckedQuota}
+- YouTube units used: ${summary.youtubeUnits}${extractor ? ` · Claude calls: ${summary.claudeCalls}` : ""}
+${errors.length ? `- Errors: ${errors.length} (see the log)` : ""}
+
+### By channel (sets with a tracklist / sets)
+${channels.map(([name, c]) => `- ${name}: ${c.found} / ${c.sets}`).join("\n")}
+
+### Examples to check by eye
+- From descriptions:
+${samples("DESCRIPTION") || "  - none"}
+- From the channel's comment:
+${samples("CHANNEL_COMMENT") || "  - none"}
+- From viewer comments:
+${samples("COMMENT") || "  - none"}
+${extractor ? `- Read by Claude:\n${samples("CLAUDE") || "  - none"}` : ""}
+`;
+  console.log(md);
+  if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, md);
+}

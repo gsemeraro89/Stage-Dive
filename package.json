@@ -1,0 +1,53 @@
+{
+  "name": "opendecks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx scripts/seed.ts",
+    "test": "vitest run",
+    "start:render": "prisma migrate deploy && tsx scripts/seed.ts && tsx scripts/thumbnails.ts && next start",
+    "db:thumbnails": "tsx scripts/thumbnails.ts",
+    "collect": "tsx scripts/collect.ts",
+    "refresh": "tsx scripts/refresh.ts",
+    "profiles": "tsx scripts/profiles.ts",
+    "similarity": "tsx scripts/similarity.ts",
+    "tracklists": "tsx scripts/tracklists.ts",
+    "artist-images": "tsx scripts/artist-images.ts",
+    "artist-lane": "tsx scripts/artist-lane.ts",
+    "track-stats": "tsx scripts/track-stats.ts",
+    "store-check": "tsx scripts/store-check.ts",
+    "admin-ops": "tsx scripts/admin-ops.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "dotenv": "^18.0.10",
+    "next": "^16.4.6",
+    "prisma": "^7.10.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

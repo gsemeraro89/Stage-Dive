@@ -1,0 +1,35 @@
+# Similar artists: asks ListenBrainz (CC0 data) for artists whose list is missing or a month old,
+# then recomputes every artist's ranking. Weekly; also recomputed (without asking) after each
+# publishing collector run.
+name: Similar artists
+
+on:
+  schedule:
+    - cron: "23 3 * * 1" # Mondays 03:23 UTC
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Maximum artists to ask ListenBrainz about (empty = all due)"
+        default: ""
+
+concurrency:
+  group: database-jobs
+  cancel-in-progress: false
+
+jobs:
+  similarity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: |
+          if [ -n "${{ inputs.limit }}" ]; then npm run similarity -- --limit "${{ inputs.limit }}"; else npm run similarity; fi

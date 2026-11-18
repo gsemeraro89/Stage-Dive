@@ -1,0 +1,219 @@
+{
+  "_note": "Channels the collector reads. kind: ELECTRONIC_ONLY (only electronic music), ARTIST (official artist channel), MIXED (several kinds of music). handle is tried first; otherwise the collector searches YouTube for 'search' (100 quota units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels to never use. newChannelsPerRun: how many new channels are looked up per run, to spread the cost of first reads.",
+  "channels": [
+    {
+      "name": "Cercle",
+      "handle": "@Cercle",
+      "search": "Cercle",
+      "expect": "cercle",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Boiler Room",
+      "handle": "@boilerroom",
+      "search": "Boiler Room",
+      "expect": "boiler room",
+      "kind": "MIXED"
+    },
+    {
+      "name": "HÖR Berlin",
+      "handle": "@HORBERLIN",
+      "search": "HÖR BERLIN",
+      "expect": "hör",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Mixmag",
+      "handle": "@Mixmag",
+      "search": "Mixmag",
+      "expect": "mixmag",
+      "kind": "MIXED"
+    },
+    {
+      "name": "DJ Mag",
+      "handle": "@DJMagazine",
+      "search": "DJ Mag",
+      "expect": "dj mag",
+      "kind": "MIXED"
+    },
+    {
+      "name": "Monegros Desert Festival",
+      "search": "Monegros Desert Festival",
+      "expect": "monegros",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Tomorrowland",
+      "handle": "@tomorrowland",
+      "search": "Tomorrowland",
+      "expect": "tomorrowland",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Awakenings",
+      "search": "Awakenings festival",
+      "expect": "awakenings",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Spectra",
+      "search": "Spectra Festival",
+      "expect": "spectra",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Keinemusik",
+      "search": "Keinemusik",
+      "expect": "keinemusik",
+      "kind": "ARTIST"
+    },
+    {
+      "name": "Afterlife",
+      "search": "Afterlife official",
+      "expect": "afterlife",
+      "kind": "ELECTRONIC_ONLY",
+      "skipIds": [
+        "UC2oCg1J_c9Cdq7E2XneYU5Q"
+      ]
+    },
+    {
+      "name": "Circoloco",
+      "search": "Circoloco",
+      "expect": "circoloco",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Paradise",
+      "search": "Paradise Jamie Jones",
+      "expect": "paradise",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Kappa FuturFestival",
+      "search": "Kappa FuturFestival",
+      "expect": "kappa",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Time Warp",
+      "search": "Time Warp festival",
+      "expect": "time warp",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Dekmantel",
+      "search": "Dekmantel",
+      "expect": "dekmantel",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Music On",
+      "search": "Music On Marco Carola",
+      "expect": "music on",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Hï Ibiza",
+      "search": "Hï Ibiza",
+      "expect": "hi ibiza",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "DGTL",
+      "search": "DGTL festival",
+      "expect": "dgtl",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Amnesia Ibiza",
+      "search": "Amnesia Ibiza",
+      "expect": "amnesia",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Movement Detroit",
+      "search": "Movement Detroit festival",
+      "expect": "movement",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Ushuaïa Ibiza",
+      "search": "Ushuaïa Ibiza",
+      "expect": "ushuaia",
+      "kind": "MIXED"
+    },
+    {
+      "name": "Diynamic",
+      "search": "Diynamic Music",
+      "expect": "diynamic",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "elrow",
+      "search": "elrow",
+      "expect": "elrow",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Sónar",
+      "search": "Sónar festival",
+      "expect": "sonar",
+      "kind": "MIXED"
+    },
+    {
+      "name": "EXIT Festival",
+      "search": "EXIT festival",
+      "expect": "exit",
+      "kind": "MIXED"
+    },
+    {
+      "name": "Amsterdam Dance Event",
+      "search": "Amsterdam Dance Event",
+      "expect": "amsterdam dance",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Pacha",
+      "search": "Pacha Ibiza",
+      "expect": "pacha",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Anjunadeep",
+      "search": "Anjunadeep",
+      "expect": "anjunadeep",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Drumcode",
+      "search": "Drumcode",
+      "expect": "drumcode",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Resident Advisor",
+      "search": "Resident Advisor",
+      "expect": "resident advisor",
+      "kind": "MIXED"
+    },
+    {
+      "name": "Defected Records",
+      "search": "Defected Records",
+      "expect": "defected",
+      "kind": "ELECTRONIC_ONLY"
+    },
+    {
+      "name": "Be-At.TV",
+      "search": "Be-At.TV",
+      "expect": "be-at",
+      "kind": "ELECTRONIC_ONLY"
+    }
+  ],
+  "_artistChannels": "Official channels of artists in the catalogue are added automatically by the refresh job (kind ARTIST).",
+  "discovery": {
+    "_note": "Fan uploads and other channels: a few YouTube searches per run (100 units each), rotating through catalogue artists.",
+    "searchesPerRun": 10,
+    "queryTemplate": "{artist} full set"
+  },
+  "newChannelsPerRun": 8
+}

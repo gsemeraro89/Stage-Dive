@@ -1,0 +1,41 @@
+/* FullDJSet design tokens — direction A "Magazine". See design/DESIGN.md.
+   Imported by src/app/globals.css. Fonts are loaded with next/font in src/app/layout.tsx,
+   which sets --font-archivo and --font-plex-mono on <html>. */
+
+:root {
+  --ground: #0B0B0F;
+  --ink: #ECEBF3;
+  --muted: #9A98AB;
+  --line: #2A2A36;
+  --acid: #C6FF3D;
+  --hover-row: #15151C;
+  --scrim: rgba(11, 11, 15, 0.64);
+
+  --font-sans: var(--font-archivo), "Archivo", "Arial Black", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  --pad-x: clamp(16px, 2.4vw, 36px);
+  --section-gap: clamp(64px, 8vw, 120px);
+  --col-gap: 28px;
+  --radius: 0;
+
+  /* Smallest area a link or button may offer to a finger. */
+  --touch: 44px;
+  /* Deck bar: the docked YouTube player. YouTube's minimum is 200x200. */
+  --deck-video-w: 356px;
+  --deck-video-h: 200px;
+  --deck-video-phone: 200px;
+  /* Page space kept free behind the fixed deck bar (bar height incl. its rule and progress line). */
+  --deck-space: 204px;
+  --deck-space-slim: 72px;
+}
+
+.display { font-family: var(--font-sans); font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.9; }
+.title   { font-family: var(--font-sans); font-weight: 800; font-stretch: 112%; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.08; }
+.body    { font-family: var(--font-sans); font-weight: 500; line-height: 1.35; }
+.meta    { font-family: var(--font-mono); font-size: 12px; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.5; }
+
+.size-hero    { font-size: clamp(150px, 33vw, 520px); line-height: 0.76; }
+.size-section { font-size: clamp(30px, 4.2vw, 60px); }
+.size-lead    { font-size: clamp(22px, 2.6vw, 40px); }
+.size-tile    { font-size: clamp(18px, 1.6vw, 24px); }

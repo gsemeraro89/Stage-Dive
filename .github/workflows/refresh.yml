@@ -1,0 +1,38 @@
+# YouTube rule: stored data must be refreshed or deleted at least every 30 days.
+# Runs daily; each set is refreshed once it is 25 days old, and its tracklist re-read.
+# Sets never checked for a tracklist are always included (the first run after this fills them all).
+name: Refresh YouTube data
+
+on:
+  schedule:
+    - cron: "43 3 * * *" # every day at 03:43 UTC
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Refresh every set now, not only those due"
+        type: boolean
+        default: false
+
+concurrency:
+  group: database-jobs
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      # Reads tracklists the rules cannot (odd formatting); the refresh works without it.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run refresh -- ${{ inputs.all && '--all' || '' }}

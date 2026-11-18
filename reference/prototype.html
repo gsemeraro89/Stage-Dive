@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenDecks — Free electronic DJ sets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b0f; --panel:#14141b; --panel2:#1b1b24; --line:#2a2a36;
+  --text:#ecebf3; --muted:#9a98ab; --acc:#c6ff3d; --acc2:#7c5cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5}
+a{color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+header{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,11,15,.92);backdrop-filter:blur(8px);z-index:10}
+.bar{display:flex;align-items:center;gap:20px;height:64px}
+.logo{font-family:'Space Grotesk';font-weight:700;font-size:22px;letter-spacing:-.5px;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo i{width:22px;height:22px;border-radius:50%;background:conic-gradient(var(--acc),var(--acc2),var(--acc));display:inline-block;box-shadow:inset 0 0 0 7px var(--bg)}
+nav{display:flex;gap:18px;color:var(--muted);font-size:14px}
+nav a{text-decoration:none}nav a:hover{color:var(--text)}
+.search{margin-left:auto;flex:0 1 340px;position:relative}
+.search input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:10px 16px 10px 38px;font:inherit}
+.search input:focus{outline:none;border-color:var(--acc)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.6}
+
+.ad{border:1px dashed #3b3b4b;border-radius:10px;color:#6d6b80;font-size:12px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#111117,#111117 10px,#14141b 10px,#14141b 20px)}
+.ad.leader{height:90px;margin:20px 0}
+.ad.rect{height:250px}
+
+.hero{padding:44px 0 10px}
+.hero h1{font-family:'Space Grotesk';font-size:clamp(32px,5vw,54px);line-height:1.02;letter-spacing:-1.5px;max-width:760px}
+.hero h1 em{font-style:normal;color:var(--acc)}
+.hero p{color:var(--muted);max-width:620px;margin-top:14px;font-size:16px}
+.stats{display:flex;gap:28px;margin-top:22px;color:var(--muted);font-size:13px}
+.stats b{display:block;color:var(--text);font-family:'Space Grotesk';font-size:22px}
+
+.layout{display:grid;grid-template-columns:240px 1fr;gap:28px;margin-top:10px;padding-bottom:60px}
+aside{position:sticky;top:84px;align-self:start}
+.fgroup{margin-bottom:22px}
+.fgroup h4{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:5px 11px;border-radius:999px;font-size:13px;cursor:pointer;font-family:inherit}
+.chip:hover{border-color:#4a4a5c}
+.chip.on{background:var(--acc);color:#111;border-color:var(--acc);font-weight:600}
+.chip small{opacity:.6;margin-left:4px}
+select{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font:inherit}
+.clear{background:none;border:none;color:var(--acc);cursor:pointer;font:inherit;font-size:13px;padding:0}
+
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.toolbar .count{color:var(--muted);font-size:14px}
+.toolbar select{width:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;text-decoration:none;display:block}
+.card:hover{transform:translateY(-3px);border-color:#44445a}
+.thumb{aspect-ratio:16/9;position:relative;overflow:hidden;display:block;background:#000}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.card:hover .thumb img{transform:scale(1.04)}
+.thumb .play{background:rgba(0,0,0,.25)}
+.tlink{text-decoration:none}.tlink:hover h3{color:var(--acc)}
+.info{margin-left:auto;color:var(--muted);font-size:12px;text-decoration:underline}.info:hover{color:var(--text)}
+.player img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.player .bigplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);z-index:2}
+.player .bigplay span{width:84px;height:84px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.player:hover .bigplay span{transform:scale(1.08)}
+.mini img{width:84px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;flex:none}
+.alink{color:var(--text);font-weight:600;text-decoration:none;border-bottom:1px solid transparent}.alink:hover{color:var(--acc);border-color:var(--acc)}
+.w{color:var(--muted);font-weight:400}
+.seeall{display:block;color:var(--acc);font-size:13px;text-decoration:none;margin:6px 8px 0}
+/* artist page */
+.ahero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);min-height:380px;display:flex;align-items:flex-end}
+.abg{position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;filter:blur(18px) saturate(1.2) brightness(.5)}
+.ahero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--bg) 4%,rgba(11,11,15,.4) 60%,rgba(11,11,15,.6))}
+.ain{position:relative;z-index:2;padding-top:24px;padding-bottom:30px;width:100%}
+.atag{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--acc);font-weight:600}
+.ahero h1{font-family:'Space Grotesk';font-size:clamp(64px,11vw,140px);line-height:.9;letter-spacing:-4px;margin:8px 0 18px}
+.astats{display:flex;gap:30px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.astats b{display:block;color:var(--text);font-family:'Space Grotesk';font-size:24px}
+.aact{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#111;font-weight:600;padding:11px 20px;border-radius:999px;text-decoration:none;border:none;cursor:pointer;font:inherit;font-weight:600}
+.btn.ghost{background:rgba(255,255,255,.08);color:var(--text);border:1px solid rgba(255,255,255,.2)}
+.abio{color:#cfcddc;max-width:780px;margin:26px 0 22px;font-size:16px}
+.featrow{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.feat{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;display:block;text-decoration:none}
+.feat img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.feat:hover img{transform:scale(1.03)}
+.fov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85),transparent 55%);display:flex;flex-direction:column;justify-content:space-between;padding:16px}
+.lbl{align-self:flex-start;background:var(--acc);color:#111;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:4px 9px;border-radius:999px}
+.fplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;opacity:.92}
+.ft b{display:block;font-size:17px;line-height:1.3}.ft small{color:#d6d4e2}
+.sec{font-family:'Space Grotesk';font-size:22px;margin:40px 0 14px;letter-spacing:-.3px}
+.timeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.ty{flex:none;display:flex;flex-direction:column;gap:6px;min-width:110px}
+.ty b{font-family:'Space Grotesk';color:var(--muted);font-size:14px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.ty img{width:110px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;display:block;opacity:.85}.ty a:hover img{opacity:1;outline:2px solid var(--acc)}
+.simrow{display:flex;gap:16px;flex-wrap:wrap}
+.sim{width:200px;text-decoration:none}
+.sim img{width:200px;height:200px;object-fit:cover;border-radius:50%;display:block;margin-bottom:10px;filter:saturate(1.1)}
+.sim b{display:block;text-align:center}.sim small{display:block;text-align:center;color:var(--muted)}
+.fa{display:flex;align-items:center;gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:22px;text-decoration:none;max-width:760px}
+.fa:hover{border-color:var(--acc)}
+.fa img{width:72px;height:72px;border-radius:50%;object-fit:cover}
+.fa small{color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+.fa b{display:block;font-family:'Space Grotesk';font-size:20px}
+.fa span{color:var(--muted);font-size:13px}
+.fa .go{margin-left:auto;color:var(--acc);font-weight:600;white-space:nowrap}
+@media (max-width:860px){.featrow{grid-template-columns:1fr}.sim{width:140px}.sim img{width:140px;height:140px}}
+.thumb .name{font-family:'Space Grotesk';font-weight:700;font-size:26px;line-height:1;letter-spacing:-.5px;position:relative;z-index:2;text-shadow:0 2px 16px rgba(0,0,0,.5)}
+.thumb .dur{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.75);font-size:12px;padding:2px 7px;border-radius:5px;z-index:2;font-variant-numeric:tabular-nums}
+.thumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;z-index:3}
+.card:hover .play{opacity:1}
+.play span{width:54px;height:54px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center}
+.meta{padding:12px 14px 14px}
+.meta h3{font-size:14.5px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:39px}
+.meta .sub{color:var(--muted);font-size:12.5px;margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}
+.tags{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel2);color:#c9c7d8;border:1px solid var(--line)}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);grid-column:1/-1}
+.grid .ad{grid-column:1/-1;height:100px}
+
+/* detail */
+#detail{display:none;padding:28px 0 60px}
+.back{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;margin-bottom:18px}
+.back:hover{color:var(--text)}
+.dgrid{display:grid;grid-template-columns:1fr 300px;gap:28px}
+.player{aspect-ratio:16/9;border-radius:14px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px}
+.player .name{font-family:'Space Grotesk';font-weight:700;font-size:clamp(30px,5vw,56px);position:relative;z-index:2;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#111;font-weight:600;padding:11px 20px;border-radius:999px;text-decoration:none;position:relative;z-index:2}
+.note{font-size:12px;color:rgba(255,255,255,.75);position:relative;z-index:2;max-width:420px}
+#detail h2{font-family:'Space Grotesk';font-size:28px;letter-spacing:-.5px;margin-top:20px;line-height:1.15}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:18px 0}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.fact span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.fact b{font-weight:600}
+.about{color:#cfcddc;max-width:720px}
+.side h4{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:22px 0 10px}
+.mini{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;text-decoration:none}
+.mini:hover{background:var(--panel)}
+.mini .sw{width:84px;aspect-ratio:16/9;border-radius:6px;flex:none;display:flex;align-items:flex-end;padding:4px 6px;font-family:'Space Grotesk';font-weight:700;font-size:11px;position:relative;overflow:hidden}
+.mini .sw b{position:relative;z-index:2}
+.mini p{font-size:13px;line-height:1.3}
+.mini small{color:var(--muted);font-size:11.5px}
+.noise{position:absolute;inset:0;z-index:1;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.18),transparent 45%),linear-gradient(to top,rgba(0,0,0,.55),transparent 60%)}
+
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px}
+.proto{background:#1d1a2e;border:1px solid #3a3260;color:#cfc8ff;font-size:13px;padding:10px 14px;border-radius:10px;margin-top:22px;max-width:760px}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  aside{position:static}
+  nav{display:none}
+  .dgrid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#" onclick="goHome();return false"><i></i>OpenDecks</a>
+    <nav><a href="#" onclick="goHome();return false">Browse</a><a href="#" onclick="return false">Genres</a><a href="#" onclick="return false">Festivals</a><a href="#" onclick="return false">DJs</a></nav>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search DJs, festivals, venues…" autocomplete="off">
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="home">
+    <div class="hero">
+      <h1>Every free electronic DJ set on YouTube, <em>in one place.</em></h1>
+      <p>Full-length sets from festivals, clubs and one-off locations, sorted by genre, DJ and venue. Free to watch, no sign-up.</p>
+      <div class="stats" id="stats"></div>
+      <a class="fa" href="#artist-nto"><img src="thumbs/NEjcnAJ7Sls.jpg" alt=""><div><small>Featured artist</small><b>NTO</b><span>14 full live sets, 2013–2026 · Cercle, HÖR, festivals</span></div><span class="go">See all sets →</span></a>
+      <div class="proto"><b>Prototype:</b> built from Giuseppe's 10 most recently watched DJ sets, plus the full NTO catalogue found on YouTube. Every video was checked as public and embeddable on 11 Nov 2026. One click on any set starts it on YouTube. On the live site, that same click will play it right here on the page.</div>
+    </div>
+
+    <div class="ad leader">Ad slot · 728×90 leaderboard</div>
+
+    <div class="layout">
+      <aside>
+        <div class="fgroup"><h4>Genre</h4><div class="chips" id="fGenre"></div></div>
+        <div class="fgroup"><h4>DJ / Artist</h4><select id="fDj"></select></div>
+        <div class="fgroup"><h4>Venue / Festival</h4><select id="fVenue"></select></div>
+        <div class="fgroup"><h4>Setting</h4><div class="chips" id="fSetting"></div></div>
+        <button class="clear" id="clearAll">Clear all filters</button>
+        <div class="ad rect" style="margin-top:24px">Ad slot · 300×250</div>
+      </aside>
+      <div>
+        <div class="toolbar">
+          <div class="count" id="count"></div>
+          <select id="sort">
+            <option value="new">Newest upload</option>
+            <option value="views">Most viewed</option>
+            <option value="long">Longest set</option>
+            <option value="short">Shortest set</option>
+          </select>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="detail"></section>
+</main>
+<section id="artist" style="display:none"></section>
+
+<footer>
+  <div class="wrap">OpenDecks indexes publicly available videos that their owners have made embeddable on YouTube. All rights belong to the artists and channels. · Prototype v0.1</div>
+</footer>
+
+<script>
+const SETS = [
+ {id:"2is2o6_Hxe0", artist:"NTO", title:"NTO Live (Full Set) – Spectra, Liège 2026", channel:"NTO", secs:7416, views:66693, date:"2026-09-30",
+  genres:["Melodic Techno","Live Act"], venue:"Spectra Festival", city:"Liège", country:"Belgium", setting:"Festival", hue:[265,320],
+  about:"The French producer's live show, played as a hybrid live act rather than a DJ set, captured in full at Spectra in Liège. Expect his signature emotive, melodic techno, built in real time."},
+ {id:"aiGBY5DA398", artist:"The Blaze", title:"The Blaze live at Cercle Odyssey, Mexico City", channel:"Cercle", secs:5378, views:2382046, date:"2025-07-01",
+  genres:["Electronica","Live Act"], venue:"Cercle Odyssey", city:"Mexico City", country:"Mexico", setting:"Cercle / Special location", hue:[20,350],
+  about:"The French duo bring their cinematic, vocal-led electronica to a Cercle Odyssey show in Mexico City. Cercle is known for filming sets at landmark locations around the world."},
+ {id:"4BvjYabSl5A", artist:"Paul Kalkbrenner", title:"Paul Kalkbrenner @ PM Open Air Buenos Aires", channel:"We Must", secs:8764, views:14340113, date:"2018-12-18",
+  genres:["Techno","Live Act"], venue:"PM Open Air", city:"Buenos Aires", country:"Argentina", setting:"Festival", hue:[200,240],
+  about:"One of the most-watched techno sets on YouTube: Paul Kalkbrenner's live show at PM Open Air in Buenos Aires, close to two and a half hours of his melodic Berlin techno."},
+ {id:"ix1mjSIuHQE", artist:"CamelPhat", title:"CamelPhat Live from a Yacht in Ibiza 2025", channel:"CamelPhat", secs:6532, views:510274, date:"2025-10-03",
+  genres:["Tech House","Melodic House"], venue:"Yacht session", city:"Ibiza", country:"Spain", setting:"Cercle / Special location", hue:[185,215],
+  about:"The Liverpool duo play a sunset set from a yacht off Ibiza. Big, rolling tech house and melodic cuts in a classic Balearic setting."},
+ {id:"PjcUzqvPsZ8", artist:"Marsh", title:"Marsh DJ Set – Live From Gjipe, Albania", channel:"Marsh", secs:7857, views:741840, date:"2025-08-27",
+  genres:["Melodic House","Progressive"], venue:"Gjipe Beach", city:"Gjipe", country:"Albania", setting:"Cercle / Special location", hue:[160,200],
+  about:"The Anjunadeep regular plays an extended set filmed on the Albanian coast at Gjipe. Deep, progressive and melodic house for a long listen."},
+ {id:"C3oynnRofxw", artist:"Eric Prydz", title:"Eric Prydz – Live from History, Toronto 2025 (Full Set)", channel:"Eric Prydz", secs:7474, views:313790, date:"2025-01-21",
+  genres:["Progressive House","Techno"], venue:"History", city:"Toronto", country:"Canada", setting:"Club", hue:[0,30],
+  about:"A full club set from Eric Prydz at History in Toronto, covering his Prydz progressive anthems and the darker Cirez D side."},
+ {id:"_YPbpWeIx2Q", artist:"Paul Kalkbrenner", title:"Paul Kalkbrenner @ Sónar Lisboa 2024", channel:"DJ Mag", secs:7161, views:2039790, date:"2024-04-24",
+  genres:["Techno","Live Act"], venue:"Sónar Lisboa", city:"Lisbon", country:"Portugal", setting:"Festival", hue:[220,280],
+  about:"Kalkbrenner's live performance at the Lisbon edition of Sónar, filmed and published by DJ Mag."},
+ {id:"sx6_l6skb5o", artist:"Indira Paganotto", title:"Indira Paganotto – Closing Monegros Desert Festival 2025", channel:"Monegros Desert Festival", secs:7400, views:341081, date:"2025-11-13",
+  genres:["Techno","Psytrance"], venue:"Monegros Desert Festival", city:"Fraga", country:"Spain", setting:"Festival", hue:[30,10],
+  about:"The Spanish DJ closes Monegros Desert Festival with her high-energy blend of techno and psychedelic trance."},
+ {id:"YDJEo-rQrfw", artist:"Folamour", title:"Folamour at Cathédrale Saint-Pierre, Geneva, for Cercle & W Hotels", channel:"Cercle", secs:6823, views:3156792, date:"2023-07-27",
+  genres:["House","Disco"], venue:"Cathédrale Saint-Pierre", city:"Geneva", country:"Switzerland", setting:"Cercle / Special location", hue:[40,330],
+  about:"Folamour plays inside Geneva's Saint-Pierre Cathedral for Cercle. A warm, soulful mix of house, disco and funk in a striking setting."},
+ {id:"iybJn1SyXB0", artist:"Val Baker", title:"Good Vibes & Groovy Morning House Mix – Bangkok Bedroom DJ Set", channel:"Val Baker I DJ", secs:1659, views:3655623, date:"2025-03-24",
+  genres:["House","Deep House"], venue:"Bedroom session", city:"Bangkok", country:"Thailand", setting:"Studio / Bedroom", hue:[45,90],
+  about:"A short, upbeat morning house mix recorded at home in Bangkok. An easy entry point if you don't have two hours."},
+
+ // ---- NTO catalogue (found on YouTube, all public + embeddable, checked 11 Nov 2026)
+ {id:"LL0b2ZKEJoY", artist:"NTO", title:"N'to live @ Tour Saint-Jacques, Paris, for Cercle", channel:"Cercle", secs:5140, views:4413755, date:"2017-09-26",
+  genres:["Melodic Techno","Live Act"], venue:"Tour Saint-Jacques", city:"Paris", country:"France", setting:"Cercle / Special location",
+  about:"NTO's most-watched set: a sunset live show on top of the Tour Saint-Jacques, a Gothic tower in central Paris, filmed by Cercle."},
+ {id:"Ri9NKdvsHXc", artist:"NTO", title:"NTO Live @ Région Dents du Midi", channel:"Région Dents du Midi", secs:5676, views:1800439, date:"2020-08-01",
+  genres:["Melodic Techno","Live Act"], venue:"Région Dents du Midi", city:"Valais", country:"Switzerland", setting:"Cercle / Special location",
+  about:"A live set in the Swiss Alps, with the mountainside lit up behind him. One of the standout outdoor broadcasts of summer 2020."},
+ {id:"pZKrn6YEWGI", artist:"NTO", title:"NTO Live (Full Set) – komm schon Alter | Das Festival 2026", channel:"komm schon Alter", secs:4818, views:114326, date:"2026-06-19",
+  genres:["Melodic Techno","Live Act"], venue:"komm schon Alter Festival", city:"", country:"Germany", setting:"Festival",
+  about:"A full festival set from summer 2026 at komm schon Alter's own festival, co-published by NTO's channel."},
+ {id:"NEjcnAJ7Sls", artist:"NTO", title:"NTO | HÖR x Sennheiser Amsterdam Livingroom – 21 Oct 2026", channel:"HÖR Berlin", secs:3406, views:11038, date:"2026-10-21",
+  genres:["Melodic Techno","Live Act"], venue:"HÖR x Sennheiser Livingroom", city:"Amsterdam", country:"Netherlands", setting:"Studio / Session",
+  about:"An intimate session for HÖR's livingroom series in Amsterdam, uploaded just weeks ago. Close-up camera work on his live setup."},
+ {id:"hHrbgjVySlc", artist:"NTO", title:"NTO live @ 6MIC x Wup Events", channel:"NTO", secs:3001, views:445740, date:"2021-08-26",
+  genres:["Melodic Techno","Live Act"], venue:"6MIC", city:"Aix-en-Provence", country:"France", setting:"Livestream",
+  about:"A livestreamed show from the 6MIC concert hall, published on NTO's own channel."},
+ {id:"qKHceXcPIec", artist:"NTO", title:"Brut.club: NTO live set at Le Baou, Marseille", channel:"Brut", secs:3858, views:76293, date:"2021-04-04",
+  genres:["Melodic Techno","Live Act"], venue:"Le Baou", city:"Marseille", country:"France", setting:"Cercle / Special location",
+  about:"Filmed for Brut.club, the media outlet's live music series, on the hills above Marseille."},
+ {id:"0QnMv0bRyk0", artist:"NTO", with:"Sofiane Pamart", title:"NTO & Sofiane Pamart – Forever Friends (Live Session)", channel:"NTO", secs:2442, views:418110, date:"2024-06-14",
+  genres:["Melodic Techno","Neo-Classical"], venue:"Live session", city:"", country:"", setting:"Studio / Session",
+  about:"NTO teams up with pianist Sofiane Pamart, blending grand piano with his electronic live setup."},
+ {id:"b_fKzTdMViQ", artist:"NTO", with:"Joachim Pastor (as Sinners)", title:"Sinners (N'to & Joachim Pastor) launch @ Concorde, Paris, for Cercle", channel:"Cercle", secs:4579, views:709234, date:"2017-01-11",
+  genres:["Melodic Techno","Live Act"], venue:"Concorde", city:"Paris", country:"France", setting:"Cercle / Special location",
+  about:"The launch show of Sinners, NTO's duo project with Joachim Pastor, filmed by Cercle in Paris."},
+ {id:"Jle4X3meNw0", artist:"NTO", title:"Electro Posé Mixtape x N'to (Live)", channel:"ElectroPosé", secs:3492, views:1057858, date:"2014-07-27",
+  genres:["Melodic Techno","Live Act"], venue:"Buiten Westen", city:"The Hague", country:"Netherlands", setting:"Club",
+  about:"An early live recording from 2014, released as part of the Electro Posé mixtape series. It passed a million views."},
+ {id:"545Q5SmA6KQ", artist:"NTO", title:"N'to – DGTL Festival 2014", channel:"paardenmiddel", secs:3800, views:11584, date:"2024-02-12",
+  genres:["Melodic Techno","Live Act"], venue:"DGTL Festival", city:"Amsterdam", country:"Netherlands", setting:"Festival",
+  about:"An archive recording of NTO's 2014 DGTL Festival set, uploaded by a fan years later."},
+ {id:"YvTy7BU1rVQ", artist:"NTO", title:"N'to – Live @ Twenty Five", channel:"anton", secs:3896, views:144591, date:"2013-02-24",
+  genres:["Melodic Techno","Live Act"], venue:"Twenty Five", city:"", country:"", setting:"Club",
+  about:"The oldest NTO set on YouTube, from early 2013, years before the Cercle shows made him widely known."},
+ {id:"vCZD8o6ut-Y", artist:"NTO", title:"N'to – Lockdown Tour, Part 3 (Bathroom)", channel:"WAiT_A_DrEAm", secs:2981, views:16626, date:"2020-12-22",
+  genres:["Melodic Techno","Live Act"], venue:"Lockdown Tour (at home)", city:"", country:"", setting:"Studio / Session",
+  about:"From NTO's tongue-in-cheek 'Lockdown Tour': a full live set played from his bathroom during the 2020 lockdowns."},
+ {id:"OiSxwfwdfnE", artist:"NTO", with:"MEUTE", title:"NTO Livestream (with special guest MEUTE)", channel:"NTO", secs:2205, views:92338, date:"2020-12-15",
+  genres:["Melodic Techno","Live Act"], venue:"Livestream", city:"", country:"", setting:"Livestream",
+  about:"A December 2020 livestream with Hamburg's techno marching band MEUTE as special guest."}
+];
+
+const ARTISTS = {
+  "NTO": {aka:"N'to", origin:"France", label:"Hungry Music",
+    bio:"French producer and live performer, and co-founder of the Hungry Music label with Worakls and Joachim Pastor. NTO never DJs: every show is played live on synths and controllers, building emotive, melodic techno in real time. His 2017 Cercle set on the Tour Saint-Jacques is one of the best-known live sets in the genre.",
+    similar:["The Blaze","Marsh","Paul Kalkbrenner"]}
+};
+const slug = a => a.toLowerCase().normalize("NFD").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"");
+const bySlug = s => [...new Set(SETS.map(x=>x.artist))].find(a=>slug(a)===s);
+const alink = a => `<a class="alink" href="#artist-${slug(a)}">${a}</a>`;
+const loc = s => [s.city,s.country].filter(Boolean).join(", ");
+
+const $ = s => document.querySelector(s);
+const state = {genre:null, dj:"", venue:"", setting:null, q:"", sort:"new"};
+
+const fmtDur = s => {const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")};
+const fmtViews = n => n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+"M":n>=1e3?Math.round(n/1e3)+"K":n;
+const fmtDate = d => new Date(d+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+const art = s => `background:radial-gradient(120% 90% at 0% 100%,hsl(${s.hue[0]} 85% 45%),transparent 60%),radial-gradient(100% 100% at 100% 0%,hsl(${s.hue[1]} 80% 50%),transparent 60%),#15131f`;
+const yt = id => "https://www.youtube.com/watch?v="+id;
+const uniq = a => [...new Set(a)];
+const countBy = (arr, f) => arr.reduce((m,x)=>{[].concat(f(x)).forEach(k=>m[k]=(m[k]||0)+1);return m},{});
+
+function buildFilters(){
+  const g = countBy(SETS, s=>s.genres);
+  $("#fGenre").innerHTML = Object.keys(g).sort((a,b)=>g[b]-g[a]).map(k=>`<button class="chip" data-v="${k}">${k}<small>${g[k]}</small></button>`).join("");
+  const st = countBy(SETS, s=>s.setting);
+  $("#fSetting").innerHTML = Object.keys(st).map(k=>`<button class="chip" data-v="${k}">${k}<small>${st[k]}</small></button>`).join("");
+  $("#fDj").innerHTML = `<option value="">All DJs (${uniq(SETS.map(s=>s.artist)).length})</option>` + uniq(SETS.map(s=>s.artist)).sort().map(a=>`<option value="${a}">${a} (${SETS.filter(x=>x.artist===a).length})</option>`).join("");
+  $("#fVenue").innerHTML = `<option value="">All venues & festivals</option>` + uniq(SETS.map(s=>s.venue)).sort().map(a=>`<option>${a}</option>`).join("");
+  const hours = Math.round(SETS.reduce((a,s)=>a+s.secs,0)/3600);
+  $("#stats").innerHTML = `<div><b>${SETS.length}</b>sets</div><div><b>${hours}h</b>of music</div><div><b>${uniq(SETS.map(s=>s.artist)).length}</b>DJs</div><div><b>${uniq(SETS.map(s=>s.country).filter(Boolean)).length}</b>countries</div>`;
+}
+
+function filtered(){
+  const q = state.q.trim().toLowerCase();
+  let r = SETS.filter(s =>
+    (!state.genre || s.genres.includes(state.genre)) &&
+    (!state.setting || s.setting===state.setting) &&
+    (!state.dj || s.artist===state.dj) &&
+    (!state.venue || s.venue===state.venue) &&
+    (!q || [s.artist,s.title,s.venue,s.city,s.country,s.channel,...s.genres].join(" ").toLowerCase().includes(q)));
+  const sorters = {new:(a,b)=>b.date.localeCompare(a.date), views:(a,b)=>b.views-a.views, long:(a,b)=>b.secs-a.secs, short:(a,b)=>a.secs-b.secs};
+  return r.sort(sorters[state.sort]);
+}
+
+function card(s){
+  return `<div class="card">
+    <a class="thumb" href="${yt(s.id)}" target="_blank" rel="noopener" title="Play ${s.title}">
+      <img src="thumbs/${s.id}.jpg" alt="${s.title}" loading="lazy">
+      <div class="dur">${fmtDur(s.secs)}</div>
+      <div class="play"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="#111"><path d="M7 4v16l13-8z"/></svg></span></div>
+    </a>
+    <div class="meta"><a class="tlink" href="${yt(s.id)}" target="_blank" rel="noopener"><h3>${s.title}</h3></a>
+      <div class="sub"><span>${alink(s.artist)}${s.with?` <span class="w">with ${s.with}</span>`:""}</span></div>
+      <div class="sub"><span>${s.venue}${s.country?" · "+s.country:""}</span></div>
+      <div class="sub"><span>${fmtViews(s.views)} views</span><span>·</span><span>${fmtDate(s.date)}</span><a class="info" href="#${s.id}">Details</a></div>
+      <div class="tags">${s.genres.map(g=>`<span class="tag">${g}</span>`).join("")}</div>
+    </div></div>`;
+}
+
+function render(){
+  const r = filtered();
+  $("#count").textContent = `${r.length} set${r.length===1?"":"s"}`;
+  let html = r.map(card);
+  if (r.length>6) html.splice(6,0,`<div class="ad">Ad slot · in-feed native</div>`);
+  $("#grid").innerHTML = r.length ? html.join("") : `<div class="empty">No sets match these filters. <button class="clear" onclick="clearAll()">Clear filters</button></div>`;
+  document.querySelectorAll("#fGenre .chip").forEach(c=>c.classList.toggle("on",c.dataset.v===state.genre));
+  document.querySelectorAll("#fSetting .chip").forEach(c=>c.classList.toggle("on",c.dataset.v===state.setting));
+  $("#fDj").value=state.dj; $("#fVenue").value=state.venue;
+}
+
+function clearAll(){Object.assign(state,{genre:null,dj:"",venue:"",setting:null,q:""});$("#q").value="";render();}
+function goHome(){ if(location.hash) location.hash=""; else route(); }
+
+const PLAY = sz=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="#111"><path d="M7 4v16l13-8z"/></svg>`;
+const fmtHours = secs => { const h = secs/3600; return h>=10 ? Math.round(h)+"h" : h.toFixed(1)+"h"; };
+
+function detail(s){
+  const same = SETS.filter(x=>x.id!==s.id && x.artist===s.artist).sort((a,b)=>b.views-a.views).slice(0,4);
+  const related = SETS.filter(x=>x.id!==s.id && x.artist!==s.artist).map(x=>({x,score:x.genres.filter(g=>s.genres.includes(g)).length+(x.setting===s.setting?1:0)})).sort((a,b)=>b.score-a.score).slice(0,4).map(o=>o.x);
+  const mini = x=>`<a class="mini" href="#${x.id}"><img src="thumbs/${x.id}.jpg" alt=""><div><p>${x.title}</p><small>${fmtDur(x.secs)} · ${fmtViews(x.views)} views</small></div></a>`;
+  $("#detail").innerHTML = `
+    <button class="back" onclick="history.length>1?history.back():goHome()">← Back</button>
+    <div class="dgrid"><div>
+      <a class="player" href="${yt(s.id)}" target="_blank" rel="noopener" title="Play ${s.title}">
+        <img src="thumbs/${s.id}.jpg" alt="${s.title}">
+        <div class="bigplay"><span>${PLAY(34)}</span></div>
+        <div class="dur" style="position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.75);font-size:13px;padding:3px 8px;border-radius:5px;z-index:3">${fmtDur(s.secs)}</div>
+      </a>
+      <h2>${s.title}</h2>
+      <div class="facts">
+        <div class="fact"><span>Artist</span><b>${alink(s.artist)}${s.with?" <small style='color:var(--muted)'>with "+s.with+"</small>":""}</b></div>
+        <div class="fact"><span>Venue / Festival</span><b>${s.venue}</b></div>
+        <div class="fact"><span>Location</span><b>${loc(s)||"—"}</b></div>
+        <div class="fact"><span>Length</span><b>${fmtDur(s.secs)}</b></div>
+        <div class="fact"><span>Views</span><b>${s.views.toLocaleString("en")}</b></div>
+        <div class="fact"><span>Uploaded</span><b>${fmtDate(s.date)} · ${s.channel}</b></div>
+      </div>
+      <div class="tags" style="margin-bottom:16px">${s.genres.map(g=>`<a class="tag" href="#" onclick="state.genre='${g}';goHome();return false">${g}</a>`).join("")}<span class="tag">${s.setting}</span></div>
+      <p class="about">${s.about}</p>
+      <div class="ad leader">Ad slot · 728×90 below player</div>
+    </div>
+    <div class="side">
+      <div class="ad rect">Ad slot · 300×250</div>
+      ${same.length?`<h4>More from ${s.artist}</h4>${same.map(mini).join("")}<a class="seeall" href="#artist-${slug(s.artist)}">See all ${SETS.filter(x=>x.artist===s.artist).length} ${s.artist} sets →</a>`:""}
+      <h4>You might also like</h4>
+      ${related.map(mini).join("")}
+    </div></div>`;
+}
+
+const astate = {setting:null, sort:"views"};
+const follows = new Set();
+function artistPage(a){
+  const all = SETS.filter(x=>x.artist===a);
+  const info = ARTISTS[a] || {};
+  const top = [...all].sort((x,y)=>y.views-x.views)[0];
+  const latest = [...all].sort((x,y)=>y.date.localeCompare(x.date))[0];
+  const totViews = all.reduce((t,x)=>t+x.views,0);
+  const years = all.map(x=>+x.date.slice(0,4));
+  const countries = uniq(all.map(x=>x.country).filter(Boolean));
+  const sets = all.filter(x=>!astate.setting||x.setting===astate.setting)
+    .sort({views:(x,y)=>y.views-x.views,new:(x,y)=>y.date.localeCompare(x.date),old:(x,y)=>x.date.localeCompare(y.date),long:(x,y)=>y.secs-x.secs}[astate.sort]);
+  const st = countBy(all, x=>x.setting);
+  const similar = (info.similar||[]).filter(n=>SETS.some(x=>x.artist===n));
+  const feat = (x,label)=>`<a class="feat" href="${yt(x.id)}" target="_blank" rel="noopener">
+      <img src="thumbs/${x.id}.jpg" alt=""><div class="fov"><span class="lbl">${label}</span><div class="fplay">${PLAY(22)}</div>
+      <div class="ft"><b>${x.title}</b><small>${fmtDur(x.secs)} · ${fmtViews(x.views)} views · ${fmtDate(x.date)}</small></div></div></a>`;
+  // timeline by year
+  const byYear = {}; all.forEach(x=>{const y=x.date.slice(0,4);(byYear[y]=byYear[y]||[]).push(x)});
+  const yrs = Object.keys(byYear).sort();
+  $("#artist").innerHTML = `
+    <div class="ahero">
+      <img class="abg" src="thumbs/${(latest||top).id}.jpg" alt="">
+      <div class="wrap ain">
+        <button class="back" onclick="goHome()">← All sets</button>
+        <div class="atag">Artist${info.aka?` · also known as ${info.aka}`:""}</div>
+        <h1>${a}</h1>
+        <div class="astats">
+          <div><b>${all.length}</b>full sets</div>
+          <div><b>${fmtHours(all.reduce((t,x)=>t+x.secs,0))}</b>of music</div>
+          <div><b>${fmtViews(totViews)}</b>total views</div>
+          <div><b>${Math.min(...years)}–${Math.max(...years)}</b>on YouTube</div>
+          ${countries.length?`<div><b>${countries.length}</b>countries</div>`:""}
+        </div>
+        <div class="aact">
+          <a class="btn" href="${yt(top.id)}" target="_blank" rel="noopener">${PLAY(16)} Play most popular set</a>
+          <button class="btn ghost" id="followBtn">${follows.has(a)?"✓ Following":"+ Follow · get new sets by email"}</button>
+        </div>
+      </div>
+    </div>
+    <div class="wrap">
+      ${info.bio?`<p class="abio">${info.bio}${info.label?` <span class="w">Label: ${info.label}.</span>`:""}</p>`:""}
+      <div class="featrow">${feat(latest,"Latest upload")}${top.id!==latest.id?feat(top,"Most watched"):""}</div>
+      <div class="ad leader">Ad slot · 728×90</div>
+      <div class="toolbar">
+        <div class="chips" id="aSetting"><button class="chip ${!astate.setting?"on":""}" data-v="">All <small>${all.length}</small></button>${Object.keys(st).map(k=>`<button class="chip ${astate.setting===k?"on":""}" data-v="${k}">${k}<small>${st[k]}</small></button>`).join("")}</div>
+        <select id="aSort">
+          <option value="views" ${astate.sort==="views"?"selected":""}>Most viewed</option>
+          <option value="new" ${astate.sort==="new"?"selected":""}>Newest upload</option>
+          <option value="old" ${astate.sort==="old"?"selected":""}>Oldest upload</option>
+          <option value="long" ${astate.sort==="long"?"selected":""}>Longest set</option>
+        </select>
+      </div>
+      <div class="grid">${sets.map(card).join("")}</div>
+      ${yrs.length>2?`<h3 class="sec">On YouTube over the years</h3>
+      <div class="timeline">${yrs.map(y=>`<div class="ty"><b>${y}</b>${byYear[y].map(x=>`<a href="#${x.id}" title="${x.title}"><img src="thumbs/${x.id}.jpg" alt=""></a>`).join("")}</div>`).join("")}</div>`:""}
+      ${similar.length?`<h3 class="sec">If you like ${a}</h3><div class="simrow">${similar.map(n=>{const t=SETS.filter(x=>x.artist===n).sort((p,q)=>q.views-p.views)[0];return `<a class="sim" href="#artist-${slug(n)}"><img src="thumbs/${t.id}.jpg" alt=""><b>${n}</b><small>${SETS.filter(x=>x.artist===n).length} set${SETS.filter(x=>x.artist===n).length>1?"s":""}</small></a>`}).join("")}</div>`:""}
+      <div style="height:60px"></div>
+    </div>`;
+  $("#aSetting").onclick = e=>{const c=e.target.closest(".chip");if(!c)return;astate.setting=c.dataset.v||null;artistPage(a);};
+  $("#aSort").onchange = e=>{astate.sort=e.target.value;artistPage(a);};
+  $("#followBtn").onclick = ()=>{follows.has(a)?follows.delete(a):follows.add(a);artistPage(a);};
+}
+
+function show(which){ ["home","detail","artist"].forEach(k=>$("#"+k).style.display = k===which?"block":"none"); }
+function route(){
+  const h = location.hash.slice(1);
+  const s = SETS.find(x=>x.id===h);
+  const a = h.startsWith("artist-") ? bySlug(h.slice(7)) : null;
+  if (s){ show("detail"); detail(s); document.title = s.title+" — OpenDecks"; }
+  else if (a){ show("artist"); astate.setting=null; artistPage(a); document.title = a+" — all DJ sets — OpenDecks"; }
+  else { show("home"); document.title = "OpenDecks — Free electronic DJ sets"; render(); }
+  window.scrollTo(0,0);
+}
+
+$("#fGenre").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;state.genre=state.genre===c.dataset.v?null:c.dataset.v;render();});
+$("#fSetting").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;state.setting=state.setting===c.dataset.v?null:c.dataset.v;render();});
+$("#fDj").addEventListener("change",e=>{state.dj=e.target.value;render();});
+$("#fVenue").addEventListener("change",e=>{state.venue=e.target.value;render();});
+$("#sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
+$("#q").addEventListener("input",e=>{state.q=e.target.value;if(location.hash){location.hash="";}render();});
+$("#clearAll").addEventListener("click",clearAll);
+window.addEventListener("hashchange",route);
+
+buildFilters(); route();
+</script>
+</body>
+</html>

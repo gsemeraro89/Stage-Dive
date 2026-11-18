@@ -1,0 +1,271 @@
+// Set page: the player, the facts, our write-up, and what to play next.
+import type { Metadata } from "next";
+import { cache } from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { LeadGrid, PlayThumb } from "@/components/catalogue/SetTile";
+import { PlayerSlot } from "@/components/player/PlayerSlot";
+import { TrackTime } from "@/components/player/TrackTime";
+import { ArtistLines, lineFromCard } from "@/components/ui/ArtistLine";
+import { count2, SectionHead } from "@/components/ui/SectionHead";
+import { formatDate, formatDuration } from "@/lib/format";
+import { toTrack } from "@/lib/player-types";
+import { getSetPage } from "@/lib/queries";
+import { compactNumber, placeLine } from "@/lib/site";
+import { sourceNote, type TrackView } from "@/lib/tracklist/view";
+
+const ID_HINT = "Unreleased or unidentified track";
+
+/** "ID", with its explanation on hover and for screen readers. */
+function Id() {
+  return <abbr title={ID_HINT}>ID</abbr>;
+}
+
+/** "Artist – Title" for one tracklist line. Artists with a page on FullDJSet are links. */
+function TrackName({ track }: { track: TrackView }) {
+  const artistIsId = track.artist !== null && /^ID$/i.test(track.artist);
+  return (
+    <>
+      {track.artist && (
+        <>
+          <span data-od="track-artist">
+            {artistIsId ? (
+              <Id />
+            ) : track.artistSlug ? (
+              <Link href={`/artists/${track.artistSlug}`} className="od-inline">
+                {track.artist}
+              </Link>
+            ) : (
+              track.artist
+            )}
+          </span>
+          {" – "}
+        </>
+      )}
+      <span data-od="track-title">{track.unidentified ? <Id /> : track.title}</span>
+    </>
+  );
+}
+
+// One database read per request, shared by the page and its title/description.
+const load = cache(getSetPage);
+
+export const dynamic = "force-dynamic";
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const page = await load((await params).slug);
+  if (!page) return {};
+  const { set } = page;
+  const place = placeLine(set);
+  const description = [
+    `Watch ${set.credits}${place ? ` at ${place}` : ""} in full (${formatDuration(set.durationSeconds)}).`,
+    set.writeUp,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 300);
+  return {
+    title: set.title,
+    description,
+    alternates: { canonical: `/sets/${set.slug}` },
+    openGraph: { title: set.title, description, type: "video.other", images: [set.thumbnail.src] },
+  };
+}
+
+export default async function SetPage({ params }: Props) {
+  const page = await load((await params).slug);
+  if (!page) notFound();
+  const { set, queue, moreFromArtist, similarCards, tracklist } = page;
+  const track = toTrack(set);
+  const mainArtist = set.artists.find((a) => a.role === "MAIN") ?? set.artists[0];
+  const upNext = queue.slice(0, 4);
+
+  return (
+    <main data-od="set">
+      {/* Desktop: the player with the tracklist beside it (so times can be clicked with the video in
+          view), then the title and the facts under the player. Phones: player, title, tracklist,
+          facts, up next. Without a tracklist the side column is "Up next" alone. Layout: pages.css. */}
+      <div className="od-setgrid" data-tracklist={tracklist ? "" : undefined}>
+        <div className="od-setplayer">
+          <PlayerSlot track={track} srcSet={set.thumbnail.srcSet} alt={`${set.credits} — ${placeLine(set) || set.title}`} />
+          <p className="od-player-note meta" data-od="player-note">
+            <span className="od-muted">Plays here, on this page</span>
+            <a href={`https://www.youtube.com/watch?v=${set.youtubeId}`} rel="noopener" className="od-link">
+              Open on YouTube
+            </a>
+          </p>
+        </div>
+
+        <h1 className="od-set-title display">{set.title}</h1>
+
+        {(tracklist || upNext.length > 0) && (
+          <div className="od-setside">
+            {tracklist && (
+              <section
+                className="od-tracklist"
+                aria-labelledby="tracklist"
+                data-od="tracklist"
+                data-timed={tracklist.tracks[0].time !== null || undefined}
+              >
+                <div className="od-tracklist-head">
+                  <h2 id="tracklist" className="title">
+                    Tracklist
+                  </h2>
+                  <span className="meta od-muted">{count2(tracklist.tracks.length)}</span>
+                </div>
+                <ol className="od-tracks" data-od="track-list">
+                  {tracklist.tracks.map((t, i) => {
+                    const label = [t.artist, t.unidentified ? "ID" : t.title].filter(Boolean).join(" – ");
+                    const nextTime = tracklist.tracks[i + 1]?.time ?? null;
+                    return (
+                      <li key={i} className="od-track" data-od="track" data-unidentified={t.unidentified || undefined}>
+                        {t.time !== null && (
+                          <TrackTime className="od-track-time" track={track} seconds={t.time} nextSeconds={nextTime} label={label} />
+                        )}{" "}
+                        <span className="od-track-name">
+                          <TrackName track={t} />
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <p className="od-tracklist-source meta od-muted" data-od="tracklist-source">
+                  {sourceNote(tracklist.source)}
+                </p>
+              </section>
+            )}
+
+            {upNext.length > 0 && (
+              <aside className="od-upnext" aria-labelledby="up-next" data-od="up-next">
+                <h2 id="up-next" className="meta od-acid">
+                  Up next
+                </h2>
+                <ol aria-label="Up next" data-od="set-list">
+                  {upNext.map((s) => (
+                    <li key={s.id} data-od="set-tile">
+                      <PlayThumb set={s} sizes="(min-width: 1001px) 124px, 132px" />
+                      <div className="min-w-0">
+                        <h3 className="title">
+                          <Link href={`/sets/${s.slug}`}>{s.title}</Link>
+                        </h3>
+                        <p className="meta od-muted" style={{ margin: 0 }}>
+                          {s.credits} · {compactNumber(s.viewCount)}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </aside>
+            )}
+          </div>
+        )}
+
+        <div className="od-setmain">
+          <dl className="od-sheet" data-od="data-sheet">
+            <div>
+              <dt className="meta">{set.artists.length > 1 ? "Artists" : "Artist"}</dt>
+              <dd>
+                {set.artists.map((a, i) => (
+                  <span key={a.slug}>
+                    {i > 0 && (a.role === "WITH" ? " with " : " & ")}
+                    {a.hasPage ? (
+                      <Link href={`/artists/${a.slug}`} className="od-sheet-artist">
+                        {a.name}
+                      </Link>
+                    ) : (
+                      // A guest without a page of their own: the name in the same type, not a link.
+                      <span className="od-sheet-artist od-sheet-artist--plain">{a.name}</span>
+                    )}
+                    {a.creditNote ? ` (${a.creditNote})` : ""}
+                  </span>
+                ))}
+              </dd>
+            </div>
+            {set.venue && (
+              <div>
+                <dt className="meta">{set.setting?.name === "Festival" ? "Festival" : "Venue"}</dt>
+                <dd>
+                  <Link href={`/venues/${set.venue.slug}`} className="od-inline">
+                    {set.venue.name}
+                  </Link>
+                </dd>
+              </div>
+            )}
+            {(set.city || set.country) && (
+              <div>
+                <dt className="meta">Location</dt>
+                <dd>{[set.city, set.country].filter(Boolean).join(", ")}</dd>
+              </div>
+            )}
+            <div>
+              <dt className="meta">Genre</dt>
+              <dd>
+                {set.genres.map((g, i) => (
+                  <span key={g.slug}>
+                    {i > 0 && " · "}
+                    <Link href={`/genres/${g.slug}`} className="od-inline">
+                      {g.name}
+                    </Link>
+                  </span>
+                ))}
+                {set.liveAct && `${set.genres.length ? " · " : ""}Live act`}
+              </dd>
+            </div>
+            {set.setting && (
+              <div>
+                <dt className="meta">Setting</dt>
+                <dd>{set.setting.name}</dd>
+              </div>
+            )}
+            <div>
+              <dt className="meta">Uploaded</dt>
+              <dd>
+                <time dateTime={set.publishedAt.toISOString().slice(0, 10)}>{formatDate(set.publishedAt)}</time>
+              </dd>
+            </div>
+            <div>
+              <dt className="meta">Channel</dt>
+              <dd>{set.channel.name}</dd>
+            </div>
+            <div>
+              <dt className="meta">Views</dt>
+              <dd>{set.viewCount.toLocaleString("en-US")}</dd>
+            </div>
+            <div>
+              <dt className="meta">Length</dt>
+              <dd>{formatDuration(set.durationSeconds)}</dd>
+            </div>
+          </dl>
+
+          {set.writeUp && (
+            <p className="od-writeup" data-od="write-up">
+              {set.writeUp}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {moreFromArtist.length > 0 && mainArtist && (
+        <section className="od-section" aria-labelledby="more-from" data-od="more-from-artist">
+          <SectionHead
+            id="more-from"
+            title={`More from ${mainArtist.name}`}
+            note={count2(Math.min(moreFromArtist.length, 5))}
+            href={`/artists/${mainArtist.slug}`}
+            linkLabel={`All sets by ${mainArtist.name}`}
+          />
+          <LeadGrid sets={moreFromArtist.slice(0, 5)} label={`More from ${mainArtist.name}`} />
+        </section>
+      )}
+      {similarCards.length > 0 && (
+        // Similar artists, each with a set to play. The deck bar's "You might also like" scrolls here.
+        <section className="od-section" aria-labelledby="also-like" data-od="related">
+          <SectionHead id="also-like" title="You might also like" note={count2(similarCards.length)} />
+          <ArtistLines artists={similarCards.map(lineFromCard)} label="You might also like" />
+        </section>
+      )}
+    </main>
+  );
+}

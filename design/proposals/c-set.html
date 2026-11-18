@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paul Kalkbrenner @ PM Open Air Buenos Aires — OpenDecks, proposal C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F0EA;--ink:#101114;--blue:#1B2BEE;--mut:#565963;--line:#C6C5BC;--white:#FBFAF5;--pad:clamp(16px,2.5vw,36px)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#F1F0EA;color:var(--ink);font:400 16px/1.45 'Instrument Sans',system-ui,sans-serif}
+img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:var(--line)}
+a{color:inherit}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.d{font-family:'Big Shoulders Display','Arial Narrow',sans-serif;font-weight:900;text-transform:uppercase;line-height:.9;font-variant-numeric:tabular-nums}
+.s{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.mut{color:var(--mut)}
+.wrap{padding-inline:var(--pad)}
+/* header */
+.hd{display:flex;flex-wrap:wrap;align-items:center;gap:4px 36px;padding-block:10px;border-bottom:2px solid var(--ink)}
+.logo{font-size:30px;text-decoration:none;padding:9px 0;min-height:44px;display:flex;align-items:baseline;gap:10px}
+.logo i{font-style:normal;color:var(--blue)}
+.nav{display:flex;flex-wrap:wrap;gap:0 26px}
+.nav a{font-weight:600;font-size:15px;text-decoration:none;padding:12px 0;min-height:44px;display:inline-flex;align-items:center}
+.nav a[aria-current]{color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
+.nav a:hover{color:var(--blue)}
+.search{margin-left:auto;display:flex;flex:1 1 280px;max-width:420px;border:2px solid var(--ink);background:var(--white)}
+.search label{position:absolute;left:-9999px}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:500 16px 'Instrument Sans',sans-serif;color:var(--ink);padding:0 12px;height:44px}
+.search input::placeholder{color:var(--mut)}
+.search button{border:0;background:var(--ink);color:var(--white);font:600 14px 'Instrument Sans',sans-serif;padding:0 16px;cursor:pointer}
+.search button:hover{background:var(--blue)}
+/* hero */
+.hero{padding-top:clamp(28px,4vw,56px)}
+.hero-top{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:24px 48px;align-items:end}
+.hero h1{margin:0;font-size:clamp(64px,12.4vw,196px);line-height:.8;letter-spacing:-.005em}
+.hero h1 em{font-style:normal;color:var(--blue)}
+.hero p{margin:0 0 6px;font-size:clamp(17px,1.5vw,21px);line-height:1.4;max-width:34em;font-weight:500}
+.hero p b{font-weight:700}
+.histo{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));margin-top:clamp(28px,4vw,56px);border-bottom:2px solid var(--ink)}
+.bin{display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 5px 10px;border-left:1px solid var(--line);min-width:0}
+.bin:first-child{border-left-color:var(--ink)}
+.bin a{display:block;text-decoration:none}
+.bin a span{display:block;font-size:12px;font-weight:600;line-height:1.25;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bin a span b{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:15px;color:var(--blue);margin-right:5px;font-variant-numeric:tabular-nums}
+.bin a:hover img{outline:3px solid var(--blue)}
+.axis{display:grid;grid-template-columns:repeat(9,minmax(0,1fr))}
+.axis a{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:8px 6px 10px;border-left:1px solid var(--ink);text-decoration:none;min-height:48px}
+.axis a b{font-size:28px}
+.axis a span{font-size:12px;font-weight:600;color:var(--mut)}
+.axis a:hover{background:var(--ink);color:var(--white)}.axis a:hover span{color:var(--white)}
+.axis-note{display:flex;justify-content:space-between;gap:12px;padding-top:6px}
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:center;margin-top:clamp(32px,4vw,56px);padding-block:12px;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.filters .grp{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.filters select{appearance:none;-webkit-appearance:none;border:2px solid var(--ink);border-radius:0;background:var(--white);color:var(--ink);font:600 15px 'Instrument Sans',sans-serif;height:44px;padding:0 34px 0 12px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23101114'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.filters .sort{margin-left:auto}
+.filters .sort a{display:inline-flex;align-items:center;min-height:44px;font-weight:600;font-size:15px;padding:0 2px;text-decoration:none;margin-left:14px}
+.filters .sort a[aria-current]{color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
+.filters .sort a:hover{color:var(--blue)}
+/* section heads */
+section{margin-top:clamp(56px,7vw,104px)}
+.sh{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 28px;margin-bottom:18px}
+.sh h2{margin:0;font-size:clamp(44px,6.2vw,92px)}
+.sh .note{font-size:16px;font-weight:500;max-width:30em;padding-bottom:4px}
+.sh .r{margin-left:auto;display:flex;align-items:center;gap:18px;padding-bottom:4px}
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;background:var(--blue);color:#fff;font:700 16px 'Instrument Sans',sans-serif;text-decoration:none;border:0;cursor:pointer}
+.btn:hover{background:var(--ink)}
+.more{font-weight:600;text-decoration:underline;text-underline-offset:4px;padding:12px 0}
+.more:hover{color:var(--blue)}
+/* track: 1 minute = 1 unit */
+.rulerwrap{container-type:inline-size}
+.ruler{position:relative;height:26px;border-left:2px solid var(--ink)}
+.ruler span{position:absolute;bottom:0;border-left:1px solid var(--ink);padding:0 0 3px 5px;font-size:12px;font-weight:600;line-height:1;height:14px}
+.ruler span:nth-child(odd){height:24px}
+.track{display:flex;border:2px solid var(--ink);background:var(--white)}
+.cell{flex:0 0 calc(var(--min) * 100cqw / var(--win,300));min-width:0;display:flex;flex-direction:column;gap:10px;padding:10px 12px 14px;border-right:1px solid var(--ink);text-decoration:none;position:relative}
+.cell .at{font-size:13px;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:7px}
+.cell .in{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start}
+.cell .in img{flex:0 0 auto;width:min(100%,232px)}
+.cell .tx{flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.cell .ar{font-size:clamp(26px,2.6vw,40px)}
+.cell .ve{font-weight:600;font-size:15px;line-height:1.25}
+.cell .me{font-size:13px;color:var(--mut)}
+.cell .du{font-size:22px;margin-top:6px}
+.cell:hover{background:var(--ink);color:var(--white)}
+.cell:hover .me{color:var(--line)}.cell:hover .at{color:var(--white)}
+.tail{flex:1 1 0;min-width:0;padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.tail .at{font-size:13px;font-weight:700;color:var(--blue)}
+.tail ol{list-style:none;margin:0;padding:0;font-size:14px;font-weight:600;line-height:1.3}
+.tail li{padding:5px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.tail li span{color:var(--mut);font-weight:500;font-variant-numeric:tabular-nums}
+.tail .more{margin-top:auto}
+/* partner + ad */
+.partner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin-top:14px;border:2px solid var(--blue);padding:12px 16px;text-decoration:none}
+.partner .k{color:var(--blue)}
+.partner b{font-size:28px}
+.partner .go{margin-left:auto;font-weight:700;color:var(--blue)}
+.partner:hover{background:var(--blue);color:#fff}.partner:hover .k,.partner:hover .go{color:#fff}
+.ad{margin-top:clamp(56px,7vw,104px);border:1px solid var(--mut);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+/* chart */
+.chart{border-top:2px solid var(--ink)}
+.row{display:grid;grid-template-columns:72px 176px minmax(0,1fr) minmax(0,26%) 190px;gap:0 24px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);text-decoration:none}
+.row .rk{font-size:56px;color:var(--mut)}
+.row:first-child .rk{color:var(--blue)}
+.row .ti b{display:block;font-size:30px}
+.row .ti span{display:block;font-weight:600;font-size:15px;line-height:1.3}
+.row .ti small{display:block;font-size:13px;color:var(--mut);margin-top:2px}
+.bar{display:block;height:12px;background:var(--line);position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--ink);width:calc(var(--min) / 150 * 100%)}
+.row .len small{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-top:5px}
+.row .vw{text-align:right}
+.row .vw b{display:block;font-size:40px}
+.row .vw small{font-size:13px;color:var(--mut)}
+.row:hover{background:var(--white)}.row:hover .ti b{color:var(--blue)}.row:hover .bar i{background:var(--blue)}
+.row.nr{grid-template-columns:176px minmax(0,1fr) minmax(0,26%) 190px}
+/* ways in */
+.ways{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:40px 56px}
+.ways h3{margin:0 0 10px;font-size:34px;padding-top:10px;border-top:2px solid var(--ink)}
+.hb{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr) 9.5em;gap:0 14px;align-items:center;min-height:44px;border-bottom:1px solid var(--line);text-decoration:none;font-weight:600}
+.hb .bar i{width:calc(var(--h) * 100%)}
+.hb small{font-size:13px;color:var(--mut);font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.hb:hover{color:var(--blue)}.hb:hover .bar i{background:var(--blue)}
+.ft{margin-top:clamp(56px,7vw,104px);border-top:2px solid var(--ink);padding-block:20px 40px;display:flex;flex-wrap:wrap;gap:8px 28px;font-size:14px}
+.ft a{padding:12px 0}
+/* set page */
+.crumb{padding-block:14px;font-size:14px;font-weight:600}
+.crumb a{display:inline-block;padding:12px 0;text-underline-offset:4px}
+.stage{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:28px 36px;align-items:start}
+.yt{aspect-ratio:16/9;background:#101114;color:#F1F0EA;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:16px;font-weight:600;min-width:200px;min-height:200px}
+.yt small{font-weight:400;font-size:13px;color:#C6C5BC;max-width:34em}
+.under{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-start;margin-top:18px}
+.under .big{font-size:clamp(64px,9vw,136px);color:var(--blue);line-height:.8}
+.under h1{margin:0;font:700 clamp(22px,2.2vw,30px)/1.2 'Instrument Sans',sans-serif;flex:1 1 320px}
+.under h1 a{display:block;padding:4px 0;font-family:'Big Shoulders Display',sans-serif;font-weight:900;text-transform:uppercase;font-size:clamp(40px,4.6vw,68px);line-height:.9;text-decoration:none;margin-bottom:8px}
+.under h1 a:hover{color:var(--blue)}
+.acts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:18px}
+.next h2{margin:0 0 8px;font-size:34px}
+.vtrack{border:2px solid var(--ink);background:var(--white)}
+.vcell{display:grid;grid-template-columns:54px 108px minmax(0,1fr);gap:0 12px;padding:10px 12px 10px 0;min-height:calc(var(--min) * 1.25px);border-bottom:1px solid var(--ink);text-decoration:none;align-items:start}
+.vcell:last-child{border-bottom:0}
+.vcell .at{font-size:13px;font-weight:700;color:var(--blue);padding-left:10px;border-right:1px solid var(--ink);align-self:stretch;margin-block:-10px;padding-top:10px}
+.vcell b{display:block;font-size:26px}
+.vcell span{display:block;font-size:14px;font-weight:600;line-height:1.25}
+.vcell small{display:block;font-size:13px;color:var(--mut)}
+.vcell:hover{background:var(--ink);color:var(--white)}.vcell:hover small{color:var(--line)}.vcell:hover .at{color:var(--white);border-color:var(--white)}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:36px 56px}
+.sheet{margin:0;border-top:2px solid var(--ink)}
+.sheet div{display:grid;grid-template-columns:8em minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.sheet dt{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);padding-top:2px}
+.sheet dd{margin:0;font-weight:600}
+.sheet dd a{text-underline-offset:4px;display:inline-block;padding:11px 0;margin:-11px 0}
+.writeup h2,.scale h2{margin:0 0 12px;font-size:34px;padding-top:10px;border-top:2px solid var(--ink)}
+.writeup p{margin:0 0 14px;font-size:clamp(19px,1.7vw,24px);line-height:1.4;font-weight:500;max-width:32em}
+.writeup p.sm{font-size:16px;font-weight:400}
+.empty{border:1px dashed var(--mut);padding:16px;color:var(--mut);font-size:15px;max-width:40em}
+.cmp{display:grid;grid-template-columns:11em minmax(0,1fr) 5.5em;gap:0 14px;align-items:center;min-height:44px;border-bottom:1px solid var(--line);font-weight:600}
+.cmp .bar{height:16px}.cmp.me .bar i{background:var(--blue)}
+.cmp b{font-size:24px;text-align:right}
+/* dock: full-width bar, the video stays visible at 356x200 */
+.dock{position:fixed;left:0;right:0;bottom:0;height:202px;display:flex;background:var(--white);border-top:2px solid var(--ink);z-index:5}
+.dock .yt{flex:0 0 356px;width:356px;height:200px;aspect-ratio:auto;font-size:14px}
+.dock .info{flex:0 0 300px;min-width:0;padding:14px 18px;display:flex;flex-direction:column;border-right:2px solid var(--ink)}
+.dock .k{color:var(--blue)}
+.dock .t{font-size:40px;margin:6px 0 4px}
+.dock .v{font-size:15px;font-weight:600}
+.dock .nx{font-size:14px;color:var(--mut);margin-top:2px;font-variant-numeric:tabular-nums}
+.dock .ctl{display:flex;gap:8px;margin-top:auto}
+.dock button{width:48px;height:44px;border:2px solid var(--ink);background:var(--white);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dock button.p{background:var(--ink);color:var(--white);flex:1}
+.dock button:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.dock .tape{flex:1;min-width:0;display:flex;flex-direction:column;container-type:inline-size}
+.dock .tape .ruler{height:24px;border-left:0;border-bottom:1px solid var(--ink);flex:none}
+.dock .tape .track{flex:1;border:0;min-height:0}
+.dock .cell{padding:10px 12px;gap:4px;overflow:hidden}
+.dock .cell .ar{font-size:30px}
+.dock .cell.now{box-shadow:inset 0 6px 0 var(--line)}
+.dock .cell.now::before{content:"";position:absolute;left:0;top:0;height:6px;width:var(--done);background:var(--blue)}
+.dock .cell.now .at{margin-top:6px}
+body.has-dock{padding-bottom:202px}
+@media (max-width:1100px){
+ .row{grid-template-columns:56px 150px minmax(0,1fr) 150px}.row.nr{grid-template-columns:150px minmax(0,1fr) 150px}.row .len{display:none}
+ .dock .tape{display:none}.dock .info{flex:1}
+}
+@media (max-width:820px){
+ .search{margin-left:0;max-width:none;flex-basis:100%}
+ .hero-top,.ways,.stage,.cols{grid-template-columns:minmax(0,1fr)}
+ .histo{display:block;border-bottom:0;border-top:2px solid var(--ink)}
+ .bin{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 8px;padding:10px 0 12px 62px;border-left:0;border-bottom:1px solid var(--line);position:relative;min-height:64px}
+ .bin::before{content:attr(data-from);position:absolute;left:0;top:8px;font:900 26px/1 'Big Shoulders Display',sans-serif}
+ .bin::after{content:attr(data-n);position:absolute;left:0;top:36px;font-size:12px;font-weight:600;color:var(--mut)}
+ .axis{display:none}.axis-note{flex-direction:column;gap:2px}
+ .filters .sort{margin-left:0}.filters .sort a{margin:0 14px 0 0}
+ .ruler{display:none}
+ .track{flex-direction:column}
+ .cell{flex:none;min-height:calc(var(--min) * 2.2px);border-right:0;border-bottom:1px solid var(--ink)}
+ .cell .in img{width:min(100%,200px)}
+ .row{grid-template-columns:40px 112px minmax(0,1fr);gap:0 12px}
+ .row.nr{grid-template-columns:112px minmax(0,1fr)}.row.nr .vw{grid-column:1/-1}
+ .filters .grp{display:grid;grid-template-columns:1fr 1fr;flex:1 1 100%}.filters select{width:100%;min-width:0}.filters .sort{display:flex;flex-wrap:wrap;align-items:center;gap:0 4px}
+ .row .rk{font-size:36px}.row .ti b{font-size:24px}
+ .row .vw{grid-column:2/-1;text-align:left;display:flex;gap:8px;align-items:baseline}.row .vw b{font-size:24px}
+ .hb{grid-template-columns:minmax(0,8.5em) minmax(0,1fr) 8em;gap:0 10px}
+ .cmp{grid-template-columns:8.5em minmax(0,1fr) 4.5em}
+ .partner .go{margin-left:0}
+ .dock{display:block;height:auto}
+ .dock .yt{width:100%;height:auto;aspect-ratio:16/9;min-height:200px}
+ .dock .info{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;align-items:center;padding:8px 12px;border-right:0;border-top:4px solid var(--blue)}
+ .dock .k,.dock .nx{display:none}.dock .t{font-size:22px;margin:0}.dock .v{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .dock .ctl{grid-column:2;grid-row:1/3;margin:0}.dock button.p{flex:none;width:48px}
+ body.has-dock{padding-bottom:calc(56.25vw + 64px)}
+}
+@media (prefers-reduced-motion:no-preference){.cell,.row,.vcell,.btn{transition:background-color .12s,color .12s}}
+</style>
+</head>
+<body class="has-dock">
+<header class="hd wrap">
+<a class="logo d" href="c-home.html" aria-label="OpenDecks home">Open<i>Decks</i></a>
+<nav class="nav" aria-label="Main"><a href="c-home.html" aria-current=page>Sets</a><a href="c-home.html">Artists</a><a href="c-home.html">Festivals &amp; venues</a><a href="c-home.html">Genres</a></nav>
+<form class="search" role="search" action="c-home.html"><label for="q">Search sets, artists, venues</label><input id="q" type="search" placeholder="Search NTO, Cercle, Monegros"><button type="submit">Search</button></form>
+</header>
+<main class="wrap">
+<nav class="crumb" aria-label="Breadcrumb"><a href="c-home.html">Sets</a> / <a href="c-home.html">Techno</a> / <a href="c-home.html">Paul Kalkbrenner</a></nav>
+<div class="stage">
+ <div>
+  <div class="yt" role="img" aria-label="YouTube player placeholder">YouTube player · 16:9<small>The embedded YouTube player sits here, untouched: nothing is drawn on it, its controls and branding stay as they are.</small></div>
+  <div class="under">
+   <span class="d big" aria-hidden="true">2:26:04</span>
+   <h1><a href="c-home.html">Paul Kalkbrenner</a>Paul Kalkbrenner @ PM Open Air Buenos Aires</h1>
+  </div>
+  <div class="acts"><button class="btn" type="button"><svg aria-hidden="true" viewBox="0 0 10 12" width="10" height="12"><path d="M0 0l10 6-10 6z" fill="currentColor"/></svg> Play set · 2:26:04</button><a class="more" href="c-home.html">Follow Paul Kalkbrenner</a><a class="more" href="https://www.youtube.com/watch?v=4BvjYabSl5A">Open on YouTube</a></div>
+ </div>
+ <aside class="next" aria-labelledby="h-next">
+  <h2 class="d" id="h-next">Plays after this set</h2>
+  <p class="mut" style="margin:0 0 12px;font-size:15px">More Paul Kalkbrenner first, then related techno. 6 h 07 without touching anything. Block height is set length.</p>
+  <div class="vtrack"><a class="vcell" href="c-set.html" style="--min:119.3"><span class="at">+2:26</span><img src="thumbs/_YPbpWeIx2Q.jpg" alt="Paul Kalkbrenner at Sónar Lisboa, Lisbon" width="640" height="360" loading=lazy><span><b class="d">Paul Kalkbrenner</b><span>Sónar Lisboa, Lisbon</span><small>1:59:21 · 2.0M views</small></span></a><a class="vcell" href="c-set.html" style="--min:123.3"><span class="at">+4:25</span><img src="thumbs/sx6_l6skb5o.jpg" alt="Indira Paganotto at Monegros Desert Festival, Fraga" width="640" height="360" loading=lazy><span><b class="d">Indira Paganotto</b><span>Monegros Desert Festival, Fraga</span><small>2:03:20 · 341K views</small></span></a><a class="vcell" href="c-set.html" style="--min:124.6"><span class="at">+6:28</span><img src="thumbs/C3oynnRofxw.jpg" alt="Eric Prydz at History, Toronto" width="640" height="360" loading=lazy><span><b class="d">Eric Prydz</b><span>History, Toronto</span><small>2:04:34 · 314K views</small></span></a></div>
+ </aside>
+</div>
+
+<section class="cols">
+ <div>
+  <dl class="sheet">
+   <div><dt>Artist</dt><dd><a href="c-home.html">Paul Kalkbrenner</a></dd></div>
+   <div><dt>Venue</dt><dd><a href="c-home.html">PM Open Air</a></dd></div>
+   <div><dt>Where</dt><dd>Buenos Aires, Argentina</dd></div>
+   <div><dt>Setting</dt><dd><a href="c-home.html">Festival</a></dd></div>
+   <div><dt>Length</dt><dd>2:26:04</dd></div>
+   <div><dt>Views</dt><dd>14,340,113</dd></div>
+   <div><dt>Uploaded</dt><dd>18 Dec 2018</dd></div>
+   <div><dt>Channel</dt><dd>We Must</dd></div>
+   <div><dt>Genres</dt><dd><a href="c-home.html">Techno</a>, <a href="c-home.html">Live Act</a></dd></div>
+  </dl>
+  <div class="scale" style="margin-top:36px"><h2 class="d">Length, to scale</h2>
+   <div class="cmp me" style="--min:146.1"><span>This set</span><span class="bar"><i></i></span><b class="d">2:26:04</b></div><div class="cmp" style="--min:83.9"><span>Average set here</span><span class="bar"><i></i></span><b class="d">1:23:52</b></div><div class="cmp" style="--min:27.6"><span>Shortest set here</span><span class="bar"><i></i></span><b class="d">0:27:39</b></div>
+   <p class="mut" style="font-size:14px;margin:8px 0 0">The longest set in the catalogue, and the most watched.</p>
+  </div>
+ </div>
+ <div class="writeup">
+  <h2 class="d">About this set</h2>
+  <p>One of the most-watched techno sets on YouTube: Paul Kalkbrenner&#x27;s live show at PM Open Air in Buenos Aires, close to two and a half hours of his melodic Berlin techno.</p>
+  <p class="sm">Filmed at PM Open Air in Buenos Aires, Argentina, and published by We Must on 18 Dec 2018. It is the most-watched set on OpenDecks, with 14,340,113 views, and at 2:26:04 also the longest.</p>
+  <h2 class="d" style="margin-top:36px">Tracklist</h2>
+  <div class="empty">No tracklist for this set yet.</div>
+ </div>
+</section>
+
+<section aria-labelledby="h-also">
+ <div class="sh"><h2 class="d" id="h-also">You might also like</h2><p class="note">Live acts and melodic techno, picked from sets that share a genre with this one.</p></div>
+ <div class="chart"><a class="row nr" href="c-set.html"><img src="thumbs/LL0b2ZKEJoY.jpg" alt="NTO at Tour Saint-Jacques, Paris" width="640" height="360" loading=lazy><span class="ti"><b class="d">NTO</b><span>Tour Saint-Jacques, Paris</span><small>26 Sep 2017 · Melodic Techno, Live Act</small></span><span class="len" style="--min:85.7"><span class="bar"><i></i></span><small><span>1:25:40</span><span class="mut">of 2:30</span></small></span><span class="vw"><b class="d">4,413,755</b><small>views</small></span></a><a class="row nr" href="c-set.html"><img src="thumbs/aiGBY5DA398.jpg" alt="The Blaze at Cercle Odyssey, Mexico City" width="640" height="360" loading=lazy><span class="ti"><b class="d">The Blaze</b><span>Cercle Odyssey, Mexico City</span><small>1 Jul 2025 · Electronica, Live Act</small></span><span class="len" style="--min:89.6"><span class="bar"><i></i></span><small><span>1:29:38</span><span class="mut">of 2:30</span></small></span><span class="vw"><b class="d">2,382,046</b><small>views</small></span></a><a class="row nr" href="c-set.html"><img src="thumbs/2is2o6_Hxe0.jpg" alt="NTO at Spectra Festival, Liège" width="640" height="360" loading=lazy><span class="ti"><b class="d">NTO</b><span>Spectra Festival, Liège</span><small>30 Sep 2026 · Melodic Techno, Live Act</small></span><span class="len" style="--min:123.6"><span class="bar"><i></i></span><small><span>2:03:36</span><span class="mut">of 2:30</span></small></span><span class="vw"><b class="d">66,693</b><small>views</small></span></a><a class="row nr" href="c-set.html"><img src="thumbs/PjcUzqvPsZ8.jpg" alt="Marsh at Gjipe Beach" width="640" height="360" loading=lazy><span class="ti"><b class="d">Marsh</b><span>Gjipe Beach</span><small>27 Aug 2025 · Melodic House, Progressive</small></span><span class="len" style="--min:130.9"><span class="bar"><i></i></span><small><span>2:10:57</span><span class="mut">of 2:30</span></small></span><span class="vw"><b class="d">741,840</b><small>views</small></span></a></div>
+</section>
+<div class="ad s">Advertisement · 970 × 250</div>
+</main>
+<footer class="ft wrap"><span>OpenDecks indexes free full-length DJ sets on YouTube. Every set plays on this site through the official YouTube player.</span><a href="c-home.html">About</a><a href="c-home.html">For festivals and promoters</a><a href="c-home.html">Newsletter</a></footer>
+<aside class="dock" aria-label="Now playing">
+ <div class="yt" role="img" aria-label="YouTube player placeholder, mini-player">YouTube player · 356 × 200<small>The real video keeps playing here while you browse. Nothing is drawn on it.</small></div>
+ <div class="info">
+  <div class="s k">Now playing</div>
+  <div class="d t">NTO</div>
+  <div class="v">Spectra Festival, Liège</div>
+  <div class="nx">0:43:10 of 2:03:36</div>
+  <div class="ctl"><button type="button" aria-label="Previous set"><svg aria-hidden="true" viewBox="0 0 12 12" width="12" height="12"><path d="M12 0L4 6l8 6zM0 0h2.5v12H0z" fill="currentColor"/></svg></button><button type="button" class="p" aria-label="Pause"><svg aria-hidden="true" viewBox="0 0 10 12" width="10" height="12"><path d="M0 0h3.5v12H0zM6.5 0H10v12H6.5z" fill="currentColor"/></svg></button><button type="button" aria-label="Next set"><svg aria-hidden="true" viewBox="0 0 12 12" width="12" height="12"><path d="M0 0l8 6-8 6zM9.5 0H12v12H9.5z" fill="currentColor"/></svg></button></div>
+ </div>
+ <div class="tape" aria-label="Running order"><div class="ruler" aria-hidden="true"><span style="left:0%">0:00</span><span style="left:10%">0:30</span><span style="left:20%">1:00</span><span style="left:30%">1:30</span><span style="left:40%">2:00</span><span style="left:50%">2:30</span><span style="left:60%">3:00</span><span style="left:70%">3:30</span><span style="left:80%">4:00</span><span style="left:90%">4:30</span></div><div class="track"><a class="cell now" href="c-set.html" style="--min:123.6;--done:35%"><span class="at">On now</span><b class="d ar">NTO</b><span class="ve">Spectra Festival, Liège</span><span class="me">2:03:36</span></a><a class="cell" href="c-set.html" style="--min:80.3"><span class="at">At 2:03</span><b class="d ar">NTO</b><span class="ve">komm schon Alter Festival</span><span class="me">1:20:18</span></a><a class="cell" href="c-set.html" style="--min:56.8"><span class="at">At 3:23</span><b class="d ar">NTO</b><span class="ve">HÖR x Sennheiser Livingroom, Amsterdam</span><span class="me">0:56:46</span></a><div class="tail"><span class="at">At 4:20</span><a class="more" href="c-home.html" style="margin-top:0">See the queue</a></div></div></div>
+</aside>
+</body></html>

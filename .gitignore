@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+.DS_Store
+
+# Generated code
+src/generated/
+next-env.d.ts
+*.tsbuildinfo
+
+# Collector reports (contain YouTube data: not committed)
+reports/
+tracklist-report.json

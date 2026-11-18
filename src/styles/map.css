@@ -1,0 +1,576 @@
+/* The map (/map), the "If you like ___" search line, and "If you like X" on artist pages.
+   DESIGN.md sections 8 and 9. Names and pictures sit on the ground: no bubbles, no boxes. */
+
+/* ---------- "If you like ___" search line ---------- */
+
+.od-mapsearch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 20px;
+  font-size: clamp(22px, 2.6vw, 38px);
+}
+
+.od-mapsearch label {
+  line-height: 1;
+  padding-bottom: 0.2em;
+  white-space: nowrap;
+}
+
+.od-mapsearch input {
+  flex: 1 1 8em;
+  min-width: 0;
+  max-width: 16em;
+  height: max(var(--touch), 1.5em);
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-size: inherit;
+  line-height: 1;
+  outline-offset: 0;
+}
+
+.od-mapsearch input::placeholder {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--muted);
+  opacity: 1;
+}
+
+.od-mapsearch input:focus-visible {
+  outline: 0;
+  border-bottom-color: var(--acid);
+}
+
+/* The browser's own list arrow is not part of the design. */
+.od-mapsearch input::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+/* Home: the line is the whole section, so it is set large. */
+.od-mapsearch--lead {
+  font-size: clamp(28px, 4.8vw, 72px);
+  gap: 10px 28px;
+  padding-bottom: 8px;
+}
+
+.od-mapsearch--lead input {
+  flex-basis: 5em;
+  max-width: none;
+}
+
+.od-mapsearch--lead input {
+  border-bottom-width: 2px;
+}
+
+.od-mapsearch--lead .od-play {
+  align-self: flex-end;
+  margin-bottom: 0.08em;
+}
+
+/* ---------- "If you like X" on the artist page: lines keep the side padding, squares bleed ---------- */
+
+.od-like-lines {
+  padding-inline: var(--pad-x);
+}
+
+.od-like-lines + .od-squares {
+  margin-top: clamp(28px, 4vw, 56px);
+}
+
+/* ---------- Map page ---------- */
+
+.od-map-head {
+  padding: clamp(20px, 2.6vw, 36px) var(--pad-x) 0;
+}
+
+.od-map-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0 28px;
+  padding-bottom: 10px;
+}
+
+.od-map-top h1 {
+  margin: 0;
+  font: inherit;
+  color: var(--acid);
+}
+
+.od-map-top .od-rail {
+  color: var(--muted);
+}
+
+.od-map-genres-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 24px;
+}
+
+/* The one-line fold is for phones only (below). */
+.od-map-genres-fold {
+  display: none;
+}
+
+.od-map-genres a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+
+.od-map-genres a:hover,
+.od-map-genres a[aria-current] {
+  color: var(--acid);
+}
+
+.od-map-genres a[aria-current] {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+.od-map-genres {
+  padding-top: 12px;
+}
+
+.od-map-clear {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.od-map {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: var(--col-gap);
+  align-items: start;
+  margin-top: 18px;
+  padding: 0 var(--pad-x);
+  border-top: 1px solid var(--ink);
+}
+
+/* Phone-only pieces (below): the pick bar and the "Start" mark over the centre picture. */
+.od-map-pick,
+.od-map-here {
+  display: none;
+}
+
+/* While the map restarts from another artist. */
+.od-map[data-busy] .od-map-field {
+  opacity: 0.35;
+}
+
+/* Rail: the artist line of the name being pointed at. */
+.od-map-rail {
+  position: sticky;
+  top: 0;
+  padding-top: 16px;
+}
+
+.od-map-rail > p {
+  margin: 0;
+}
+
+/* The field: square pictures placed from the centre out, the name under each. MapView moves
+   apart any that would touch. Closer to the centre = more alike = larger. */
+.od-map-field {
+  position: relative;
+  container-type: inline-size;
+  height: clamp(640px, calc(100vh - 290px), 880px);
+  overflow: hidden;
+}
+
+.od-map-field ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A thin crosshair marks the centre. */
+.od-map-field::before,
+.od-map-field::after {
+  content: "";
+  position: absolute;
+  background: var(--line);
+}
+
+.od-map-field::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.od-map-field::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+/* Before the script runs (and without it) the places come straight from the data. */
+.od-map-centre,
+.od-map-field li {
+  position: absolute;
+  z-index: 1;
+  left: calc(50% + var(--x, 0) * 40%);
+  top: calc(50% + var(--y, 0) * 40%);
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: 60%;
+}
+
+.od-map-node,
+.od-map-centre {
+  display: block;
+  background: var(--ground);
+  line-height: 0.95;
+}
+
+.od-map-pic {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--hover-row);
+}
+
+/* The picture uses the shared portrait crop (components.css, Artist squares). */
+
+.od-map-pic--plain {
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  font-size: 40px;
+}
+
+/* Three sizes by distance; they shrink with the field so twelve always fit. */
+.od-map-node .od-map-pic {
+  width: clamp(60px, 9.5cqw, 96px);
+}
+
+.od-map-field li[data-tier="2"] .od-map-pic {
+  width: clamp(72px, 12cqw, 120px);
+}
+
+.od-map-field li[data-tier="1"] .od-map-pic {
+  width: clamp(88px, 15cqw, 148px);
+}
+
+/* The name is under the picture, on the ground, never on the photo (section 7). */
+.od-map-name {
+  display: block;
+  max-width: clamp(120px, 18cqw, 170px);
+  padding: 8px 0 4px;
+  font-size: clamp(12px, 1.6cqw, 14px);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+/* The centre block is as wide as its picture, so the picture sits on the crosshair. */
+.od-map-centre {
+  width: min(210px, 23cqw);
+}
+
+.od-map-centre .od-map-pic {
+  width: 100%;
+}
+
+.od-map-centre .od-map-name {
+  max-width: none;
+  /* Small enough for a long word ("Kalkbrenner") to stay whole under the picture. */
+  font-size: clamp(14px, 2.1cqw, 20px);
+  line-height: 0.95;
+}
+
+.od-map-node:hover img,
+.od-map-node[data-selected] img,
+.od-map-centre:hover img {
+  filter: none;
+}
+
+.od-map-node:hover .od-map-name,
+.od-map-node[data-selected] .od-map-name,
+.od-map-centre:hover .od-map-name {
+  color: var(--acid);
+}
+
+/* Tablet: the field on top, the selected artist below it. */
+@media (max-width: 1000px) {
+  .od-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .od-map-rail {
+    position: static;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Phones: the field fits the screen; the selected artist sits in a bar under it. */
+@media (max-width: 760px) {
+  .od-map-head {
+    padding-top: 14px;
+  }
+
+  /* The count is plain to see in the field; the line it took is given to the map. */
+  .od-map-top {
+    padding-bottom: 6px;
+  }
+
+  .od-map-top span {
+    display: none;
+  }
+
+  /* "If you like" on its own line, then the field and the button side by side. The type is
+     small enough for a long name ("Paul Kalkbrenner") to show whole in the field. */
+  .od-map-head .od-mapsearch {
+    gap: 0 12px;
+    font-size: 18px;
+  }
+
+  .od-map-head .od-mapsearch label {
+    flex-basis: 100%;
+    padding-bottom: 0;
+  }
+
+  .od-map-head .od-mapsearch input {
+    max-width: none;
+  }
+
+  .od-map-head .od-mapsearch .od-play {
+    min-height: var(--touch);
+    padding: 12px 16px;
+  }
+
+  /* Genres: one line that says what is on and opens the list. */
+  .od-map-genres {
+    padding-top: 6px;
+  }
+
+  .od-map-genres-fold {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-height: var(--touch);
+    padding: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-align: left;
+  }
+
+  .od-map-genres-verb {
+    flex: none;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+  }
+
+  .od-map-genres-list {
+    display: none;
+    gap: 0 18px;
+    padding-bottom: 6px;
+  }
+
+  .od-map-genres[data-open] .od-map-genres-list {
+    display: flex;
+  }
+
+  .od-map-genres-only {
+    display: none;
+  }
+
+  /* Without scripts the fold cannot open: show the list instead. */
+  @media (scripting: none) {
+    .od-map-genres-fold {
+      display: none;
+    }
+
+    .od-map-genres-list {
+      display: flex;
+    }
+  }
+
+  .od-map {
+    display: block;
+    margin-top: 6px;
+    padding: 0;
+  }
+
+  /* The field: almost the full width of the screen, taller the more pictures it holds. */
+  .od-map-field {
+    margin: 0 8px;
+    height: 520px;
+  }
+
+  .od-map-field[data-size="m"] {
+    height: 420px;
+  }
+
+  /* Ten to twelve pictures: more room, and the pictures a little smaller. */
+  .od-map-field[data-size="xl"] {
+    height: 600px;
+  }
+
+  .od-map-field[data-size="xl"] .od-map-node .od-map-pic {
+    width: 14cqw;
+  }
+
+  .od-map-field[data-size="xl"] li[data-tier="2"] .od-map-pic {
+    width: 17cqw;
+  }
+
+  .od-map-field[data-size="xl"] li[data-tier="1"] .od-map-pic {
+    width: 20cqw;
+  }
+
+  .od-map-field[data-size="s"] {
+    height: 320px;
+  }
+
+  .od-map-node .od-map-pic {
+    width: 15cqw;
+  }
+
+  .od-map-field li[data-tier="2"] .od-map-pic {
+    width: 18.5cqw;
+  }
+
+  .od-map-field li[data-tier="1"] .od-map-pic {
+    width: 22cqw;
+  }
+
+  .od-map-name {
+    max-width: 33cqw;
+    padding: 5px 0 2px;
+    font-size: 11px;
+  }
+
+  /* Wide enough for an eleven-letter word ("Kalkbrenner") to stay whole under the picture. */
+  .od-map-centre {
+    width: 33cqw;
+  }
+
+  .od-map-centre .od-map-name {
+    font-size: 11px;
+  }
+
+  /* Who the map starts from: a mono word on the ground above the centre picture, never on it. */
+  .od-map-here {
+    display: block;
+    padding-bottom: 3px;
+    font-size: 11px;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  /* The pick bar: picture, name and genres of the selected artist, then the two ways on.
+     It stays at the foot of the screen while the field is in view, then rests under the field. */
+  .od-map-pick {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 10px 12px;
+    align-items: start;
+    padding: 12px var(--pad-x);
+    background: var(--ground);
+    border-top: 1px solid var(--ink);
+  }
+
+  /* The deck bar owns the foot of the screen while a set plays. */
+  body:has(.od-dock-spacer) .od-map-pick {
+    position: static;
+  }
+
+  .od-map-pick p,
+  .od-map-pick h2 {
+    margin: 0;
+  }
+
+  .od-map-pickpic .od-map-pic {
+    width: 72px;
+  }
+
+  .od-map-pickpic img {
+    filter: none;
+  }
+
+  .od-map-pickid {
+    min-width: 0;
+  }
+
+  .od-map-pickname {
+    padding: 2px 0 3px;
+    font-size: 21px;
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .od-map-pickgenres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 14px;
+  }
+
+  .od-map-pickacts {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0 20px;
+    min-height: var(--touch);
+  }
+
+  .od-map-pickacts .od-link {
+    flex: none;
+  }
+
+  .od-map-start {
+    min-height: var(--touch);
+    padding: 12px 18px;
+  }
+
+  .od-map-hint {
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--muted);
+  }
+
+  .od-map-rail .od-aline-settitle a {
+    min-height: var(--touch);
+  }
+
+  /* Under the bar: the facts and the sets of the selected artist. The bar already has the
+     picture, the name, the genres and the links. */
+  .od-map-rail {
+    padding: 0 var(--pad-x);
+    border-top: 1px solid var(--line);
+  }
+
+  .od-map-kicker,
+  .od-map-rail .od-aline-pic,
+  .od-map-rail .od-aline-name,
+  .od-map-rail .od-aline-genres,
+  .od-map-rail .od-aline-more {
+    display: none;
+  }
+
+  .od-map-rail .od-aline {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "id"
+      "top"
+      "latest";
+  }
+}

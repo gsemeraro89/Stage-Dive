@@ -1,0 +1,837 @@
+{
+  "_note": "Artists the owner has confirmed belong in the catalogue. Their full sets are accepted even when the classifier is unsure; the genres here are used when the classifier gives none of ours. Since 13 Nov 2026 every artist already in the catalogue is treated the same way (their genres then come from their sets on the site); this list is for artists not in the catalogue yet, or to set their genres. Names are matched ignoring case, accents and symbols; add other spellings to 'aka'.",
+  "include": [
+    {
+      "name": "Fred again..",
+      "genres": [
+        "Electronica",
+        "Tech House"
+      ]
+    },
+    {
+      "name": "Honey Dijon",
+      "genres": [
+        "Tech House",
+        "Deep House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "The Martinez Brothers",
+      "genres": [
+        "Tech House",
+        "Deep House"
+      ]
+    },
+    {
+      "name": "RÜFÜS DU SOL",
+      "genres": [
+        "Melodic House",
+        "Electronica"
+      ]
+    },
+    {
+      "name": "Yousuke Yukimatsu",
+      "aka": [
+        "¥ØU$UK€ ¥UK1MAT$U"
+      ],
+      "genres": [
+        "Electronica",
+        "Afro House"
+      ]
+    },
+    {
+      "name": "Fatboy Slim",
+      "genres": [
+        "Tech House",
+        "Electronica"
+      ]
+    },
+    {
+      "name": "Above & Beyond",
+      "genres": [
+        "Progressive House",
+        "Melodic House"
+      ]
+    },
+    {
+      "name": "Keinemusik",
+      "genres": [
+        "Afro House",
+        "Melodic House",
+        "Deep House"
+      ]
+    },
+    {
+      "name": "Peggy Gou",
+      "genres": [
+        "Deep House",
+        "Tech House",
+        "Techno"
+      ]
+    },
+    {
+      "name": "Steve Aoki",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Dimitri Vegas & Like Mike",
+      "aka": [
+        "Dimitri Vegas and Like Mike"
+      ],
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Swedish House Mafia",
+      "genres": [
+        "Big Room / EDM"
+      ]
+    },
+    {
+      "name": "Afrojack",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "NERVO",
+      "genres": [
+        "Big Room / EDM"
+      ]
+    },
+    {
+      "name": "Martin Garrix",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Marshmello",
+      "genres": [
+        "Big Room / EDM"
+      ]
+    },
+    {
+      "name": "Alesso",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Axwell Λ Ingrosso",
+      "aka": [
+        "Axwell /\\ Ingrosso",
+        "Axwell & Ingrosso",
+        "Axwell Ingrosso"
+      ],
+      "genres": [
+        "Big Room / EDM"
+      ]
+    },
+    {
+      "name": "Armin van Buuren",
+      "genres": [
+        "Trance"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Purple Disco Machine",
+      "genres": [
+        "Nu Disco"
+      ]
+    },
+    {
+      "name": "Skrillex",
+      "genres": [
+        "Bass"
+      ]
+    },
+    {
+      "name": "Jamie xx",
+      "genres": [
+        "Electronica",
+        "Deep House"
+      ]
+    },
+    {
+      "name": "Folamour",
+      "genres": [
+        "Nu Disco"
+      ]
+    },
+    {
+      "name": "Adam Beyer",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "I Hate Models",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Amelie Lens",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Reinier Zonneveld",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Joseph Capriati",
+      "genres": [
+        "Techno",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Enrico Sangiuliano",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Patrick Mason",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Indira Paganotto",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Nina Kraviz",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Charlotte de Witte",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Héctor Oáks",
+      "aka": [
+        "Hector Oaks"
+      ],
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Vintage Culture",
+      "genres": [
+        "Tech House",
+        "Melodic House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Joris Voorn",
+      "genres": [
+        "Techno",
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "999999999",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Nico Moreno",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "FJAAK",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Kölsch",
+      "aka": [
+        "Kolsch",
+        "Koelsch"
+      ],
+      "genres": [
+        "Melodic Techno",
+        "Melodic House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Richie Hawtin",
+      "aka": [
+        "Plastikman"
+      ],
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Sara Landry",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Jamie Jones",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Adiel",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Miss Monique",
+      "genres": [
+        "Progressive House",
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Hardwell",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Kevin de Vries",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Kobosil",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Eric Prydz",
+      "aka": [
+        "Pryda",
+        "Cirez D"
+      ],
+      "genres": [
+        "Progressive House",
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Daria Kolosova",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Anfisa Letyago",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Mind Against",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Oliver Heldens",
+      "genres": [
+        "Big Room / EDM",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Mau P",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Pan-Pot",
+      "aka": [
+        "Pan Pot",
+        "Panpot"
+      ],
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Dax J",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "AZYR",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Ogazón",
+      "aka": [
+        "Ogazon"
+      ],
+      "genres": [
+        "Techno",
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Timmy Trumpet",
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Ben Klock",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "CamelPhat",
+      "aka": [
+        "Camel Phat"
+      ],
+      "genres": [
+        "Tech House",
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "W&W",
+      "aka": [
+        "W & W",
+        "W and W"
+      ],
+      "genres": [
+        "Big Room / EDM"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Clara Cuvé",
+      "aka": [
+        "Clara Cuve"
+      ],
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Stephan Bodzin",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Jeff Mills",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Artbat",
+      "genres": [
+        "Melodic Techno",
+        "Melodic House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Dom Dolla",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Solomun",
+      "genres": [
+        "Melodic House",
+        "Deep House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Carl Cox",
+      "genres": [
+        "Techno",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Freddy K",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Juliet Fox",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Vini Vici",
+      "genres": [
+        "Trance"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "FISHER",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Seth Troxler",
+      "genres": [
+        "Deep House",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Funk Tribu",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Marcel Dettmann",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Mochakk",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Chris Stussy",
+      "genres": [
+        "Deep House",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Klangkuenstler",
+      "aka": [
+        "Klangkünstler",
+        "Klangkunstler"
+      ],
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Paco Osuna",
+      "genres": [
+        "Techno",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Franky Rizardo",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Joyhauser",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "VTSS",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Adriatique",
+      "genres": [
+        "Melodic Techno",
+        "Melodic House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Hot Since 82",
+      "genres": [
+        "Tech House",
+        "Deep House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Massano",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Quest",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Tale Of Us",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Eli Brown",
+      "genres": [
+        "Tech House",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Maddix",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Rødhåd",
+      "aka": [
+        "Rodhad",
+        "Rødhad"
+      ],
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Maceo Plex",
+      "genres": [
+        "Techno",
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Boris Brejcha",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Dixon",
+      "genres": [
+        "Melodic House",
+        "Deep House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Ellen Allien",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "KETTAMA",
+      "genres": [
+        "Techno",
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Loco Dice",
+      "genres": [
+        "Tech House"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Mathame",
+      "genres": [
+        "Melodic Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Charlie Sparks",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Elli Acula",
+      "genres": [
+        "Hard Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Helena Hauff",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Anetha",
+      "genres": [
+        "Hard Techno",
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Olympe",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "ANNA",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Ilario Alicante",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    },
+    {
+      "name": "Bart Skils",
+      "genres": [
+        "Techno"
+      ],
+      "allSets": true
+    }
+  ],
+  "groups": [
+    {
+      "name": "3 Are Legend",
+      "members": [
+        "Dimitri Vegas & Like Mike",
+        "Steve Aoki"
+      ]
+    }
+  ],
+  "_groups_note": "Group names that are not an artist: a set credited to the group is credited to each member instead (owner, 16 Nov 2026).",
+  "_note_allSets": "allSets (owner, 17 Nov 2026): every official full set (at least 40 minutes) of these artists is looked for by the per-artist lane, with no view threshold. Optional overrides when MusicBrainz cannot tell namesakes apart (ANNA, Quest, Dixon...): 'mbid' (MusicBrainz artist ID) and 'youtubeChannelId' (UC..., the artist's official YouTube channel); they win over what the lane finds."
+}

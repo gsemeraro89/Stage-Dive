@@ -1,0 +1,1010 @@
+/* Page-level layout: heroes, the set page, 404. Built from the same tokens and components. */
+
+.od-section--first {
+  padding-top: clamp(28px, 4vw, 56px);
+}
+
+/* Squares run edge to edge: only the section head keeps the side padding. */
+.od-section--bleed {
+  padding-inline: 0;
+}
+
+.od-section--bleed > .od-head {
+  margin-inline: var(--pad-x);
+}
+
+/* Mono rail above a big name: kind, place, count. */
+.od-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin: 0;
+}
+
+.od-rail span:first-child {
+  color: var(--acid);
+}
+
+/* ---------- Home hero: rail left, lead image right, giant artist name below ---------- */
+
+/* Home hero: today's featured set. The image carries the weight: it starts right under the
+   acid strip and runs off the right edge of the page. The rail stands beside it, kicker at
+   the top, title, facts and play button at the foot. No giant name on the home page. */
+.od-hero {
+  padding: 0 0 0 var(--pad-x);
+}
+
+.od-hero .od-feature {
+  align-items: stretch;
+}
+
+/* The image is 16:9 at least. When a long title makes the rail taller, the image grows with it
+   (cover crop), so the foot of the rail and the foot of the image always line up. */
+.od-hero .od-feature--flip .od-feature-media {
+  grid-column: 5 / span 8;
+  position: relative;
+}
+
+.od-hero .od-feature-media::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
+}
+
+.od-hero .od-feature-media .od-thumb {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.od-hero .od-feature-media .od-thumb img {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+.od-hero .od-feature--flip .od-feature-rail {
+  grid-column: 1 / span 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 26px;
+}
+
+.od-hero .od-feature-rail h2 {
+  /* Pushes the title block to the foot of the image; the kicker stays at the top. */
+  margin-top: auto;
+  padding-top: 28px;
+  font-size: clamp(26px, 3vw, 50px);
+  line-height: 0.98;
+}
+
+.od-hero .od-feature-rail .od-credit {
+  margin: 14px 0 0;
+}
+
+.od-hero .od-facts {
+  align-self: stretch;
+  margin: 22px 0 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* Small laptops and tablets: a wider rail keeps the title short and the image close to 16:9. */
+@media (max-width: 1000px) {
+  .od-hero .od-feature--flip .od-feature-media {
+    grid-column: 6 / span 7;
+  }
+
+  .od-hero .od-feature--flip .od-feature-rail {
+    grid-column: 1 / span 5;
+  }
+}
+
+@media (max-width: 760px) {
+  .od-hero {
+    padding: 0;
+  }
+
+  .od-hero .od-feature {
+    row-gap: 0;
+  }
+
+  .od-hero .od-feature--flip .od-feature-media,
+  .od-hero .od-feature--flip .od-feature-rail {
+    grid-column: auto;
+  }
+
+  .od-hero .od-feature--flip .od-feature-rail {
+    padding: 18px var(--pad-x) 0;
+  }
+
+  .od-hero .od-feature-media::before {
+    content: none;
+  }
+
+  .od-hero .od-feature-media .od-thumb {
+    position: relative;
+    inset: auto;
+    height: auto;
+  }
+
+  .od-hero .od-feature-media .od-thumb img {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .od-hero .od-feature-rail h2 {
+    margin-top: 10px;
+    padding-top: 0;
+  }
+}
+
+/* ---------- Artist / venue / genre hero: rail, giant name, stat strip ---------- */
+
+.od-pagehero {
+  padding: 22px var(--pad-x) 0;
+  overflow-x: clip;
+}
+
+.od-pagehero .od-bigname {
+  margin: max(0.07em, 20px) 0 max(0.05em, 18px) -0.05em;
+}
+
+/* Artist intro: on the left the profile (bio, facts) and, at the foot, the latest upload's
+   title and play button; on the right its image. Both columns end on the same line: the
+   image is 16:9 at least and grows (cover crop) when the column beside it is taller. */
+.od-intro {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 28px var(--col-gap);
+  align-items: stretch;
+  padding: 32px var(--pad-x) 0;
+}
+
+.od-profile {
+  grid-column: span 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.od-intro-media {
+  grid-column: 6 / span 7;
+  position: relative;
+  min-width: 0;
+}
+
+.od-intro-media::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
+}
+
+/* The crop stops at about 4:3 (0.72 of the column's width): a thumbnail is never cut deeper. */
+.od-intro-media .od-thumb {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100%;
+  max-height: calc(((100vw - 2 * var(--pad-x) - 11 * var(--col-gap)) / 12 * 7 + 6 * var(--col-gap)) * 0.72);
+}
+
+.od-intro-media .od-thumb img {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+/* Four lines at most; longer bios are cut with an ellipsis. */
+.od-bio {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  margin: 10px 0 0;
+  max-width: 36em;
+  font-size: clamp(16px, 1.25vw, 19px);
+  line-height: 1.45;
+}
+
+/* Facts: mono rows between hairlines, label left, value right of it. */
+.od-profile-facts {
+  margin: 22px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.od-profile > p:first-child + .od-profile-facts {
+  margin-top: 10px;
+}
+
+.od-profile-facts > div {
+  display: grid;
+  grid-template-columns: 8.5em minmax(0, 1fr);
+  column-gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.od-profile-facts dt {
+  color: var(--muted);
+}
+
+.od-profile-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The latest upload, named at the foot of the column, level with the foot of its image. */
+.od-profile-set {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: auto;
+  padding-top: 30px;
+}
+
+.od-profile-set h2 {
+  margin: 8px 0 0;
+  font-size: clamp(20px, 2.1vw, 32px);
+  line-height: 1.04;
+  overflow-wrap: anywhere;
+}
+
+.od-profile-set h2 a:hover {
+  color: var(--acid);
+}
+
+.od-profile-set-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin: 10px 0 0;
+}
+
+.od-profile-set .od-credit {
+  padding-top: 0;
+}
+
+.od-profile-set .od-play {
+  margin-top: 18px;
+}
+
+/* No profile: the latest upload as a full-width Feature, close under the stat strip. */
+.od-intro-solo {
+  padding-top: 32px;
+}
+
+/* Tablets and phones: one column. Beside a narrow image the profile would be far taller
+   than a 16:9 picture, so the image goes under it at full width. */
+@media (max-width: 1000px) {
+  .od-intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .od-profile,
+  .od-intro-media {
+    grid-column: auto;
+  }
+
+  .od-profile-set {
+    padding-top: 28px;
+  }
+
+  .od-intro-media::before {
+    content: none;
+  }
+
+  .od-intro-media .od-thumb {
+    position: relative;
+    inset: auto;
+    height: auto;
+    max-height: none;
+  }
+
+  .od-intro-media .od-thumb img {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 760px) {
+  .od-intro {
+    padding-top: 24px;
+  }
+
+  /* Narrow lines: six of them hold about what four hold on a desktop. */
+  .od-bio {
+    -webkit-line-clamp: 6;
+  }
+
+  .od-intro-solo {
+    padding-top: 24px;
+  }
+}
+
+/* ---------- Set page ---------- */
+
+/* Set page, top: the player with a side column beside it, then the title and the facts under
+   the player. The side column holds the tracklist (when there is one) and "Up next". */
+.od-setgrid {
+  --side: 300px;
+  --gap: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side);
+  grid-template-areas:
+    "player side"
+    "title side"
+    "main side";
+  grid-template-rows: auto auto 1fr;
+  column-gap: var(--gap);
+  align-items: start;
+  padding: 28px var(--pad-x) 0;
+}
+
+/* With a tracklist the side column is wider: track names need the room. */
+.od-setgrid[data-tracklist] {
+  --side: clamp(320px, 31vw, 460px);
+}
+
+.od-setplayer {
+  grid-area: player;
+  min-width: 0;
+}
+
+.od-setgrid > .od-set-title {
+  grid-area: title;
+}
+
+.od-setside {
+  grid-area: side;
+  min-width: 0;
+}
+
+.od-setmain {
+  grid-area: main;
+  min-width: 0;
+}
+
+.od-player-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 20px;
+  margin: 0;
+}
+
+/* The player is the hero of this page; the title supports it. Sized so a long title
+   (about 40 characters) takes two lines on a desktop and three on a phone. */
+.od-set-title {
+  margin: 18px 0 0;
+  font-size: clamp(24px, 3.4vw, 56px);
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+
+.od-sheet {
+  /* Cells flow in rows of up to four; a short last row stretches, so every hairline runs full width. */
+  display: flex;
+  flex-wrap: wrap;
+  margin: clamp(28px, 4vw, 48px) 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.od-sheet > div {
+  flex: 1 1 22%;
+  padding: 16px 20px 18px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.od-sheet dt {
+  color: var(--muted);
+}
+
+.od-sheet dd {
+  margin: 8px 0 0;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.od-sheet dd a {
+  display: inline-block;
+  padding: 13px 0;
+  margin: -13px 0;
+}
+
+.od-sheet-artist {
+  color: var(--acid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.od-sheet-artist:hover {
+  color: var(--ink);
+}
+
+/* A guest without a page: same type and colour, but not a link, so no underline and no hover. */
+.od-sheet-artist--plain,
+.od-sheet-artist--plain:hover {
+  color: var(--acid);
+  text-decoration: none;
+}
+
+.od-writeup {
+  margin: clamp(28px, 3vw, 40px) 0 0;
+  max-width: 34em;
+  font-size: clamp(18px, 1.9vw, 26px);
+  line-height: 1.3;
+}
+
+/* ---------- Tracklist (set page) ----------
+   Text only, set tight like the track listing on a record sleeve: an ink rule, a small title with
+   the count, then one line per track, 20px apart (13px text), with no rules between them. The space between
+   two tracks (4px) is only a little more than the space between the two lines of a wrapped title,
+   so the list reads as one block of type. The time is a button that plays the set from there. */
+
+.od-tracklist {
+  margin-top: clamp(28px, 4vw, 40px);
+}
+
+/* Desktop: the tracklist stands beside the player and is exactly as tall as the player and the
+   line under it, so every time can be clicked with the video in view. A longer list scrolls
+   inside the column (every track is still in the page); a shorter one ends early and "Up next"
+   follows it. The height is worked out from the player: its width is what the page leaves after
+   the side column, and it is 16:9. */
+@media (min-width: 1001px) {
+  .od-setside > .od-tracklist {
+    display: flex;
+    flex-direction: column;
+    max-height: calc((100vw - 2 * var(--pad-x) - var(--gap) - var(--side)) * 0.5625 + 44px);
+    margin-top: 0;
+  }
+
+  .od-setside > .od-tracklist .od-tracklist-head {
+    flex: none;
+    padding-top: 12px;
+  }
+
+  .od-setside > .od-tracklist .od-tracks {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    /* Room for the "playing now" bar, which stands just left of the line. */
+    padding-left: 8px;
+    margin-left: -8px;
+  }
+
+  .od-setside > .od-tracklist .od-track-time[data-current]::before {
+    left: -8px;
+  }
+
+  .od-setside > .od-tracklist .od-tracklist-source {
+    flex: none;
+    margin-top: 10px;
+  }
+
+  .od-setside > .od-tracklist + .od-upnext {
+    margin-top: 28px;
+  }
+}
+
+.od-tracklist-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  border-top: 1px solid var(--ink);
+  padding: 14px 0 12px;
+}
+
+.od-tracklist-head h2 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 26px);
+}
+
+/* One grid for the whole list, so the time column is as wide as the longest time and no wider. */
+.od-tracks {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  counter-reset: od-track;
+}
+
+.od-track {
+  position: relative;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  counter-increment: od-track;
+}
+
+.od-track:hover {
+  background: var(--hover-row);
+}
+
+@supports not (grid-template-columns: subgrid) {
+  .od-tracks {
+    display: block;
+  }
+
+  .od-track {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+}
+
+/* The time: mono figures, right-aligned so the colons line up. Its padding is the click area:
+   the full height of the line (20px) and at least 52px wide; it is also the gap to the title.
+   Times touch but never overlap each other. */
+.od-track-time,
+.od-tracklist:not([data-timed]) .od-track::before {
+  grid-column: 1;
+  box-sizing: border-box;
+  margin: 0 4px 0 0;
+  padding: 2px 12px 2px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  line-height: 16px;
+  text-align: right;
+}
+
+/* Acid, the colour of everything that plays on this site: the time is the control. */
+.od-track-time {
+  min-width: 52px;
+  border: 0;
+  background: none;
+  color: var(--acid);
+}
+
+.od-track-time time {
+  padding: 1px 0;
+}
+
+.od-track-time:hover time,
+.od-track-time:focus-visible time {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.od-track-time:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Playing now: the time becomes a solid acid label with ground-colour figures (like "On deck"
+   on a thumbnail), with a 3px acid bar at the start of the line and the line itself in ink on
+   the hover-row ground. It cannot be mistaken for the other times, which are acid text. */
+.od-track-time[data-current]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * min(var(--pad-x), 12px));
+  width: 3px;
+  background: var(--acid);
+}
+
+.od-track-time[data-current] time {
+  margin-right: -5px;
+  padding: 1px 5px;
+  background: var(--acid);
+  color: var(--ground);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.od-track:has(.od-track-time[data-current]) {
+  background: var(--hover-row);
+}
+
+/* A list without times is numbered instead: 01, 02 ... */
+.od-tracklist:not([data-timed]) .od-track::before {
+  content: counter(od-track, decimal-leading-zero);
+  color: var(--muted);
+}
+
+/* Artist in bold, title in regular. Long lines wrap under the title, never under the time. */
+.od-track-name {
+  grid-column: 2;
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 13px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+.od-track-name [data-od="track-artist"] {
+  font-weight: 700;
+}
+
+/* Vertical padding on an inline link adds click area without moving the line. */
+.od-track-name a {
+  padding: 2px 0;
+}
+
+.od-track[data-unidentified] .od-track-name {
+  color: var(--muted);
+}
+
+.od-track-name abbr {
+  text-decoration: none;
+  cursor: help;
+}
+
+/* Fingers need more than a mouse: on touch screens and phones the text is 14px, the lines are
+   30px apart and the time's tap area is 30px tall and at least 60px wide. */
+@media (pointer: coarse), (max-width: 760px) {
+  .od-track-time,
+  .od-tracklist:not([data-timed]) .od-track::before,
+  .od-track-name {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    line-height: 18px;
+  }
+
+  .od-track-name {
+    font-size: 14px;
+  }
+
+  .od-track-time {
+    font-size: 12px;
+  }
+
+  .od-track-time {
+    min-width: 60px;
+  }
+
+  .od-track-name a {
+    padding: 6px 0;
+  }
+}
+
+.od-tracklist-source {
+  max-width: 62ch;
+  margin: 12px 0 0;
+}
+
+.od-upnext {
+  border-top: 1px solid var(--ink);
+}
+
+.od-upnext h2 {
+  margin: 0;
+  padding: 14px 0 12px;
+}
+
+.od-upnext ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.od-upnext li {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.od-upnext li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.od-upnext h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.12;
+}
+
+.od-upnext h3 a {
+  display: block;
+  min-height: var(--touch);
+  padding-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.od-upnext h3 a:hover {
+  color: var(--acid);
+}
+
+/* In the narrow rail the image is too small for a label with the length. */
+.od-upnext .od-dur {
+  padding: 3px 6px;
+  font-size: 11px;
+}
+
+/* One column: player, title, tracklist, facts and write-up, up next. The side column's two parts
+   are placed on their own, so the facts can sit between them. */
+@media (max-width: 1000px) {
+  .od-setgrid,
+  .od-setgrid[data-tracklist] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "player"
+      "title"
+      "tracklist"
+      "main"
+      "upnext";
+    grid-template-rows: none;
+  }
+
+  .od-setside {
+    display: contents;
+  }
+
+  .od-setside > .od-tracklist {
+    grid-area: tracklist;
+  }
+
+  .od-upnext {
+    grid-area: upnext;
+    margin-top: clamp(28px, 4vw, 40px);
+  }
+
+  .od-upnext li {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .od-setgrid {
+    padding-top: 0;
+  }
+
+  /* Phone: the player runs edge to edge, as large as the screen allows. */
+  .od-setplayer > .od-slot {
+    width: auto;
+    margin-inline: calc(-1 * var(--pad-x));
+  }
+
+  .od-sheet > div {
+    flex-basis: 40%;
+    padding-right: 12px;
+  }
+}
+
+/* ---------- 404 ---------- */
+
+.od-notfound {
+  padding: 22px var(--pad-x) 0;
+  overflow-x: clip;
+}
+
+.od-notfound-code {
+  margin: 0.1em 0 0.06em -0.07em;
+  font-size: min(33vw, 520px);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+.od-notfound h1 {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink);
+}
+
+.od-notfound-text {
+  margin: 14px 0 0;
+  font-size: clamp(17px, 1.6vw, 22px);
+}
+
+.od-notfound-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+  margin: 28px 0 0;
+}
+
+/* ---------- Loading ---------- */
+
+.od-skel {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .od-pagehero .od-bigname {
+    margin: 14px 0 14px -0.04em;
+  }
+}
+
+/* ---------- This month and year pages: rail, big name, month index, period nav ---------- */
+
+.od-period-rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 28px;
+  margin: 0;
+}
+
+.od-period-rail .od-link {
+  margin-left: auto;
+}
+
+/* The year beside the month name is outlined, like every second genre word. */
+.od-period-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+/* The hero already says what the page is, so the first section sits closer than a normal one. */
+.od-period-body {
+  padding-top: clamp(20px, 3vw, 44px);
+}
+
+.od-period-month {
+  padding-top: clamp(48px, 6vw, 88px);
+}
+
+.od-period-more {
+  margin-top: 8px;
+}
+
+/* Without a section head (empty month, or a single set) the block still starts on the ink rule. */
+.od-period-empty,
+.od-period-single {
+  border-top: 1px solid var(--ink);
+  padding-top: 28px;
+}
+
+/* Month index: twelve cells on one line, divided by hairlines like the stat strip. */
+.od-months {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.od-months > li {
+  border-left: 1px solid var(--line);
+}
+
+.od-months > li:first-child {
+  border-left: 0;
+}
+
+.od-month {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: var(--touch);
+  padding: 14px 12px 16px;
+}
+
+.od-months > li:first-child .od-month {
+  padding-left: 0;
+}
+
+.od-month-count {
+  min-height: 1em;
+  margin-top: 10px;
+  font-size: clamp(24px, 2.6vw, 40px);
+  line-height: 1;
+}
+
+.od-month .od-bar {
+  margin-top: 12px;
+}
+
+a.od-month:hover {
+  background: var(--hover-row);
+}
+
+a.od-month:hover .od-month-name {
+  color: var(--acid);
+}
+
+a.od-month:focus-visible {
+  outline-offset: -2px;
+}
+
+/* A month without sets: muted name and zero, empty track. One that has not started: no figure. */
+.od-month--empty {
+  color: var(--muted);
+}
+
+/* Foot of the page: the period before on the left, the one after on the right. */
+.od-period-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px var(--col-gap);
+  margin: var(--section-gap) var(--pad-x) 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ink);
+}
+
+.od-period-step {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--touch);
+  padding: 4px 0;
+}
+
+.od-period-step--end {
+  margin-left: auto;
+  text-align: right;
+}
+
+.od-period-step .meta {
+  color: var(--muted);
+}
+
+.od-period-step .title {
+  font-size: clamp(20px, 2.4vw, 34px);
+}
+
+.od-period-step:hover .title {
+  color: var(--acid);
+}
+
+@media (max-width: 1000px) {
+  .od-months {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .od-months > li:nth-child(n + 7) {
+    border-top: 1px solid var(--line);
+  }
+
+  .od-months > li:nth-child(6n + 1) {
+    border-left: 0;
+  }
+
+  .od-months > li:nth-child(6n + 1) .od-month {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .od-period-rail {
+    gap: 0 18px;
+  }
+
+  .od-period-outline {
+    -webkit-text-stroke-width: 1.5px;
+  }
+
+  .od-months {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .od-months > li:nth-child(n + 5) {
+    border-top: 1px solid var(--line);
+  }
+
+  .od-months > li:nth-child(n) {
+    border-left: 1px solid var(--line);
+  }
+
+  .od-months > li:nth-child(n) .od-month {
+    padding: 12px 10px 14px;
+  }
+
+  .od-months > li:nth-child(4n + 1) {
+    border-left: 0;
+  }
+
+  .od-months > li:nth-child(4n + 1) .od-month {
+    padding-left: 0;
+  }
+}

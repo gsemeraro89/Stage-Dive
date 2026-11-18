@@ -1,0 +1,22 @@
+/* Tailwind + the Magazine design system. Tokens live in design/tokens.css (source of truth:
+   design/DESIGN.md); component styles live in src/styles/. */
+@import "tailwindcss";
+@import "../../design/tokens.css";
+@import "../styles/base.css";
+@import "../styles/components.css";
+@import "../styles/deck.css";
+@import "../styles/pages.css";
+@import "../styles/map.css";
+@import "../styles/home.css";
+
+@source not "../../design";
+
+/* Tokens as Tailwind utilities: bg-ground, text-acid, border-line, font-mono ... */
+@theme inline {
+  --color-ground: var(--ground);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-acid: var(--acid);
+  --color-hover-row: var(--hover-row);
+}

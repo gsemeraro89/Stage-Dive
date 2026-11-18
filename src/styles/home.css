@@ -1,0 +1,493 @@
+/* Home page (DESIGN.md section 9, "Home"): the statement (.od-places), the reel of pictures
+   (.od-reel), the atlas (.od-atlas) and the four ways in (.od-wordrows). Only tokens; no radius, no fills behind content, no gradients.
+   No text is written on a photo: captions stand under their pictures, on the ground. */
+
+/* ---------- Shared pieces ---------- */
+
+/* Outlined display type, as on genre words. */
+.od-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+/* The pitch: two or three lines that say what the site is for. */
+.od-home-pitch {
+  margin: 0;
+  max-width: 44ch;
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.4;
+}
+
+.od-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+}
+
+/* A link block that is not a play button keeps the acid block but needs no triangle. */
+.od-home-actions .od-play {
+  min-height: 52px;
+}
+
+/* The latest strip inside a section: it runs edge to edge, right above the section rule. */
+.od-strip--inset {
+  margin: 0 calc(var(--pad-x) * -1) clamp(28px, 3.4vw, 48px);
+}
+
+/* Plate: a set tile titled by its place. The kicker is a quiet mono link. */
+.od-plate-kicker {
+  padding: 15px 0;
+  margin: -15px 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.od-plate-kicker:hover {
+  color: var(--acid);
+}
+
+.od-plate-rest {
+  margin: 0;
+  padding-top: 4px;
+}
+
+/* ---------- The statement: a line of places, then the reel of pictures ---------- */
+
+.od-places {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--col-gap);
+  align-items: end;
+  padding-top: clamp(22px, 2.6vw, 40px);
+}
+
+.od-places h1 {
+  grid-column: 1 / span 8;
+  margin: 0 0 0 var(--pad-x);
+  min-width: 0;
+}
+
+.od-places h1 .meta {
+  display: block;
+  padding-bottom: 12px;
+}
+
+.od-places h1 .display {
+  display: block;
+  font-size: clamp(34px, 4.6vw, 72px);
+  line-height: 0.94;
+}
+
+.od-places-side {
+  grid-column: 9 / span 4;
+  margin-right: var(--pad-x);
+  min-width: 0;
+}
+
+.od-places-side .od-home-actions {
+  margin-top: 20px;
+}
+
+/* Reel: the band of pictures. Edge to edge, every frame the same 16:9 picture at the same
+   size, a 2px seam of ground between them. The list scrolls sideways with scroll-snap (swipe
+   on touch screens); its scrollbar is hidden because the two arrows and the frame that is cut
+   off at the right edge say there is more. The frame width is a share of the band (cqw), so a
+   part of the next frame always shows: 3.25 frames on desktop, 2.25 up to 1000px, 1.14 on phones. */
+.od-reel {
+  grid-column: 1 / -1;
+  position: relative;
+  container-type: inline-size;
+  margin-top: clamp(24px, 2.8vw, 40px);
+  min-width: 0;
+}
+
+.od-reel > * {
+  --reel-seam: 2px;
+  --reel-frame: calc((100cqw - 3 * var(--reel-seam)) / 3.25);
+  --reel-arrow: 56px;
+}
+
+.od-reel-list {
+  display: flex;
+  gap: var(--reel-seam);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.od-reel-list::-webkit-scrollbar {
+  display: none;
+}
+
+.od-reel-list li {
+  flex: 0 0 var(--reel-frame);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.od-reel .od-thumb img {
+  aspect-ratio: 16 / 9;
+}
+
+.od-reel-cap {
+  padding: 12px 14px 0 var(--pad-x);
+  min-width: 0;
+}
+
+.od-reel-cap p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.od-reel-cap h2 {
+  margin: 0;
+  font-size: clamp(18px, 1.8vw, 28px);
+  overflow-wrap: anywhere;
+}
+
+/* Captions keep one height along the band: the list is as tall as its tallest frame, so one
+   long caption (even one that is scrolled out of view) would open a hole under all the others.
+   The place takes two lines at most, the setting and the artists one line each. */
+.od-reel-cap h2 a {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: var(--touch);
+  padding: 10px 0 0;
+  margin-bottom: 2px;
+}
+
+.od-reel-cap p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.od-reel-frame:hover h2 a,
+.od-reel-cap h2 a:hover {
+  color: var(--acid);
+}
+
+/* The arrows: solid ground squares on the band's left and right edges, level with the middle
+   of the pictures (legibility rule, pattern 1: a solid label). Acid on hover. An arrow at its
+   end of the band is taken away. */
+.od-reel-arrow {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--reel-frame) * 9 / 32 - var(--reel-arrow) / 2);
+  display: grid;
+  place-items: center;
+  width: var(--reel-arrow);
+  height: var(--reel-arrow);
+  padding: 0;
+  border: 0;
+  background: var(--ground);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.od-reel-arrow--prev {
+  left: 0;
+}
+
+.od-reel-arrow--prev svg {
+  transform: scaleX(-1);
+}
+
+.od-reel-arrow--next {
+  right: 0;
+}
+
+.od-reel-arrow:hover {
+  background: var(--acid);
+  color: var(--ground);
+}
+
+.od-reel-arrow:focus-visible {
+  outline-offset: -4px;
+}
+
+.od-reel-arrow:disabled {
+  visibility: hidden;
+}
+
+@media (max-width: 1000px) {
+  .od-places h1 {
+    grid-column: 1 / span 7;
+  }
+
+  .od-places-side {
+    grid-column: 8 / span 5;
+  }
+
+  .od-reel > * {
+    --reel-frame: calc((100cqw - 2 * var(--reel-seam)) / 2.25);
+  }
+}
+
+/* Phones: the line of places, the reel (one picture and the edge of the next), then the pitch. */
+@media (max-width: 760px) {
+  .od-places {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 18px;
+  }
+
+  .od-places h1 {
+    margin-right: var(--pad-x);
+  }
+
+  .od-places h1 .display {
+    font-size: clamp(30px, 9.4vw, 58px);
+  }
+
+  .od-reel {
+    margin-top: 18px;
+  }
+
+  .od-reel > * {
+    --reel-frame: calc((100cqw - var(--reel-seam)) / 1.14);
+    --reel-arrow: 48px;
+  }
+
+  .od-places-side {
+    order: 3;
+    margin: 28px var(--pad-x) 0;
+  }
+}
+
+/* The atlas: two plates on the left, the list of places on the right. */
+.od-atlas-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 36px var(--col-gap);
+  align-items: start;
+}
+
+.od-atlas-plates {
+  grid-column: 1 / span 5;
+  display: grid;
+  gap: 28px;
+  min-width: 0;
+}
+
+.od-atlas {
+  grid-column: 7 / span 6;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* No pictures left for the plates (a small catalogue): the list takes the whole width. */
+.od-atlas-grid--list .od-atlas {
+  grid-column: 1 / -1;
+}
+
+.od-atlas-row {
+  display: grid;
+  grid-template-columns: 9.5em minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 20px;
+  min-height: 56px;
+  padding: 12px 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.od-atlas-row:hover {
+  background: var(--hover-row);
+}
+
+.od-atlas-row:hover .od-atlas-place {
+  color: var(--acid);
+}
+
+.od-atlas-country {
+  color: var(--muted);
+}
+
+.od-atlas-place {
+  font-size: clamp(17px, 1.5vw, 22px);
+  overflow-wrap: anywhere;
+}
+
+.od-atlas-artist {
+  grid-column: 2;
+  color: var(--muted);
+}
+
+.od-atlas-dur {
+  grid-column: 3;
+  grid-row: 1;
+  text-align: right;
+}
+
+@media (max-width: 1000px) {
+  .od-atlas-plates,
+  .od-atlas {
+    grid-column: 1 / -1;
+  }
+
+  .od-atlas-plates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--col-gap);
+  }
+}
+
+@media (max-width: 760px) {
+  .od-atlas-plates {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+
+  .od-atlas-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 14px;
+  }
+
+  /* The country leads each group as a small line above its first place. */
+  .od-atlas-country {
+    grid-column: 1 / -1;
+  }
+
+  .od-atlas-country:empty,
+  .od-atlas-country:has(> .od-sr:only-child) {
+    display: none;
+  }
+
+  .od-atlas-place,
+  .od-atlas-artist {
+    grid-column: 1;
+  }
+
+  .od-atlas-dur {
+    grid-column: 2;
+    grid-row: auto;
+  }
+}
+
+/* Word rows: a giant word with its count, a sentence and a few real entries. */
+.od-wordrows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.od-wordrows li {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px var(--col-gap);
+  align-items: end;
+  padding: clamp(14px, 1.8vw, 26px) 0 clamp(12px, 1.4vw, 20px);
+  border-bottom: 1px solid var(--line);
+}
+
+.od-wordrows li:first-child {
+  padding-top: 0;
+}
+
+.od-wordrows-word {
+  grid-column: 1 / span 7;
+  justify-self: start;
+  font-size: clamp(40px, 7vw, 108px);
+  line-height: 0.9;
+  min-height: var(--touch);
+  overflow-wrap: anywhere;
+}
+
+.od-wordrows li:nth-child(even) .od-wordrows-word {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.od-wordrows .od-wordrows-word:hover {
+  color: var(--acid);
+  -webkit-text-stroke: 0;
+}
+
+.od-wordrows-word sup {
+  position: relative;
+  top: 0.5em;
+  margin-left: 8px;
+  vertical-align: top;
+  color: var(--acid);
+  -webkit-text-stroke: 0;
+  font-stretch: 100%;
+}
+
+.od-wordrows-side {
+  grid-column: 8 / span 5;
+  min-width: 0;
+}
+
+.od-wordrows-side p {
+  margin: 0;
+}
+
+.od-wordrows-side .body {
+  max-width: 40ch;
+  font-size: clamp(16px, 1.25vw, 18px);
+}
+
+.od-wordrows-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+  padding-top: 4px;
+}
+
+.od-wordrows-links a {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--touch);
+  min-height: var(--touch);
+  color: var(--muted);
+}
+
+.od-wordrows-links a:hover {
+  color: var(--acid);
+}
+
+.od-wordrows-links .od-wordrows-more {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+/* The fifth way in: the search line of Find your next DJ. */
+.od-wordrows-ask {
+  padding-top: clamp(22px, 2.6vw, 36px);
+}
+
+.od-wordrows-ask > p {
+  margin: 0 0 6px;
+}
+
+@media (max-width: 760px) {
+  .od-wordrows li {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 0 8px;
+  }
+
+  .od-wordrows-word,
+  .od-wordrows-side {
+    grid-column: auto;
+  }
+
+  .od-wordrows-word {
+    font-size: clamp(34px, 11.4vw, 88px);
+  }
+
+  .od-wordrows-links {
+    gap: 0 20px;
+  }
+}

@@ -1,0 +1,1678 @@
+/* The Magazine components (design/DESIGN.md section 8). Content sits on the page ground,
+   separated by hairline rules and space: no boxes, no rounded corners, no shadows. */
+
+/* ---------- Header ---------- */
+
+.od-header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 44px;
+  padding: 10px var(--pad-x);
+  border-bottom: 1px solid var(--line);
+}
+
+.od-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.od-logo span {
+  color: var(--acid);
+}
+
+.od-nav {
+  --nav-gap: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--nav-gap);
+}
+
+.od-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  white-space: nowrap;
+}
+
+.od-nav a:hover,
+.od-nav a[aria-current] {
+  color: var(--acid);
+}
+
+/* Marks where the second row starts on narrow screens; not drawn anywhere else. */
+.od-nav-break {
+  display: none;
+}
+
+/* "This month" and the year: the label is a link, the sign after it opens a list of other
+   months or years. The sign's blank right half stands in for the gap to the next item, so the
+   button is a full finger wide without pushing the menu apart. */
+.od-nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-right: calc(-1 * var(--nav-gap));
+}
+
+.od-nav-toggle {
+  flex: none;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0 0 0 8px;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+}
+
+.od-nav-toggle:hover,
+.od-nav-toggle[aria-expanded="true"] {
+  color: var(--acid);
+}
+
+.od-nav-toggle:focus-visible {
+  outline-offset: -4px;
+}
+
+/* The list hangs from the header's hairline, its text in line with the label above it.
+   Ground colour, no lines between its lines (owner, 17 Nov 2026), no shadow. */
+.od-nav-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 10px);
+  left: -13px;
+  max-height: min(60vh, 400px);
+  padding: 4px 0;
+  overflow-y: auto;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-top-color: var(--ink);
+}
+
+.od-nav-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--rows), auto);
+  grid-auto-columns: 136px;
+}
+
+/* Compact lines (owner, 17 Nov 2026): the list must stay a small thing under the menu. */
+.od-nav-list a {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 0 12px;
+}
+
+.od-nav-list a:focus-visible {
+  outline-offset: -2px;
+}
+
+.od-nav-count {
+  color: var(--muted);
+}
+
+@media (hover: hover) {
+  .od-nav-list a:hover {
+    background: var(--hover-row);
+  }
+}
+
+.od-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex: 0 1 340px;
+  min-width: 0;
+  border-bottom: 1px solid var(--ink);
+}
+
+.od-search:focus-within {
+  border-bottom-color: var(--acid);
+}
+
+.od-search label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+}
+
+.od-search input {
+  flex: 1;
+  min-width: 0;
+  height: var(--touch);
+  background: transparent;
+  color: var(--ink);
+  font: 500 16px/1.2 var(--font-sans);
+  outline-offset: 0;
+}
+
+.od-search input::placeholder,
+.od-field input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.od-search button {
+  min-width: var(--touch);
+  height: var(--touch);
+  color: var(--ink);
+}
+
+.od-search button:hover {
+  color: var(--acid);
+}
+
+/* Seven items, the last one long ("Find your next DJ"). Where nav and search no longer fit beside
+   the logo, the search narrows first, then the nav takes its own row. The labels are never
+   shortened and never break inside. */
+@media (max-width: 1360px) {
+  .od-header {
+    gap: 0 32px;
+  }
+
+  .od-nav {
+    --nav-gap: 22px;
+  }
+
+  .od-search {
+    flex: 1 1 200px;
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 1140px) {
+  .od-header {
+    gap: 0 20px;
+  }
+
+  .od-nav {
+    order: 3;
+    flex: 1 0 100%;
+  }
+
+  .od-search {
+    flex: 1 1 120px;
+    max-width: 340px;
+  }
+}
+
+/* Narrow screens: two rows of mono, divided by a hairline. Row one is the sets by time and the
+   artists; row two the festivals, the genres and the long one. The break is a real element, so
+   the rows never depend on how the labels happen to wrap. */
+@media (max-width: 680px) {
+  .od-nav {
+    --nav-gap: 18px;
+  }
+
+  .od-nav-break {
+    display: block;
+    flex: 1 0 100%;
+    border-top: 1px solid var(--line);
+  }
+
+  /* The list becomes a low band across the page under the whole menu: three columns. */
+  .od-nav-item {
+    position: static;
+  }
+
+  .od-nav-panel {
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 34vh;
+    padding: 0 var(--pad-x) 6px;
+    border-width: 0 0 1px;
+    border-bottom-color: var(--ink);
+  }
+
+  .od-nav-list {
+    grid-template-rows: repeat(var(--rows-phone), auto);
+    grid-auto-columns: minmax(0, 1fr);
+    column-gap: 16px;
+  }
+
+  .od-nav-list a {
+    gap: 4px;
+    min-height: 36px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 359px) {
+  .od-nav {
+    --nav-gap: 14px;
+  }
+
+  /* 320px: the four items of the first row only fit with a slightly narrower sign. */
+  .od-nav-toggle {
+    width: 36px;
+  }
+}
+
+/* ---------- Footer ---------- */
+
+.od-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 40px;
+  margin-top: var(--section-gap);
+  padding: 22px var(--pad-x) 28px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.od-footer p {
+  margin: 0;
+  max-width: 70ch;
+}
+
+/* ---------- Latest strip (home) ---------- */
+
+/* A ledger, not a run of wrapping text. Every line is placed on purpose:
+   phones   tagline / latest upload (left) + its date (right) / counts, split by ground hairlines
+   tablets  tagline + counts / latest upload + date
+   desktop  one line: tagline, latest upload, date, counts at the right edge
+   Styled on the existing markup: h1, a (latest upload), span (date), .od-strip-end (counts). */
+
+.od-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0 var(--pad-x);
+  background: var(--acid);
+  color: var(--ground);
+  font-weight: 500;
+}
+
+.od-strip > * {
+  margin: 0;
+  padding: 9px 0;
+}
+
+.od-strip h1 {
+  grid-area: 1 / 1 / auto / -1;
+  font: inherit;
+  white-space: nowrap;
+}
+
+/* Latest upload: up to three lines on phones, never a word left alone on the last line. */
+.od-strip > a {
+  grid-area: 2 / 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  /* Transparent borders, not padding: they are part of the tap target (44px with one line)
+     and the line clamp cannot leak a cut-off line into them. */
+  padding: 0;
+  margin: 0 -6px;
+  border: solid transparent;
+  border-width: 13px 6px;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.od-strip > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.od-strip > a:focus-visible {
+  outline: 2px solid var(--ground);
+  outline-offset: -5px;
+}
+
+/* The date of the latest upload, top right of its row. */
+.od-strip > span:not(.od-strip-end) {
+  grid-area: 2 / 2;
+  justify-self: end;
+  padding: 13px 0 13px 20px;
+  white-space: nowrap;
+}
+
+.od-strip .od-strip-end {
+  grid-area: 3 / 1 / auto / -1;
+  white-space: nowrap;
+}
+
+/* Hairlines: drawn on the strip so they run the full measure whatever the row holds. */
+.od-strip h1,
+.od-strip > a ~ .od-strip-end {
+  position: relative;
+}
+
+.od-strip h1::after,
+.od-strip > a ~ .od-strip-end::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  border-top: 1px solid var(--ground);
+}
+
+.od-strip > a ~ .od-strip-end::before {
+  inset: 0 0 auto;
+}
+
+@media (min-width: 600px) {
+  .od-strip h1 {
+    grid-area: 1 / 1;
+    position: static;
+  }
+
+  .od-strip {
+    position: relative;
+  }
+
+  /* One hairline between the two rows. */
+  .od-strip h1::after {
+    inset: 36px var(--pad-x) auto;
+  }
+
+  .od-strip > a ~ .od-strip-end::before {
+    content: none;
+  }
+
+  .od-strip .od-strip-end {
+    grid-area: 1 / 2;
+    justify-self: end;
+    padding-left: 28px;
+  }
+
+  .od-strip > a {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (min-width: 1100px) {
+  .od-strip {
+    grid-template-columns: auto minmax(0, auto) auto 1fr;
+  }
+
+  .od-strip h1::after {
+    content: none;
+  }
+
+  .od-strip h1 {
+    padding-right: 28px;
+  }
+
+  .od-strip > a {
+    grid-area: 1 / 2;
+    border-block-width: 9px;
+  }
+
+  .od-strip > a:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .od-strip > span:not(.od-strip-end) {
+    grid-area: 1 / 3;
+    padding: 9px 0 9px 12px;
+  }
+
+  .od-strip .od-strip-end {
+    grid-area: 1 / 4;
+    justify-self: end;
+  }
+}
+
+/* ---------- Section head: ink rule, display title, mono count, mono link ---------- */
+
+.od-section {
+  padding: var(--section-gap) var(--pad-x) 0;
+}
+
+.od-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 24px;
+  border-top: 1px solid var(--ink);
+  padding: 14px 0 30px;
+}
+
+.od-head h2 {
+  margin: 0;
+  line-height: 0.95;
+}
+
+.od-head .od-head-note {
+  color: var(--muted);
+}
+
+.od-head .od-link {
+  margin-left: auto;
+}
+
+/* ---------- Thumbnail (always a play button) ---------- */
+
+.od-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: var(--hover-row);
+  text-align: left;
+}
+
+.od-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* Solid label on the image: the duration (with a play triangle only where the click plays here:
+   the artist line). Turns acid on hover and while on deck. */
+.od-dur {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.od-thumb:hover .od-dur,
+.od-thumb:focus-visible .od-dur,
+.od-thumb[data-current] .od-dur {
+  background: var(--acid);
+  color: var(--ground);
+}
+
+.od-thumb[data-current] .od-dur::before {
+  content: "On deck";
+  font-weight: 500;
+}
+
+.od-thumb[data-current] .od-dur svg {
+  display: none;
+}
+
+/* ---------- Set tile ---------- */
+
+.od-tile {
+  min-width: 0;
+}
+
+.od-tile-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  color: var(--muted);
+}
+
+.od-tile h3 {
+  margin: 0;
+  font-size: clamp(18px, 1.6vw, 24px);
+}
+
+.od-tile--lead h3 {
+  font-size: clamp(22px, 2.6vw, 40px);
+}
+
+.od-tile h3 a {
+  display: block;
+  padding: 8px 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.od-tile:hover h3 a,
+.od-tile h3 a:hover {
+  color: var(--acid);
+}
+
+.od-credit {
+  margin: 0;
+  padding: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* Inline padding: a taller area for the finger without opening up the lines. */
+.od-credit a {
+  padding: 15px 0;
+}
+
+.od-credit .od-credit-artist {
+  color: var(--acid);
+  /* Short names ("NTO") still get a finger-wide target. */
+  padding-inline: 11px;
+  margin-inline: -11px;
+}
+
+/* A guest without a page is plain text: no finger target needed. */
+.od-credit span.od-credit-artist {
+  padding-inline: 0;
+  margin-inline: 0;
+}
+
+.od-credit a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Lead + stack: one lead image (7 columns) next to smaller tiles (5 columns). */
+.od-lead-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 36px var(--col-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.od-lead-grid > .od-lead {
+  grid-column: span 7;
+}
+
+.od-lead-grid > .od-rest {
+  grid-column: span 5;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px var(--col-gap);
+  align-content: start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* With one or two small tiles, stack them in a single narrower column. */
+.od-lead-grid > .od-rest[data-count="1"],
+.od-lead-grid > .od-rest[data-count="2"] {
+  grid-column: 9 / span 4;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 760px) {
+  .od-lead-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .od-lead-grid > .od-lead,
+  .od-lead-grid > .od-rest,
+  .od-lead-grid > .od-rest[data-count] {
+    grid-column: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* Phone: small tiles become rows, image left and text right, divided by hairlines. */
+  .od-rest .od-tile {
+    display: grid;
+    grid-template-columns: 42% minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .od-rest .od-tile .od-thumb {
+    grid-row: 1 / span 3;
+  }
+
+  .od-rest .od-tile .od-tile-meta {
+    padding-top: 0;
+  }
+
+  .od-rest .od-tile h3 {
+    font-size: 16px;
+  }
+
+  .od-rest .od-tile h3 a {
+    padding: 6px 0 0;
+  }
+}
+
+/* ---------- Rows: chart (most watched) and list (all sets, results) ---------- */
+
+.od-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.od-row {
+  display: grid;
+  align-items: center;
+  gap: 8px var(--col-gap);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.od-row:hover {
+  background: var(--hover-row);
+}
+
+.od-row--chart {
+  grid-template-columns: 72px 176px minmax(0, 1fr) minmax(180px, 300px);
+}
+
+.od-row--list {
+  grid-template-columns: 176px minmax(0, 1fr) 76px 92px;
+}
+
+.od-rank {
+  font-size: 44px;
+  line-height: 1;
+}
+
+li:first-child > .od-row .od-rank {
+  color: var(--acid);
+}
+
+.od-row h3 {
+  margin: 0;
+  font-size: clamp(17px, 1.7vw, 26px);
+}
+
+.od-row--list h3 {
+  font-size: clamp(16px, 1.4vw, 21px);
+}
+
+.od-row h3 a {
+  display: block;
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.od-row h3 a:hover {
+  color: var(--acid);
+}
+
+.od-row .od-credit {
+  padding-top: 2px;
+}
+
+.od-views-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.od-bar {
+  display: block;
+  height: 3px;
+  margin-top: 10px;
+  background: var(--line);
+}
+
+.od-bar > span {
+  display: block;
+  height: 3px;
+  background: var(--acid);
+}
+
+.od-row .od-num {
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .od-row {
+    gap: 8px 14px;
+    padding: 14px 0;
+    align-items: start;
+  }
+
+  .od-row--chart {
+    grid-template-columns: 34px 112px minmax(0, 1fr);
+  }
+
+  .od-row--chart .od-views {
+    grid-column: 2 / -1;
+  }
+
+  .od-bar {
+    margin-top: 6px;
+  }
+
+  .od-rank {
+    font-size: 24px;
+    padding-top: 2px;
+  }
+
+  .od-row--list {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+
+  .od-row--list .od-num {
+    display: none;
+  }
+
+  .od-row h3 a {
+    padding: 0 0 4px;
+  }
+}
+
+.od-phone {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .od-phone {
+    display: inline;
+  }
+}
+
+/* ---------- Archive rows (small image, then text; one link per row) ---------- */
+
+.od-archive {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.od-arc {
+  display: grid;
+  grid-template-columns: 52px 96px minmax(0, 1fr) minmax(0, 260px) 76px 76px;
+  grid-template-areas: "year thumb title venue dur views";
+  align-items: center;
+  gap: 2px 24px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.od-arc:hover {
+  background: var(--hover-row);
+}
+
+.od-arc:hover .od-arc-title {
+  color: var(--acid);
+}
+
+.od-arc:focus-visible {
+  outline-offset: -2px;
+}
+
+.od-arc-year {
+  grid-area: year;
+  color: var(--acid);
+}
+
+/* 16:9, 96px wide: the row stays a line of an archive, not a tile. No text on the image. */
+.od-arc-thumb {
+  grid-area: thumb;
+  display: block;
+  background: var(--hover-row);
+}
+
+.od-arc-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.od-arc-title {
+  grid-area: title;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-stretch: 108%;
+  font-size: 18px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.od-arc-venue {
+  grid-area: venue;
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.od-arc-num {
+  text-align: right;
+}
+
+.od-arc-dur {
+  grid-area: dur;
+}
+
+.od-arc-views {
+  grid-area: views;
+  color: var(--muted);
+}
+
+/* Narrow desktop and tablet: the venue goes under the title. */
+@media (max-width: 1000px) {
+  .od-arc {
+    grid-template-columns: 52px 96px minmax(0, 1fr) 76px 76px;
+    grid-template-areas:
+      "year thumb title dur views"
+      "year thumb venue dur views";
+  }
+
+  .od-arc-title {
+    align-self: end;
+  }
+
+  .od-arc-venue {
+    align-self: start;
+  }
+
+  .od-arc-venue:empty {
+    display: none;
+  }
+
+  .od-arc-title:has(+ .od-arc-venue:empty) {
+    grid-row: 1 / -1;
+    align-self: center;
+  }
+}
+
+/* Phones: image left, title with length and views under it on the right. The year is a line of
+   its own above the first row of each year. */
+@media (max-width: 760px) {
+  .od-arc {
+    grid-template-columns: 96px auto minmax(0, 1fr);
+    grid-template-areas:
+      "thumb title title"
+      "thumb dur views";
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 4px 12px;
+    padding: 12px 0;
+  }
+
+  .od-arc--year {
+    grid-template-areas:
+      "year year year"
+      "thumb title title"
+      "thumb dur views";
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .od-arc:not(.od-arc--year) .od-arc-year {
+    position: absolute;
+  }
+
+  .od-arc--year .od-arc-year {
+    padding-bottom: 4px;
+  }
+
+  .od-arc-title {
+    align-self: start;
+    grid-row: auto;
+    font-size: 16px;
+  }
+
+  .od-arc-title:has(+ .od-arc-venue:empty) {
+    grid-row: auto;
+    align-self: start;
+  }
+
+  .od-arc-venue {
+    display: none;
+  }
+
+  .od-arc-num {
+    text-align: left;
+  }
+}
+
+/* ---------- Index rows (venues, genres): optional image, name, place, count ---------- */
+
+.od-index-row {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px var(--col-gap);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.od-index-row:hover {
+  background: var(--hover-row);
+}
+
+.od-index-row:hover .od-index-name {
+  color: var(--acid);
+}
+
+.od-index-row img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--hover-row);
+}
+
+/* No picture: the initial, outlined, in a hairline 16:9 frame. */
+.od-index-noimg {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1;
+}
+
+.od-index-name {
+  display: block;
+  font-size: clamp(20px, 2.6vw, 40px);
+  overflow-wrap: anywhere;
+}
+
+.od-index-sub {
+  display: block;
+  padding-top: 6px;
+  color: var(--muted);
+}
+
+.od-index-count {
+  font-size: clamp(22px, 2.6vw, 40px);
+  line-height: 1;
+  text-align: right;
+}
+
+.od-index-count small {
+  display: block;
+  padding-top: 6px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+@media (max-width: 760px) {
+  .od-index-row {
+    grid-template-columns: 112px minmax(0, 1fr) auto;
+    gap: 8px 14px;
+    padding: 14px 0;
+  }
+}
+
+/* ---------- Genre words ---------- */
+
+.od-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 40px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: clamp(30px, 6.2vw, 96px);
+  line-height: 1.02;
+}
+
+.od-words--xl {
+  font-size: clamp(34px, 8.4vw, 132px);
+  gap: 10px 48px;
+}
+
+.od-words li {
+  min-width: 0;
+}
+
+.od-words a {
+  display: inline-block;
+  min-height: var(--touch);
+  overflow-wrap: anywhere;
+}
+
+.od-words li:nth-child(even) a {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.od-words a:hover,
+.od-words li:nth-child(even) a:hover {
+  color: var(--acid);
+  -webkit-text-stroke: 0;
+}
+
+.od-words sup {
+  position: relative;
+  top: 0.5em;
+  margin-left: 6px;
+  vertical-align: top;
+  color: var(--acid);
+  -webkit-text-stroke: 0;
+  font-stretch: 100%;
+}
+
+/* ---------- Artist squares ---------- */
+
+.od-squares {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* A 2px seam of ground between pictures, so text baked into one thumbnail never reads on
+     into the next. */
+  gap: 0 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.od-squares--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* One link per artist: the picture, then the caption under it. */
+.od-square {
+  display: block;
+  height: 100%;
+}
+
+.od-square-pic {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--hover-row);
+}
+
+/* Portrait crop, shared by every square artist picture (squares, artist lines, the map).
+   The thumbnail is 2.35 times the square's width (a plain square crop is 1.78), centred, then
+   moved down by 13% of the square: the square shows the middle of the picture from just under
+   its top edge to about three quarters down. Lower-third titles and edge logos fall outside and
+   heads stay in. The offset is measured on the square, not the file, so it is the same for
+   16:9 files and for YouTube's smaller 4:3 files with black bars (the bars never show). */
+.od-square-pic img,
+.od-aline-pic img,
+.od-map-pic img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 235%;
+  max-width: none;
+  height: auto;
+  margin-top: 13%;
+  transform: translate(-50%, -50%);
+  filter: grayscale(1) contrast(1.15);
+}
+
+/* The artist's own picture (the avatar of their YouTube channel) is already square: it is shown
+   whole, with no crop. Some avatars are logos on a white or coloured ground; greyscale and a
+   slightly lowered brightness keep a white one from glaring in the dark grid. Full colour and
+   brightness return on hover, like every other picture. */
+.od-square-pic[data-portrait] img,
+.od-aline-pic[data-portrait] img,
+.od-map-pic[data-portrait] img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+  transform: none;
+  filter: grayscale(1) contrast(1.08) brightness(0.8);
+}
+
+.od-square:hover .od-square-pic img,
+.od-square:focus-visible .od-square-pic img {
+  filter: none;
+}
+
+/* The caption sits on the ground under the picture, never on it (section 7): the same place
+   and the same width for every name, however long. */
+.od-square-cap {
+  display: block;
+  padding: 10px 12px 30px;
+}
+
+.od-square-count {
+  display: block;
+  color: var(--muted);
+}
+
+.od-square-name {
+  display: block;
+  padding-top: 2px;
+  font-size: clamp(15px, 1.7vw, 26px);
+  line-height: 0.98;
+  overflow-wrap: anywhere;
+}
+
+.od-square:hover .od-square-name,
+.od-square:focus-visible .od-square-name {
+  color: var(--acid);
+}
+
+.od-square:focus-visible {
+  outline-offset: -2px;
+}
+
+/* No photo: the outlined initial inside hairlines. */
+.od-square-pic--plain {
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+  font-size: clamp(64px, 11vw, 180px);
+  line-height: 1;
+}
+
+.od-square:hover .od-square-pic--plain,
+.od-square:focus-visible .od-square-pic--plain {
+  -webkit-text-stroke-color: var(--acid);
+}
+
+/* The acid "All artists" tile that closes the home grid: its words are inside the block. */
+.od-square--all .od-square-pic {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--acid);
+  color: var(--ground);
+}
+
+.od-square--all:hover .od-square-pic {
+  background: var(--ink);
+}
+
+.od-square--all .display {
+  font-size: clamp(17px, 1.9vw, 30px);
+  line-height: 0.95;
+}
+
+@media (max-width: 760px) {
+  .od-squares,
+  .od-squares--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Stat strip ---------- */
+
+.od-stats {
+  display: grid;
+  grid-template-columns: repeat(var(--stat-count, 5), minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.od-stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  padding: 18px 20px 20px;
+  border-left: 1px solid var(--line);
+}
+
+.od-stats > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.od-stats dd {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 46px);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.od-stats dt {
+  padding-top: 8px;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .od-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .od-stats > div {
+    padding: 14px 12px 14px 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .od-stats > div:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .od-stats > div:nth-child(even) {
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+  }
+}
+
+/* ---------- Big name: the largest thing on the page, sized to fit its column ---------- */
+
+.od-bigname {
+  margin: 0;
+  /* --em: width of the widest line in em. --em-word: width of the widest single word. */
+  font-size: min(var(--bigname-max, 33vw), calc((100vw - 2 * var(--pad-x)) / var(--em)));
+  line-height: 0.8;
+  overflow-wrap: normal;
+}
+
+.od-bigname--outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+@media (max-width: 760px) {
+  .od-bigname {
+    font-size: min(var(--bigname-max-phone, var(--bigname-max, 33vw)), calc((100vw - 2 * var(--pad-x)) / var(--em-word)));
+    line-height: 0.84;
+  }
+
+  .od-bigname--outline {
+    -webkit-text-stroke-width: 1.5px;
+  }
+}
+
+/* ---------- Feature: one set shown large, image plus a metadata rail ---------- */
+
+.od-feature {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px var(--col-gap);
+  align-items: end;
+}
+
+.od-feature-media {
+  grid-column: span 8;
+}
+
+.od-feature-rail {
+  grid-column: span 4;
+  min-width: 0;
+}
+
+.od-feature--flip .od-feature-media {
+  grid-column: 6 / span 7;
+  grid-row: 1;
+}
+
+.od-feature--flip .od-feature-rail {
+  grid-column: 1 / span 5;
+  grid-row: 1;
+}
+
+.od-feature-rail h2,
+.od-feature-rail h3 {
+  margin: 10px 0 0;
+  font-size: clamp(22px, 2.4vw, 38px);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.od-feature-rail h2 a:hover,
+.od-feature-rail h3 a:hover {
+  color: var(--acid);
+}
+
+.od-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 20px;
+  margin: 22px 0 26px;
+}
+
+.od-facts dt {
+  color: var(--muted);
+}
+
+.od-facts dd {
+  margin: 0;
+}
+
+.od-facts a:hover {
+  color: var(--acid);
+}
+
+@media (max-width: 760px) {
+  .od-feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .od-feature-media,
+  .od-feature-rail,
+  .od-feature--flip .od-feature-media,
+  .od-feature--flip .od-feature-rail {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* ---------- Filters ---------- */
+
+.od-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(5, minmax(0, 1fr)) auto;
+  gap: 18px var(--col-gap);
+  align-items: end;
+  padding-bottom: 28px;
+}
+
+.od-field {
+  display: block;
+  min-width: 0;
+}
+
+.od-field > span {
+  display: block;
+  color: var(--muted);
+}
+
+.od-field input,
+.od-field select {
+  display: block;
+  width: 100%;
+  height: var(--touch);
+  padding: 0;
+  background-color: transparent;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font: 500 16px/1.2 var(--font-sans);
+  outline-offset: 0;
+}
+
+.od-field select {
+  appearance: none;
+  padding-right: 20px;
+  text-overflow: ellipsis;
+  /* A plain filled triangle marks the field as a menu. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23ECEBF3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+}
+
+.od-field select option {
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.od-field input:focus-visible,
+.od-field select:focus-visible {
+  border-bottom-color: var(--acid);
+}
+
+/* A filter that is switched on shows its value in acid. */
+.od-field[data-on] select,
+.od-field[data-on] input {
+  color: var(--acid);
+  border-bottom-color: var(--acid);
+}
+
+.od-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+@media (max-width: 1100px) {
+  .od-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .od-filter-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .od-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+  }
+
+  .od-filters .od-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- Empty state ---------- */
+
+.od-empty {
+  padding: 8px 0 24px;
+  max-width: 900px;
+}
+
+.od-empty .display {
+  margin: 0;
+  font-size: clamp(34px, 6.2vw, 96px);
+  line-height: 0.92;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.od-empty p {
+  margin: 18px 0 6px;
+  font-size: clamp(17px, 1.6vw, 22px);
+  line-height: 1.35;
+}
+
+/* Title links are at least one finger tall, even on a single line. */
+.od-tile h3 a,
+.od-row h3 a {
+  display: flex;
+  align-items: flex-end;
+  min-height: var(--touch);
+}
+
+/* ---------- Artist line: a suggested artist as a row (DESIGN.md section 8) ---------- */
+
+.od-alines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* The line lays itself out from the width of the place it is in: page, deck sheet or map rail. */
+.od-alines > li,
+.od-aline-box {
+  container-type: inline-size;
+}
+
+.od-alines > li {
+  border-bottom: 1px solid var(--line);
+}
+
+.od-aline {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.9fr);
+  grid-template-areas: "pic id top latest";
+  align-items: start;
+  gap: 16px var(--col-gap);
+  padding: 20px 0;
+}
+
+.od-aline p {
+  margin: 0;
+}
+
+/* Picture: square crop of the newest set, greyscale like the artist squares. */
+.od-aline-pic {
+  grid-area: pic;
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--hover-row);
+}
+
+/* The picture uses the shared portrait crop (see Artist squares). */
+
+.od-aline:hover .od-aline-pic img {
+  filter: none;
+}
+
+.od-aline-pic--plain {
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  font-size: 56px;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.od-aline-id {
+  grid-area: id;
+  min-width: 0;
+}
+
+.od-aline-name {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* The top of the name is level with the top of the picture; the padding makes it one finger tall. */
+.od-aline-name a {
+  display: block;
+  margin: -10px 0 -4px;
+  padding: 10px 0;
+  overflow-wrap: anywhere;
+}
+
+.od-aline-name a:hover,
+.od-aline-settitle a:hover,
+.od-aline-genres a:hover {
+  color: var(--acid);
+}
+
+.od-aline-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  color: var(--muted);
+}
+
+.od-aline-style {
+  padding-top: 8px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.od-aline-style::first-letter {
+  text-transform: uppercase;
+}
+
+.od-aline-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+
+.od-aline-genres a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.od-aline-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+}
+
+/* Most watched: the thumbnail is the play button. */
+.od-aline-top {
+  grid-area: top;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: var(--col-gap);
+  align-items: start;
+  min-width: 0;
+}
+
+.od-aline-latest {
+  grid-area: latest;
+  min-width: 0;
+}
+
+.od-aline-settitle {
+  padding: 6px 0 4px;
+  font-size: 16px;
+  line-height: 1.12;
+}
+
+/* No padding on the clamped link itself: the top of a hidden fourth line would show in it. */
+.od-aline-settitle a {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.od-aline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+}
+
+.od-aline-play {
+  gap: 8px;
+}
+
+/* "Play next" once queued: plain acid text, no longer a link. */
+.od-playnext[data-queued] {
+  color: var(--acid);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Medium: the two sets stack in the third column. */
+@container (max-width: 940px) {
+  .od-aline {
+    grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas:
+      "pic id top"
+      "pic id latest";
+  }
+
+  .od-aline-top {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Narrow (phones, the map rail): picture and name, then the sets below. */
+@container (max-width: 600px) {
+  .od-aline {
+    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-areas:
+      "pic id"
+      "top top"
+      "latest latest";
+    gap: 14px 16px;
+    padding: 18px 0;
+  }
+
+  .od-aline-name {
+    font-size: 22px;
+  }
+
+  .od-aline-latest {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+}
