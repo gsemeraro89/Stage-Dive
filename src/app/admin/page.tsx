@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false, foll
 
 export default async function AdminPage() {
   const db = getDb();
-  const [runs, pending, recent, counts, tracklists, neverChecked] = await Promise.all([
+  const [runs, pending, recent, counts, setlists, neverChecked] = await Promise.all([
     db.jobRun.findMany({ orderBy: { startedAt: "desc" }, take: 10 }),
     db.reviewItem.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.concert.findMany({
@@ -22,12 +22,12 @@ export default async function AdminPage() {
       include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, channel: true },
     }),
     db.concert.groupBy({ by: ["status", "source"], _count: true }),
-    // Published concerts by where their tracklist came from (null = none found).
-    db.concert.groupBy({ by: ["tracklistSource"], where: { status: "PUBLISHED" }, _count: true }),
-    db.concert.count({ where: { status: "PUBLISHED", tracklistCheckedAt: null } }),
+    // Published concerts by where their setlist came from (null = none found).
+    db.concert.groupBy({ by: ["setlistSource"], where: { status: "PUBLISHED" }, _count: true }),
+    db.concert.count({ where: { status: "PUBLISHED", setlistCheckedAt: null } }),
   ]);
-  const published = tracklists.reduce((n, t) => n + t._count, 0);
-  const withTracklist = tracklists.filter((t) => t.tracklistSource).reduce((n, t) => n + t._count, 0);
+  const published = setlists.reduce((n, t) => n + t._count, 0);
+  const withSetlist = setlists.filter((t) => t.setlistSource).reduce((n, t) => n + t._count, 0);
   const SOURCE_LABEL: Record<string, string> = {
     DESCRIPTION: "video description",
     CHANNEL_COMMENT: "uploader's comment",
@@ -50,22 +50,22 @@ export default async function AdminPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="tracklists" data-od="admin-tracklists">
-        <h2 id="tracklists">Tracklists</h2>
+      <section aria-labelledby="setlists" data-od="admin-setlists">
+        <h2 id="setlists">Setlists</h2>
         <p>
-          {withTracklist} of {published} published concerts have a tracklist
-          {published ? ` (${Math.round((withTracklist / published) * 100)}%)` : ""}.
+          {withSetlist} of {published} published concerts have a setlist
+          {published ? ` (${Math.round((withSetlist / published) * 100)}%)` : ""}.
         </p>
         <ul>
-          {tracklists
-            .filter((t) => t.tracklistSource)
+          {setlists
+            .filter((t) => t.setlistSource)
             .sort((a, b) => b._count - a._count)
             .map((t) => (
-              <li key={t.tracklistSource}>
-                From {SOURCE_LABEL[t.tracklistSource!] ?? t.tracklistSource}: {t._count}
+              <li key={t.setlistSource}>
+                From {SOURCE_LABEL[t.setlistSource!] ?? t.setlistSource}: {t._count}
               </li>
             ))}
-          <li>None found: {published - withTracklist - neverChecked}</li>
+          <li>None found: {published - withSetlist - neverChecked}</li>
           <li>Not checked yet (the next refresh looks): {neverChecked}</li>
         </ul>
       </section>

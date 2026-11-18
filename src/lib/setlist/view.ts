@@ -1,4 +1,4 @@
-// The tracklist as the concert page shows it. Reads the stored JSON defensively: anything that is not
+// The setlist as the concert page shows it. Reads the stored JSON defensively: anything that is not
 // a well-formed track is left out rather than breaking the page.
 
 import { slugify } from "../slug";
@@ -14,13 +14,13 @@ export interface TrackView {
   artistSlug: string | null;
 }
 
-export interface TracklistView {
+export interface SetlistView {
   tracks: TrackView[];
   /** DESCRIPTION, CHANNEL_COMMENT, COMMENT or CLAUDE. */
   source: string | null;
 }
 
-export function readTracklist(json: unknown, source: string | null): TracklistView | null {
+export function readSetlist(json: unknown, source: string | null): SetlistView | null {
   if (!Array.isArray(json)) return null;
   const tracks: TrackView[] = [];
   for (const item of json) {
@@ -40,13 +40,13 @@ export function readTracklist(json: unknown, source: string | null): TracklistVi
 }
 
 /** Slugs to look up for artist links ("ID" and empty names never link). */
-export function artistSlugsIn(view: TracklistView | null): string[] {
+export function artistSlugsIn(view: SetlistView | null): string[] {
   if (!view) return [];
   return [...new Set(view.tracks.filter((t) => t.artist && !/^ID$/i.test(t.artist)).map((t) => slugify(t.artist!)))].filter(Boolean);
 }
 
 /** Link the tracks whose artist has a page with us. */
-export function linkArtists(view: TracklistView | null, known: Set<string>): TracklistView | null {
+export function linkArtists(view: SetlistView | null, known: Set<string>): SetlistView | null {
   if (!view) return null;
   return {
     ...view,
@@ -57,16 +57,16 @@ export function linkArtists(view: TracklistView | null, known: Set<string>): Tra
   };
 }
 
-/** Where the tracklist was read, in words for the page. */
+/** Where the setlist was read, in words for the page. */
 export function sourceNote(source: string | null): string {
   switch (source) {
     case "DESCRIPTION":
-      return "Tracklist from the video description on YouTube.";
+      return "Setlist from the video description on YouTube.";
     case "CHANNEL_COMMENT":
-      return "Tracklist from the uploader's comment on YouTube.";
+      return "Setlist from the uploader's comment on YouTube.";
     case "COMMENT":
-      return "Tracklist from a viewer's comment on YouTube. It may contain mistakes.";
+      return "Setlist from a viewer's comment on YouTube. It may contain mistakes.";
     default:
-      return "Tracklist from the video's description or comments on YouTube.";
+      return "Setlist from the video's description or comments on YouTube.";
   }
 }

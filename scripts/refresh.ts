@@ -9,8 +9,8 @@ import { createPrismaClient } from "../src/lib/db";
 import { isDueForRefresh, refreshAction } from "../src/lib/collector/rules";
 import { expireOldData } from "../src/lib/collector/store";
 import { QuotaBudgetExceeded, YouTubeClient } from "../src/lib/collector/youtube";
-import { TracklistExtractor } from "../src/lib/tracklist/extract";
-import { lookUpTracklist, tracklistFields } from "../src/lib/tracklist/lookup";
+import { SetlistExtractor } from "../src/lib/setlist/extract";
+import { lookUpSetlist, setlistFields } from "../src/lib/setlist/lookup";
 import { slugify } from "../src/lib/slug";
 
 const all = process.argv.includes("--all");
@@ -24,24 +24,24 @@ const stats = {
   updated: 0,
   deleted: [] as string[],
   artistChannels: 0,
-  /** Concerts with a tracklist after this run, and concerts whose tracklist was dropped because it disappeared. */
-  withTracklist: 0,
-  tracklistsRemoved: 0,
-  tracklistsNotChecked: 0,
+  /** Concerts with a setlist after this run, and concerts whose setlist was dropped because it disappeared. */
+  withSetlist: 0,
+  setlistsRemoved: 0,
+  setlistsNotChecked: 0,
   errors: [] as string[],
   youtubeUnits: 0,
 };
-// Tracklists are YouTube data too: re-read with the rest (description, comments, Claude for odd formatting).
-const tracklistExtractor = process.env.ANTHROPIC_API_KEY ? new TracklistExtractor() : null;
-const tracklistClaudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
-let tracklistQuotaLeft = true;
+// Setlists are YouTube data too: re-read with the rest (description, comments, Claude for odd formatting).
+const setlistExtractor = process.env.ANTHROPIC_API_KEY ? new SetlistExtractor() : null;
+const setlistClaudeMax = Number(process.env.SETLIST_CLAUDE_MAX ?? 50);
+let setlistQuotaLeft = true;
 
 try {
   const concerts = await db.concert.findMany({
     include: { channel: true, credits: { where: { role: "MAIN" }, include: { artist: true } } },
   });
-  // Due for the 30-day refresh, or never checked for a tracklist (e.g. the collector ran out of quota).
-  const due = concerts.filter((s) => all || isDueForRefresh(s.ytRefreshedAt, now) || !s.tracklistCheckedAt);
+  // Due for the 30-day refresh, or never checked for a setlist (e.g. the collector ran out of quota).
+  const due = concerts.filter((s) => all || isDueForRefresh(s.ytRefreshedAt, now) || !s.setlistCheckedAt);
   const facts = await yt.videos(due.map((s) => s.youtubeId));
 
   for (const concert of due) {
@@ -68,19 +68,19 @@ try {
     });
     stats.updated++;
 
-    // Tracklist: re-read now. If the quota runs out, the old one stays and is looked at next run.
-    if (tracklistQuotaLeft) {
+    // Setlist: re-read now. If the quota runs out, the old one stays and is looked at next run.
+    if (setlistQuotaLeft) {
       try {
-        const found = await lookUpTracklist(yt, video!, { extractor: tracklistExtractor, claudeMax: tracklistClaudeMax });
-        await db.concert.update({ where: { id: concert.id }, data: tracklistFields(found, now) });
-        if (found.tracks) stats.withTracklist++;
-        else if (concert.tracklist) stats.tracklistsRemoved++;
+        const found = await lookUpSetlist(yt, video!, { extractor: setlistExtractor, claudeMax: setlistClaudeMax });
+        await db.concert.update({ where: { id: concert.id }, data: setlistFields(found, now) });
+        if (found.tracks) stats.withSetlist++;
+        else if (concert.setlist) stats.setlistsRemoved++;
       } catch (error) {
         if (!(error instanceof QuotaBudgetExceeded)) throw error;
-        tracklistQuotaLeft = false;
+        setlistQuotaLeft = false;
       }
     }
-    if (!tracklistQuotaLeft) stats.tracklistsNotChecked++;
+    if (!setlistQuotaLeft) stats.setlistsNotChecked++;
 
     // Fill in the channel's YouTube ID (seed concerts were imported without it).
     if (!concert.channel.youtubeChannelId && video!.channelId) {
@@ -113,6 +113,6 @@ console.log(JSON.stringify(stats, null, 2));
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(
     process.env.GITHUB_STEP_SUMMARY,
-    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · deleted: ${stats.deleted.length}\n${stats.deleted.map((d) => `  - ${d}`).join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Tracklists: ${stats.withTracklist} concerts have one · removed (gone from YouTube): ${stats.tracklistsRemoved} · not checked (quota): ${stats.tracklistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
+    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · deleted: ${stats.deleted.length}\n${stats.deleted.map((d) => `  - ${d}`).join("\n")}\n- Artist channels added: ${stats.artistChannels}\n- Setlists: ${stats.withSetlist} concerts have one · removed (gone from YouTube): ${stats.setlistsRemoved} · not checked (quota): ${stats.setlistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
   );
 }

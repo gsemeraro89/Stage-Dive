@@ -1,24 +1,24 @@
-// Measures how many published concerts have a readable tracklist, and where it comes from
+// Measures how many published concerts have a readable setlist, and where it comes from
 // (description, the channel's own comment, a viewer comment). Read-only: nothing is saved to the
-// database. Run with: npm run tracklists [-- --claude] [-- --limit 200]
-//   --claude   also ask Claude about texts that look like a tracklist but the rules could not read
-// YouTube quota: 1 unit per 50 concerts (descriptions) + 1 unit per concert without a tracklist there (comments).
+// database. Run with: npm run setlists [-- --claude] [-- --limit 200]
+//   --claude   also ask Claude about texts that look like a setlist but the rules could not read
+// YouTube quota: 1 unit per 50 concerts (descriptions) + 1 unit per concert without a setlist there (comments).
 import "dotenv/config";
 import { appendFile, writeFile } from "node:fs/promises";
 import { createPrismaClient } from "../src/lib/db";
 import { QuotaBudgetExceeded, YouTubeClient } from "../src/lib/collector/youtube";
-import { fromComments, fromDescription, type TracklistSource } from "../src/lib/tracklist/choose";
-import { TracklistExtractor } from "../src/lib/tracklist/extract";
-import { isUnidentified, type Track } from "../src/lib/tracklist/parse";
+import { fromComments, fromDescription, type SetlistSource } from "../src/lib/setlist/choose";
+import { SetlistExtractor } from "../src/lib/setlist/extract";
+import { isUnidentified, type Track } from "../src/lib/setlist/parse";
 
 const args = process.argv.slice(2);
 const useClaude = args.includes("--claude");
 const limitArg = args.indexOf("--limit");
 const limit = limitArg >= 0 ? Number(args[limitArg + 1]) : undefined;
-const sampleCount = Number(process.env.TRACKLIST_SAMPLES ?? 3);
-const claudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
+const sampleCount = Number(process.env.SETLIST_SAMPLES ?? 3);
+const claudeMax = Number(process.env.SETLIST_CLAUDE_MAX ?? 50);
 
-type Outcome = TracklistSource | "CLAUDE" | "UNCLEAR" | "NONE" | "GONE" | "NOT_CHECKED";
+type Outcome = SetlistSource | "CLAUDE" | "UNCLEAR" | "NONE" | "GONE" | "NOT_CHECKED";
 interface Row {
   slug: string;
   channel: string;
@@ -32,7 +32,7 @@ interface Row {
 
 const db = createPrismaClient();
 const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", Number(process.env.YOUTUBE_UNIT_BUDGET ?? 3000));
-const extractor = useClaude ? new TracklistExtractor() : null;
+const extractor = useClaude ? new SetlistExtractor() : null;
 const rows: Row[] = [];
 const errors: string[] = [];
 
@@ -124,7 +124,7 @@ const samples = (o: Outcome) =>
 
 const summary = {
   concertsChecked: checked,
-  withTracklist: found.length,
+  withSetlist: found.length,
   fromDescription: count("DESCRIPTION"),
   fromChannelComment: count("CHANNEL_COMMENT"),
   fromViewerComment: count("COMMENT"),
@@ -142,12 +142,12 @@ const summary = {
   errors,
 };
 console.log(JSON.stringify(summary, null, 2));
-await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Object.fromEntries(channels), rows }, null, 2));
+await writeFile("setlist-report.json", JSON.stringify({ summary, channels: Object.fromEntries(channels), rows }, null, 2));
 
 {
-  const md = `## Tracklists: how many concerts have one
+  const md = `## Setlists: how many concerts have one
 
-**${found.length} of ${checked} concerts (${pct(found.length)})** have a tracklist we can show.
+**${found.length} of ${checked} concerts (${pct(found.length)})** have a setlist we can show.
 
 | Where it came from | Concerts | Share |
 |---|---|---|
@@ -155,7 +155,7 @@ await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Obj
 | Comment by the channel itself | ${summary.fromChannelComment} | ${pct(summary.fromChannelComment)} |
 | Viewer comment | ${summary.fromViewerComment} | ${pct(summary.fromViewerComment)} |
 | Read by Claude (odd formatting) | ${summary.fromClaude} | ${pct(summary.fromClaude)} |
-| Looks like a tracklist, could not be read | ${summary.unclearNotRead} | ${pct(summary.unclearNotRead)} |
+| Looks like a setlist, could not be read | ${summary.unclearNotRead} | ${pct(summary.unclearNotRead)} |
 | Nothing found | ${summary.none} | ${pct(summary.none)} |
 
 - With times (clickable later): ${summary.timed} · with at least one "ID" track: ${summary.withIdTracks}
@@ -163,7 +163,7 @@ await writeFile("tracklist-report.json", JSON.stringify({ summary, channels: Obj
 - YouTube units used: ${summary.youtubeUnits}${extractor ? ` · Claude calls: ${summary.claudeCalls}` : ""}
 ${errors.length ? `- Errors: ${errors.length} (see the log)` : ""}
 
-### By channel (concerts with a tracklist / concerts)
+### By channel (concerts with a setlist / concerts)
 ${channels.map(([name, c]) => `- ${name}: ${c.found} / ${c.concerts}`).join("\n")}
 
 ### Examples to check by eye

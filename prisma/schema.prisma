@@ -210,14 +210,14 @@ model Concert {
   liveAct            Boolean   @default(false) @map("live_act")
   /// Our own original text about the concert (required before ads, YouTube policy III.G.1.d).
   writeUp            String?   @map("write_up")
-  /// Tracklist as a list of { time, artist, title } (time in seconds or null; artist null for an
-  /// untitled line). Read from the video description or its comments (src/lib/tracklist). It is
+  /// Setlist as a list of { time, artist, title } (time in seconds or null; artist null for an
+  /// untitled line). Read from the video description or its comments (src/lib/setlist). It is
   /// YouTube data: re-read by the refresh job at least every 30 days, removed when it disappears.
-  tracklist          Json?
-  /// Where the tracklist came from: DESCRIPTION, CHANNEL_COMMENT, COMMENT (a viewer) or CLAUDE.
-  tracklistSource    String?   @map("tracklist_source")
-  /// Last time the description and comments were read for a tracklist. Null = never.
-  tracklistCheckedAt DateTime? @map("tracklist_checked_at")
+  setlist          Json?
+  /// Where the setlist came from: DESCRIPTION, CHANNEL_COMMENT, COMMENT (a viewer) or CLAUDE.
+  setlistSource    String?   @map("setlist_source")
+  /// Last time the description and comments were read for a setlist. Null = never.
+  setlistCheckedAt DateTime? @map("setlist_checked_at")
   /// Best available thumbnail. Null = derive from the YouTube ID.
   thumbnailUrl       String?   @map("thumbnail_url")
 

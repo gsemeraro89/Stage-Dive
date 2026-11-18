@@ -1,17 +1,17 @@
-// Tracklist rules: reading descriptions and comments, the checks, and which source wins.
+// Setlist rules: reading descriptions and comments, the checks, and which source wins.
 import { describe, expect, it } from "vitest";
-import { fromComments, fromDescription } from "../src/lib/tracklist/choose";
+import { fromComments, fromDescription } from "../src/lib/setlist/choose";
 import { YouTubeClient } from "../src/lib/collector/youtube";
-import { toTracks } from "../src/lib/tracklist/extract";
+import { toTracks } from "../src/lib/setlist/extract";
 import {
   cleanTitle,
   fixSwapped,
   isUnidentified,
   parseLine,
-  parseTracklist,
+  parseSetlist,
   timeToSeconds,
   validateTracks,
-} from "../src/lib/tracklist/parse";
+} from "../src/lib/setlist/parse";
 
 const HOUR = 3600;
 
@@ -80,7 +80,7 @@ describe("timeToSeconds and isUnidentified", () => {
 
 const CERCLE_STYLE = `Artist performing live at a beautiful place for Cercle.
 
-Tracklist:
+Setlist:
 00:00 Artist - Opening
 05:40 Artist - Second One
 11:02 Other Artist - Third (Artist Remix)
@@ -91,11 +91,11 @@ Tracklist:
 Cercle is a media company...
 Follow us: https://instagram.com/cercle`;
 
-describe("parseTracklist", () => {
-  it("finds a timed tracklist inside a longer description", () => {
-    const result = parseTracklist(CERCLE_STYLE, 1.5 * HOUR);
-    expect(result.kind).toBe("tracklist");
-    if (result.kind !== "tracklist") return;
+describe("parseSetlist", () => {
+  it("finds a timed setlist inside a longer description", () => {
+    const result = parseSetlist(CERCLE_STYLE, 1.5 * HOUR);
+    expect(result.kind).toBe("setlist");
+    if (result.kind !== "setlist") return;
     expect(result.timed).toBe(true);
     expect(result.tracks).toHaveLength(6);
     expect(result.tracks[3]).toEqual({ time: 1050, artist: "ID", title: "ID" });
@@ -103,39 +103,39 @@ describe("parseTracklist", () => {
 
   it("reads a numbered list without times", () => {
     const text = ["1. A - One", "2. B - Two", "3. C - Three", "4. D - Four", "5. E - Five"].join("\n");
-    const result = parseTracklist(text);
-    expect(result).toMatchObject({ kind: "tracklist", timed: false });
+    const result = parseSetlist(text);
+    expect(result).toMatchObject({ kind: "setlist", timed: false });
   });
 
   it("allows blank lines and a heading inside the list", () => {
     const text = "00:00 A - One\n10:00 B - Two\n\nPart 2\n20:00 C - Three\n30:00 D - Four\n40:00 E - Five";
-    const result = parseTracklist(text, HOUR);
-    expect(result.kind === "tracklist" && result.tracks.length).toBe(5);
+    const result = parseSetlist(text, HOUR);
+    expect(result.kind === "setlist" && result.tracks.length).toBe(5);
   });
 
   it("finds nothing in an ordinary description", () => {
-    expect(parseTracklist("Live at Spectra 2026. Thanks to everyone who came!", HOUR)).toEqual({ kind: "none" });
+    expect(parseSetlist("Live at Spectra 2026. Thanks to everyone who came!", HOUR)).toEqual({ kind: "none" });
   });
 
-  it("does not take a chapter list for a tracklist", () => {
+  it("does not take a chapter list for a setlist", () => {
     const text = "00:00 Intro\n10:00 Part one\n20:00 Part two\n30:00 Part three\n40:00 Outro";
-    expect(parseTracklist(text, HOUR).kind).toBe("unclear");
+    expect(parseSetlist(text, HOUR).kind).toBe("unclear");
   });
 
   it("flags lists whose times go backwards or past the end", () => {
     const backwards = "00:00 A - 1\n20:00 B - 2\n10:00 C - 3\n30:00 D - 4\n40:00 E - 5";
-    expect(parseTracklist(backwards, HOUR)).toEqual({ kind: "unclear", reason: "times go backwards" });
+    expect(parseSetlist(backwards, HOUR)).toEqual({ kind: "unclear", reason: "times go backwards" });
     const tooLong = "00:00 A - 1\n20:00 B - 2\n40:00 C - 3\n1:30:00 D - 4\n2:00:00 E - 5";
-    expect(parseTracklist(tooLong, HOUR)).toEqual({ kind: "unclear", reason: "times run past the end of the concert" });
+    expect(parseSetlist(tooLong, HOUR)).toEqual({ kind: "unclear", reason: "times run past the end of the concert" });
   });
 
   it("needs at least five tracks", () => {
-    expect(parseTracklist("00:00 A - 1\n10:00 B - 2\n20:00 C - 3", HOUR).kind).toBe("none");
+    expect(parseSetlist("00:00 A - 1\n10:00 B - 2\n20:00 C - 3", HOUR).kind).toBe("none");
   });
 
-  it("flags a text that announces a tracklist it does not give in a readable way", () => {
-    const text = "Tracklist:\n00:00 A - 1\n10:00 B - 2\nmore soon";
-    expect(parseTracklist(text, HOUR).kind).toBe("unclear");
+  it("flags a text that announces a setlist it does not give in a readable way", () => {
+    const text = "Setlist:\n00:00 A - 1\n10:00 B - 2\nmore soon";
+    expect(parseSetlist(text, HOUR).kind).toBe("unclear");
   });
 });
 
@@ -150,7 +150,7 @@ const list = (prefix: string, n = 6) =>
   Array.from({ length: n }, (_, i) => `${String(i * 5).padStart(2, "0")}:00 ${prefix}${i} - Track ${i}`).join("\n");
 
 describe("choosing a source", () => {
-  it("uses the description when it has a tracklist", () => {
+  it("uses the description when it has a setlist", () => {
     expect(fromDescription(CERCLE_STYLE, HOUR).chosen?.source).toBe("DESCRIPTION");
   });
 
@@ -171,7 +171,7 @@ describe("choosing a source", () => {
     expect(chosen.tracks[0].artist).toBe("Long0");
   });
 
-  it("returns nothing, and lists the unclear texts, when no comment is a tracklist", () => {
+  it("returns nothing, and lists the unclear texts, when no comment is a setlist", () => {
     const comments = [
       { text: "What a concert!!", likeCount: 1000, byChannel: false },
       { text: "00:00 Intro\n10:00 a\n20:00 b\n30:00 c\n40:00 d", likeCount: 5, byChannel: false },
@@ -248,8 +248,8 @@ describe("cases found in the first measurement (13 Nov 2026)", () => {
   });
 });
 
-describe("lookUpTracklist", async () => {
-  const { lookUpTracklist, tracklistFields } = await import("../src/lib/tracklist/lookup");
+describe("lookUpSetlist", async () => {
+  const { lookUpSetlist, setlistFields } = await import("../src/lib/setlist/lookup");
   const { QuotaBudgetExceeded } = await import("../src/lib/collector/youtube");
   const { Prisma } = await import("../src/generated/prisma/client");
 
@@ -284,31 +284,31 @@ describe("lookUpTracklist", async () => {
 
   it("uses the description and does not spend quota on comments", async () => {
     const yt = fakeYt([]);
-    const found = await lookUpTracklist(yt as never, video(CERCLE_STYLE));
+    const found = await lookUpSetlist(yt as never, video(CERCLE_STYLE));
     expect(found.source).toBe("DESCRIPTION");
     expect(yt.calls).toBe(0);
   });
 
   it("falls back to comments, and knows the channel's own comment", async () => {
     const yt = fakeYt([{ text: list("Chan", 6), likeCount: 0, authorChannelId: "UCchannel" }]);
-    const found = await lookUpTracklist(yt as never, video("Live somewhere."));
+    const found = await lookUpSetlist(yt as never, video("Live somewhere."));
     expect(found).toMatchObject({ source: "CHANNEL_COMMENT", commentsOff: false });
     expect(found.tracks).toHaveLength(6);
   });
 
-  it("reports nothing when there is no tracklist anywhere", async () => {
-    const found = await lookUpTracklist(fakeYt([]) as never, video("Live somewhere."));
+  it("reports nothing when there is no setlist anywhere", async () => {
+    const found = await lookUpSetlist(fakeYt([]) as never, video("Live somewhere."));
     expect(found).toEqual({ tracks: null, source: null, commentsOff: true, unclear: false });
   });
 
   it("passes a quota stop on, so the caller keeps what it had", async () => {
-    await expect(lookUpTracklist(fakeYt(new QuotaBudgetExceeded("out")) as never, video("x"))).rejects.toBeInstanceOf(
+    await expect(lookUpSetlist(fakeYt(new QuotaBudgetExceeded("out")) as never, video("x"))).rejects.toBeInstanceOf(
       QuotaBudgetExceeded,
     );
   });
 
   it("treats other comment errors as no comments", async () => {
-    const found = await lookUpTracklist(fakeYt(new Error("YouTube commentThreads failed: 500")) as never, video("x"));
+    const found = await lookUpSetlist(fakeYt(new Error("YouTube commentThreads failed: 500")) as never, video("x"));
     expect(found.tracks).toBeNull();
   });
 
@@ -321,29 +321,29 @@ describe("lookUpTracklist", async () => {
       },
     };
     const chapters = "00:00 Intro\n10:00 Part one\n20:00 Part two\n30:00 Part three\n40:00 Outro";
-    const found = await lookUpTracklist(fakeYt([]) as never, video(chapters), { extractor: extractor as never });
+    const found = await lookUpSetlist(fakeYt([]) as never, video(chapters), { extractor: extractor as never });
     expect(found.source).toBe("CLAUDE");
-    await lookUpTracklist(fakeYt([]) as never, video(chapters), { extractor: extractor as never, claudeMax: 1 });
+    await lookUpSetlist(fakeYt([]) as never, video(chapters), { extractor: extractor as never, claudeMax: 1 });
     expect(extractor.calls).toBe(1);
-    await lookUpTracklist(fakeYt([]) as never, video("Live somewhere."), { extractor: extractor as never });
+    await lookUpSetlist(fakeYt([]) as never, video("Live somewhere."), { extractor: extractor as never });
     expect(extractor.calls).toBe(1);
   });
 
-  it("clears an old tracklist when none is found", () => {
+  it("clears an old setlist when none is found", () => {
     const now = new Date();
-    expect(tracklistFields({ tracks: null, source: null, commentsOff: false, unclear: false }, now)).toEqual({
-      tracklist: Prisma.DbNull,
-      tracklistSource: null,
-      tracklistCheckedAt: now,
+    expect(setlistFields({ tracks: null, source: null, commentsOff: false, unclear: false }, now)).toEqual({
+      setlist: Prisma.DbNull,
+      setlistSource: null,
+      setlistCheckedAt: now,
     });
   });
 });
 
-describe("tracklist on the concert page", async () => {
-  const { readTracklist, linkArtists, artistSlugsIn, sourceNote } = await import("../src/lib/tracklist/view");
+describe("setlist on the concert page", async () => {
+  const { readSetlist, linkArtists, artistSlugsIn, sourceNote } = await import("../src/lib/setlist/view");
 
   it("reads stored tracks and skips anything malformed", () => {
-    const view = readTracklist(
+    const view = readSetlist(
       [{ time: 0, artist: "NTO", title: "Alter State" }, { time: 60, artist: "ID", title: "ID" }, { nope: 1 }, "x", { time: -5, artist: "", title: "Outro" }],
       "DESCRIPTION",
     );
@@ -352,17 +352,17 @@ describe("tracklist on the concert page", async () => {
       { time: 60, artist: "ID", title: "ID", unidentified: true, artistSlug: null },
       { time: null, artist: null, title: "Outro", unidentified: false, artistSlug: null },
     ]);
-    expect(readTracklist(null, null)).toBeNull();
-    expect(readTracklist([], "COMMENT")).toBeNull();
+    expect(readSetlist(null, null)).toBeNull();
+    expect(readSetlist([], "COMMENT")).toBeNull();
   });
 
   it("links only artists we have a page for, never ID", () => {
-    const view = readTracklist([{ time: 0, artist: "NTO", title: "A" }, { time: 1, artist: "Nobody Known", title: "B" }, { time: 2, artist: "ID", title: "ID" }], null);
+    const view = readSetlist([{ time: 0, artist: "NTO", title: "A" }, { time: 1, artist: "Nobody Known", title: "B" }, { time: 2, artist: "ID", title: "ID" }], null);
     expect(artistSlugsIn(view)).toEqual(["nto", "nobody-known"]);
     expect(linkArtists(view, new Set(["nto"]))!.tracks.map((t) => t.artistSlug)).toEqual(["nto", null, null]);
   });
 
-  it("says where the tracklist came from", () => {
+  it("says where the setlist came from", () => {
     expect(sourceNote("COMMENT")).toMatch(/viewer/);
     expect(sourceNote("DESCRIPTION")).toMatch(/description/);
   });
@@ -377,8 +377,8 @@ describe("fixes from the store check (13 Nov 2026)", () => {
       "18:00 Worakls - Red Dressed",
       "24:00 NTO - The Hound",
     ].join("\n");
-    const result = parseTracklist(text, HOUR);
-    expect(result.kind === "tracklist" && result.tracks.map((t) => `${t.artist} – ${t.title}`)).toEqual([
+    const result = parseSetlist(text, HOUR);
+    expect(result.kind === "setlist" && result.tracks.map((t) => `${t.artist} – ${t.title}`)).toEqual([
       "NTO – Petit Matin",
       "NTO – Cirrus",
       "NTO – Fior Di Macchia",

@@ -37,8 +37,8 @@ import {
 import { QuotaBudgetExceeded, YouTubeClient, type YouTubeVideo } from "../src/lib/collector/youtube";
 import { slugify } from "../src/lib/slug";
 import { findBestThumbnail } from "../src/lib/thumbnails";
-import { TracklistExtractor } from "../src/lib/tracklist/extract";
-import { lookUpTracklist, tracklistFields } from "../src/lib/tracklist/lookup";
+import { SetlistExtractor } from "../src/lib/setlist/extract";
+import { lookUpSetlist, setlistFields } from "../src/lib/setlist/lookup";
 
 const args = process.argv.slice(2);
 // --dry-run: classify and report, publish nothing. The classifier's answers are still stored
@@ -92,9 +92,9 @@ const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as 
 const db = createPrismaClient();
 const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", unitBudget);
 const run = dryRun ? null : await db.jobRun.create({ data: { job: "collect" } });
-// Tracklists for new concerts (description, then comments, then Claude for odd formatting).
-const tracklistExtractor = process.env.ANTHROPIC_API_KEY ? new TracklistExtractor() : null;
-const tracklistClaudeMax = Number(process.env.TRACKLIST_CLAUDE_MAX ?? 50);
+// Setlists for new concerts (description, then comments, then Claude for odd formatting).
+const setlistExtractor = process.env.ANTHROPIC_API_KEY ? new SetlistExtractor() : null;
+const setlistClaudeMax = Number(process.env.SETLIST_CLAUDE_MAX ?? 50);
 
 const stats = {
   dryRun,
@@ -106,9 +106,9 @@ const stats = {
   classified: 0,
   verdicts: {} as Record<string, number>,
   created: [] as string[],
-  /** New concerts published with a tracklist, and those whose tracklist waits for the refresh job (quota). */
-  tracklists: 0,
-  tracklistsPostponed: 0,
+  /** New concerts published with a setlist, and those whose setlist waits for the refresh job (quota). */
+  setlists: 0,
+  setlistsPostponed: 0,
   errors: [] as string[],
   youtubeUnits: 0,
   claudeCostUsd: 0,
@@ -444,13 +444,13 @@ try {
         stats.created.push(saved.slug);
         if (saved.status === "replaced") detail += `; replaced fan upload ${saved.replacedYoutubeId}`;
         try {
-          const found = await lookUpTracklist(yt, video, { extractor: tracklistExtractor, claudeMax: tracklistClaudeMax });
-          await db.concert.update({ where: { id: saved.concertId }, data: tracklistFields(found, new Date()) });
-          if (found.tracks) stats.tracklists++;
+          const found = await lookUpSetlist(yt, video, { extractor: setlistExtractor, claudeMax: setlistClaudeMax });
+          await db.concert.update({ where: { id: saved.concertId }, data: setlistFields(found, new Date()) });
+          if (found.tracks) stats.setlists++;
         } catch (error) {
-          // Never lose a new concert over its tracklist: the refresh job looks again (tracklist_checked_at stays empty).
-          if (error instanceof QuotaBudgetExceeded) stats.tracklistsPostponed++;
-          else stats.errors.push(`tracklist for ${saved.slug}: ${(error as Error).message}`);
+          // Never lose a new concert over its setlist: the refresh job looks again (setlist_checked_at stays empty).
+          if (error instanceof QuotaBudgetExceeded) stats.setlistsPostponed++;
+          else stats.errors.push(`setlist for ${saved.slug}: ${(error as Error).message}`);
         }
       }
     }
@@ -533,7 +533,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `## Collector ${dryRun ? "(dry run: nothing published)" : ""}`,
     `- Videos seen: ${stats.videosSeen} · already known: ${stats.alreadyKnown} · classified: ${stats.classified}`,
     `- Verdicts: ${Object.entries(stats.verdicts).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}`,
-    `- New concerts: ${stats.created.length} (with a tracklist: ${stats.tracklists}${stats.tracklistsPostponed ? `; ${stats.tracklistsPostponed} left for the refresh job` : ""})`,
+    `- New concerts: ${stats.created.length} (with a setlist: ${stats.setlists}${stats.setlistsPostponed ? `; ${stats.setlistsPostponed} left for the refresh job` : ""})`,
     `- YouTube units: ${stats.youtubeUnits} · Claude cost: ~$${stats.claudeCostUsd}`,
     stats.stoppedEarly ? `- Stopped early: ${stats.stoppedEarly}` : "",
     stats.errors.length ? `- Errors: ${stats.errors.length} (see log)` : "",

@@ -1,10 +1,10 @@
-// Reads a tracklist out of free text: a YouTube video description or a viewer comment.
-// The same rules apply to both, because people write tracklists the same way in either place:
+// Reads a setlist out of free text: a YouTube video description or a viewer comment.
+// The same rules apply to both, because people write setlists the same way in either place:
 //   00:00 Artist - Title          [00:00] Artist – Title (Original Mix)
 //   1:02:33 ID - ID               01. Artist - Title [Label]
 //   Artist - Title (12:30)        1. 00:00 Artist — Title
-// A text only counts as a tracklist when it passes the checks in `validateTracks`; texts that look
-// like a tracklist but fail them are reported as "unclear" so they can be handed to Claude.
+// A text only counts as a setlist when it passes the checks in `validateTracks`; texts that look
+// like a setlist but fail them are reported as "unclear" so they can be handed to Claude.
 
 export interface Track {
   /** Seconds from the start of the concert, when the text gives a time. */
@@ -15,15 +15,15 @@ export interface Track {
 }
 
 export type ParseResult =
-  | { kind: "tracklist"; tracks: Track[]; timed: boolean }
-  /** Looks like it tries to be a tracklist, but fails the checks. Worth asking Claude. */
+  | { kind: "setlist"; tracks: Track[]; timed: boolean }
+  /** Looks like it tries to be a setlist, but fails the checks. Worth asking Claude. */
   | { kind: "unclear"; reason: string }
   | { kind: "none" };
 
 export const MIN_TRACKS = 5;
 /** Share of lines that must name both an artist and a title (or be an ID). Chapter lists fail this. */
 const MIN_NAMED_SHARE = 0.6;
-/** Non-track lines allowed inside one tracklist (a "Part 2" heading, a stray note) before it is cut. */
+/** Non-track lines allowed inside one setlist (a "Part 2" heading, a stray note) before it is cut. */
 const MAX_GAP_LINES = 2;
 
 const TIME = String.raw`(?:\d{1,2}:)?\d{1,2}:\d{2}`;
@@ -197,21 +197,21 @@ export function validateTracks(tracks: Track[], durationSeconds?: number): strin
   return null;
 }
 
-/** Find the tracklist in a description or comment. */
-export function parseTracklist(text: string, durationSeconds?: number): ParseResult {
+/** Find the setlist in a description or comment. */
+export function parseSetlist(text: string, durationSeconds?: number): ParseResult {
   const candidates = blocks(text).sort((a, b) => b.length - a.length);
   if (!candidates.length) return { kind: "none" };
 
   let firstProblem: string | null = null;
   for (const tracks of candidates) {
     const problem = validateTracks(tracks, durationSeconds);
-    if (!problem) return { kind: "tracklist", tracks: fixSwapped(tracks), timed: tracks[0].time !== null };
-    // A short run (a couple of timestamps in a sentence) is just text, not a failed tracklist.
+    if (!problem) return { kind: "setlist", tracks: fixSwapped(tracks), timed: tracks[0].time !== null };
+    // A short run (a couple of timestamps in a sentence) is just text, not a failed setlist.
     if (tracks.length >= MIN_TRACKS) firstProblem ??= problem;
   }
   if (firstProblem) return { kind: "unclear", reason: firstProblem };
-  if (/\btrack\s?list\b/i.test(text) && candidates[0].length >= 2) {
-    return { kind: "unclear", reason: "mentions a tracklist but too few lines could be read" };
+  if (/\b(?:track|set)\s?list\b/i.test(text) && candidates[0].length >= 2) {
+    return { kind: "unclear", reason: "mentions a setlist but too few lines could be read" };
   }
   return { kind: "none" };
 }

@@ -1,8 +1,8 @@
-// Picks one tracklist for a concert from the video description and its most relevant comments.
+// Picks one setlist for a concert from the video description and its most relevant comments.
 // Order (owner, 13 Nov 2026): the description first; then a comment by the uploading channel itself
 // (usually the pinned one); then the most liked comment; on equal likes, the most complete list.
 
-import { parseTracklist, type Track } from "./parse";
+import { parseSetlist, type Track } from "./parse";
 
 export interface CommentText {
   text: string;
@@ -11,23 +11,23 @@ export interface CommentText {
   byChannel: boolean;
 }
 
-export type TracklistSource = "DESCRIPTION" | "CHANNEL_COMMENT" | "COMMENT";
+export type SetlistSource = "DESCRIPTION" | "CHANNEL_COMMENT" | "COMMENT";
 
-export interface ChosenTracklist {
+export interface ChosenSetlist {
   tracks: Track[];
   timed: boolean;
-  source: TracklistSource;
+  source: SetlistSource;
 }
 
 export interface Choice {
-  chosen: ChosenTracklist | null;
-  /** Texts that look like a tracklist but could not be read; candidates for Claude. */
-  unclear: { source: TracklistSource; text: string; reason: string }[];
+  chosen: ChosenSetlist | null;
+  /** Texts that look like a setlist but could not be read; candidates for Claude. */
+  unclear: { source: SetlistSource; text: string; reason: string }[];
 }
 
 export function fromDescription(description: string, durationSeconds?: number): Choice {
-  const result = parseTracklist(description, durationSeconds);
-  if (result.kind === "tracklist") {
+  const result = parseSetlist(description, durationSeconds);
+  if (result.kind === "setlist") {
     return { chosen: { tracks: result.tracks, timed: result.timed, source: "DESCRIPTION" }, unclear: [] };
   }
   if (result.kind === "unclear") {
@@ -37,12 +37,12 @@ export function fromDescription(description: string, durationSeconds?: number): 
 }
 
 export function fromComments(comments: CommentText[], durationSeconds?: number): Choice {
-  const found: (ChosenTracklist & { likes: number })[] = [];
+  const found: (ChosenSetlist & { likes: number })[] = [];
   const unclear: Choice["unclear"] = [];
   for (const comment of comments) {
-    const source: TracklistSource = comment.byChannel ? "CHANNEL_COMMENT" : "COMMENT";
-    const result = parseTracklist(comment.text, durationSeconds);
-    if (result.kind === "tracklist") {
+    const source: SetlistSource = comment.byChannel ? "CHANNEL_COMMENT" : "COMMENT";
+    const result = parseSetlist(comment.text, durationSeconds);
+    if (result.kind === "setlist") {
       found.push({ tracks: result.tracks, timed: result.timed, source, likes: comment.likeCount });
     } else if (result.kind === "unclear") {
       unclear.push({ source, text: comment.text, reason: result.reason });

@@ -1,6 +1,6 @@
 # YouTube rule: stored data must be refreshed or deleted at least every 30 days.
-# Runs daily; each set is refreshed once it is 25 days old, and its tracklist re-read.
-# Sets never checked for a tracklist are always included (the first run after this fills them all).
+# Runs daily; each set is refreshed once it is 25 days old, and its setlist re-read.
+# Sets never checked for a setlist are always included (the first run after this fills them all).
 name: Refresh YouTube data
 
 on:
@@ -24,7 +24,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-      # Reads tracklists the rules cannot (odd formatting); the refresh works without it.
+      # Reads setlists the rules cannot (odd formatting); the refresh works without it.
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4

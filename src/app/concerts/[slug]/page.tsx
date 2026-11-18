@@ -12,7 +12,7 @@ import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
 import { compactNumber, placeLine } from "@/lib/site";
-import { sourceNote, type TrackView } from "@/lib/tracklist/view";
+import { sourceNote, type TrackView } from "@/lib/setlist/view";
 
 const ID_HINT = "Unreleased or unidentified track";
 
@@ -21,7 +21,7 @@ function Id() {
   return <abbr title={ID_HINT}>ID</abbr>;
 }
 
-/** "Artist – Title" for one tracklist line. Artists with a page on FullDJSet are links. */
+/** "Artist – Title" for one setlist line. Artists with a page on FullDJSet are links. */
 function TrackName({ track }: { track: TrackView }) {
   const artistIsId = track.artist !== null && /^ID$/i.test(track.artist);
   return (
@@ -77,17 +77,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { concert, queue, moreFromArtist, similarCards, tracklist } = page;
+  const { concert, queue, moreFromArtist, similarCards, setlist } = page;
   const track = toTrack(concert);
   const mainArtist = concert.artists.find((a) => a.role === "MAIN") ?? concert.artists[0];
   const upNext = queue.slice(0, 4);
 
   return (
     <main data-od="concert">
-      {/* Desktop: the player with the tracklist beside it (so times can be clicked with the video in
-          view), then the title and the facts under the player. Phones: player, title, tracklist,
-          facts, up next. Without a tracklist the side column is "Up next" alone. Layout: pages.css. */}
-      <div className="od-setgrid" data-tracklist={tracklist ? "" : undefined}>
+      {/* Desktop: the player with the setlist beside it (so times can be clicked with the video in
+          view), then the title and the facts under the player. Phones: player, title, setlist,
+          facts, up next. Without a setlist the side column is "Up next" alone. Layout: pages.css. */}
+      <div className="od-setgrid" data-setlist={setlist ? "" : undefined}>
         <div className="od-setplayer">
           <PlayerSlot track={track} srcSet={concert.thumbnail.srcSet} alt={`${concert.credits} — ${placeLine(concert) || concert.title}`} />
           <p className="od-player-note meta" data-od="player-note">
@@ -100,25 +100,25 @@ export default async function ConcertPage({ params }: Props) {
 
         <h1 className="od-concert-title display">{concert.title}</h1>
 
-        {(tracklist || upNext.length > 0) && (
+        {(setlist || upNext.length > 0) && (
           <div className="od-setside">
-            {tracklist && (
+            {setlist && (
               <section
-                className="od-tracklist"
-                aria-labelledby="tracklist"
-                data-od="tracklist"
-                data-timed={tracklist.tracks[0].time !== null || undefined}
+                className="od-setlist"
+                aria-labelledby="setlist"
+                data-od="setlist"
+                data-timed={setlist.tracks[0].time !== null || undefined}
               >
-                <div className="od-tracklist-head">
-                  <h2 id="tracklist" className="title">
-                    Tracklist
+                <div className="od-setlist-head">
+                  <h2 id="setlist" className="title">
+                    Setlist
                   </h2>
-                  <span className="meta od-muted">{count2(tracklist.tracks.length)}</span>
+                  <span className="meta od-muted">{count2(setlist.tracks.length)}</span>
                 </div>
                 <ol className="od-tracks" data-od="track-list">
-                  {tracklist.tracks.map((t, i) => {
+                  {setlist.tracks.map((t, i) => {
                     const label = [t.artist, t.unidentified ? "ID" : t.title].filter(Boolean).join(" – ");
-                    const nextTime = tracklist.tracks[i + 1]?.time ?? null;
+                    const nextTime = setlist.tracks[i + 1]?.time ?? null;
                     return (
                       <li key={i} className="od-track" data-od="track" data-unidentified={t.unidentified || undefined}>
                         {t.time !== null && (
@@ -131,8 +131,8 @@ export default async function ConcertPage({ params }: Props) {
                     );
                   })}
                 </ol>
-                <p className="od-tracklist-source meta od-muted" data-od="tracklist-source">
-                  {sourceNote(tracklist.source)}
+                <p className="od-setlist-source meta od-muted" data-od="setlist-source">
+                  {sourceNote(setlist.source)}
                 </p>
               </section>
             )}

@@ -6,7 +6,7 @@ import { thumbnailSources, type ThumbnailSources } from "./thumbnails";
 import { cached } from "./memo";
 import { buildPeriodIndex, monthRange, yearRange, type PeriodIndex } from "./periods";
 import { pickForDay } from "./rotation";
-import { artistSlugsIn, linkArtists, readTracklist, type TracklistView } from "./tracklist/view";
+import { artistSlugsIn, linkArtists, readSetlist, type SetlistView } from "./setlist/view";
 import { buildQueue, relatedByGenre } from "./upnext";
 import { layoutMap } from "./similarity/layout";
 import { nameKey } from "./collector/musicbrainz";
@@ -30,8 +30,8 @@ const concertInclude = {
 };
 
 async function findConcerts(args: { where: object; orderBy?: object | object[]; take?: number }) {
-  // The tracklist is only read by the concert page (getConcertPage), never for lists.
-  return getDb().concert.findMany({ ...args, include: concertInclude, omit: { tracklist: true } });
+  // The setlist is only read by the concert page (getConcertPage), never for lists.
+  return getDb().concert.findMany({ ...args, include: concertInclude, omit: { setlist: true } });
 }
 type ConcertRow = Awaited<ReturnType<typeof findConcerts>>[number];
 
@@ -247,17 +247,17 @@ export async function getConcertPage(slug: string) {
     (await concertViewsInOrder([...queueIds, ...relatedIds].map((c) => c.id))).map((v) => [v.id, v]),
   );
   const pick = (list: LightCandidate[]) => list.map((c) => views.get(c.id)).filter((v): v is ConcertView => Boolean(v));
-  // Only the concert page carries the tracklist (lists stay light). Artists we have a page for
+  // Only the concert page carries the setlist (lists stay light). Artists we have a page for
   // (with at least one visible concert) become links.
-  const stored = await getDb().concert.findUnique({ where: { id: row.id }, select: { tracklist: true } });
-  const raw = readTracklist(stored?.tracklist, row.tracklistSource);
+  const stored = await getDb().concert.findUnique({ where: { id: row.id }, select: { setlist: true } });
+  const raw = readSetlist(stored?.setlist, row.setlistSource);
   const slugs = artistSlugsIn(raw);
   const known = slugs.length
     ? await getDb().artist.findMany({ where: { slug: { in: slugs }, credits: { some: { concert: VISIBLE } } }, select: { slug: true } })
     : [];
   return {
     concert: toConcertView(row),
-    tracklist: linkArtists(raw, new Set(known.map((a) => a.slug))) as TracklistView | null,
+    setlist: linkArtists(raw, new Set(known.map((a) => a.slug))) as SetlistView | null,
     /** "You might also like": similar artists with a concert to play (never one with this concert's artists). */
     similarCards: (await artistCards(similar.slice(0, 12), current.artistIds)).slice(0, 4),
     queue: pick(queueIds),

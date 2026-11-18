@@ -67,8 +67,8 @@ import { chunks, recentDecisions, recordDecision, saveConcert } from "../src/lib
 import { QuotaBudgetExceeded, YouTubeClient, type ChannelInfo, type YouTubeVideo } from "../src/lib/collector/youtube";
 import { slugify } from "../src/lib/slug";
 import { findBestThumbnail } from "../src/lib/thumbnails";
-import { TracklistExtractor } from "../src/lib/tracklist/extract";
-import { lookUpTracklist, tracklistFields } from "../src/lib/tracklist/lookup";
+import { SetlistExtractor } from "../src/lib/setlist/extract";
+import { lookUpSetlist, setlistFields } from "../src/lib/setlist/lookup";
 
 const args = process.argv.slice(2);
 const haikuTest = args.includes("--haiku-test");
@@ -722,7 +722,7 @@ async function runLane() {
   texts = await storedLaneAnswers(db, needText.map((a) => a.t.video.youtubeId), "writeup", ttlDays);
 
   // 8. Publish (not in a dry run), and record the verdicts.
-  const extractor = process.env.ANTHROPIC_API_KEY ? new TracklistExtractor() : null;
+  const extractor = process.env.ANTHROPIC_API_KEY ? new SetlistExtractor() : null;
   const rows: Record<string, unknown>[] = [];
   for (const r of outcomes) {
     const { t, decision } = r;
@@ -763,11 +763,11 @@ async function runLane() {
         rep.created.push(saved.slug);
         totals.created.push(saved.slug);
         try {
-          const found = await lookUpTracklist(yt, t.video, { extractor, claudeMax: 20 });
-          await db.concert.update({ where: { id: saved.concertId }, data: tracklistFields(found, new Date()) });
+          const found = await lookUpSetlist(yt, t.video, { extractor, claudeMax: 20 });
+          await db.concert.update({ where: { id: saved.concertId }, data: setlistFields(found, new Date()) });
         } catch (error) {
-          // Never lose a new concert over its tracklist: the refresh job looks again.
-          if (!(error instanceof QuotaBudgetExceeded)) errors.push(`tracklist for ${saved.slug}: ${(error as Error).message}`);
+          // Never lose a new concert over its setlist: the refresh job looks again.
+          if (!(error instanceof QuotaBudgetExceeded)) errors.push(`setlist for ${saved.slug}: ${(error as Error).message}`);
         }
       }
     }

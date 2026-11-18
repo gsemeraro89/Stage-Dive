@@ -217,7 +217,7 @@ export function searchesToRun<T extends SearchState>(artists: T[], maxSearches: 
 
 /**
  * How many searches fit in the YouTube units left. Each search costs 100 units plus 1 unit to read
- * its 50 results with videos.list; `reserve` is kept for what comes after (tracklists of new concerts).
+ * its 50 results with videos.list; `reserve` is kept for what comes after (setlists of new concerts).
  */
 export function searchesThatFit(unitsLeft: number, reserve = 100): number {
   return Math.max(0, Math.floor((unitsLeft - reserve) / 101));

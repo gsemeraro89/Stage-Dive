@@ -1,6 +1,6 @@
-# Measures how many published sets have a readable tracklist (description or comments).
+# Measures how many published sets have a readable setlist (description or comments).
 # Read-only: saves nothing to the database. The result is on the run's summary page.
-name: Tracklist coverage
+name: Setlist coverage
 
 on:
   workflow_dispatch:
@@ -31,12 +31,12 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: >-
-          npm run tracklists --
+          npm run setlists --
           ${{ inputs.use_claude && '--claude' || '' }}
           ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tracklist-report
-          path: tracklist-report.json
+          name: setlist-report
+          path: setlist-report.json
           retention-days: 7

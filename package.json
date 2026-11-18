@@ -22,7 +22,7 @@
     "refresh": "tsx scripts/refresh.ts",
     "profiles": "tsx scripts/profiles.ts",
     "similarity": "tsx scripts/similarity.ts",
-    "tracklists": "tsx scripts/tracklists.ts",
+    "setlists": "tsx scripts/setlists.ts",
     "artist-images": "tsx scripts/artist-images.ts",
     "artist-lane": "tsx scripts/artist-lane.ts",
     "admin-ops": "tsx scripts/admin-ops.ts"

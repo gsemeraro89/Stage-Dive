@@ -30,7 +30,7 @@ interface PlayerState {
 
 interface PlayerActions {
   play: (track: Track) => void;
-  /** Play a concert from a given second (tracklist times). Starts the concert first if another one is playing. */
+  /** Play a concert from a given second (setlist times). Starts the concert first if another one is playing. */
   playFrom: (track: Track, seconds: number) => void;
   /** Put a concert first in the queue without stopping the current one (plays now if nothing is playing). */
   playNext: (track: Track) => void;
@@ -130,7 +130,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const historyRef = useRef<Track[]>([]);
   const advanceRef = useRef<() => void>(() => {});
-  /** Where the concert being started should begin (a tracklist time), 0 for the start. */
+  /** Where the concert being started should begin (a setlist time), 0 for the start. */
   const startAtRef = useRef(0);
 
   const start = useCallback((track: Track, at = 0) => {
@@ -184,7 +184,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
               const wanted = currentRef.current;
               if (wanted && wanted.youtubeId !== first.youtubeId) player.loadVideoById(wanted.youtubeId, startAtRef.current);
               else {
-                // A tracklist time clicked while the player was loading: start there.
+                // A setlist time clicked while the player was loading: start there.
                 if (startAtRef.current) player.seekTo(startAtRef.current, true);
                 player.playVideo();
               }
