@@ -7,6 +7,30 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const url = process.env.TEST_DATABASE_URL;
 
+const extra = (id: string, artist: string, venue: string, performed: string, genres: string[], venueKind: string, views: number, date: string) => ({
+  id,
+  artist,
+  title: `${artist} - Live at ${venue} ${performed.slice(0, 4)} (Full Concert)`,
+  channel: artist,
+  official: true,
+  secs: 5000,
+  views,
+  date,
+  performed,
+  genres,
+  venue,
+  city: "",
+  country: "",
+  venueKind,
+  checked_on: "2026-11-18",
+});
+const EXTRA_CONCERTS = [
+  extra("tstLPkRaR04", "Linkin Park", "Rock am Ring", "2004-06-05", ["alternative"], "Festival", 2_000_000, "2020-04-01"),
+  extra("tstCureHyd8", "The Cure", "Hyde Park", "2018-07-07", ["post-punk"], "Festival", 2_500_000, "2019-10-18"),
+  extra("tstRHGlast7", "Radiohead", "Glastonbury", "1997-06-28", ["alternative"], "Festival", 1_100_000, "2017-06-28"),
+  extra("tstDMWaldb9", "Depeche Mode", "Waldbühne", "2009-06-10", ["new wave / synth"], "Room", 700_000, "2021-09-09"),
+];
+
 describe.skipIf(!url)("up next reads only related concerts (database)", () => {
   let q: typeof import("../src/lib/queries");
   let up: typeof import("../src/lib/upnext");
@@ -22,7 +46,10 @@ describe.skipIf(!url)("up next reads only related concerts (database)", () => {
     await db.$executeRawUnsafe(
       `TRUNCATE plays, review_queue, concert_genres, concert_artists, concerts, artists, venues, genres, venue_kinds, tours, channels RESTART IDENTITY CASCADE`,
     );
-    await importSeed(db, normalizeSeed(JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"))));
+    // The 8-concert fixture plus a few more, so the queues mix same-band, shared-genre and unrelated concerts.
+    const seed = JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"));
+    seed.concerts.push(...EXTRA_CONCERTS);
+    await importSeed(db, normalizeSeed(seed));
     q = await import("../src/lib/queries");
     up = await import("../src/lib/upnext");
   });

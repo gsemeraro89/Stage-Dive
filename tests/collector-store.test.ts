@@ -10,8 +10,8 @@ const url = process.env.TEST_DATABASE_URL;
 
 function ytVideo(overrides: Partial<YouTubeVideo> = {}): YouTubeVideo {
   return {
-    youtubeId: "NEWSET00001",
-    title: "Marsh live at Somewhere",
+    youtubeId: "NEWCONC0001",
+    title: "Radiohead live at Somewhere Open Air",
     description: "",
     tags: [],
     channelId: "UCfan000000000000000000",
@@ -35,16 +35,16 @@ function cls(overrides: Partial<FullClassification> = {}): FullClassification {
     notConcertReason: "",
     isRock: true,
     confidence: 0.95,
-    mainArtists: ["Marsh"],
+    mainArtists: ["Radiohead"],
     collaborators: [],
     venue: "Somewhere Open Air",
     city: "Berlin",
     country: "Germany",
     venueKind: "Festival",
-    genres: ["metal"],
+    genres: ["alternative"],
     performed: "2024",
     uploaderIsOfficial: false,
-    writeUp: "Marsh plays a long melodic house concert outdoors.",
+    writeUp: "Radiohead play a long open-air festival show.",
     ...overrides,
   };
 }
@@ -75,23 +75,23 @@ describe.skipIf(!url)("saveConcert (database)", () => {
     const r = await store.saveConcert(db, { video: ytVideo(), classification: cls(), channel: fanChannel, thumbnail: "maxresdefault" });
     expect(r.status).toBe("created");
     const concert = await db.concert.findUniqueOrThrow({
-      where: { youtubeId: "NEWSET00001" },
+      where: { youtubeId: "NEWCONC0001" },
       include: { credits: { include: { artist: true } }, genres: { include: { genre: true } }, venue: true, venueKind: true, channel: true },
     });
     expect(concert.source).toBe("COLLECTOR");
     expect(concert.curated).toBe(false);
-    expect(concert.credits.map((c) => c.artist.slug)).toEqual(["marsh"]); // existing artist reused
-    expect(concert.genres.map((g) => g.genre.name)).toEqual(["Melodic House"]);
+    expect(concert.credits.map((c) => c.artist.slug)).toEqual(["radiohead"]); // existing artist reused
+    expect(concert.genres.map((g) => g.genre.name)).toEqual(["alternative"]);
     expect(concert.venue?.name).toBe("Somewhere Open Air");
     expect(concert.venueKind?.name).toBe("Festival");
     expect(concert.channel.isOfficial).toBe(false);
     expect(concert.thumbnailUrl).toContain("maxresdefault");
-    expect(concert.writeUp).toContain("melodic house");
+    expect(concert.writeUp).toContain("open-air festival");
   });
 
   it("does not add the same concert twice", async () => {
-    const r = await store.saveConcert(db, { video: ytVideo({ youtubeId: "NEWSET00002" }), classification: cls(), channel: fanChannel, thumbnail: null });
-    expect(r).toEqual({ status: "duplicate", ofYoutubeId: "NEWSET00001" });
+    const r = await store.saveConcert(db, { video: ytVideo({ youtubeId: "NEWCONC0002" }), classification: cls(), channel: fanChannel, thumbnail: null });
+    expect(r).toEqual({ status: "duplicate", ofYoutubeId: "NEWCONC0001" });
   });
 
   it("replaces a fan upload with the official upload of the same concert", async () => {
@@ -102,33 +102,33 @@ describe.skipIf(!url)("saveConcert (database)", () => {
       thumbnail: null,
     });
     expect(r.status).toBe("replaced");
-    expect(await db.concert.findUnique({ where: { youtubeId: "NEWSET00001" } })).toBeNull();
+    expect(await db.concert.findUnique({ where: { youtubeId: "NEWCONC0001" } })).toBeNull();
     expect((await db.concert.findUniqueOrThrow({ where: { youtubeId: "OFFICIAL001" }, include: { channel: true } })).channel.isOfficial).toBe(true);
   });
 
   it("never replaces a hand-picked seed concert", async () => {
-    // Same artist, same venue, same year as the seed's NTO at Tour Saint-Jacques (Cercle, 2017).
+    // Same band, same venue, uploaded weeks after the seed's Metallica at Yankee Stadium (2022), other channel.
     const r = await store.saveConcert(db, {
-      video: ytVideo({ youtubeId: "COPYCAT0001", publishedAt: new Date("2017-10-01"), durationSeconds: 5140 }),
-      classification: cls({ mainArtists: ["NTO"], venue: "Tour Saint-Jacques" }),
+      video: ytVideo({ youtubeId: "COPYCAT0001", publishedAt: new Date("2022-03-01"), durationSeconds: 8100 }),
+      classification: cls({ mainArtists: ["Metallica"], venue: "Yankee Stadium", genres: ["metal"], performed: "2011-09-14" }),
       channel: officialChannel,
       thumbnail: null,
     });
-    expect(r).toEqual({ status: "duplicate", ofYoutubeId: "LL0b2ZKEJoY" });
+    expect(r).toEqual({ status: "duplicate", ofYoutubeId: "nbhqDjIWLpk" });
   });
 
   it("creates new artists, collaborators and a unique slug", async () => {
     const r = await store.saveConcert(db, {
       video: ytVideo({ youtubeId: "NEWARTIST01", publishedAt: new Date("2024-01-01") }),
-      classification: cls({ mainArtists: ["Brand New DJ"], collaborators: [{ name: "Guest Star", note: "as GS" }], venue: "Somewhere Open Air" }),
+      classification: cls({ mainArtists: ["Brand New Band"], collaborators: [{ name: "Guest Star", note: "as GS" }], venue: "Somewhere Open Air" }),
       channel: officialChannel,
       thumbnail: null,
     });
     expect(r.status).toBe("created");
     const concert = await db.concert.findUniqueOrThrow({ where: { youtubeId: "NEWARTIST01" }, include: { credits: { include: { artist: true } } } });
-    expect(concert.slug).toBe("brand-new-dj-somewhere-open-air-2024");
+    expect(concert.slug).toBe("brand-new-band-somewhere-open-air-2024");
     expect(concert.credits.map((c) => [c.artist.name, c.role, c.creditNote])).toEqual([
-      ["Brand New DJ", "MAIN", null],
+      ["Brand New Band", "MAIN", null],
       ["Guest Star", "WITH", "as GS"],
     ]);
   });
@@ -144,7 +144,7 @@ describe.skipIf(!url)("saveConcert (database)", () => {
   it("reuses a stored classification only for the same rules and within 30 days", async () => {
     const cache = await import("../src/lib/collector/cache");
     await cache.storeClassification(db, "CACHED00001", "v1", cls());
-    expect((await cache.cachedClassifications(db, ["CACHED00001"], "v1", 30)).get("CACHED00001")?.mainArtists).toEqual(["Marsh"]);
+    expect((await cache.cachedClassifications(db, ["CACHED00001"], "v1", 30)).get("CACHED00001")?.mainArtists).toEqual(["Radiohead"]);
     expect((await cache.cachedClassifications(db, ["CACHED00001"], "v2", 30)).size).toBe(0); // rules changed
     await db.classificationCache.update({ where: { youtubeId: "CACHED00001" }, data: { createdAt: new Date(Date.now() - 31 * 86_400_000) } });
     expect((await cache.cachedClassifications(db, ["CACHED00001"], "v1", 30)).size).toBe(0); // too old
@@ -153,17 +153,17 @@ describe.skipIf(!url)("saveConcert (database)", () => {
 
   it("keeps clear verdicts longer so the classifier is not paid again", async () => {
     const old = (days: number) => new Date(Date.now() - days * 86_400_000);
-    await store.recordDecision(db, "NOTASET0001", "NOT_A_CONCERT", "a clip");
-    await store.recordDecision(db, "NOTELEC0001", "NOT_ROCK", "rock");
+    await store.recordDecision(db, "NOTACON0001", "NOT_A_CONCERT", "a clip");
+    await store.recordDecision(db, "NOTROCK0001", "NOT_ROCK", "not rock");
     await store.recordDecision(db, "UNSURE00001", "UNCERTAIN", "unsure");
-    await db.videoDecision.updateMany({ where: { youtubeId: { in: ["NOTASET0001", "NOTELEC0001", "UNSURE00001"] } }, data: { decidedAt: old(100) } });
-    expect([...(await store.recentDecisions(db, ["NOTASET0001", "NOTELEC0001", "UNSURE00001"], 30))].sort()).toEqual(["NOTASET0001", "NOTELEC0001"]);
+    await db.videoDecision.updateMany({ where: { youtubeId: { in: ["NOTACON0001", "NOTROCK0001", "UNSURE00001"] } }, data: { decidedAt: old(100) } });
+    expect([...(await store.recentDecisions(db, ["NOTACON0001", "NOTROCK0001", "UNSURE00001"], 30))].sort()).toEqual(["NOTACON0001", "NOTROCK0001"]);
     await store.expireOldData(db, 30);
-    expect(await db.videoDecision.count({ where: { youtubeId: { in: ["NOTASET0001", "NOTELEC0001"] } } })).toBe(2);
-    await db.videoDecision.update({ where: { youtubeId: "NOTELEC0001" }, data: { decidedAt: old(200) } });
-    expect([...(await store.recentDecisions(db, ["NOTELEC0001"], 30))]).toEqual([]);
+    expect(await db.videoDecision.count({ where: { youtubeId: { in: ["NOTACON0001", "NOTROCK0001"] } } })).toBe(2);
+    await db.videoDecision.update({ where: { youtubeId: "NOTROCK0001" }, data: { decidedAt: old(200) } });
+    expect([...(await store.recentDecisions(db, ["NOTROCK0001"], 30))]).toEqual([]);
     await store.expireOldData(db, 30);
-    expect(await db.videoDecision.count({ where: { youtubeId: "NOTELEC0001" } })).toBe(0);
+    expect(await db.videoDecision.count({ where: { youtubeId: "NOTROCK0001" } })).toBe(0);
   });
 
   it("remembers long videos, looks at them again when due, forgets them", async () => {

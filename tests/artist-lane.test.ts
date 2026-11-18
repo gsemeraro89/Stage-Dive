@@ -437,15 +437,15 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.classifierBatch.deleteMany();
   });
 
-  const answer = { isFullConcert: true, notConcertReason: "", isRock: true, confidence: 0.9, mainArtists: ["Ben Klock"], collaborators: [], venue: "Berghain", city: "Berlin", country: "Germany", venueKind: "Club" as const, genres: ["Techno" as const], liveAct: false };
+  const answer: import("../src/lib/collector/haiku").LaneClassification = { isFullConcert: true, notConcertReason: "", isRock: true, confidence: 0.9, mainArtists: ["Idles"], collaborators: [], venue: "Glastonbury", city: "Pilton", country: "United Kingdom", venueKind: "Festival", performed: "2022-06-24", genres: ["punk", "post-punk"] };
 
   it("stores Haiku answers by prompt version and reuses them (a dry run's answers serve the real run)", async () => {
     await haiku.storeLaneAnswer(db, "LANEVID0001", "classify", haiku.LANE_CLASSIFY_VERSION, answer);
-    await haiku.storeLaneAnswer(db, "LANEVID0001", "writeup", haiku.LANE_WRITEUP_VERSION, { writeUp: "Ben Klock plays Berghain." });
+    await haiku.storeLaneAnswer(db, "LANEVID0001", "writeup", haiku.LANE_WRITEUP_VERSION, { writeUp: "Idles play the Park Stage at Glastonbury." });
     await haiku.storeLaneAnswer(db, "LANEVID0002", "classify", "lane-c-oldversion", answer);
     const got = await haiku.storedLaneAnswers(db, ["LANEVID0001", "LANEVID0002"], "classify", 30);
     expect([...got.keys()]).toEqual(["LANEVID0001"]);
-    expect((await haiku.storedLaneAnswers(db, ["LANEVID0001"], "writeup", 30)).get("LANEVID0001")).toEqual({ writeUp: "Ben Klock plays Berghain." });
+    expect((await haiku.storedLaneAnswers(db, ["LANEVID0001"], "writeup", 30)).get("LANEVID0001")).toEqual({ writeUp: "Idles play the Park Stage at Glastonbury." });
   });
 
   it("reuses every stored answer, however many (pass 2 sent stored videos to Haiku again?)", async () => {
@@ -463,8 +463,8 @@ describe.skipIf(!url)("lane storage (database)", () => {
   });
 
   it("remembers the lane's matches (IDs only) for a cheap next pass", async () => {
-    await db.laneMatch.createMany({ data: [{ youtubeId: "MATCH000001", artist: "Ben Klock" }], skipDuplicates: true });
-    await db.laneMatch.createMany({ data: [{ youtubeId: "MATCH000001", artist: "Ben Klock" }], skipDuplicates: true });
+    await db.laneMatch.createMany({ data: [{ youtubeId: "MATCH000001", artist: "Idles" }], skipDuplicates: true });
+    await db.laneMatch.createMany({ data: [{ youtubeId: "MATCH000001", artist: "Idles" }], skipDuplicates: true });
     expect(await db.laneMatch.count({ where: { youtubeId: "MATCH000001" } })).toBe(1);
     await db.laneMatch.deleteMany();
   });

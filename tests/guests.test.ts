@@ -22,13 +22,13 @@ describe.skipIf(!url)("guest artists (database)", () => {
       `TRUNCATE plays, review_queue, artist_lookups, job_runs, concert_genres, concert_artists, concerts, artists, venues, genres, venue_kinds, tours, channels RESTART IDENTITY CASCADE`,
     );
     await importSeed(db, normalizeSeed(JSON.parse(readFileSync("tests/fixtures/seed-concerts.json", "utf8"))));
-    // A collector concert by a seed artist with two unknown guests.
-    const host = await db.concert.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "paul-kalkbrenner" } } } }, include: { credits: true } });
-    const victoria = await db.artist.create({ data: { slug: "victoria", name: "Victoria" } });
+    // A collector-style guest list on a seed band's concert: one unknown guest, one that will get a concert of their own.
+    const host = await db.concert.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "linkin-park" } } } }, include: { credits: true } });
+    const unknown = await db.artist.create({ data: { slug: "jay-gordon", name: "Jay Gordon" } });
     const known = await db.artist.create({ data: { slug: "known-guest", name: "Known Guest" } });
     await db.concertArtist.createMany({
       data: [
-        { concertId: host.id, artistId: victoria.id, role: "WITH", position: 5 },
+        { concertId: host.id, artistId: unknown.id, role: "WITH", position: 5 },
         { concertId: host.id, artistId: known.id, role: "WITH", position: 6 },
       ],
     });
@@ -38,21 +38,22 @@ describe.skipIf(!url)("guest artists (database)", () => {
   afterAll(async () => db?.$disconnect());
 
   it("a guest never gets a page from someone else's concert, however well known", async () => {
-    expect(await q.getArtistPage("sofiane-pamart")).toBeNull();
-    expect(await q.getArtistPage("meute")).toBeNull();
-    expect((await q.listArtists()).map((a) => a.slug)).not.toContain("meute");
-    expect(await q.getMap("meute")).toBeNull();
+    // Dave Mustaine: guest on Metallica at Yankee Stadium (seed), no concert of his own here.
+    expect(await q.getArtistPage("dave-mustaine")).toBeNull();
+    expect((await q.listArtists()).map((a) => a.slug)).not.toContain("dave-mustaine");
+    expect((await q.filterOptions()).artists.map((a) => a.slug)).not.toContain("dave-mustaine");
+    expect(await q.getMap("dave-mustaine")).toBeNull();
   });
 
   it("unknown guests are plain text: no page, not in lists, not on the map", async () => {
-    expect(await q.getArtistPage("victoria")).toBeNull();
-    expect((await q.listArtists()).map((a) => a.slug)).not.toContain("victoria");
-    expect((await q.filterOptions()).artists.map((a) => a.slug)).not.toContain("victoria");
-    expect((await q.findArtistByText("victoria"))).toBeNull();
+    expect(await q.getArtistPage("jay-gordon")).toBeNull();
+    expect((await q.listArtists()).map((a) => a.slug)).not.toContain("jay-gordon");
+    expect((await q.filterOptions()).artists.map((a) => a.slug)).not.toContain("jay-gordon");
+    expect((await q.findArtistByText("jay gordon"))).toBeNull();
     const page = (await q.getConcertPage(concertSlug))!;
-    const credit = page.concert.artists.find((a) => a.slug === "victoria")!;
+    const credit = page.concert.artists.find((a) => a.slug === "jay-gordon")!;
     expect(credit.hasPage).toBe(false);
-    expect(page.concert.artists.find((a) => a.slug === "paul-kalkbrenner")!.hasPage).toBe(true);
+    expect(page.concert.artists.find((a) => a.slug === "linkin-park")!.hasPage).toBe(true);
   });
 
   it("a guest gets a page once they have a concert of their own", async () => {

@@ -36,19 +36,20 @@ describe.skipIf(!url)("similar artists (database)", () => {
     expect(rows.some((r) => r.artistId === r.similarId)).toBe(false);
     for (const r of rows) expect(rows.some((x) => x.artistId === r.similarId && x.similarId === r.artistId)).toBe(true);
     // Guests without a concert of their own have no page and are never suggested (owner rule).
-    const nto = await q.similarArtistIds([await id("nto")]);
-    expect(nto).not.toContain(await id("sofiane-pamart"));
+    const metallica = await q.similarArtistIds([await id("metallica")]);
+    expect(metallica).not.toContain(await id("dave-mustaine"));
   });
 
   it("ListenBrainz lists are stored and change the ranking; artists without an ID are skipped", async () => {
-    const nto = await db.artist.findUniqueOrThrow({ where: { slug: "nto" } });
+    const metallica = await db.artist.findUniqueOrThrow({ where: { slug: "metallica" } });
     const all = await db.artist.findMany({ where: { credits: { some: { role: "MAIN" } } } });
     const { nameKey } = await import("../src/lib/collector/musicbrainz");
-    // No network in tests: every artist already has a MusicBrainz lookup; only NTO has an ID.
+    // No network in tests: every artist already has a MusicBrainz lookup; only Metallica has an ID.
     await db.artistLookup.createMany({
-      data: all.map((a) => ({ nameKey: nameKey(a.name), mbid: a.id === nto.id ? "nto-mbid" : null, genres: [] })),
+      data: all.map((a) => ({ nameKey: nameKey(a.name), mbid: a.id === metallica.id ? "metallica-mbid" : null, genres: [] })),
     });
-    const target = all.find((a) => a.slug === "paul-kalkbrenner")!;
+    const target = all.find((a) => a.slug === "the-cure")!;
+    expect(await q.similarArtistIds([metallica.id])).not.toContain(target.id); // nothing in common on our side
     const asked: string[] = [];
     const stats = await job.refreshExternal(db, {
       similar: async (mbid) => {
@@ -56,13 +57,13 @@ describe.skipIf(!url)("similar artists (database)", () => {
         return [{ name: target.name, nameKey: nameKey(target.name), mbid: "x", score: 1 }];
       },
     });
-    expect(asked).toEqual(["nto-mbid"]);
-    expect(stats.asked).toEqual(["NTO"]);
+    expect(asked).toEqual(["metallica-mbid"]);
+    expect(stats.asked).toEqual(["Metallica"]);
     expect(stats.noMbid.length).toBe(all.length - 1);
-    expect(await db.artistExternalSimilar.count({ where: { artistId: nto.id } })).toBe(1);
+    expect(await db.artistExternalSimilar.count({ where: { artistId: metallica.id } })).toBe(1);
 
     await job.recompute(db);
-    expect(await q.similarArtistIds([nto.id])).toContain(target.id);
+    expect(await q.similarArtistIds([metallica.id])).toContain(target.id);
 
     // Asked again only when the list is a month old.
     const again = await job.refreshExternal(db, { similar: async () => [] });
@@ -71,48 +72,48 @@ describe.skipIf(!url)("similar artists (database)", () => {
   });
 
   it("the player's suggestions and queue use the similar artists", async () => {
-    const ntoId = await id("nto");
-    const ntoConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artistId: ntoId, role: "MAIN" } } } });
-    const cards = await q.recommendationsFor(ntoConcert.youtubeId);
+    const metallicaId = await id("metallica");
+    const metallicaConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artistId: metallicaId, role: "MAIN" } } } });
+    const cards = await q.recommendationsFor(metallicaConcert.youtubeId);
     expect(cards!.length).toBeGreaterThan(0);
     expect(cards!.length).toBeLessThanOrEqual(4);
-    // Most similar first; an artist whose only concert is with NTO (Sofiane Pamart) is not suggested.
-    const order = await q.similarArtistIds([ntoId]);
+    // Most similar first; a guest whose only concert is with Metallica (Dave Mustaine) is not suggested.
+    const order = await q.similarArtistIds([metallicaId]);
     const slugs = await Promise.all(order.map(async (i) => (await db.artist.findUniqueOrThrow({ where: { id: i } })).slug));
     const positions = cards!.map((c) => slugs.indexOf(c.slug));
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
-    expect(cards!.map((c) => c.slug)).not.toContain("sofiane-pamart");
+    expect(cards!.map((c) => c.slug)).not.toContain("dave-mustaine");
     for (const c of cards!) {
       expect(c.concerts).toBeGreaterThan(0);
       expect(c.mostWatched.artists.some((a) => a.slug === c.slug)).toBe(true);
-      expect(c.mostWatched.artists.some((a) => a.slug === "nto")).toBe(false);
+      expect(c.mostWatched.artists.some((a) => a.slug === "metallica")).toBe(false);
     }
     expect(await q.recommendationsFor("xxxxxxxxxxx")).toBeNull();
 
-    // After NTO's own concerts, the queue goes on with the most similar artist.
-    const queue = (await q.getQueue(ntoConcert.youtubeId))!;
-    const firstOther = queue.find((s) => !s.artists.some((a) => a.slug === "nto"));
+    // After Metallica's own concerts, the queue goes on with the most similar band.
+    const queue = (await q.getQueue(metallicaConcert.youtubeId))!;
+    const firstOther = queue.find((s) => !s.artists.some((a) => a.slug === "metallica"));
     expect(firstOther?.artists.some((a) => a.slug === cards![0].slug)).toBe(true);
   });
 
   it("the artist page lists computed similar artists with their details", async () => {
-    const page = await q.getArtistPage("nto");
+    const page = await q.getArtistPage("metallica");
     expect(page!.similar.length).toBeGreaterThan(0);
     expect(page!.similarCards[0].latest).toBeTruthy();
   });
 
   it("the concert page has artist cards for You might also like", async () => {
-    const ntoConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "nto" }, role: "MAIN" } } } });
-    const page = await q.getConcertPage(ntoConcert.slug);
+    const metallicaConcert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artist: { slug: "metallica" }, role: "MAIN" } } } });
+    const page = await q.getConcertPage(metallicaConcert.slug);
     expect(page!.similarCards.length).toBeGreaterThan(0);
     expect(page!.similarCards.length).toBeLessThanOrEqual(4);
-    expect(page!.similarCards.some((c) => c.slug === "nto")).toBe(false);
+    expect(page!.similarCards.some((c) => c.slug === "metallica")).toBe(false);
   });
 
   it("the map: centre, neighbours best first with positions, search by text, genre filter", async () => {
-    const map = (await q.getMap("nto"))!;
-    expect(map.centre.slug).toBe("nto");
-    const order = await q.similarArtistIds([await id("nto")]);
+    const map = (await q.getMap("metallica"))!;
+    expect(map.centre.slug).toBe("metallica");
+    const order = await q.similarArtistIds([await id("metallica")]);
     const slugs = await Promise.all(order.map(async (i) => (await db.artist.findUniqueOrThrow({ where: { id: i } })).slug));
     expect(map.artists.map((a) => a.slug)).toEqual(slugs.filter((s) => map.artists.some((a) => a.slug === s)));
     const d = map.artists.map((a) => Math.hypot(a.x, a.y));
@@ -120,12 +121,12 @@ describe.skipIf(!url)("similar artists (database)", () => {
     expect(JSON.stringify(map)).not.toContain("score");
 
     expect(await q.getMap("no-such-artist")).toBeNull();
-    expect((await q.findArtistByText("  nto "))?.slug).toBe("nto");
-    expect((await q.findArtistByText("kalkb"))?.slug).toBe("paul-kalkbrenner");
+    expect((await q.findArtistByText("  metallica "))?.slug).toBe("metallica");
+    expect((await q.findArtistByText("linkin"))?.slug).toBe("linkin-park");
     expect(await q.findArtistByText("zzzz")).toBeNull();
 
     const genre = await db.genre.findFirstOrThrow({ where: { concerts: { some: {} } } });
-    const filtered = (await q.getMap("nto", [genre.slug]))!;
+    const filtered = (await q.getMap("metallica", [genre.slug]))!;
     for (const a of filtered.artists) expect(a.genres.length).toBeGreaterThan(0);
     expect(filtered.artists.length).toBeLessThanOrEqual(map.artists.length);
     expect(typeof (await q.defaultMapArtist())).toBe("string");

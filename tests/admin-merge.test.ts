@@ -26,21 +26,21 @@ describe.skipIf(!url)("admin fixes (database)", () => {
   afterAll(async () => db?.$disconnect());
 
   it("moves every credit to one page, keeps the other name as aka, deletes the extra page", async () => {
-    const into = await db.artist.findUniqueOrThrow({ where: { slug: "nto" }, include: { credits: true } });
+    const into = await db.artist.findUniqueOrThrow({ where: { slug: "metallica" }, include: { credits: true } });
     const concert = await db.concert.findFirstOrThrow({ where: { credits: { some: { artistId: into.id } } } });
-    const dup = await db.artist.create({ data: { slug: "n-to", name: "N'to", origin: "Marseille" } });
+    const dup = await db.artist.create({ data: { slug: "metalica", name: "Metalica", origin: "Los Angeles, US" } });
     // One concert credited to both (stays one credit), one concert only on the duplicate (moves).
     await db.concertArtist.create({ data: { concertId: concert.id, artistId: dup.id, role: "MAIN" } });
     const other = await db.concert.findFirstOrThrow({ where: { credits: { none: { artistId: into.id } } } });
     await db.concertArtist.create({ data: { concertId: other.id, artistId: dup.id, role: "MAIN", position: 1 } });
 
-    const r = await admin.mergeArtists(db, "n-to", "nto");
+    const r = await admin.mergeArtists(db, "metalica", "metallica");
     expect(r).toMatchObject({ creditsMoved: 1, creditsDropped: 1 });
-    expect(await db.artist.findUnique({ where: { slug: "n-to" } })).toBeNull();
-    const after = await db.artist.findUniqueOrThrow({ where: { slug: "nto" }, include: { credits: true } });
+    expect(await db.artist.findUnique({ where: { slug: "metalica" } })).toBeNull();
+    const after = await db.artist.findUniqueOrThrow({ where: { slug: "metallica" }, include: { credits: true } });
     expect(after.credits.length).toBe(into.credits.length + 1);
-    expect(after.aka).toContain("N'to");
-    await expect(admin.mergeArtists(db, "nto", "nto")).rejects.toThrow();
+    expect(after.aka).toContain("Metalica");
+    await expect(admin.mergeArtists(db, "metallica", "metallica")).rejects.toThrow();
   });
 
   it("splits a group page into its members and hides a concert", async () => {

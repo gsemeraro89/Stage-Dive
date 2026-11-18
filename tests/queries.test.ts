@@ -31,81 +31,100 @@ describe.skipIf(!url)("page queries (database)", () => {
 
   it("lists all concerts, newest first by default", async () => {
     const { concerts, total } = await list({});
-    expect(total).toBe(23);
-    expect(concerts[0].youtubeId).toBe("NEjcnAJ7Sls"); // NTO at HÖR, 21 Oct 2026
+    expect(total).toBe(8);
+    expect(concerts[0].youtubeId).toBe("_aWDlaxvEZo"); // The Cure at Troxy, uploaded 1 Nov 2024
   });
 
   it("filters by artist, genre, venue and venueKind", async () => {
-    expect((await list({ artist: "nto" })).total).toBe(14);
-    expect((await list({ artist: "sofiane-pamart" })).total).toBe(1); // collaborators count too
-    expect((await list({ genre: "deep-house" })).total).toBe(1);
-    expect((await list({ genre: "disco" })).total).toBe(0); // genre taken off the list
-    expect((await list({ venue: "sonar-lisboa" })).total).toBe(1);
-    expect((await list({ venueKind: "club" })).total).toBe(3);
-    expect((await list({ artist: "nto", venueKind: "festival" })).total).toBe(3);
+    expect((await list({ artist: "metallica" })).total).toBe(3);
+    expect((await list({ artist: "dave-mustaine" })).total).toBe(1); // guests count too
+    expect((await list({ genre: "post-punk" })).total).toBe(1);
+    expect((await list({ genre: "new-wave-synth" })).total).toBe(2);
+    expect((await list({ genre: "techno" })).total).toBe(0); // not a genre on our list
+    expect((await list({ venue: "pinkpop" })).total).toBe(3);
+    expect((await list({ venueKind: "room" })).total).toBe(3);
+    expect((await list({ venueKind: "livestream" })).total).toBe(2);
+    expect((await list({ genre: "metal", venueKind: "festival" })).total).toBe(1); // Limp Bizkit at Pinkpop
   });
 
   it("searches titles, artists (including other spellings), venues and places", async () => {
-    expect((await list({ q: "kalkbrenner" })).total).toBe(2);
-    expect((await list({ q: "n'to" })).total).toBe(14);
-    expect((await list({ q: "cercle paris" })).total).toBe(2);
-    expect((await list({ q: "albania" })).total).toBe(1);
-    expect((await list({ q: "no such thing" })).total).toBe(0);
+    await db.artist.update({ where: { slug: "linkin-park" }, data: { aka: "Xero" } }); // the band's first name
+    try {
+      expect((await list({ q: "metallica" })).total).toBe(3);
+      expect((await list({ q: "xero" })).total).toBe(1);
+      expect((await list({ q: "pinkpop 1997" })).total).toBe(1); // every word must match
+      expect((await list({ q: "troxy" })).total).toBe(1);
+      expect((await list({ q: "landgraaf" })).total).toBe(2); // city (Limp Bizkit's row has none)
+      expect((await list({ q: "no such thing" })).total).toBe(0);
+    } finally {
+      await db.artist.update({ where: { slug: "linkin-park" }, data: { aka: null } });
+    }
   });
 
   it("sorts by views and length", async () => {
-    expect((await list({ sort: "most-viewed" })).concerts[0].youtubeId).toBe("4BvjYabSl5A"); // Kalkbrenner, 14.3M
-    expect((await list({ sort: "longest" })).concerts[0].durationSeconds).toBe(8764);
-    expect((await list({ sort: "shortest" })).concerts[0].durationSeconds).toBe(1659);
+    expect((await list({ sort: "most-viewed" })).concerts[0].youtubeId).toBe("vXsFpdYAV9c"); // Linkin Park, 5M
+    expect((await list({ sort: "longest" })).concerts[0].durationSeconds).toBe(10800);
+    expect((await list({ sort: "shortest" })).concerts[0].durationSeconds).toBe(2700);
   });
 
   it("never shows hidden, private or non-embeddable concerts", async () => {
-    await db.concert.update({ where: { youtubeId: "iybJn1SyXB0" }, data: { status: "HIDDEN" } });
-    await db.concert.update({ where: { youtubeId: "YDJEo-rQrfw" }, data: { embeddable: false } });
-    await db.concert.update({ where: { youtubeId: "sx6_l6skb5o" }, data: { privacyStatus: "private" } });
+    await db.concert.update({ where: { youtubeId: "_aWDlaxvEZo" }, data: { status: "HIDDEN" } }); // The Cure: the only post-punk concert
+    await db.concert.update({ where: { youtubeId: "pIo5HnaaMoc" }, data: { embeddable: false } });
+    await db.concert.update({ where: { youtubeId: "o1rkPf9Nd00" }, data: { privacyStatus: "private" } });
     try {
-      expect((await list({})).total).toBe(20);
-      expect(await q.getConcertPage("folamour-cathedrale-saint-pierre-2023")).toBeNull();
-      expect(await q.getQueue("YDJEo-rQrfw")).toBeNull();
-      expect((await q.filterOptions()).genres.some((g) => g.slug === "deep-house")).toBe(false);
-      expect((await q.listArtists()).some((a) => a.slug === "indira-paganotto")).toBe(false);
+      expect((await list({})).total).toBe(5);
+      expect(await q.getConcertPage("limp-bizkit-pinkpop-1997")).toBeNull();
+      expect(await q.getQueue("pIo5HnaaMoc")).toBeNull();
+      expect((await q.filterOptions()).genres.some((g) => g.slug === "post-punk")).toBe(false);
+      expect((await q.listArtists()).some((a) => a.slug === "the-cure")).toBe(false);
     } finally {
       await db.concert.updateMany({ data: { status: "PUBLISHED", embeddable: true, privacyStatus: "public" } });
     }
   });
 
   it("builds a concert page with its queue: same artist first", async () => {
-    const page = await q.getConcertPage("nto-spectra-festival-2026");
+    const page = await q.getConcertPage("metallica-the-metro-1983");
     expect(page).not.toBeNull();
-    expect(page!.concert.credits).toBe("NTO");
-    expect(page!.queue.slice(0, 13).every((s) => s.artists.some((a) => a.slug === "nto"))).toBe(true);
-    expect(page!.queue[0].youtubeId).toBe("NEjcnAJ7Sls");
+    expect(page!.concert.credits).toBe("Metallica");
+    expect(page!.queue.slice(0, 2).every((s) => s.artists.some((a) => a.slug === "metallica"))).toBe(true);
+    expect(page!.queue[0].youtubeId).toBe("nbhqDjIWLpk"); // Metallica's newest upload
     expect(page!.queue.some((s) => s.id === page!.concert.id)).toBe(false);
-    expect(page!.related.every((s) => !s.artists.some((a) => a.slug === "nto"))).toBe(true);
+    expect(page!.related.length).toBeGreaterThan(0); // Limp Bizkit shares metal
+    expect(page!.related.every((s) => !s.artists.some((a) => a.slug === "metallica"))).toBe(true);
     expect(await q.getConcertPage("does-not-exist")).toBeNull();
   });
 
   it("builds an artist page with similar artists that exist", async () => {
-    const page = await q.getArtistPage("nto");
-    expect(page!.concerts).toHaveLength(14);
-    expect(page!.similar.map((a) => a.name)).toEqual(["The Blaze", "Marsh", "Paul Kalkbrenner"]);
-    expect(await q.getArtistPage("nobody")).toBeNull();
+    // The hand-written list keeps only names with a page: no Megadeth concert here, Dave Mustaine is only a guest.
+    await db.artist.update({
+      where: { slug: "metallica" },
+      data: { similarNames: ["Megadeth", "Dave Mustaine", "Limp Bizkit", "Linkin Park"] },
+    });
+    try {
+      const page = await q.getArtistPage("metallica");
+      expect(page!.concerts).toHaveLength(3);
+      expect(page!.similar.map((a) => a.name)).toEqual(["Limp Bizkit", "Linkin Park"]);
+      expect(await q.getArtistPage("nobody")).toBeNull();
+    } finally {
+      await db.artist.update({ where: { slug: "metallica" }, data: { similarNames: ["Megadeth", "Slayer"] } });
+    }
   });
 
   it("features a different headline artist each day, with that artist's latest concert", async () => {
     const days = await Promise.all(
-      Array.from({ length: 9 }, (_, d) => q.featuredConcert(new Date(Date.UTC(2026, 10, 12 + d)))),
+      Array.from({ length: 6 }, (_, d) => q.featuredConcert(new Date(Date.UTC(2026, 10, 12 + d)))),
     );
     const artists = days.map((s) => s!.artists.find((a) => a.role === "MAIN")!.slug);
-    expect(new Set(artists).size).toBe(9); // nine headline artists in the seed
-    const nto = days.find((s) => s!.artists[0].slug === "nto")!;
-    expect(nto.youtubeId).toBe("NEjcnAJ7Sls"); // NTO's newest
+    expect(new Set(artists).size).toBe(6); // six headline bands in the fixture
+    expect(artists).not.toContain("dave-mustaine"); // a guest never headlines
+    const metallica = days.find((s) => s!.artists[0].slug === "metallica")!;
+    expect(metallica.youtubeId).toBe("nbhqDjIWLpk"); // Metallica's newest
   });
 
   it("builds venue and genre pages", async () => {
-    expect((await q.getVenuePage("sonar-lisboa"))!.concerts).toHaveLength(1);
-    expect((await q.getGenrePage("melodic-techno"))!.concerts.length).toBeGreaterThan(10);
-    expect(await q.getGenrePage("trance")).toBeNull(); // taken off the list
+    expect((await q.getVenuePage("pinkpop"))!.concerts).toHaveLength(3);
+    expect((await q.getGenrePage("metal"))!.concerts).toHaveLength(4);
+    expect(await q.getGenrePage("techno")).toBeNull(); // not on the list
   });
 
   it("the Festivals index lists only places with a festival concert", async () => {
