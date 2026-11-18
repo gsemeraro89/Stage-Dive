@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CollectionBody } from "@/components/ui/Collection";
+import { Collection, pileData } from "@/components/gig/Collection";
+import { EmptyNote, PageHead } from "@/components/gig/PageHead";
+import { cutName } from "@/components/gig/words";
 import { getTourPage } from "@/lib/queries";
 
 const load = cache(getTourPage);
@@ -29,22 +31,27 @@ export default async function TourPage({ params }: Props) {
   if (!page) notFound();
   const { tour, concerts } = page;
   return (
-    <main data-od="tour">
-      <header className="od-pagehero">
-        <p className="od-rail meta">
-          <span>Tour</span>
-          {tour.artist && <Link href={`/artists/${tour.artist.slug}`}>{tour.artist.name}</Link>}
-        </p>
-        <h1>{tour.name}</h1>
-      </header>
+    <main data-od="tour" className="pg">
+      <PageHead
+        trail={[{ label: "Tours", href: "/tours" }, ...(tour.artist ? [{ label: tour.artist.name, href: `/artists/${tour.artist.slug}` }] : []), { label: tour.name }]}
+        lines={cutName(tour.name)}
+        data={
+          <>
+            {tour.artist ? `${tour.artist.name} /// ` : ""}
+            <span data-od="result-count">{pileData(concerts)}</span>
+          </>
+        }
+        note="in the order they played it"
+      />
       {concerts.length === 0 ? (
-        <section className="od-section">
-          <div className="od-empty" data-od="empty">
-            <p>Every gig of this tour is off the wall right now.</p>
-          </div>
-        </section>
+        <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+          <p>Every gig of this tour is off the wall right now. They come back when the videos do.</p>
+          <Link href="/tours" className="hm-more">
+            ALL TOURS &gt;&gt;
+          </Link>
+        </EmptyNote>
       ) : (
-        <CollectionBody concerts={concerts} name={tour.name} />
+        <Collection concerts={concerts} label={`Every gig of ${tour.name}`} />
       )}
     </main>
   );

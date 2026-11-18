@@ -443,7 +443,7 @@
   }
 
   .od-dock:not([data-in-page]) .od-dock-label,
-  .od-dock:not([data-in-page]) .od-dock-time {
+.od-dock:not([data-in-page]) .od-dock-time {
     display: none;
   }
 
@@ -469,7 +469,7 @@
   }
 
   .od-dock:not([data-in-page]) .od-dock-info,
-  .od-dock:not([data-in-page]) .od-dock-controls {
+.od-dock:not([data-in-page]) .od-dock-controls {
     padding: 8px 12px;
   }
 

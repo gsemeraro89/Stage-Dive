@@ -9,87 +9,16 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { PlayButton } from "@/components/player/PlayButton";
-import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { GigCard } from "@/components/gig/GigCard";
+import { YouTubePicture } from "@/components/gig/GigPicture";
+import { bandName, cutName, mainArtist, playedOn } from "@/components/gig/words";
+import { PaperStrip, PhotoFrame, PlayableSetlist, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { homeData, type HomeData } from "@/lib/home";
 import { toTrack } from "@/lib/player-types";
 import type { BandPhotoView } from "@/lib/photos/view";
 import type { ConcertView } from "@/lib/queries";
 import { compactNumber } from "@/lib/site";
-import { HomeSetlist } from "./HomeSetlist";
-
-const mainArtist = (c: ConcertView) => c.artists.find((a) => a.role === "MAIN") ?? c.artists[0];
-const bandName = (c: ConcertView) => mainArtist(c)?.name ?? c.credits;
-
-/** "06.06.2010", or the year when the day is not known. */
-function playedOn(c: ConcertView, shortYear = false): string | null {
-  if (c.performedOn) {
-    const d = new Date(c.performedOn);
-    const year = String(d.getUTCFullYear());
-    return `${String(d.getUTCDate()).padStart(2, "0")}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.${shortYear ? year.slice(2) : year}`;
-  }
-  return c.performedYear ? String(c.performedYear) : null;
-}
-
-/** "PINKPOP 1996 /// 1:14:20" */
-const shortData = (c: ConcertView) =>
-  [[c.venue?.name, c.performedYear].filter(Boolean).join(" "), formatDuration(c.durationSeconds)].filter(Boolean).join(" /// ");
-
-/** Where a headline is cut: one strip for a short name, two for a long one, cut near the middle. */
-function cutName(name: string): string[] {
-  const words = name.split(" ");
-  if (name.length <= 12 || words.length < 2) return [name];
-  let best = 1;
-  let bestGap = Infinity;
-  for (let i = 1; i < words.length; i++) {
-    const gap = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length);
-    if (gap < bestGap) [best, bestGap] = [i, gap];
-  }
-  return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
-}
-
-/** A play control for a picture: the only thing allowed on a YouTube thumbnail. */
-function PlayOnPicture({ concert }: { concert: ConcertView }) {
-  return (
-    <PlayButton track={toTrack(concert)} className="zn-icon hm-playicon">
-      <PlayGlyph />
-    </PlayButton>
-  );
-}
-
-function YouTubePicture({
-  concert,
-  sizes,
-  children,
-  ...rest
-}: {
-  concert: ConcertView;
-  sizes: string;
-  children?: ReactNode;
-  tilt?: number;
-  shadow?: boolean;
-  eager?: boolean;
-  fixings?: ReactNode;
-  stamp?: ReactNode;
-  className?: string;
-}) {
-  const t = concert.thumbnail;
-  return (
-    <PhotoFrame
-      kind="youtube"
-      src={t.src}
-      srcSet={t.srcSet}
-      width={t.width}
-      height={t.height}
-      sizes={sizes}
-      alt={`Still from the video: ${concert.title}`}
-      control={<PlayOnPicture concert={concert} />}
-      {...rest}
-    >
-      {children}
-    </PhotoFrame>
-  );
-}
 
 function SectionTitle({ id, children, tone = "black" }: { id: string; children: ReactNode; tone?: "black" | "pink" }) {
   return (
@@ -202,7 +131,7 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
         >
           {timed.length > 0 ? (
             <>
-              <HomeSetlist track={track} songs={timed} />
+              <PlayableSetlist track={track} songs={timed} />
               <p className="zn-marker hm-setlist-hint">click any song = jump straight to it</p>
             </>
           ) : setlist ? (
@@ -221,41 +150,6 @@ function GigOfTheWeek({ gig }: { gig: NonNullable<HomeData["gigOfTheWeek"]> }) {
         </Sheet>
       </div>
     </section>
-  );
-}
-
-// ---------- 2. Fresh off the copier ----------
-
-function FreshCard({ concert, photo, index }: { concert: ConcertView; photo: BandPhotoView | null; index: number }) {
-  const tilt = [-1.2, 1, -0.8][index % 3];
-  const name = (
-    <PaperStrip tone="white" size="name" className="hm-card-name">
-      <Link href={`/concerts/${concert.slug}`}>{concert.credits}</Link>
-    </PaperStrip>
-  );
-  const sizes = "(min-width: 901px) 30vw, 50vw";
-  return (
-    <li className="hm-card" style={{ "--tilt": `${tilt}deg` } as CSSProperties}>
-      {photo ? (
-        <PhotoFrame
-          kind="treated"
-          src={photo.src}
-          alt={`${bandName(concert)}, photocopied`}
-          ratio="4 / 3"
-          sizes={sizes}
-          credit={photo.credit}
-          creditHref={photo.sourcePage}
-          control={<PlayOnPicture concert={concert} />}
-        >
-          {name}
-        </PhotoFrame>
-      ) : (
-        <YouTubePicture concert={concert} sizes={sizes}>
-          {name}
-        </YouTubePicture>
-      )}
-      <p className="zn-data hm-card-data">{shortData(concert)}</p>
-    </li>
   );
 }
 
@@ -336,7 +230,7 @@ export default async function HomePage() {
           </div>
           <ul className="hm-cards">
             {freshCards.map(({ concert, photo }, i) => (
-              <FreshCard key={concert.id} concert={concert} photo={photo} index={i} />
+              <GigCard key={concert.id} concert={concert} photo={photo} index={i} />
             ))}
           </ul>
         </section>
@@ -429,6 +323,7 @@ export default async function HomePage() {
                   />
                 ))}
               </ol>
+              <p className="zn-label hm-rows-credit">Pictures: YouTube</p>
             </section>
           )}
 

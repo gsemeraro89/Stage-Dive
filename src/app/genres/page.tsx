@@ -1,9 +1,10 @@
+// Genres: "Sort by noise" (board 04). Quiet on the left, loud on the right; the type grows with the noise.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SIZES } from "@/components/catalogue/ConcertTile";
-import { GenreWords } from "@/components/ui/GenreWords";
-import { count2, SectionHead } from "@/components/ui/SectionHead";
-import { listGenres } from "@/lib/queries";
+import type { CSSProperties } from "react";
+import { EmptyNote, PageHead } from "@/components/gig/PageHead";
+import { gigs } from "@/components/gig/words";
+import { homeData } from "@/lib/home";
 
 export const dynamic = "force-dynamic";
 
@@ -13,51 +14,67 @@ export const metadata: Metadata = {
   alternates: { canonical: "/genres" },
 };
 
+const TILTS = [-2, 1.5, -1, 2, -1.5, 1];
+const TONES = ["white", "black"] as const;
+
 export default async function GenresPage() {
-  const genres = await listGenres();
+  // Every genre of the site, quietest first, with how many gigs it has (0 = not on the wall yet).
+  const { noise } = await homeData();
+  const live = noise.filter((g) => g.count > 0);
   return (
-    <main data-od="genres-index">
-      <section className="od-section od-section--first">
-        <SectionHead as="h1" title="Genres" note={count2(genres.length)} />
-        {genres.length === 0 ? (
-          <div className="od-empty" data-od="empty">
-            <p className="display">No genres yet</p>
-          </div>
-        ) : (
-          <GenreWords genres={genres} size="xl" />
-        )}
-      </section>
-      {genres.length > 0 && (
-        <section className="od-section" aria-labelledby="latest-by-genre">
-          <SectionHead id="latest-by-genre" title="Latest in each" />
-          <ul className="od-rows" aria-label="Latest concert in each genre">
-            {genres.map((g) => {
-              // The picture is the genre's most recent concert.
-              const image = g.cover?.thumbnail;
+    <main data-od="genres-index" className="pg">
+      <PageHead
+        trail={[{ label: "Genres" }]}
+        lines={["Sort by", "noise"]}
+        data={noise.length ? `${live.length} of ${noise.length} on the wall /// quiet on the left /// loud on the right` : undefined}
+      />
+      {noise.length === 0 ? (
+        <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+          <p>No genres on the wall yet.</p>
+        </EmptyNote>
+      ) : (
+        <section className="pg-section">
+          <ul className="hm-noise pg-noise">
+            {noise.map((g, i) => {
+              const style = {
+                "--tilt": `${TILTS[i % TILTS.length]}deg`,
+                "--loud": noise.length > 1 ? i / (noise.length - 1) : 1,
+              } as CSSProperties;
               return (
                 <li key={g.slug}>
-                  <Link href={`/genres/${g.slug}`} className="od-index-row">
-                    {image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={image.src} srcSet={image.srcSet} sizes={SIZES.row} alt="" loading="lazy" />
-                    ) : (
-                      // No picture: the initial, outlined, in a hairline frame.
-                      <span className="od-index-noimg display" aria-hidden="true">
-                        {g.name.charAt(0)}
+                  {g.count > 0 ? (
+                    <Link href={`/genres/${g.slug}`} className="hm-genre zn-lift" data-tone={TONES[i % 2]} style={style}>
+                      {g.name}
+                      <span className="hm-genre-n">
+                        {g.count}
+                        <span className="od-sr">{g.count === 1 ? " gig" : " gigs"}</span>
                       </span>
-                    )}
-                    <span className="min-w-0">
-                      <span className="od-index-name title">{g.name}</span>
+                    </Link>
+                  ) : (
+                    <span className="hm-genre" data-tone="none" style={style}>
+                      {g.name}
+                      <span className="od-sr">: no gigs yet</span>
                     </span>
-                    <span className="od-index-count display">
-                      {String(g.count).padStart(2, "0")}
-                      <small className="meta">{g.count === 1 ? "concert" : "concerts"}</small>
-                    </span>
-                  </Link>
+                  )}
                 </li>
               );
             })}
           </ul>
+          {noise.some((g) => g.count === 0) && <p className="zn-marker hm-noise-note">dashed = nothing on the wall yet</p>}
+
+          {live.length > 0 && (
+            <ul className="pg-leaders pg-noise-list" aria-label="Genres with gigs">
+              {live.map((g) => (
+                <li key={g.slug}>
+                  <Link href={`/genres/${g.slug}`}>
+                    <span className="pg-leaders-name">{g.name}</span>
+                    <span className="pg-leaders-dots" aria-hidden="true" />
+                    <span className="zn-data">{gigs(g.count)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
     </main>

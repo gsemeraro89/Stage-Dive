@@ -1,15 +1,12 @@
-// All concerts (moved from "/" on 17 Nov 2026, when "/" became the home page): today's featured concert, latest uploads, most watched, genres, artists, and the full list with search, filters and sorting.
+// Every gig: the full list, with search, filters and sorting. The header's "find a gig:" lands here.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FilterForm } from "@/components/catalogue/FilterForm";
-import { ChartList, Feature, LeadGrid, ConcertRows, SIZES } from "@/components/catalogue/ConcertTile";
-import { ArtistSquares } from "@/components/ui/ArtistSquares";
-import { GenreWords } from "@/components/ui/GenreWords";
-import { MapSearch } from "@/components/ui/MapSearch";
-import { count2, SectionHead } from "@/components/ui/SectionHead";
-import { filtersToQuery, hasActiveFilters, parseFilters, SORT_LABELS } from "@/lib/filters";
-import { formatDate } from "@/lib/format";
-import { featuredConcert, filterOptions, latestConcerts, listArtists, listConcerts, mapArtistIndex, mostWatchedConcerts } from "@/lib/queries";
+import { GigFilters } from "@/components/gig/GigFilters";
+import { GigRows } from "@/components/gig/GigRows";
+import { EmptyNote, PageHead } from "@/components/gig/PageHead";
+import { gigs } from "@/components/gig/words";
+import { hasActiveFilters, parseFilters, SORT_LABELS } from "@/lib/filters";
+import { filterOptions, listConcerts } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -19,123 +16,57 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const filters = parseFilters(await searchParams);
   const filtered = hasActiveFilters(filters) || filters.sort !== "newest";
   return {
-    title: filters.q ? `Concerts matching "${filters.q}"` : "All concerts",
+    title: filters.q ? `Gigs matching "${filters.q}"` : "Every full gig",
+    description: "Every full rock concert on STAGEDIVE, free to watch: search by band, venue or year, or sort the lot.",
     alternates: { canonical: "/concerts" },
-    // Filtered views repeat content that has its own pages (artist, venue, genre).
+    // Filtered views repeat content that has its own pages (band, venue, genre).
     robots: filtered ? { index: false, follow: true } : undefined,
   };
 }
 
-export default async function HomePage({ searchParams }: Props) {
+export default async function ConcertsPage({ searchParams }: Props) {
   const filters = parseFilters(await searchParams);
-  const browsing = hasActiveFilters(filters) || filters.sort !== "newest";
+  const browsing = hasActiveFilters(filters);
   const [options, results] = await Promise.all([filterOptions(), listConcerts(filters)]);
-
-  const browse = (
-    <section className={`od-section${browsing ? " od-section--first" : ""}`} aria-labelledby="all-concerts" data-od="browse">
-      <SectionHead
-        id="all-concerts"
-        as={browsing ? "h1" : "h2"}
-        title={browsing ? (filters.q ? `“${filters.q}”` : "Results") : "All concerts"}
-        note={
-          <span data-od="result-count" aria-live="polite">
-            {results.total} {results.total === 1 ? "concert" : "concerts"} · {SORT_LABELS[filters.sort]}
-          </span>
-        }
-        href={browsing ? "/" : undefined}
-        linkLabel="Clear filters"
-      />
-      <FilterForm filters={filters} options={options} />
-      {results.total === 0 ? (
-        <div className="od-empty" data-od="empty">
-          <p className="display">No concerts match</p>
-          <p>Try another search, or drop a filter.</p>
-          <Link href="/concerts" className="od-link">
-            Clear the filters
-          </Link>
-        </div>
-      ) : (
-        <ConcertRows concerts={results.concerts} label="Concerts" />
-      )}
-    </section>
-  );
-
-  if (browsing) return <main data-od="home">{browse}</main>;
-
-  const [featured, latest, mostWatched, artists, mapIndex] = await Promise.all([
-    featuredConcert(),
-    latestConcerts(5),
-    mostWatchedConcerts(6),
-    listArtists(),
-    mapArtistIndex(),
-  ]);
-  // The acid strip announces the real latest upload; the hero is the daily featured pick.
-  const newest = latest[0];
-  // The nine artists with the most concerts; the tenth square is the "All artists" tile.
-  const topArtists = [...artists].sort((a, b) => b.concerts - a.concerts || a.name.localeCompare(b.name)).slice(0, 9);
+  const shown = results.concerts.length;
+  const query = filters.q ? `“${filters.q}”` : null;
 
   return (
-    <main data-od="home">
-      <div className="od-strip meta" data-od="latest-strip">
-        <h1>Full rock gigs, free</h1>
-        {newest && (
-          <>
-            <Link href={`/concerts/${newest.slug}`}>
-              Latest upload: {newest.credits}
-              {newest.venue ? ` — ${newest.venue.name}` : ""}
+    <main data-od="home" className="pg">
+      <PageHead
+        trail={[{ label: "Every gig", href: browsing ? "/concerts" : undefined }, ...(browsing ? [{ label: query ?? "Sorted out" }] : [])]}
+        lines={query ? ["Looking for", query] : browsing ? ["Sorted", "out"] : ["Every", "full gig"]}
+        data={
+          <span data-od="result-count" aria-live="polite">
+            {gigs(results.total)} /// {SORT_LABELS[filters.sort]} first
+          </span>
+        }
+        note={browsing ? undefined : "the whole wall, top to bottom"}
+      />
+
+      <section className="pg-section" aria-label="Search and sort" data-od="browse">
+        <GigFilters filters={filters} options={options} />
+      </section>
+
+      <section className="pg-section pg-section--cut" aria-label="Gigs">
+        {results.total === 0 ? (
+          <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+            <p>Check the spelling or yell a different band.</p>
+            <Link href="/concerts" className="hm-more">
+              SHOW EVERY GIG &gt;&gt;
             </Link>
-            <span>{formatDate(newest.publishedAt)}</span>
+          </EmptyNote>
+        ) : (
+          <>
+            <GigRows concerts={results.concerts} label="Gigs" lead="year" />
+            {results.total > shown && (
+              <p className="zn-marker pg-thin">
+                that&rsquo;s the first {shown} of {results.total}. search or pick a pile for the rest.
+              </p>
+            )}
           </>
         )}
-        <span className="od-strip-end">
-          {results.total} concerts · {artists.length} artists
-        </span>
-      </div>
-
-      {featured && (
-        <section className="od-hero" aria-label="Featured today" data-od="hero">
-          <Feature concert={featured} kicker="Featured today" flip credit sizes={SIZES.hero} />
-        </section>
-      )}
-
-      <section className="od-section" aria-labelledby="latest" data-od="latest">
-        <SectionHead
-          id="latest"
-          title="Latest uploads"
-          note={count2(latest.length)}
-          href={`/concerts${filtersToQuery({ sort: "newest" })}#all-concerts`}
-          linkLabel="All concerts"
-        />
-        <LeadGrid concerts={latest} label="Latest uploads" />
       </section>
-
-      <section className="od-section" aria-labelledby="most-watched" data-od="most-watched">
-        <SectionHead
-          id="most-watched"
-          title="Most watched"
-          note="All-time"
-          href={`/concerts${filtersToQuery({ sort: "most-viewed" })}`}
-          linkLabel="Full chart"
-        />
-        <ChartList concerts={mostWatched} label="Most watched" />
-      </section>
-
-      <section className="od-section" aria-labelledby="by-genre" data-od="genres">
-        <SectionHead id="by-genre" title="By genre" note={count2(options.genres.length)} href="/genres" linkLabel="All genres" />
-        <GenreWords genres={options.genres} />
-      </section>
-
-      <section className="od-section od-section--bleed" aria-labelledby="artists" data-od="artists">
-        <SectionHead id="artists" title="Artists" note={count2(artists.length)} href="/artists" linkLabel="A–Z index" />
-        <ArtistSquares artists={topArtists} allTile={{ count: artists.length }} label="Artists" />
-      </section>
-
-      <section className="od-section" aria-labelledby="find-map" data-od="map-search-home">
-        <SectionHead id="find-map" title="Find your next band" note="Type a band, find the ones around them" />
-        <MapSearch artists={mapIndex} id="home-map-q" lead />
-      </section>
-
-      {browse}
     </main>
   );
 }

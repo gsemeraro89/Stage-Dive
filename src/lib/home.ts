@@ -142,9 +142,12 @@ async function gigOfTheWeek(now: Date, picks: HomePicks) {
   return { concert, setlist: readSetlist(stored?.setlist, stored?.setlistSource ?? null) };
 }
 
+/** Venue-kind slugs: festivals are "the fields"; rooms, livestreams and TV studios are "the rooms". */
+const PLACE_KINDS = { festival: ["festival"], room: ["room", "livestream", "tv-studio"] } as const;
+
 async function places(kind: "festival" | "room", take: number) {
   const venues = await getDb().venue.findMany({
-    where: { concerts: { some: { ...VISIBLE, venueKind: { slug: kind } } } },
+    where: { concerts: { some: { ...VISIBLE, venueKind: { slug: { in: [...PLACE_KINDS[kind]] } } } } },
     select: { slug: true, name: true, city: true, country: true, _count: { select: { concerts: { where: VISIBLE } } } },
   });
   return venues
@@ -221,5 +224,8 @@ async function homeDataUncached(now: Date = new Date()): Promise<HomeData> {
 
 /** Cached for a few minutes (src/lib/memo.ts), like the other lists. */
 export const homeData = cached("homeData", homeDataUncached);
+
+/** Every field (festival) or room with a visible gig, with town and count, most gigs first. Cached. */
+export const listPlaces = cached("listPlaces", (kind: "festival" | "room") => places(kind, 10_000));
 
 export { decadeOf };

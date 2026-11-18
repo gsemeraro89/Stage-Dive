@@ -1,51 +1,23 @@
-// Concert page: the player, the facts, our write-up, and what to play next.
+// Concert page (brand book board 05, phones board 07): the player in its frame, the band on strips,
+// the typewriter setlist beside it (click a song, the gig jumps there), the facts, our write-up, and
+// what to play next. Styles: src/styles/pages.css (cp-). Data: getConcertPage.
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LeadGrid, PlayThumb } from "@/components/catalogue/ConcertTile";
+import { GigCard } from "@/components/gig/GigCard";
+import { GigRows } from "@/components/gig/GigRows";
+import { OnNowMark } from "@/components/gig/OnNowMark";
+import { Crumbs, SectionTitle } from "@/components/gig/PageHead";
+import { bandName, cutName, gigs, kindWord, mainArtist, placeYear, playedOn, playedOnLong } from "@/components/gig/words";
 import { PlayerSlot } from "@/components/player/PlayerSlot";
-import { TrackTime } from "@/components/player/TrackTime";
-import { ArtistLines, lineFromCard } from "@/components/ui/ArtistLine";
-import { count2, SectionHead } from "@/components/ui/SectionHead";
+import { PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
-import { compactNumber, placeLine } from "@/lib/site";
 import { sourceNote, type TrackView } from "@/lib/setlist/view";
-
-const ID_HINT = "Unreleased or unidentified track";
-
-/** "ID", with its explanation on hover and for screen readers. */
-function Id() {
-  return <abbr title={ID_HINT}>ID</abbr>;
-}
-
-/** "Artist – Title" for one setlist line. Artists with a page on STAGEDIVE are links. */
-function TrackName({ track }: { track: TrackView }) {
-  const artistIsId = track.artist !== null && /^ID$/i.test(track.artist);
-  return (
-    <>
-      {track.artist && (
-        <>
-          <span data-od="track-artist">
-            {artistIsId ? (
-              <Id />
-            ) : track.artistSlug ? (
-              <Link href={`/artists/${track.artistSlug}`} className="od-inline">
-                {track.artist}
-              </Link>
-            ) : (
-              track.artist
-            )}
-          </span>
-          {" – "}
-        </>
-      )}
-      <span data-od="track-title">{track.unidentified ? <Id /> : track.title}</span>
-    </>
-  );
-}
+import { compactNumber, placeLine } from "@/lib/site";
+import { concertJsonLd, jsonLd } from "@/lib/structured-data";
 
 // One database read per request, shared by the page and its title/description.
 const load = cache(getConcertPage);
@@ -74,196 +46,257 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/** A song as the setlist types it. A song credited to someone else says so. */
+function songTitle(t: TrackView, band: string): string {
+  const title = t.unidentified ? "Unidentified song" : t.title;
+  return t.artist && !/^ID$/i.test(t.artist) && t.artist.toLowerCase() !== band.toLowerCase() ? `${title} (${t.artist})` : title;
+}
+
+/** Where the setlist was read, said honestly. */
+function setlistSource(source: string | null): string {
+  if (source === "COMMENT") return "Setlist typed up by a viewer on YouTube. It may have mistakes.";
+  return sourceNote(source);
+}
+
 export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
   const { concert, queue, moreFromArtist, similarCards, setlist } = page;
   const track = toTrack(concert);
-  const mainArtist = concert.artists.find((a) => a.role === "MAIN") ?? concert.artists[0];
-  const upNext = queue.slice(0, 4);
+  const band = mainArtist(concert);
+  const name = bandName(concert);
+  const more = moreFromArtist.slice(0, 3);
+  const upNext = queue.filter((c) => !more.some((m) => m.id === c.id)).slice(0, 4);
+
+  const songs = setlist?.tracks ?? [];
+  const timed = songs.length > 0 && songs.every((t) => t.time !== null);
+  const songCount = songs.length ? `${songs.length} ${songs.length === 1 ? "song" : "songs"}` : null;
+  const where = [concert.venue?.name, concert.city].filter(Boolean).join(", ");
+  const data = [where, playedOn(concert)].filter(Boolean).join(" /// ");
+  const kind = kindWord(concert.venueKind);
 
   return (
-    <main data-od="concert">
-      {/* Desktop: the player with the setlist beside it (so times can be clicked with the video in
-          view), then the title and the facts under the player. Phones: player, title, setlist,
-          facts, up next. Without a setlist the side column is "Up next" alone. Layout: pages.css. */}
-      <div className="od-setgrid" data-setlist={setlist ? "" : undefined}>
-        <div className="od-setplayer">
-          <PlayerSlot track={track} srcSet={concert.thumbnail.srcSet} alt={`${concert.credits} — ${placeLine(concert) || concert.title}`} />
-          <p className="od-player-note meta" data-od="player-note">
-            <span className="od-muted">Plays here, on this page</span>
-            <a href={`https://www.youtube.com/watch?v=${concert.youtubeId}`} rel="noopener" className="od-link">
-              Open on YouTube
+    <main data-od="concert" className="pg cp">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(concertJsonLd(concert, setlist)) }} />
+      <Crumbs
+        trail={[
+          { label: "Bands", href: "/artists" },
+          ...(band ? [{ label: band.name, href: band.hasPage ? `/artists/${band.slug}` : undefined }] : []),
+          { label: placeYear(concert) || "The gig" },
+        ]}
+      />
+
+      <div className="cp-top" data-setlist={setlist ? "" : undefined}>
+        <div className="cp-stage">
+          {/* The player: dead straight, in a black frame. Nothing is ever placed on the video; the
+              stamp sits on the frame's top edge and the strips on the black mount under it. */}
+          <div className="cp-player" data-od="player-area">
+            <OnNowMark youtubeId={concert.youtubeId} className="cp-onnow" />
+            <PlayerSlot track={track} srcSet={concert.thumbnail.srcSet} alt={`${concert.credits} — ${placeLine(concert) || concert.title}`} />
+          </div>
+          <div className="cp-strips">
+            <StripHeading as="h1" size="h1" lines={cutName(concert.credits, 14)} keyline />
+            {data && (
+              <PaperStrip as="p" hand="type" tone="pink" tilt={-0.6} className="cp-data">
+                {data}
+              </PaperStrip>
+            )}
+          </div>
+          <p className="cp-note zn-label" data-od="player-note">
+            <span>Plays right here /// picture and video: YouTube</span>
+            <a href={`https://www.youtube.com/watch?v=${concert.youtubeId}`} rel="noopener">
+              Open on YouTube &gt;&gt;
             </a>
           </p>
         </div>
 
-        <h1 className="od-concert-title display">{concert.title}</h1>
-
-        {(setlist || upNext.length > 0) && (
-          <div className="od-setside">
-            {setlist && (
-              <section
-                className="od-setlist"
-                aria-labelledby="setlist"
-                data-od="setlist"
-                data-timed={setlist.tracks[0].time !== null || undefined}
-              >
-                <div className="od-setlist-head">
-                  <h2 id="setlist" className="title">
-                    Setlist
-                  </h2>
-                  <span className="meta od-muted">{count2(setlist.tracks.length)}</span>
-                </div>
-                <ol className="od-tracks" data-od="track-list">
-                  {setlist.tracks.map((t, i) => {
-                    const label = [t.artist, t.unidentified ? "ID" : t.title].filter(Boolean).join(" – ");
-                    const nextTime = setlist.tracks[i + 1]?.time ?? null;
-                    return (
-                      <li key={i} className="od-track" data-od="track" data-unidentified={t.unidentified || undefined}>
-                        {t.time !== null && (
-                          <TrackTime className="od-track-time" track={track} seconds={t.time} nextSeconds={nextTime} label={label} />
-                        )}{" "}
-                        <span className="od-track-name">
-                          <TrackName track={t} />
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ol>
-                <p className="od-setlist-source meta od-muted" data-od="setlist-source">
-                  {sourceNote(setlist.source)}
-                </p>
-              </section>
+        <Sheet
+          as="aside"
+          label="Setlist"
+          title="Setlist"
+          meta={songCount ?? undefined}
+          level={2}
+          tilt={1}
+          fixings={
+            <>
+              <Tape at="top-center" tilt={-2} />
+              <Staple at="top-right" />
+            </>
+          }
+          className="cp-setlist"
+        >
+          <div data-od="setlist" data-timed={timed || undefined}>
+            {timed ? (
+              <>
+                <PlayableSetlist
+                  track={track}
+                  songs={songs.map((t) => ({ title: songTitle(t, name), seconds: t.time ?? 0 }))}
+                  label={`Setlist: ${concert.credits}`}
+                />
+                <p className="zn-marker cp-setlist-hint">click any song = jump straight to it</p>
+              </>
+            ) : setlist ? (
+              <ol className="zn-setlist hm-setlist-plain" aria-label={`Setlist: ${concert.credits}`}>
+                {songs.map((t, i) => (
+                  <li key={`${i}-${t.title}`}>
+                    <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span> {songTitle(t, name)}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="hm-setlist-empty">
+                Still being typed up. Two fingers, one typewriter. The gig plays start to finish without it.
+              </p>
             )}
-
-            {upNext.length > 0 && (
-              <aside className="od-upnext" aria-labelledby="up-next" data-od="up-next">
-                <h2 id="up-next" className="meta od-acid">
-                  Up next
-                </h2>
-                <ol aria-label="Up next" data-od="concert-list">
-                  {upNext.map((s) => (
-                    <li key={s.id} data-od="concert-tile">
-                      <PlayThumb concert={s} sizes="(min-width: 1001px) 124px, 132px" />
-                      <div className="min-w-0">
-                        <h3 className="title">
-                          <Link href={`/concerts/${s.slug}`}>{s.title}</Link>
-                        </h3>
-                        <p className="meta od-muted" style={{ margin: 0 }}>
-                          {s.credits} · {compactNumber(s.viewCount)}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </aside>
+            {setlist && (
+              <p className="zn-label cp-setlist-source" data-od="setlist-source">
+                {setlistSource(setlist.source)}
+              </p>
             )}
           </div>
-        )}
+        </Sheet>
 
-        <div className="od-setmain">
-          <dl className="od-sheet" data-od="data-sheet">
+        <div className="cp-details">
+          <div className="cp-words">
+            {concert.writeUp ? (
+              <p className="cp-writeup" data-od="write-up">
+                {concert.writeUp}
+              </p>
+            ) : (
+              <p className="cp-writeup">
+                {name}
+                {where ? `, ${where}` : ""}
+                {concert.performedYear ? `, ${concert.performedYear}` : ""}. The whole set, {formatDuration(concert.durationSeconds)} of it,
+                free, start to finish.
+              </p>
+            )}
+            <p className="zn-marker">one click. it keeps playing while you dig.</p>
+          </div>
+
+          <dl className="cp-facts" data-od="data-sheet">
             <div>
-              <dt className="meta">{concert.artists.length > 1 ? "Artists" : "Artist"}</dt>
+              <dt className="zn-label">{concert.artists.length > 1 ? "Bands" : "Band"}</dt>
               <dd>
                 {concert.artists.map((a, i) => (
                   <span key={a.slug}>
                     {i > 0 && (a.role === "WITH" ? " with " : " & ")}
-                    {a.hasPage ? (
-                      <Link href={`/artists/${a.slug}`} className="od-sheet-artist">
-                        {a.name}
-                      </Link>
-                    ) : (
-                      // A guest without a page of their own: the name in the same type, not a link.
-                      <span className="od-sheet-artist od-sheet-artist--plain">{a.name}</span>
-                    )}
+                    {a.hasPage ? <Link href={`/artists/${a.slug}`}>{a.name}</Link> : a.name}
                     {a.creditNote ? ` (${a.creditNote})` : ""}
                   </span>
                 ))}
               </dd>
             </div>
-            {concert.venue && (
+            {playedOnLong(concert) && (
               <div>
-                <dt className="meta">{concert.venueKind?.name === "Festival" ? "Festival" : "Venue"}</dt>
+                <dt className="zn-label">Date</dt>
+                <dd>{playedOnLong(concert)}</dd>
+              </div>
+            )}
+            {(concert.venue || concert.city || concert.country) && (
+              <div>
+                <dt className="zn-label">Where</dt>
                 <dd>
-                  <Link href={`/venues/${concert.venue.slug}`} className="od-inline">
-                    {concert.venue.name}
-                  </Link>
+                  {concert.venue && <Link href={`/venues/${concert.venue.slug}`}>{concert.venue.name}</Link>}
+                  {[concert.venue ? "" : null, concert.city, concert.country].filter((v) => v !== null).join(", ")}
+                  {kind ? ` /// ${kind.toLowerCase()}` : ""}
                 </dd>
               </div>
             )}
-            {(concert.city || concert.country) && (
+            <div>
+              <dt className="zn-label">Length</dt>
+              <dd>{[formatDuration(concert.durationSeconds), songCount].filter(Boolean).join(" /// ")}</dd>
+            </div>
+            {concert.tour && (
               <div>
-                <dt className="meta">Location</dt>
-                <dd>{[concert.city, concert.country].filter(Boolean).join(", ")}</dd>
+                <dt className="zn-label">Tour</dt>
+                <dd>
+                  <Link href={`/tours/${concert.tour.slug}`}>{concert.tour.name}</Link>
+                </dd>
+              </div>
+            )}
+            {concert.genres.length > 0 && (
+              <div>
+                <dt className="zn-label">Genre</dt>
+                <dd>
+                  {concert.genres.map((g, i) => (
+                    <span key={g.slug}>
+                      {i > 0 && " /// "}
+                      <Link href={`/genres/${g.slug}`}>{g.name}</Link>
+                    </span>
+                  ))}
+                </dd>
               </div>
             )}
             <div>
-              <dt className="meta">Genre</dt>
+              <dt className="zn-label">Source</dt>
               <dd>
-                {concert.genres.map((g, i) => (
-                  <span key={g.slug}>
-                    {i > 0 && " · "}
-                    <Link href={`/genres/${g.slug}`} className="od-inline">
-                      {g.name}
-                    </Link>
-                  </span>
-                ))}
+                {concert.channel.isOfficial ? "Official upload" : "Upload"} by {concert.channel.name}, plays from YouTube
               </dd>
             </div>
-            {concert.venueKind && (
-              <div>
-                <dt className="meta">Kind</dt>
-                <dd>{concert.venueKind.name}</dd>
-              </div>
-            )}
             <div>
-              <dt className="meta">Uploaded</dt>
+              <dt className="zn-label">Video</dt>
               <dd>
+                {concert.title} /// {compactNumber(concert.viewCount)} views /// up since{" "}
                 <time dateTime={concert.publishedAt.toISOString().slice(0, 10)}>{formatDate(concert.publishedAt)}</time>
               </dd>
             </div>
-            <div>
-              <dt className="meta">Channel</dt>
-              <dd>{concert.channel.name}</dd>
-            </div>
-            <div>
-              <dt className="meta">Views</dt>
-              <dd>{concert.viewCount.toLocaleString("en-US")}</dd>
-            </div>
-            <div>
-              <dt className="meta">Length</dt>
-              <dd>{formatDuration(concert.durationSeconds)}</dd>
-            </div>
           </dl>
-
-          {concert.writeUp && (
-            <p className="od-writeup" data-od="write-up">
-              {concert.writeUp}
-            </p>
-          )}
         </div>
       </div>
 
-      {moreFromArtist.length > 0 && mainArtist && (
-        <section className="od-section" aria-labelledby="more-from" data-od="more-from-artist">
-          <SectionHead
-            id="more-from"
-            title={`More from ${mainArtist.name}`}
-            note={count2(Math.min(moreFromArtist.length, 5))}
-            href={`/artists/${mainArtist.slug}`}
-            linkLabel={`All concerts by ${mainArtist.name}`}
-          />
-          <LeadGrid concerts={moreFromArtist.slice(0, 5)} label={`More from ${mainArtist.name}`} />
-        </section>
-      )}
-      {similarCards.length > 0 && (
-        // Similar artists, each with a concert to play. The deck bar's "You might also like" scrolls here.
-        <section className="od-section" aria-labelledby="also-like" data-od="related">
-          <SectionHead id="also-like" title="You might also like" note={count2(similarCards.length)} />
-          <ArtistLines artists={similarCards.map(lineFromCard)} label="You might also like" />
-        </section>
+      {(more.length > 0 || upNext.length > 0 || similarCards.length > 0) && (
+        <div className="cp-after">
+          <div className="cp-after-main">
+            {more.length > 0 && band && (
+              <section aria-labelledby="more-from" data-od="more-from-artist" className="pg-block">
+                <div className="pg-block-head">
+                  <SectionTitle id="more-from">More {band.name}</SectionTitle>
+                  {band.hasPage && (
+                    <Link href={`/artists/${band.slug}`} className="hm-more">
+                      THE BAND&rsquo;S PAGE &gt;&gt;
+                    </Link>
+                  )}
+                </div>
+                <ul className="hm-cards">
+                  {more.map((c, i) => (
+                    <GigCard key={c.id} concert={c} index={i} name="place" sizes="(min-width: 901px) 22vw, 50vw" />
+                  ))}
+                </ul>
+              </section>
+            )}
+            {upNext.length > 0 && (
+              <section aria-labelledby="up-next" data-od="up-next" className="pg-block">
+                <div className="pg-block-head">
+                  <SectionTitle id="up-next" tilt={more.length ? 1 : -1.2}>
+                    Up next
+                  </SectionTitle>
+                  <span className="zn-label">when this one ends, these play</span>
+                </div>
+                <GigRows concerts={upNext} label="Up next" lead="rank" />
+              </section>
+            )}
+          </div>
+          {similarCards.length > 0 && (
+            // Similar bands. The player bar's "You might also like" scrolls here (#also-like).
+            <section aria-labelledby="also-like" data-od="related" className="pg-block cp-after-side">
+              <div className="pg-block-head">
+                <SectionTitle id="also-like" tilt={1} small>
+                  You might also like
+                </SectionTitle>
+              </div>
+              <ul className="pg-list">
+                {similarCards.map((a) => (
+                  <li key={a.slug}>
+                    <Link href={`/artists/${a.slug}`}>
+                      <span className="pg-list-name">{a.name}</span>
+                      <span className="zn-data">{gigs(a.concerts)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
     </main>
   );

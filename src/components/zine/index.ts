@@ -19,5 +19,6 @@ export {
   type IconName,
 } from "./Icons";
 export { TypewriterSetlist, type SetlistSong } from "./TypewriterSetlist";
+export { PlayableSetlist } from "./PlayableSetlist";
 export { DockedPlayerFrame } from "./DockedPlayerFrame";
 export { type Tilt } from "./tilt";

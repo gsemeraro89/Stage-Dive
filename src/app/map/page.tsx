@@ -2,6 +2,7 @@
 // /map?artist=<slug> or /map?q=<text>; without either it starts from today's featured artist.
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyNote } from "@/components/gig/PageHead";
 import { lineFromCard } from "@/components/ui/ArtistLine";
 import { MapGenres } from "@/components/ui/MapGenres";
 import { MapSearch } from "@/components/ui/MapSearch";
@@ -35,14 +36,14 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const toggle = (g: string) => (genres.includes(g) ? genres.filter((x) => x !== g) : [...genres, g]);
 
   return (
-    <main data-od="map">
+    <main data-od="map" className="pg">
       <header className="od-map-head">
         <div className="od-map-top">
           <div className="od-rail meta">
             <h1>Find your next band</h1>
             {map && (
               <span>
-                {String(map.artists.length).padStart(2, "0")} {map.artists.length === 1 ? "artist" : "artists"} around {map.centre.name}
+                {map.artists.length} {map.artists.length === 1 ? "band" : "bands"} around {map.centre.name}
               </span>
             )}
           </div>
@@ -60,35 +61,33 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       </header>
 
       {!map ? (
-        <section className="od-section od-section--first">
-          <div className="od-empty" data-od="map-empty">
-            <p className="display">No artist found</p>
-            <p>{q ? `Nothing in the archive matches “${q}”.` : "That artist is not in the archive."} Try another name.</p>
-            <Link href="/map" className="od-link">
-              Start from today’s artist
+        <div data-od="map-empty">
+          <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+            <p>{q ? `No band on the wall matches “${q}”.` : "That band is not on the wall."} Check the spelling or yell a different band.</p>
+            <Link href="/map" className="hm-more">
+              START FROM TODAY’S BAND &gt;&gt;
             </Link>
-          </div>
-        </section>
+          </EmptyNote>
+        </div>
       ) : map.artists.length === 0 ? (
-        <section className="od-section od-section--first">
-          <div className="od-empty" data-od="map-empty">
-            <p className="display">No one nearby</p>
+        <div data-od="map-empty">
+          <EmptyNote lines={["No one", "nearby. Yet."]}>
             <p>
               {genres.length
-                ? `No artists around ${map.centre.name} in ${genres.length === 1 ? "this genre" : "these genres"}.`
-                : `No artists around ${map.centre.name} yet.`}
+                ? `No bands around ${map.centre.name} in ${genres.length === 1 ? "this genre" : "these genres"}.`
+                : `We have not worked out who sounds like ${map.centre.name} yet. The wall is still small.`}
             </p>
             {genres.length > 0 ? (
-              <Link href={href({ genres: [] })} className="od-link">
-                Show all genres
+              <Link href={href({ genres: [] })} className="hm-more">
+                SHOW ALL GENRES &gt;&gt;
               </Link>
             ) : (
-              <Link href={`/artists/${map.centre.slug}`} className="od-link">
-                Concerts by {map.centre.name}
+              <Link href={`/artists/${map.centre.slug}`} className="hm-more">
+                GIGS BY {map.centre.name} &gt;&gt;
               </Link>
             )}
-          </div>
-        </section>
+          </EmptyNote>
+        </div>
       ) : (
         <MapView
           key={`${map.centre.slug}:${genres.join(",")}`}

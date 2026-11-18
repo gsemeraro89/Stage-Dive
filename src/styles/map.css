@@ -68,16 +68,6 @@
   margin-bottom: 0.08em;
 }
 
-/* ---------- "If you like X" on the artist page: lines keep the side padding, squares bleed ---------- */
-
-.od-like-lines {
-  padding-inline: var(--pad-x);
-}
-
-.od-like-lines + .od-squares {
-  margin-top: clamp(28px, 4vw, 56px);
-}
-
 /* ---------- Map page ---------- */
 
 .od-map-head {
@@ -496,7 +486,7 @@
   }
 
   .od-map-pick p,
-  .od-map-pick h2 {
+.od-map-pick h2 {
     margin: 0;
   }
 
@@ -561,10 +551,10 @@
   }
 
   .od-map-kicker,
-  .od-map-rail .od-aline-pic,
-  .od-map-rail .od-aline-name,
-  .od-map-rail .od-aline-genres,
-  .od-map-rail .od-aline-more {
+.od-map-rail .od-aline-pic,
+.od-map-rail .od-aline-name,
+.od-map-rail .od-aline-genres,
+.od-map-rail .od-aline-more {
     display: none;
   }
 

@@ -3,11 +3,9 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { BigName } from "@/components/ui/BigName";
-import { CollectionBody, collectionStats } from "@/components/ui/Collection";
-import { GenreWords } from "@/components/ui/GenreWords";
-import { count2, SectionHead } from "@/components/ui/SectionHead";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { Collection, pileData } from "@/components/gig/Collection";
+import { EmptyNote, PageHead, TagLinks } from "@/components/gig/PageHead";
+import { cutName } from "@/components/gig/words";
 import { getGenrePage, listGenres } from "@/lib/queries";
 
 // One database read per request, shared by the page and its title/description.
@@ -35,39 +33,25 @@ export default async function GenrePage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
   const { genre, concerts } = page;
-  // An empty genre points the visitor to the genres that do have concerts.
-  const others = concerts.length === 0 ? await listGenres() : [];
+  // The genres that do have gigs: somewhere to go next.
+  const others = (await listGenres()).filter((g) => g.slug !== genre.slug);
+  const otherGenres = <TagLinks label={concerts.length ? "Other noise" : "Play these instead"} items={others.map((g) => ({ href: `/genres/${g.slug}`, label: g.name }))} />;
   return (
-    <main data-od="genre">
-      <header className="od-pagehero">
-        <p className="od-rail meta">
-          <span>Genre</span>
-          <span data-od="result-count">
-            {concerts.length} {concerts.length === 1 ? "concert" : "concerts"}
-          </span>
-        </p>
-        <BigName name={genre.name} max="15vw" outline />
-        {concerts.length > 0 && <StatStrip stats={collectionStats(concerts)} />}
-      </header>
+    <main data-od="genre" className="pg">
+      <PageHead
+        trail={[{ label: "Genres", href: "/genres" }, { label: genre.name }]}
+        lines={cutName(genre.name.replace(" / ", " + "))}
+        data={<span data-od="result-count">{pileData(concerts)}</span>}
+      />
       {concerts.length === 0 ? (
-        <>
-          <section className="od-section" style={{ paddingTop: "clamp(28px, 4vw, 56px)" }}>
-            <div className="od-empty" data-od="empty">
-              <p style={{ marginTop: 0 }}>No {genre.name} concerts in the archive yet.</p>
-              <Link href="/genres" className="od-link">
-                All genres
-              </Link>
-            </div>
-          </section>
-          {others.length > 0 && (
-            <section className="od-section" aria-labelledby="other-genres">
-              <SectionHead id="other-genres" title="Play these instead" note={count2(others.length)} />
-              <GenreWords genres={others} />
-            </section>
-          )}
-        </>
+        <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+          <p>No {genre.name} on the wall yet.</p>
+          {otherGenres}
+        </EmptyNote>
       ) : (
-        <CollectionBody concerts={concerts} name={genre.name} />
+        <Collection concerts={concerts} label={`Every ${genre.name} gig`}>
+          {otherGenres}
+        </Collection>
       )}
     </main>
   );

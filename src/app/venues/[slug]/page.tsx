@@ -1,11 +1,11 @@
-// Venue or festival page: every concert recorded there.
+// A field (festival) or a room: every gig recorded there.
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { BigName } from "@/components/ui/BigName";
-import { CollectionBody, collectionStats } from "@/components/ui/Collection";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { Collection, pileData } from "@/components/gig/Collection";
+import { EmptyNote, PageHead } from "@/components/gig/PageHead";
+import { cutName, kindWord } from "@/components/gig/words";
 import { getVenuePage } from "@/lib/queries";
 
 // One database read per request, shared by the page and its title/description.
@@ -37,32 +37,27 @@ export default async function VenuePage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
   const { venue, concerts } = page;
-  const kind = concerts.find((s) => s.venueKind)?.venueKind?.name ?? "Venue";
+  const kind = kindWord(concerts.find((s) => s.venueKind)?.venueKind) ?? "Place";
   return (
-    <main data-od="venue">
-      <header className="od-pagehero">
-        <p className="od-rail meta">
-          <span>{kind}</span>
-          {where(venue) && <span data-od="place">{where(venue)}</span>}
-          <span data-od="result-count">
-            {concerts.length} {concerts.length === 1 ? "concert" : "concerts"}
-          </span>
-        </p>
-        <BigName name={venue.name} max="15vw" />
-        {concerts.length > 0 && <StatStrip stats={collectionStats(concerts)} />}
-      </header>
+    <main data-od="venue" className="pg">
+      <PageHead
+        trail={[{ label: "Fields + Rooms", href: "/venues" }, { label: venue.name }]}
+        lines={cutName(venue.name)}
+        data={
+          <>
+            {[kind, where(venue)].filter(Boolean).join(" /// ")} /// <span data-od="result-count">{pileData(concerts)}</span>
+          </>
+        }
+      />
       {concerts.length === 0 ? (
-        <section className="od-section">
-          <div className="od-empty" data-od="empty">
-            <p className="display">No concerts yet</p>
-            <p>Nothing recorded at {venue.name} is in the archive right now.</p>
-            <Link href="/venues" className="od-link">
-              All festivals
-            </Link>
-          </div>
-        </section>
+        <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
+          <p>Every gig from {venue.name} is off the wall right now. They come back when the videos do.</p>
+          <Link href="/venues" className="hm-more">
+            ALL FIELDS + ROOMS &gt;&gt;
+          </Link>
+        </EmptyNote>
       ) : (
-        <CollectionBody concerts={concerts} name={venue.name} />
+        <Collection concerts={concerts} label={`Every gig at ${venue.name}`} />
       )}
     </main>
   );

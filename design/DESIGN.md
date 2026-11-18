@@ -237,8 +237,27 @@ Tilt and texture must never hurt usability.
 11. Don't write "content", "curated", "get started" or "at no cost".
 12. Don't add a second typeface, a second accent colour or a dark mode.
 
-## 14. The bridge (temporary)
+## 14. Pages
 
-Pages not yet rebuilt still use the old OpenDecks styles (`base.css`, `components.css`, `deck.css`, `pages.css`, `map.css`, `home.css`) and `od-` class names. The old token names (`--ground`, `--ink`, `--muted`, `--line`, `--acid`, `--hover-row`, `--font-sans`, `--font-mono`, `.display`, `.title`, `.meta`…) are still defined at the bottom of `tokens.css`, mapped onto the zine, so those pages read as STAGEDIVE without layout changes. In the old CSS the accent is now only ever a pink block behind toner text, never a text colour.
+Every page is built from the kit. Where things live:
 
-New work uses the zine tokens and components, not the bridge names. Remove the bridge page by page as each page is rebuilt.
+| Page | Markup | Styles |
+| --- | --- | --- |
+| Homepage (board 04) | `src/app/_home/HomePage.tsx` | `src/styles/home.css` (`hm-`) |
+| Concert page (board 05) | `src/app/concerts/[slug]/page.tsx` | `src/styles/pages.css` (`cp-`) |
+| Band page (board 06) | `src/app/artists/[slug]/page.tsx` | `pages.css` (`bp-`) |
+| Bands, Fields + Rooms, Decades, Genres, Tours, Every gig, and their piles | `src/app/*/page.tsx` | `pages.css` (`pg-`) |
+
+Shared pieces that know about gigs live in `src/components/gig/`: `PageHead` (trail, name on strips, one typed line), `GigRows` (a list of gigs), `GigCard`, `Collection` (rows plus "On the bill"), `GigFilters`, `OnNowMark`. `PlayableSetlist` (in the kit) wires the typewriter setlist to the player.
+
+Rules the pages add:
+
+- **The concert page's player** sits in a 4 px black frame with a solid shadow, dead straight, never taped. Under the video the frame grows a black mount; the band's strips bite into the mount, never the video. The "On now" stamp sits on the frame's top edge, outside the video.
+- **One pink thing per page.** On a page that has its label pink in the header (Bands, Decades, Genres…), nothing else is pink at rest: data strips are black, play labels are black and turn pink only for the gig that is playing. On the concert page (no pink label in the header) the date strip is pink, as on the board.
+- **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
+- **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.
+- **Nothing is invented.** No story, quote or song note that is not stored. An empty pile says "Nothing. Not even a bootleg." and points somewhere full.
+
+## 15. The bridge (what is left of it)
+
+The player bar (`PlayerDock`), the concert page's player slot and the map (`/map`) still use `od-` class names and the old token names (`--ground`, `--ink`, `--muted`, `--acid`, `.display`, `.title`, `.meta`…), mapped onto the zine at the bottom of `tokens.css`. Their layout is in `deck.css`, `map.css` and `components.css`; they are dressed through `data-od` attributes only, because their logic is not design's to touch. New work uses the zine tokens and components, not the bridge names.

@@ -1,17 +1,17 @@
 /* Tailwind + the STAGEDIVE zine. Tokens live in design/tokens.css (rules: design/DESIGN.md).
-   src/styles/zine.css holds the zine components and the motion system; the other files in
-   src/styles/ are the old OpenDecks page styles, kept alive by the bridge tokens until each page
-   is rebuilt. zine.css comes after them so it wins; home.css (the homepage, built from the zine) places
-   zine pieces, so it comes after zine.css. */
+   zine.css holds the zine components and the motion system; home.css is the homepage and pages.css
+   every other page, both built from the zine, so they come after it. base.css is the page ground;
+   components.css, deck.css and map.css are what is left of the old layout: the player bar, the
+   concert page's player slot and the map, dressed as the zine through the bridge tokens. */
 @import "tailwindcss";
 @import "../../design/tokens.css";
 @import "../styles/base.css";
 @import "../styles/components.css";
 @import "../styles/deck.css";
-@import "../styles/pages.css";
 @import "../styles/map.css";
 @import "../styles/zine.css";
 @import "../styles/home.css";
+@import "../styles/pages.css";
 
 @source not "../../design";
 

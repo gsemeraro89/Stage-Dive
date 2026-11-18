@@ -38,3 +38,21 @@ Each idea: date, the idea, why it fits the zine, effort.
 **Why it fits.** It is the fourth step of an entry (photo, name strip, typed data, one marker line) and the place where the zine's voice lives. Written by a person, never generated, so it stays honest.
 
 **Effort.** Small. One text field on the concert, one input in the admin; the homepage card and the band page already have the slot.
+
+---
+
+## 2026-11-18 · after the other pages
+
+### 5. Tear-off tabs at the bottom of a gig
+**Idea.** The concert page ends with a row of tear-off tabs, like the phone-number strips at the bottom of a flyer on a venue wall: each tab is one song with its time ("KILLING IN THE NAME /// 1:09:40"). Pressing a tab copies a link that opens the gig at that song, and the tab tears off (drops, tilted) so you can see what you took.
+
+**Why it fits.** It is the most recognisable thing on a real gig flyer, it is made with scissors, and it turns the clickable setlist into the way the site gets shared: a link to the exact song, not just the page. It also gives the "share" icon from the kit a home without a share menu.
+
+**Effort.** Small to medium. A `?t=` (or `#song-5`) link the concert page reads on load and hands to `playFrom`; one new component from existing pieces (a cut line, strips); one new motion (tear and drop, with the reduced-motion version landing at once). Needs a small change in the player wiring, so not design alone.
+
+### 6. "First time on the wall" for thin piles
+**Idea.** While a band, field or decade has one gig, its page shows the marker line "one so far. more when we find them." Go one step further: let the visitor leave their e-mail under that line ("tell me when the second one turns up"), one field, same voice as the newsletter line.
+
+**Why it fits.** Thin pages are the honest state of a new zine; this turns "we only have one" into a reason to come back, and feeds the newsletter with people who told us exactly which band they care about.
+
+**Effort.** Medium. Needs the newsletter sign-up to exist first, plus a tag per band on the subscriber. The page slot and the copy are already there.

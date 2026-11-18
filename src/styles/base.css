@@ -84,18 +84,6 @@ button:disabled {
   color: var(--on-acid);
 }
 
-/* Links inside running text. */
-.od-inline {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
-}
-
-.od-inline:hover {
-  background-color: var(--acid);
-  color: var(--on-acid);
-}
-
 .od-muted {
   color: var(--muted);
 }
@@ -130,19 +118,3 @@ button:disabled {
   flex: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .od-skel {
-    animation: od-blink 1.2s steps(2, jump-none) infinite;
-  }
-}
-
-@keyframes od-blink {
-  50% {
-    opacity: 0.55;
-  }
-}
-
-/* Loading placeholder: flat blocks in the hover-row colour, no shimmer. */
-.od-skel {
-  background: var(--hover-row);
-}
