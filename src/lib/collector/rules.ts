@@ -223,6 +223,8 @@ export interface Classification {
   confidence: number;
   genres: string[];
   mainArtists: string[];
+  /** When it was played (YYYY, YYYY-MM or YYYY-MM-DD), empty if unknown. Absent = not asked. */
+  performed?: string;
 }
 
 export interface DecisionInput {
@@ -278,6 +280,10 @@ export function decide(input: DecisionInput, config: CollectorConfig): Decision 
   }
   if (input.excluded) return { verdict: "EXCLUDED", reason: "band on the owner's exclude list", signals };
   if (!input.official) return { verdict: "NOT_OFFICIAL", reason: "fan upload: report only (official sources only)", signals };
+  // Owner rule (18 Nov 2026): no year, no concert. A missing venue is fine.
+  if (c.performed !== undefined && readPerformed(c.performed).performedYear === null) {
+    return { verdict: "UNCERTAIN", reason: "no date: the year it was played is unknown", signals };
+  }
   if (input.ownerApproved) {
     if (c.genres.length === 0) return { verdict: "UNCERTAIN", reason: "band approved by owner, but no genre", signals };
     return { verdict: "ACCEPTED", reason: "band approved by owner", signals: [...signals, "owner"] };

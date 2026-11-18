@@ -165,6 +165,12 @@ describe("decide", () => {
   const with_ = (patch: Partial<DecisionInput>, cls: Partial<DecisionInput["classification"]> = {}) =>
     decide({ ...base, ...patch, classification: { ...base.classification, ...cls } }, config);
 
+  it("keeps a concert without a year out, even for an owner-approved band (a missing venue is fine)", () => {
+    expect(with_({ ownerApproved: true }, { performed: "" }).verdict).toBe("UNCERTAIN");
+    expect(with_({}, { performed: "summer" }).verdict).toBe("UNCERTAIN");
+    expect(with_({ ownerApproved: true }, { performed: "2001" }).verdict).toBe("ACCEPTED");
+    expect(with_({}, { performed: "1994-05-27" }).verdict).toBe("ACCEPTED");
+  });
   it("accepts a confident rock concert on an archive or band channel", () => {
     expect(with_({}).verdict).toBe("ACCEPTED");
     expect(with_({ channelKind: "ARTIST" }).verdict).toBe("ACCEPTED");

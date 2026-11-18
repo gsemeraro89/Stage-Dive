@@ -167,5 +167,6 @@ export function toDecisionInput(c: FullClassification): Classification {
     confidence: c.confidence,
     genres: c.genres,
     mainArtists: c.mainArtists.map((a) => a.trim()).filter(Boolean),
+    performed: c.performed ?? "",
   };
 }
