@@ -38,3 +38,11 @@ jobs:
       - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npm run refresh -- ${{ inputs.all && '--all' || '' }}
+      - name: Best thumbnail size for new concerts (YouTube's image server, no quota)
+        continue-on-error: true
+        run: npm run db:thumbnails
+      - name: Announce changed pages to search engines (IndexNow; skipped until the live site is open)
+        continue-on-error: true
+        env:
+          LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
+        run: npm run indexnow
