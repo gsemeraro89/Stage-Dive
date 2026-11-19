@@ -21,7 +21,8 @@ import { toTrack } from "@/lib/player-types";
 import { avatarSources, getArtistPage, type ConcertView } from "@/lib/queries";
 import { compactNumber } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { bandAnswers } from "@/lib/answers";
+import { bandAnswers, bandStatLines, bandStatsFor } from "@/lib/answers";
+import { bandSongsPath, songPath, songTally } from "@/lib/songs";
 import { bandIsStrong, bandSearchTitle, clip, robotsFor, shareImages } from "@/lib/seo";
 import { bandJsonLd, bandSameAs, breadcrumbs, faqPage } from "@/lib/structured-data";
 
@@ -66,6 +67,9 @@ function sorted(concerts: ConcertView[], sort: Sort): ConcertView[] {
   return list.sort((a, b) => (b.performedYear ?? -1) - (a.performedYear ?? -1) || day(b) - day(a) || a.id - b.id);
 }
 
+/** Songs listed under "Songs played live" (the rest are on the band's songs page). */
+const TOP_LIVE_SONGS = 10;
+
 /** Gigs shown before "Show more" (owner, 18 Nov 2026). */
 const FIRST_GIGS = 10;
 
@@ -78,6 +82,13 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
   // AEO: the answer-first lead under the name, and the questions in a closed FAQ at the bottom (owner
   // choice); FAQPage structured data carries exactly the questions shown.
   const answers = bandAnswers(artist, concerts, setlists);
+  // Live statistics and songs played live, from the band's own setlists (src/lib/band-stats.ts, src/lib/songs.ts).
+  const stats = bandStatsFor(artist.name, concerts, setlists);
+  const statLines = bandStatLines(stats).map((l) => ({
+    ...l,
+    href: l.id === "opener" && stats.opener ? songPath(artist.slug, stats.opener.slug) : l.id === "closer" && stats.closer ? songPath(artist.slug, stats.closer.slug) : l.href,
+  }));
+  const liveSongs = songTally(setlists);
   const genreNames = [...new Set(concerts.flatMap((c) => c.genres.map((g) => g.name)))];
   const rows = sorted(concerts, sort);
   const best = sorted(concerts, "watched")[0];
@@ -266,6 +277,45 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                 </details>
               )}
               {concerts.length === 1 && <p className="zn-marker bp-thin">one so far. more when we find them.</p>}
+            </section>
+          )}
+
+          {statLines.length > 0 && (
+            // Unstyled for now (designer): figures from the band's concerts and setlists, each backed by two or more.
+            <section aria-labelledby="live-stats" data-od="band-stats" className="bp-stats">
+              <SectionTitle id="live-stats" tilt={1} small>
+                {artist.name} live, in numbers
+              </SectionTitle>
+              <dl>
+                {statLines.map((l) => (
+                  <div key={l.id} data-stat={l.id}>
+                    <dt>{l.label}</dt>
+                    <dd>{l.href ? <Link href={l.href}>{l.value}</Link> : l.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+
+          {liveSongs.length > 0 && (
+            // Unstyled for now (designer): the songs in the band's setlists, most played first, each with its own page.
+            <section aria-labelledby="live-songs" data-od="band-live-songs" className="bp-songs">
+              <SectionTitle id="live-songs" tilt={-1} small>
+                Songs played live
+              </SectionTitle>
+              <ol className="bp-songs-list">
+                {liveSongs.slice(0, TOP_LIVE_SONGS).map((song) => (
+                  <li key={song.slug}>
+                    <Link href={songPath(artist.slug, song.slug)}>
+                      <span className="bp-song-name">{song.title}</span>{" "}
+                      <span className="zn-data">{song.count === 1 ? "1 setlist" : `${song.count} setlists`}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+              <Link href={bandSongsPath(artist.slug)} className="hm-more bp-songs-all">
+                EVERY SONG ({liveSongs.length}) &gt;&gt;
+              </Link>
             </section>
           )}
 

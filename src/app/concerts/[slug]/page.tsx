@@ -87,7 +87,7 @@ function setlistSource(source: string | null): string {
 export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { concert, queue, moreFromArtist, similarCards, setlist, notes } = page;
+  const { concert, queue, moreFromArtist, similarCards, setlist, notes, songLinks } = page;
   const track = toTrack(concert);
   const band = mainArtist(concert);
   const name = bandName(concert);
@@ -112,7 +112,7 @@ export default async function ConcertPage({ params }: Props) {
       <JsonLd
         data={[
           concertJsonLd(concert, setlist),
-          concertEventJsonLd(concert, setlist),
+          concertEventJsonLd(concert, setlist, (title) => songLinks[title] ?? null),
           breadcrumbs([
             ["Home", "/"],
             ["Bands", "/artists"],
@@ -188,7 +188,7 @@ export default async function ConcertPage({ params }: Props) {
               <>
                 <PlayableSetlist
                   track={track}
-                  songs={songs.map((t) => ({ title: songTitle(t, name), seconds: t.time ?? 0 }))}
+                  songs={songs.map((t) => ({ title: songTitle(t, name), seconds: t.time ?? 0, href: songLinks[t.title] }))}
                   label={`Setlist: ${concert.credits}`}
                 />
                 <p className="zn-marker cp-setlist-hint">click any song = jump straight to it</p>
@@ -197,7 +197,15 @@ export default async function ConcertPage({ params }: Props) {
               <ol className="zn-setlist hm-setlist-plain" aria-label={`Setlist: ${concert.credits}`}>
                 {songs.map((t, i) => (
                   <li key={`${i}-${t.title}`}>
-                    <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span> {songTitle(t, name)}
+                    <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span>{" "}
+                    {songLinks[t.title] ? (
+                      // Each song links to its own page: every live version (src/lib/songs.ts).
+                      <Link href={songLinks[t.title]} data-od="song-page-link">
+                        {songTitle(t, name)}
+                      </Link>
+                    ) : (
+                      songTitle(t, name)
+                    )}
                   </li>
                 ))}
               </ol>

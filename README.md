@@ -33,7 +33,8 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/lib/seed/`, `scripts/seed.ts` | Seed import (`npm run db:seed`) |
 | `src/lib/queries.ts` | Every database read used by the pages (only public, embeddable, published concerts) |
 | `src/components/player/` | The single persistent YouTube player: provider, concert-page slot, docked bar |
-| `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/genres`, `/decades`, `/tours`, `/map`, `/admin` |
+| `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/genres`, `/decades`, `/tours`, `/songs/[band]`, `/songs/[band]/[song]`, `/map`, `/admin` |
+| `src/lib/songs.ts`, `song-title.ts`, `band-stats.ts` | Songs played live (a page per song, every live version, worked out from the setlists) and the band's live statistics |
 | `src/lib/setlist/` | Setlists from the video description, chapters or comments |
 | `src/lib/collector/` | Collector rules, YouTube client, Claude classifier (Haiku lane), MusicBrainz |
 | `src/lib/seo.ts`, `structured-data.ts`, `answers.ts`, `concert-notes.ts`, `llms.ts`, `sitemap.ts`, `robots.ts`, `indexnow.ts` | Search and AI assistants (CLAUDE.md "SEO, AEO and AI search"): what is indexed, titles, schema.org, answer-first leads, FAQ, concert notes, `/llms.txt`, `.md` copies, sitemap, IndexNow |

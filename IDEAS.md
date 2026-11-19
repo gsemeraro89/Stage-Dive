@@ -95,4 +95,4 @@ Not built: for the owner to approve, after keyword research (a keywords script l
 2. **Best of a festival or decade** (`/best/glastonbury`, `/best/1990s`): the most watched concerts, ranked by views on YouTube, with one line each from our data. Answers "best glastonbury performances" / "best 90s rock concerts".
 3. **Festival year** (`/venues/pinkpop/1996`): the line-up we hold for one edition, in running order when known. For "pinkpop 1996 line up".
 4. **Genre by decade** (`/genres/grunge/1990s`): the crossings with enough concerts. "90s grunge concerts".
-5. **Songs** (`/songs/enter-sandman`, the coordinator's approved item): every live version with a jump to the song's time. The data helpers are ready: `songKey` / `songCounts` in `src/lib/text.ts`, `bandConcertsWithSongs` in `src/lib/queries.ts`, deep links via `startAtPath` in `src/lib/player/start-time.ts`.
+5. **Songs**: built (owner OK, 19 Nov 2026) as `/songs/<band>/<song>` and `/songs/<band>` (song titles collide across bands, so songs live under their band). See README.

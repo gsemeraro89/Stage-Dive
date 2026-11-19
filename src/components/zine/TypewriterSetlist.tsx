@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { cx } from "./tilt";
 
@@ -7,6 +8,8 @@ export type SetlistSong = {
   title: string;
   /** Where the song starts in the video, in seconds. */
   seconds: number;
+  /** The song's own page (every live version), when it has one: a link beside the button. */
+  href?: string;
 };
 
 type TypewriterSetlistProps = {
@@ -83,6 +86,12 @@ export function TypewriterSetlist({
               </span>
               {played && <i className="zn-strike" aria-hidden="true" />}
             </button>
+            {song.href && (
+              // Unstyled for now (designer): the song's page, beside the button that plays it.
+              <Link href={song.href} className="zn-setlist-page" data-od="song-page-link" aria-label={`${song.title}: every live version`}>
+                every version
+              </Link>
+            )}
           </li>
         );
       })}
