@@ -80,7 +80,9 @@ describe("band answers", () => {
     expect(q["Which festivals has Metallica played?"]).toBe("Full festival shows here: Pinkpop 1993 and Pinkpop 2008.");
     expect(q["What is Metallica's most watched concert?"]).toBe("Pinkpop 1993, with 5,000,000 views on YouTube.");
     expect(q["What is the oldest Metallica concert here?"]).toBe("L.C. Walker Arena 1991. The newest is Pinkpop 2008.");
-    expect(q["Which songs does Metallica play most live?"]).toBe("Across the 2 setlists here: “One” (2 setlists).");
+    expect(q["What are Metallica's most played songs live?"]).toBe("Across the 2 setlists here: “One” (2 setlists).");
+    expect(q["What song does Metallica usually open with?"]).toBe("“One”: it opens both setlists here.");
+    expect(q["How long is a Metallica concert?"]).toBe("The 3 Metallica concerts here run 2 hours 22 minutes on average. The longest is L.C. Walker Arena 1991 (2:22:00).");
     expect(q["Where are Metallica from?"]).toBe("Los Angeles, US.");
     expect(allText(a)).not.toMatch(BANNED);
     expect(youtubeOnlyWithViews(allText(a))).toBe(true);

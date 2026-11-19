@@ -10,7 +10,9 @@
 // a view count. Pure functions, tested in tests/answers.test.ts.
 import { formatDuration } from "./format";
 import { placeLine, SITE_NAME } from "./site";
-import { listWords, plural, quoted, songCounts, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
+import { bandStats, type BandStats, type UsualSong } from "./band-stats";
+import type { Song, TypicalPosition } from "./songs";
+import { listWords, plural, quoted, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
 
 export interface QA {
   question: string;
@@ -181,14 +183,169 @@ export function bandAnswers(
   }
   const tours = [...new Set(concerts.map((c) => c.tour?.name).filter((x): x is string => Boolean(x)))];
   if (tours.length) questions.push({ question: `Which ${band.name} tours are here?`, answer: `${listWords(tours)}.` });
-  const songs = setlists.length >= 2 ? songCounts(setlists).slice(0, 5) : [];
-  if (songs.length) {
-    questions.push({
-      question: `Which songs does ${band.name} play most live?`,
-      answer: `Across the ${setlists.length} setlists here: ${listWords(songs.map((s) => `${quoted(s.title)} (${plural(s.count, "setlist")})`))}.`,
+  questions.push(...bandStatQuestions(band.name, bandStatsFor(band.name, concerts, setlists)));
+  if (band.origin) questions.push({ question: `Where are ${band.name} from?`, answer: `${band.origin}.` });
+  return { lead, questions };
+}
+
+/** The band's figures from its own (headline) concerts and its setlists (src/lib/band-stats.ts). */
+export function bandStatsFor(name: string, concerts: ListConcert[], setlists: string[][]): BandStats {
+  return bandStats(headlined(name, concerts), setlists);
+}
+
+/** The band's own concerts (headline), so a guest spot elsewhere does not change its figures. */
+function headlined(name: string, concerts: ListConcert[]): ListConcert[] {
+  const own = concerts.filter((c) => c.artists.some((a) => a.role === "MAIN" && a.name === name));
+  return own.length ? own : concerts;
+}
+
+/** "“There There”: it opens 3 of the 4 setlists here." / "Most often “Airbag”: ..." */
+function usualWords(u: UsualSong, verb: "opens" | "closes"): string {
+  return `${u.majority ? "" : "Most often "}${quoted(u.title)}: it ${verb} ${shareWords(u.count, u.of, "setlists")} here.`;
+}
+
+/** "3 of the 4 setlists", "both setlists", "all 5 setlists". */
+export function shareWords(count: number, of: number, things: string): string {
+  if (count < of) return `${count} of the ${of} ${things}`;
+  return of === 2 ? `both ${things}` : `all ${of} ${things}`;
+}
+
+/**
+ * Questions from the band's statistics (src/lib/band-stats.ts). Each one only when its figure is
+ * there, which takes at least two concerts or setlists.
+ */
+export function bandStatQuestions(name: string, stats: BandStats): QA[] {
+  const out: QA[] = [];
+  if (stats.averageSeconds !== null) {
+    const l = stats.longest;
+    out.push({
+      question: `How long is a ${name} concert?`,
+      answer:
+        `The ${stats.concerts} ${name} concerts here run ${spokenDuration(stats.averageSeconds)} on average.` +
+        (l ? ` The longest is ${gigName(l)} (${formatDuration(l.durationSeconds)}).` : ""),
     });
   }
-  if (band.origin) questions.push({ question: `Where are ${band.name} from?`, answer: `${band.origin}.` });
+  if (stats.averageSongs !== null) {
+    out.push({
+      question: `How many songs does ${name} play in a concert?`,
+      answer: `${Math.round(stats.averageSongs)} on average, across the ${stats.setlists} setlists here.`,
+    });
+  }
+  if (stats.opener) out.push({ question: `What song does ${name} usually open with?`, answer: usualWords(stats.opener, "opens") });
+  if (stats.closer) out.push({ question: `What song does ${name} usually close with?`, answer: usualWords(stats.closer, "closes") });
+  if (stats.mostPlayed.length) {
+    out.push({
+      question: `What are ${name}'s most played songs live?`,
+      answer: `Across the ${stats.setlists} setlists here: ${listWords(stats.mostPlayed.map((s) => `${quoted(s.title)} (${plural(s.count, "setlist")})`))}.`,
+    });
+  }
+  return out;
+}
+
+/** Figures for the band page and its Markdown copy, as label and value ("Average concert", "1:48:00"). */
+export function bandStatLines(stats: BandStats): { id: string; label: string; value: string; href?: string }[] {
+  const out: { id: string; label: string; value: string; href?: string }[] = [];
+  if (stats.averageSeconds !== null) out.push({ id: "average-length", label: "Average concert", value: formatDuration(stats.averageSeconds) });
+  if (stats.longest) {
+    out.push({ id: "longest", label: "Longest concert", value: `${gigName(stats.longest)} (${formatDuration(stats.longest.durationSeconds)})`, href: `/concerts/${stats.longest.slug}` });
+  }
+  if (stats.averageSongs !== null) out.push({ id: "average-songs", label: "Songs per concert", value: `${Math.round(stats.averageSongs)} on average` });
+  if (stats.opener) out.push({ id: "opener", label: stats.opener.majority ? "Usually opens with" : "Most often opens with", value: `${stats.opener.title} (${stats.opener.count} of ${stats.opener.of})` });
+  if (stats.closer) out.push({ id: "closer", label: stats.closer.majority ? "Usually closes with" : "Most often closes with", value: `${stats.closer.title} (${stats.closer.count} of ${stats.closer.of})` });
+  if (stats.years) out.push({ id: "years", label: "Years", value: `${stats.years.from} to ${stats.years.to}` });
+  return out;
+}
+
+// ---- Songs played live (src/lib/songs.ts) ----
+
+/** "Pinkpop 1996" for a version's concert. */
+const versionName = (v: { concert: { title: string; venue: { name: string } | null; city: string | null; performedYear: number | null } }) => gigName(v.concert);
+
+/** Where a song usually comes in the set, as a sentence; empty without a pattern. */
+export function positionWords(p: TypicalPosition | null): string {
+  if (!p) return "";
+  switch (p.slot) {
+    case "opener":
+      return `It opened ${shareWords(p.count, p.of, "sets")} here.`;
+    case "closer":
+      return `It closed ${shareWords(p.count, p.of, "sets")} here.`;
+    case "early":
+      return "It usually comes early in the set.";
+    case "middle":
+      return "It usually comes in the middle of the set.";
+    default:
+      return "It usually comes near the end of the set.";
+  }
+}
+
+/** Short label for the facts list: "Opener (3 of 4)", "Early in the set". */
+export function positionLabel(p: TypicalPosition): string {
+  if (p.slot === "opener") return `Opener (${p.count} of ${p.of})`;
+  if (p.slot === "closer") return `Closer (${p.count} of ${p.of})`;
+  return { early: "Early in the set", middle: "Middle of the set", late: "Near the end of the set" }[p.slot];
+}
+
+/** Lead and questions for a song page. `setlists` is how many of the band's concerts here have a setlist. */
+export function songAnswers(band: { name: string }, song: Song, setlists: number): Answers {
+  const n = song.versions.length;
+  const years = song.versions.map((v) => v.concert.performedYear).filter((y): y is number => y !== null);
+  const places = song.places.map((p) => p.name);
+  const timed = song.versions.some((v) => v.time !== null);
+  const length = song.averageLengthSeconds !== null ? `It runs ${spokenDuration(song.averageLengthSeconds)}${song.timedVersions > 1 ? " on average" : ""}.` : "";
+  const lead = [
+    `${quoted(song.title)} by ${band.name}: ${plural(n, "live version")} on ${SITE_NAME}` +
+      `${years.length ? `, played ${spanWords(years)}` : ""}${places.length ? `, at ${listWords(places.slice(0, 3))}${places.length > 3 ? " and more" : ""}` : ""}.`,
+    positionWords(song.position),
+    length,
+    `Each version plays on its concert page${timed ? ", starting at the song where the setlist gives its time" : ""}.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const questions: QA[] = [
+    {
+      question: `How often does ${band.name} play ${quoted(song.title)} live?`,
+      answer: `It is in ${n} of the ${setlists} ${band.name} setlists on ${SITE_NAME}.`,
+    },
+  ];
+  if (song.oldest && song.newest) {
+    questions.push({
+      question: `When did ${band.name} play ${quoted(song.title)} live?`,
+      answer:
+        n > 1 && song.oldest !== song.newest
+          ? `The oldest version here is from ${versionName(song.oldest)}, the newest from ${versionName(song.newest)}.`
+          : `At ${versionName(song.newest)}.`,
+    });
+  }
+  if (song.position) questions.push({ question: `Where in the set does ${band.name} play ${quoted(song.title)}?`, answer: positionWords(song.position) });
+  if (song.averageLengthSeconds !== null) {
+    questions.push({
+      question: `How long is ${quoted(song.title)} live?`,
+      answer: `${spokenDuration(song.averageLengthSeconds)}${song.timedVersions > 1 ? ` on average, from ${song.timedVersions} versions with times` : ""} (${formatDuration(song.averageLengthSeconds)}).`,
+    });
+  }
+  questions.push({
+    question: `Where can I watch ${band.name} play ${quoted(song.title)} live?`,
+    answer: `On ${SITE_NAME}: ${n > 1 ? `each of the ${n} versions plays` : "it plays"} on its concert page${timed ? ", starting at the song where the time is known" : ""}.`,
+  });
+  return { lead, questions };
+}
+
+/** Lead and questions for a band's "songs played live" page. */
+export function bandSongsAnswers(band: { name: string }, songs: { title: string; count: number }[], setlists: number): Answers {
+  if (!songs.length) return { lead: `No ${band.name} setlist is on ${SITE_NAME} right now.`, questions: [] };
+  const top = songs.filter((s) => s.count >= 2).slice(0, 5);
+  const most = top.length ? ` Most played: ${listWords(top.map((s) => `${quoted(s.title)} (${s.count})`))}.` : "";
+  const lead = `${plural(songs.length, "song")} ${band.name} played live in the ${plural(setlists, "setlist")} on ${SITE_NAME}.${most} Each song has its own page with every live version.`;
+  const questions: QA[] = [
+    { question: `How many different songs has ${band.name} played live here?`, answer: `${songs.length}, across ${plural(setlists, "setlist")}.` },
+  ];
+  if (top.length) {
+    questions.push({
+      question: `What are ${band.name}'s most played songs live?`,
+      answer: `Across the ${setlists} setlists here: ${listWords(top.map((s) => `${quoted(s.title)} (${plural(s.count, "setlist")})`))}.`,
+    });
+  }
   return { lead, questions };
 }
 
