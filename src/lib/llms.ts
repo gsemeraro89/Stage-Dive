@@ -7,7 +7,8 @@
 // All built from the database at request time (cached for a while), so new concerts, setlists and
 // bios show up here by themselves. Copy rules as everywhere (src/lib/answers.ts).
 // Pure functions, tested in tests/llms.test.ts.
-import { bandAnswers, concertAnswers, type QA } from "./answers";
+import { bandAnswers, bandSongsAnswers, bandStatLines, bandStatsFor, concertAnswers, positionLabel, songAnswers, type QA } from "./answers";
+import { bandSongsPath, songPath, songTally, type Song } from "./songs";
 import { noteText, type ConcertNote, type NotePart } from "./concert-notes";
 import { formatDuration } from "./format";
 import { startAtPath } from "./player/start-time";
@@ -25,6 +26,14 @@ interface Named {
 }
 
 const count = (n: number) => plural(n, "full concert");
+
+/** A band's songs played live, for the full index (src/lib/queries.ts songCatalogue). */
+export interface SongCatalogueBand {
+  slug: string;
+  name: string;
+  setlists: number;
+  songs: { slug: string; title: string; versions: number }[];
+}
 
 export interface LlmsData {
   bands: Named[];
@@ -52,6 +61,7 @@ export function llmsTxt(data: LlmsData): string {
     `- [Genres](${abs("/genres")}): concerts by genre`,
     `- [Tours](${abs("/tours")}): concerts by tour`,
     `- [Find your next band](${abs("/map")}): bands similar to one you like`,
+    "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
     "",
     "## Most featured bands",
     "",
@@ -94,7 +104,28 @@ const concertLine = (c: ConcertLine) => {
   return `- [${c.credits}${where ? ` at ${where}` : ""} (${facts})](${abs(`/concerts/${c.slug}`)})`;
 };
 
-export function llmsFullTxt(data: LlmsData & { mostWatched: ConcertLine[]; latest: ConcertLine[] }): string {
+/** Songs most played live across the site, listed in the full index. */
+export const LLMS_TOP_SONGS = 200;
+
+/** The full index's song sections: every band's songs page, then the songs with the most live versions. */
+function songSections(bands: SongCatalogueBand[]): string[] {
+  if (!bands.length) return [];
+  const top = bands
+    .flatMap((b) => b.songs.filter((s) => s.versions >= 2).map((s) => ({ ...s, band: b })))
+    .sort((a, b) => b.versions - a.versions || a.title.localeCompare(b.title))
+    .slice(0, LLMS_TOP_SONGS);
+  return [
+    `## Songs played live (${plural(bands.length, "band")})`,
+    "",
+    ...bands.map((b) => `- [${b.name}: songs played live](${abs(bandSongsPath(b.slug))}): ${plural(b.songs.length, "song")}, ${plural(b.setlists, "setlist")}`),
+    "",
+    ...(top.length
+      ? ["## Most played songs live", "", ...top.map((s) => `- [${s.title} by ${s.band.name}](${abs(songPath(s.band.slug, s.slug))}): ${plural(s.versions, "live version")}`), ""]
+      : []),
+  ];
+}
+
+export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; mostWatched: ConcertLine[]; latest: ConcertLine[] }): string {
   return [
     `# ${SITE_NAME}: full index`,
     "",
@@ -124,6 +155,7 @@ export function llmsFullTxt(data: LlmsData & { mostWatched: ConcertLine[]; lates
           "",
         ]
       : []),
+    ...songSections(data.songs ?? []),
     "## Most watched concerts",
     "",
     ...data.mostWatched.map(concertLine),
@@ -160,7 +192,13 @@ interface ConcertForMd extends ConcertLine {
 
 type SetlistForMd = { tracks: { time: number | null; artist: string | null; title: string; unidentified: boolean }[] } | null;
 
-export function concertMarkdown(c: ConcertForMd, setlist: SetlistForMd, notes: ConcertNote[] = []): string {
+export function concertMarkdown(
+  c: ConcertForMd,
+  setlist: SetlistForMd,
+  notes: ConcertNote[] = [],
+  /** Setlist title -> its song page (src/lib/songs.ts). */
+  songLinks: Record<string, string> = {},
+): string {
   const link = (text: string, path: string) => `[${text}](${abs(path)})`;
   const facts: [string, string | null | undefined][] = [
     ["Band", c.artists.map((a) => `${a.hasPage ? link(a.name, `/artists/${a.slug}`) : a.name}${a.creditNote ? ` (${a.creditNote})` : ""}`).join(", ")],
@@ -181,7 +219,7 @@ export function concertMarkdown(c: ConcertForMd, setlist: SetlistForMd, notes: C
     lines.push("## Setlist", "");
     setlist.tracks.forEach((t, i) => {
       const time = t.time !== null ? `[${formatDuration(t.time)}](${abs(startAtPath(c.slug, t.time))}) ` : "";
-      const song = t.unidentified ? "Unidentified song" : t.title;
+      const song = t.unidentified ? "Unidentified song" : songLinks[t.title] ? link(t.title, songLinks[t.title]) : t.title;
       lines.push(`${i + 1}. ${time}${song}${t.artist && !c.artists.some((a) => a.name.toLowerCase() === t.artist!.toLowerCase()) ? ` (${t.artist})` : ""}`);
     });
     lines.push("");
@@ -198,6 +236,8 @@ export function bandMarkdown(
   setlists: string[][] = [],
 ): string {
   const answers = bandAnswers(band, concerts, setlists);
+  const stats = bandStatLines(bandStatsFor(band.name, concerts, setlists));
+  const songs = songTally(setlists);
   const facts: [string, string | null][] = [
     ["From", band.origin],
     ["Born", band.bornYear ? String(band.bornYear) : null],
@@ -219,11 +259,101 @@ export function bandMarkdown(
     "",
     ...concerts.map(concertLine),
     "",
+    ...(stats.length ? ["## Live statistics", "", ...stats.map((l) => `- **${l.label}:** ${l.value}`), ""] : []),
+    ...(songs.length
+      ? [
+          "## Songs played live",
+          "",
+          ...songs.slice(0, BAND_MD_SONGS).map((s) => `- [${s.title}](${abs(songPath(band.slug, s.slug))}): ${plural(s.count, "setlist")}`),
+          ...(songs.length > BAND_MD_SONGS ? ["", `Every song: ${abs(bandSongsPath(band.slug))}`] : []),
+          "",
+        ]
+      : []),
     ...qaMarkdown(answers.questions),
     `Source: ${SITE_NAME}, ${abs(`/artists/${band.slug}`)}`,
     "",
   ].join("\n");
 }
+
+/** Songs listed in a band's Markdown copy (the rest are on its songs page). */
+export const BAND_MD_SONGS = 30;
+
+/** A song page as Markdown: lead, facts, every version with a link that starts the concert at the song, questions. */
+export function songMarkdown(
+  band: { slug: string; name: string },
+  song: Song,
+  setlists: number,
+  others: { slug: string; title: string; versions: number }[] = [],
+): string {
+  const answers = songAnswers(band, song, setlists);
+  const facts: [string, string | null][] = [
+    ["Band", `[${band.name}](${abs(`/artists/${band.slug}`)})`],
+    ["Live versions", String(song.versions.length)],
+    ["Oldest here", song.oldest ? versionLabel(song.oldest) : null],
+    ["Newest here", song.newest && song.versions.length > 1 ? versionLabel(song.newest) : null],
+    ["Place in the set", song.position ? positionLabel(song.position) : null],
+    ["Length", song.averageLengthSeconds !== null ? `${formatDuration(song.averageLengthSeconds)}${song.timedVersions > 1 ? ` on average (${song.timedVersions} versions)` : ""}` : null],
+    ["Credited to", song.creditedTo],
+    ["Played at", song.places.map((p) => `[${p.name}](${abs(`/venues/${p.slug}`)})`).join(", ") || null],
+    ["Decades", song.decades.map((d) => `[${d.label}](${abs(`/decades/${d.label}`)})`).join(", ") || null],
+    ["Tours", song.tours.map((t) => `[${t.name}](${abs(`/tours/${t.slug}`)})`).join(", ") || null],
+  ];
+  return [
+    `# ${song.title} by ${band.name}: every live version`,
+    "",
+    answers.lead,
+    "",
+    ...facts.filter(([, v]) => v).map(([k, v]) => `- **${k}:** ${v}`),
+    "",
+    "## Live versions, newest first",
+    "",
+    ...song.versions.map(
+      (v, i) =>
+        `${i + 1}. [${versionLabel(v)}](${abs(v.href)}): song ${v.position} of ${v.of}` +
+        `${v.time !== null ? `, starts at ${formatDuration(v.time)}` : ""}${v.lengthSeconds !== null ? `, ${formatDuration(v.lengthSeconds)} long` : ""}`,
+    ),
+    "",
+    ...(others.length
+      ? ["## More songs by " + band.name, "", ...others.map((o) => `- [${o.title}](${abs(songPath(band.slug, o.slug))}): ${plural(o.versions, "live version")}`), ""]
+      : []),
+    ...qaMarkdown(answers.questions),
+    `Source: ${SITE_NAME}, ${abs(songPath(band.slug, song.slug))}`,
+    "",
+  ].join("\n");
+}
+
+/** A band's songs played live as Markdown. */
+export function bandSongsMarkdown(band: { slug: string; name: string }, songs: Song[], setlists: number): string {
+  const answers = bandSongsAnswers(band, songs.map((s) => ({ title: s.title, count: s.versions.length })), setlists);
+  return [
+    `# ${band.name}: songs played live`,
+    "",
+    answers.lead,
+    "",
+    `- **Band:** [${band.name}](${abs(`/artists/${band.slug}`)})`,
+    `- **Songs:** ${songs.length}`,
+    `- **Setlists:** ${setlists}`,
+    "",
+    "## Songs, most played first",
+    "",
+    ...songs.map(
+      (s) =>
+        `- [${s.title}](${abs(songPath(band.slug, s.slug))}): ${plural(s.versions.length, "live version")}` +
+        `${s.oldest && s.newest && s.oldest !== s.newest ? `, ${yearOrName(s.oldest)} to ${yearOrName(s.newest)}` : ""}`,
+    ),
+    "",
+    ...qaMarkdown(answers.questions),
+    `Source: ${SITE_NAME}, ${abs(bandSongsPath(band.slug))}`,
+    "",
+  ].join("\n");
+}
+
+/** A version's concert in words: "Pinkpop 1996". */
+function versionLabel(v: Song["versions"][number]): string {
+  const c = v.concert;
+  return [c.venue?.name ?? c.city, c.performedYear].filter(Boolean).join(" ") || c.title;
+}
+const yearOrName = (v: Song["versions"][number]) => String(v.concert.performedYear ?? versionLabel(v));
 
 /** Plain text of the notes, joined (for descriptions). */
 export const notesText = (notes: ConcertNote[]) => notes.map(noteText).join(" ");

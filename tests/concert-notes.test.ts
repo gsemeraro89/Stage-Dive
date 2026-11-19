@@ -46,6 +46,11 @@ describe("concert notes", () => {
     expect(byId["shared-songs"]).toBe("Also in Metallica's other setlists here: “Enter Sandman” (2 of 3), “Creeping Death” (1 of 3) and “Seek & Destroy” (1 of 3).");
     expect(byId["only-here"]).toBe("Only in this setlist, of the 4 by Metallica here: “Last Caress”.");
   });
+  it("links each shared song to its song page", () => {
+    const shared = notes.find((n) => n.id === "shared-songs")!;
+    expect(shared.parts).toContainEqual({ href: "/songs/metallica/enter-sandman", text: "“Enter Sandman”" });
+    expect(shared.parts).toContainEqual({ href: "/songs/metallica/seek-and-destroy", text: "“Seek & Destroy”" });
+  });
   it("leaves notes out when their data is missing", () => {
     const alone = concertNotes({ concert: { ...current, tour: null, venue: null }, band: null, siblings: [], setlist: null, decade: { label: "1990s", count: 1 } });
     expect(alone).toEqual([]);

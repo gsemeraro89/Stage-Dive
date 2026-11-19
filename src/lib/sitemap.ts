@@ -2,13 +2,14 @@
 // (scripts/indexnow.ts). Only pages worth indexing are listed, by the same rules as the pages' own
 // robots tags (src/lib/seo.ts), so Google is never sent to a page that then says "noindex".
 // Everything comes from the database: a new concert, a new setlist or a new bio puts its page (and
-// the band, venue, genre, decade and tour pages it strengthens) in the sitemap by itself.
+// the band, venue, genre, decade, tour and song pages it strengthens) in the sitemap by itself.
 // buildSitemap is pure (tests/sitemap.test.ts); sitemapEntries reads the database.
 import { decadeOf, parseDecade } from "./catalogue";
 import { getDb } from "./db";
 import { VISIBLE } from "./filters";
-import { PAGE_ARTIST } from "./queries";
-import { bandIsStrong, concertIsStrong, hubIsStrong } from "./seo";
+import { PAGE_ARTIST, songCatalogue } from "./queries";
+import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsStrong } from "./seo";
+import { bandSongsPath, songPath } from "./songs";
 
 export interface SitemapEntry {
   path: string;
@@ -39,6 +40,13 @@ export interface SitemapBand {
   bio: string | null;
 }
 
+/** A band's songs played live (src/lib/songs.ts, src/lib/queries.ts songCatalogue). */
+export interface SitemapSongBand {
+  slug: string;
+  setlists: number;
+  songs: { slug: string; versions: number; updatedAt: Date }[];
+}
+
 /** The pages that are always listed (the index pages). */
 export const FIXED_PAGES: SitemapEntry[] = [
   { path: "/", priority: 1, changeFrequency: "daily" },
@@ -64,7 +72,7 @@ function tally(concerts: SitemapConcert[], keys: (c: SitemapConcert) => (string 
   return out;
 }
 
-export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[]): SitemapEntry[] {
+export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], songBands: SitemapSongBand[] = []): SitemapEntry[] {
   const byBand = tally(concerts, (c) => c.artistSlugs);
   const hubs = (keys: (c: SitemapConcert) => (string | null)[], path: (k: string) => string, priority: number, changeFrequency: SitemapEntry["changeFrequency"]) =>
     [...tally(concerts, keys)]
@@ -83,13 +91,27 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[]): 
     ...concerts
       .filter(concertIsStrong)
       .map((c): SitemapEntry => ({ path: `/concerts/${c.slug}`, lastModified: c.updatedAt, priority: 0.7, changeFrequency: "monthly" })),
+    // Songs played live: a band's songs page from 5 songs and 2 setlists, a song page from 2 live versions.
+    ...songBands
+      .filter((b) => songIndexIsStrong({ songs: b.songs.length, setlists: b.setlists }))
+      .map((b): SitemapEntry => ({
+        path: bandSongsPath(b.slug),
+        lastModified: new Date(Math.max(...b.songs.map((s) => s.updatedAt.getTime()))),
+        priority: 0.6,
+        changeFrequency: "weekly",
+      })),
+    ...songBands.flatMap((b) =>
+      b.songs
+        .filter((s) => songIsStrong(s.versions))
+        .map((s): SitemapEntry => ({ path: songPath(b.slug, s.slug), lastModified: s.updatedAt, priority: 0.5, changeFrequency: "monthly" })),
+    ),
   ];
 }
 
 /** Every page worth indexing, read from the database. */
 export async function sitemapEntries(): Promise<SitemapEntry[]> {
   const db = getDb();
-  const [concerts, bands] = await Promise.all([
+  const [concerts, bands, songBands] = await Promise.all([
     db.concert.findMany({
       where: VISIBLE,
       select: {
@@ -106,6 +128,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       },
     }),
     db.artist.findMany({ where: PAGE_ARTIST, select: { slug: true, updatedAt: true, bio: true } }),
+    songCatalogue(),
   ]);
   return buildSitemap(
     concerts.map((c) => ({
@@ -122,5 +145,6 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       genreSlugs: c.genres.map((g) => g.genre.slug),
     })),
     bands,
+    songBands,
   );
 }

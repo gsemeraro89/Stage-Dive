@@ -42,6 +42,21 @@ export function bandIsStrong(b: { concerts: number; bio: string | null }): boole
   return b.concerts >= 2 || (b.concerts >= 1 && Boolean(b.bio?.trim()));
 }
 
+/** A song page is worth indexing from this many live versions (one would repeat that concert's setlist). */
+export const MIN_SONG_VERSIONS = 2;
+
+export function songIsStrong(versions: number): boolean {
+  return versions >= MIN_SONG_VERSIONS;
+}
+
+/** A band's "songs played live" page needs this many songs, from at least two setlists. */
+export const MIN_INDEX_SONGS = 5;
+export const MIN_INDEX_SETLISTS = 2;
+
+export function songIndexIsStrong(s: { songs: number; setlists: number }): boolean {
+  return s.songs >= MIN_INDEX_SONGS && s.setlists >= MIN_INDEX_SETLISTS;
+}
+
 /**
  * Robots value for a page: never index anything but the live site; there, index the page when it is
  * worth it, else keep it out of the index but let its links be followed.
@@ -110,6 +125,16 @@ export function decadeSearchTitle(label: string, anySetlist: boolean): string {
 export function tourSearchTitle(tour: string, band: string | null): string {
   const name = /\btour\b/i.test(tour) ? tour : `${tour} Tour`;
   return `${band ? `${band} · ` : ""}${name} · Full Concerts`;
+}
+
+/** "Creep · Radiohead · Every Live Version" ("Live Version" while there is only one). */
+export function songSearchTitle(song: string, band: string, versions: number): string {
+  return `${song} · ${band} · ${versions > 1 ? "Every Live Version" : "Live Version"}`;
+}
+
+/** "Radiohead · Songs Played Live" */
+export function bandSongsSearchTitle(band: string): string {
+  return `${band} · Songs Played Live`;
 }
 
 /** A description cut to fit a search result (about 160 characters), at a word, with an ellipsis. */

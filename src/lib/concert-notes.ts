@@ -5,6 +5,7 @@
 // up in the band's other setlists. Nothing is guessed: a note is left out when its data is missing.
 // Pure functions, tested in tests/concert-notes.test.ts.
 import { formatDuration } from "./format";
+import { songLinker } from "./songs";
 import { listWords, ordinal, plural, quoted, songKey } from "./text";
 
 /** A piece of a note: plain text, or a link to another page on the site. */
@@ -50,6 +51,16 @@ export interface NotesInput {
 export const noteText = (n: ConcertNote) => n.parts.map((p) => (typeof p === "string" ? p : p.text)).join("");
 
 const views = (n: number) => `${n.toLocaleString("en-GB")} views on YouTube`;
+
+/** Groups of parts joined as words: a, b and c. */
+function wordList(groups: NotePart[][]): NotePart[] {
+  const out: NotePart[] = [];
+  groups.forEach((g, i) => {
+    if (i > 0) out.push(i === groups.length - 1 ? " and " : ", ");
+    out.push(...g);
+  });
+  return out;
+}
 
 /** Links joined as words: [a], " and ", [b]. */
 function linkList(links: { href: string; text: string }[]): NotePart[] {
@@ -136,7 +147,8 @@ export function concertNotes({ concert, band, siblings, setlist, decade }: Notes
     notes.push({ id: "longest-song", parts: [`Longest song: ${quoted(longest.title)} (${formatDuration(longest.seconds)}).`] });
   }
 
-  // Songs this setlist shares with the band's other setlists, and the ones only played here.
+  // Songs this setlist shares with the band's other setlists (each linked to its song page), and the ones only played here.
+  const linkSong = band ? songLinker(band.slug, siblings.flatMap((s) => s.songs ?? [])) : () => null;
   const otherSetlists = others.filter((s) => s.songs?.length).map((s) => new Set(s.songs!.map(songKey)));
   if (known.length && otherSetlists.length) {
     const shared = known
@@ -149,7 +161,12 @@ export function concertNotes({ concert, band, siblings, setlist, decade }: Notes
         id: "shared-songs",
         parts: [
           `Also in ${bandName}'s other setlists here: `,
-          listWords(shared.map((s) => `${quoted(s.title)} (${s.count} of ${otherSetlists.length})`)),
+          ...wordList(
+            shared.map((s): NotePart[] => {
+              const href = linkSong(s.title);
+              return [href ? { href, text: quoted(s.title) } : quoted(s.title), ` (${s.count} of ${otherSetlists.length})`];
+            }),
+          ),
           ".",
         ],
       });

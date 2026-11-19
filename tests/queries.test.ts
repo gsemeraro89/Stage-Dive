@@ -138,4 +138,39 @@ describe.skipIf(!url)("page queries (database)", () => {
     expect(nonFestival.length).toBeGreaterThan(0);
     for (const v of nonFestival) expect(festivals.map((f) => f.slug)).not.toContain(v.slug);
   });
+
+  it("builds song pages from the setlists, and updates them when a setlist arrives", async () => {
+    const set = (youtubeId: string, titles: [number, string][]) =>
+      db.concert.update({
+        where: { youtubeId },
+        data: { setlist: titles.map(([time, title]) => ({ time, artist: null, title })), setlistSource: "DESCRIPTION" },
+      });
+    const before = await db.concert.findMany({ where: { youtubeId: { in: ["IA9xKr_Dmek", "nbhqDjIWLpk"] } }, select: { youtubeId: true, setlist: true, setlistSource: true } });
+    try {
+      await set("IA9xKr_Dmek", [[0, "Enter Sandman"], [360, "Creeping Death"], [720, "Seek & Destroy"]]);
+      let data = await q.bandSongData("metallica");
+      expect(data!.setlists).toBe(1);
+      expect(data!.songs.find((s) => s.slug === "enter-sandman")!.versions).toHaveLength(1);
+      // A new setlist: the song pages, the catalogue and the sitemap follow by themselves.
+      await set("nbhqDjIWLpk", [[0, "Creeping Death"], [400, "Enter Sandman (Live)"], [800, "Fuel"]]);
+      data = await q.bandSongData("metallica");
+      expect(data!.setlists).toBe(2);
+      const sandman = data!.songs.find((s) => s.slug === "enter-sandman")!;
+      expect(sandman.versions.map((v) => v.href)).toEqual(["/concerts/metallica-yankee-stadium-2011?t=400", "/concerts/metallica-l-c-walker-arena-1991"]);
+      expect(await q.bandSongData("dave-mustaine")).toBeNull(); // a guest has no page, so no songs
+      const catalogue = await q.songCatalogue();
+      expect(catalogue.find((b) => b.slug === "metallica")!.songs.find((s) => s.slug === "enter-sandman")!.versions).toBe(2);
+      process.env.SITE_INDEXABLE = "true";
+      const { sitemapEntries } = await import("../src/lib/sitemap");
+      const paths = (await sitemapEntries()).map((e) => e.path);
+      expect(paths).toContain("/songs/metallica/enter-sandman");
+      expect(paths).not.toContain("/songs/metallica/fuel"); // one version
+      expect(paths).not.toContain("/songs/metallica"); // 4 songs: not yet
+    } finally {
+      delete process.env.SITE_INDEXABLE;
+      // Both had no setlist in the fixture.
+      expect(before.every((b) => b.setlist === null && b.setlistSource === null)).toBe(true);
+      await db.$executeRawUnsafe(`UPDATE concerts SET setlist = NULL, setlist_source = NULL WHERE youtube_id IN ('IA9xKr_Dmek', 'nbhqDjIWLpk')`);
+    }
+  });
 });

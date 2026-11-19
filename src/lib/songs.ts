@@ -252,7 +252,8 @@ export function bandSongs(band: { names: string[] }, concerts: SongConcert[]): S
         lengthSeconds: songLength(tracks, i),
         title: t.title,
         creditedTo: credit,
-        href: t.time !== null && t.time < c.durationSeconds ? startAtPath(c.slug, t.time) : `/concerts/${c.slug}`,
+        // The first second needs no ?t= (the concert starts there anyway).
+        href: t.time !== null && t.time > 0 && t.time < c.durationSeconds ? startAtPath(c.slug, t.time) : `/concerts/${c.slug}`,
       };
       bySlug.set(slug, [...(bySlug.get(slug) ?? []), version]);
     });

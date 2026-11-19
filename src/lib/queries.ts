@@ -11,6 +11,7 @@ import { buildQueue, relatedByGenre } from "./upnext";
 import { layoutMap } from "./similarity/layout";
 import { nameKey } from "./collector/musicbrainz";
 import { concertNotes, type ConcertNote, type SiblingConcert } from "./concert-notes";
+import { bandSongs, setlistCount, songLinker, type SongConcert } from "./songs";
 
 /**
  * Artists that have their own page (owner rule, 13 Nov 2026): only artists with a concert of their own
@@ -291,6 +292,13 @@ export async function getConcertPage(slug: string) {
       ? getDb().concert.count({ where: { AND: [VISIBLE, { performedYear: { gte: Math.floor(row.performedYear / 10) * 10, lte: Math.floor(row.performedYear / 10) * 10 + 9 } }] } })
       : Promise.resolve(0),
   ]);
+  // Each song of the setlist links to its song page (src/lib/songs.ts), filed as the band's other setlists file it.
+  const linkSong = band ? songLinker(band.slug, siblings.flatMap((s) => s.songs ?? [])) : () => null;
+  const songLinks: Record<string, string> = {};
+  for (const t of setlist?.tracks ?? []) {
+    const href = t.unidentified ? null : linkSong(t.title);
+    if (href) songLinks[t.title] = href;
+  }
   const notes: ConcertNote[] = concertNotes({
     concert,
     band: band ? { slug: band.slug, name: band.name } : null,
@@ -301,6 +309,8 @@ export async function getConcertPage(slug: string) {
   return {
     concert,
     setlist,
+    /** Setlist title -> its song page. */
+    songLinks,
     notes,
     /** "You might also like": similar artists with a concert to play (never one with this concert's artists). */
     similarCards: (await artistCards(similar.slice(0, 12), current.artistIds)).slice(0, 4),
@@ -341,6 +351,99 @@ export async function bandConcertsWithSongs(artistId: number): Promise<SiblingCo
       songs: view ? view.tracks.filter((t) => !t.unidentified).map((t) => t.title) : null,
     };
   });
+}
+
+// ---- Songs played live (src/lib/songs.ts) ----
+
+/** The fields a song page needs from a concert, with its setlist. */
+const songConcertSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  youtubeId: true,
+  thumbnailUrl: true,
+  performedYear: true,
+  performedOn: true,
+  durationSeconds: true,
+  viewCount: true,
+  updatedAt: true,
+  city: true,
+  country: true,
+  setlist: true,
+  setlistSource: true,
+  venue: { select: { slug: true, name: true } },
+  venueKind: { select: { slug: true, name: true } },
+  tour: { select: { slug: true, name: true } },
+} as const;
+
+function toSongConcert(r: {
+  id: number;
+  slug: string;
+  title: string;
+  youtubeId: string;
+  thumbnailUrl: string | null;
+  performedYear: number | null;
+  performedOn: Date | null;
+  durationSeconds: number;
+  viewCount: number;
+  updatedAt: Date;
+  city: string | null;
+  country: string | null;
+  setlist: unknown;
+  setlistSource: string | null;
+  venue: { slug: string; name: string } | null;
+  venueKind: { slug: string; name: string } | null;
+  tour: { slug: string; name: string } | null;
+}): SongConcert {
+  const { setlist, setlistSource, ...rest } = r;
+  return { ...rest, tracks: readSetlist(setlist, setlistSource)?.tracks ?? [] };
+}
+
+/**
+ * Everything a band's song pages need: the band, its headline concerts with their setlists, and every
+ * song worked out from them (src/lib/songs.ts). Null when the band has no page.
+ */
+async function bandSongDataUncached(slug: string) {
+  const artist = await getDb().artist.findFirst({ where: { slug, ...PAGE_ARTIST }, select: { id: true, slug: true, name: true, aka: true } });
+  if (!artist) return null;
+  const rows = await getDb().concert.findMany({
+    where: { ...VISIBLE, setlistSource: { not: null }, credits: { some: { artistId: artist.id, role: "MAIN" } } },
+    select: songConcertSelect,
+    orderBy: [{ performedYear: "asc" }, { id: "asc" }],
+  });
+  const concerts = rows.map(toSongConcert);
+  const band = { slug: artist.slug, name: artist.name };
+  return { band, songs: bandSongs({ names: [artist.name, artist.aka].filter((n): n is string => Boolean(n)) }, concerts), setlists: setlistCount(concerts) };
+}
+
+/** Every band with songs played live, and its songs (sitemap, llms-full.txt). */
+async function songCatalogueUncached() {
+  const rows = await getDb().concert.findMany({
+    where: { ...VISIBLE, setlistSource: { not: null } },
+    select: { ...songConcertSelect, credits: { where: { role: "MAIN" }, select: { artist: { select: { slug: true, name: true, aka: true } } } } },
+    orderBy: [{ performedYear: "asc" }, { id: "asc" }],
+  });
+  const byBand = new Map<string, { band: { slug: string; name: string; aka: string | null }; concerts: SongConcert[] }>();
+  for (const { credits, ...row } of rows)
+    for (const { artist } of credits) {
+      const e = byBand.get(artist.slug) ?? { band: artist, concerts: [] };
+      e.concerts.push(toSongConcert(row));
+      byBand.set(artist.slug, e);
+    }
+  return [...byBand.values()]
+    .map(({ band, concerts }) => ({
+      slug: band.slug,
+      name: band.name,
+      setlists: setlistCount(concerts),
+      songs: bandSongs({ names: [band.name, band.aka].filter((n): n is string => Boolean(n)) }, concerts).map((s) => ({
+        slug: s.slug,
+        title: s.title,
+        versions: s.versions.length,
+        updatedAt: s.updatedAt,
+      })),
+    }))
+    .filter((b) => b.songs.length > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** The play queue after a concert, by YouTube ID. Used by the player. */
@@ -733,6 +836,12 @@ export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
 export const listTours = cached("listTours", listToursUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts): one entry per band, shared by all its song pages. */
+export const bandSongData = cached("bandSongData", bandSongDataUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts). */
+export const songCatalogue = cached("songCatalogue", songCatalogueUncached);
 
 /** Visible-concert lists for other modules (e.g. src/lib/home.ts): any where/order, as page-ready views. */
 export async function findConcertViews(args: { where: object; orderBy?: object | object[]; take?: number }): Promise<ConcertView[]> {

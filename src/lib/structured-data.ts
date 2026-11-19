@@ -12,6 +12,7 @@ import type { ConcertView } from "./queries";
 import { abs, SHARE_FALLBACK_IMAGE, SITE_ALTERNATE_NAMES } from "./seo";
 import { startAtPath, START_PARAM } from "./player/start-time";
 import type { SetlistView } from "./setlist/view";
+import { songPath, type Song } from "./songs";
 import { SITE_NAME } from "./site";
 
 type Json = Record<string, unknown>;
@@ -93,7 +94,12 @@ export function concertJsonLd(c: ConcertView, setlist: SetlistView | null = null
  * of the setlist. Only when we know both a date (at least the year) and a place; null otherwise.
  * No eventStatus: schema.org has no value for "it happened", and the event is in the past.
  */
-export function concertEventJsonLd(c: ConcertView, setlist: SetlistView | null = null): Json | null {
+export function concertEventJsonLd(
+  c: ConcertView,
+  setlist: SetlistView | null = null,
+  /** The song page of a setlist title, when the band has one (src/lib/songs.ts songLinker). */
+  songHref: (title: string) => string | null = () => null,
+): Json | null {
   const date = playedDate(c);
   if (!date || !(c.venue || c.city)) return null;
   const url = concertUrl(c.slug);
@@ -127,7 +133,14 @@ export function concertEventJsonLd(c: ConcertView, setlist: SetlistView | null =
     performer: performers(c),
     image: [c.thumbnail.src],
     ...(c.tour ? { superEvent: { "@type": "EventSeries", name: c.tour.name, url: abs(`/tours/${c.tour.slug}`) } } : {}),
-    ...(works.length ? { workPerformed: works.map((name) => ({ "@type": "MusicComposition", name })) } : {}),
+    ...(works.length
+      ? {
+          workPerformed: works.map((name) => {
+            const href = songHref(name);
+            return { "@type": "MusicComposition", name, ...(href ? { url: abs(href) } : {}) };
+          }),
+        }
+      : {}),
     recordedIn: { "@id": `${url}#video` },
   };
 }
@@ -168,6 +181,55 @@ export function bandJsonLd(
       uploadDate: c.publishedAt.toISOString(),
     })),
   };
+}
+
+// ---- Songs played live (src/lib/songs.ts) ----
+
+/**
+ * A song page: the song (MusicComposition) and every live version we hold as an ItemList of
+ * MusicRecordings by the band, each pointing at the concert video it is part of and at our page
+ * starting at the song. No composer: a setlist does not tell us who wrote it.
+ */
+export function songJsonLd(band: { slug: string; name: string }, song: Song): Json[] {
+  const url = abs(songPath(band.slug, song.slug));
+  const group = { "@type": "MusicGroup", "@id": `${abs(`/artists/${band.slug}`)}#band`, name: band.name, url: abs(`/artists/${band.slug}`) };
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "MusicComposition",
+      "@id": `${url}#song`,
+      name: song.title,
+      url,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `${song.title} by ${band.name}: every live version`,
+      numberOfItems: song.versions.length,
+      itemListElement: song.versions.slice(0, 50).map((v, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "MusicRecording",
+          name: `${song.title} (live${[v.concert.venue?.name ?? v.concert.city, v.concert.performedYear].some(Boolean) ? `, ${[v.concert.venue?.name ?? v.concert.city, v.concert.performedYear].filter(Boolean).join(" ")}` : ""})`,
+          url: abs(v.href),
+          byArtist: group,
+          recordingOf: { "@id": `${url}#song` },
+          ...(v.lengthSeconds !== null ? { duration: isoDuration(v.lengthSeconds) } : {}),
+          ...(playedDate(v.concert) ? { dateCreated: playedDate(v.concert) } : {}),
+          isPartOf: { "@type": "VideoObject", "@id": `${concertUrl(v.concert.slug)}#video`, url: concertUrl(v.concert.slug) },
+        },
+      })),
+    },
+  ];
+}
+
+/** A band's songs played live: an ItemList of the song pages, most played first. */
+export function bandSongsJsonLd(band: { slug: string; name: string }, songs: { slug: string; title: string }[]): Json {
+  return itemList(
+    `${band.name}: songs played live`,
+    songs.map((s) => ({ path: songPath(band.slug, s.slug), name: s.title })),
+  );
 }
 
 /** schema.org BreadcrumbList: [["Home", "/"], ["Bands", "/artists"], ["Metallica", "/artists/metallica"]]. */
