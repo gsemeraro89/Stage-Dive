@@ -11,39 +11,65 @@ import { OnNowMark } from "@/components/gig/OnNowMark";
 import { Crumbs, SectionTitle } from "@/components/gig/PageHead";
 import { bandName, cutName, gigs, kindWord, mainArtist, placeYear, playedOn, playedOnLong } from "@/components/gig/words";
 import { PlayerSlot } from "@/components/player/PlayerSlot";
+import { StartFromUrl } from "@/components/player/StartFromUrl";
 import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading } from "@/components/zine";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
 import { sourceNote, type TrackView } from "@/lib/setlist/view";
 import { compactNumber, placeLine } from "@/lib/site";
-import { concertJsonLd, jsonLd } from "@/lib/structured-data";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { concertAnswers } from "@/lib/answers";
+import type { NotePart } from "@/lib/concert-notes";
+import { clip, concertIsStrong, concertSearchTitle, robotsFor, shareImages } from "@/lib/seo";
+import { breadcrumbs, concertEventJsonLd, concertJsonLd } from "@/lib/structured-data";
 
 // One database read per request, shared by the page and its title/description.
 const load = cache(getConcertPage);
 
-export const dynamic = "force-dynamic";
+// Built on its first visit, then served ready-made and rebuilt in the background at most every 10
+// minutes (speed, lesson from OpenDecks). Nothing on this page depends on the visitor.
+export const revalidate = 600;
+/** No page is built ahead: each one is built on its first visit, then kept. */
+export function generateStaticParams() {
+  return [];
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await load((await params).slug);
   if (!page) return {};
-  const { concert } = page;
-  const place = placeLine(concert);
-  const description = [
-    `Watch ${concert.credits}${place ? ` at ${place}` : ""} in full (${formatDuration(concert.durationSeconds)}).`,
-    concert.writeUp,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .slice(0, 300);
+  const { concert, setlist } = page;
+  // Answer first (who, where, when, how long, the setlist), then our write-up.
+  const description = clip([concertAnswers(concert, setlist).lead, concert.writeUp].filter(Boolean).join(" "), 300);
+  const title = concertSearchTitle(concert);
+  const path = `/concerts/${concert.slug}`;
   return {
-    title: concert.title,
+    title,
     description,
-    alternates: { canonical: `/concerts/${concert.slug}` },
-    openGraph: { title: concert.title, description, type: "video.other", images: [concert.thumbnail.src] },
+    alternates: { canonical: path, types: { "text/markdown": `${path}.md` } },
+    robots: robotsFor(concertIsStrong(concert)),
+    openGraph: { title, description, type: "video.other", url: path, images: shareImages(concert.thumbnail.src) },
+    twitter: { card: "summary_large_image", title, description },
   };
+}
+
+/** A concert note: text with links to the band, venue, tour, decade and other concerts. */
+function Note({ parts }: { parts: NotePart[] }) {
+  return (
+    <>
+      {parts.map((p, i) =>
+        typeof p === "string" ? (
+          <span key={i}>{p}</span>
+        ) : (
+          <Link key={i} href={p.href}>
+            {p.text}
+          </Link>
+        ),
+      )}
+    </>
+  );
 }
 
 /** A song as the setlist types it. A song credited to someone else says so. */
@@ -61,7 +87,7 @@ function setlistSource(source: string | null): string {
 export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { concert, queue, moreFromArtist, similarCards, setlist } = page;
+  const { concert, queue, moreFromArtist, similarCards, setlist, notes } = page;
   const track = toTrack(concert);
   const band = mainArtist(concert);
   const name = bandName(concert);
@@ -76,10 +102,25 @@ export default async function ConcertPage({ params }: Props) {
   const where = [concert.venue?.name, concert.city].filter(Boolean).join(", ");
   const data = [where, playedOn(concert)].filter(Boolean).join(" /// ");
   const kind = kindWord(concert.venueKind);
+  // AEO: one answer-first sentence on the page (data-od="concert-lead"); the questions and answers
+  // are only in the Markdown copy for AI assistants (/concerts/<slug>.md), owner choice.
+  const answers = concertAnswers(concert, setlist);
+  const path = `/concerts/${concert.slug}`;
 
   return (
     <main data-od="concert" className="pg cp">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(concertJsonLd(concert, setlist)) }} />
+      <JsonLd
+        data={[
+          concertJsonLd(concert, setlist),
+          concertEventJsonLd(concert, setlist),
+          breadcrumbs([
+            ["Home", "/"],
+            ["Bands", "/artists"],
+            ...(band?.hasPage ? [[band.name, `/artists/${band.slug}`] as [string, string]] : []),
+            [placeYear(concert) || concert.title, path],
+          ]),
+        ]}
+      />
       <Crumbs
         trail={[
           { label: "Bands", href: "/artists" },
@@ -94,6 +135,8 @@ export default async function ConcertPage({ params }: Props) {
               stamp sits on the frame's top edge and the strips on the black mount under it. */}
           <div className="cp-player" data-od="player-area">
             <OnNowMark youtubeId={concert.youtubeId} className="cp-onnow" />
+            {/* /concerts/<slug>?t=315 starts the concert at that second (key moments in search results). */}
+            <StartFromUrl track={track} />
             <PlayerSlot track={track} srcSet={concert.thumbnail.srcSet} alt={`${concert.credits} — ${placeLine(concert) || concert.title}`} />
           </div>
           <div className="cp-strips">
@@ -172,6 +215,9 @@ export default async function ConcertPage({ params }: Props) {
         </Sheet>
 
         <div className="cp-details">
+          <p className="cp-lead" data-od="concert-lead">
+            {answers.lead}
+          </p>
           <div className="cp-words">
             {concert.writeUp ? (
               <p className="cp-writeup" data-od="write-up">
@@ -182,7 +228,7 @@ export default async function ConcertPage({ params }: Props) {
                 {name}
                 {where ? `, ${where}` : ""}
                 {concert.performedYear ? `, ${concert.performedYear}` : ""}. The whole set, {formatDuration(concert.durationSeconds)} of it,
-                free, start to finish.
+                start to finish.
               </p>
             )}
             <p className="zn-marker">one click. it keeps playing while you dig.</p>
@@ -245,17 +291,31 @@ export default async function ConcertPage({ params }: Props) {
             <div>
               <dt className="zn-label">Source</dt>
               <dd>
-                {concert.channel.isOfficial ? "Official upload" : "Upload"} by {concert.channel.name}
+                {concert.channel.isOfficial ? "Official concert from" : "From"} {concert.channel.name}
               </dd>
             </div>
             <div>
               <dt className="zn-label">Video</dt>
               <dd>
-                {concert.title} /// {compactNumber(concert.viewCount)} views /// up since{" "}
+                {concert.title} /// {compactNumber(concert.viewCount)} views on YouTube /// online since{" "}
                 <time dateTime={concert.publishedAt.toISOString().slice(0, 10)}>{formatDate(concert.publishedAt)}</time>
               </dd>
             </div>
           </dl>
+
+          {notes.length > 0 && (
+            // Concert notes (src/lib/concert-notes.ts): facts from our data, with links to related pages.
+            <section className="cp-notes" aria-labelledby="concert-notes" data-od="concert-notes">
+              <h2 id="concert-notes">Concert notes</h2>
+              <ul>
+                {notes.map((n) => (
+                  <li key={n.id} data-note={n.id}>
+                    <Note parts={n.parts} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
 

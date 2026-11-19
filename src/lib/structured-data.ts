@@ -10,6 +10,7 @@
 import { concertAnswers } from "./answers";
 import type { ConcertView } from "./queries";
 import { abs, SHARE_FALLBACK_IMAGE, SITE_ALTERNATE_NAMES } from "./seo";
+import { startAtPath, START_PARAM } from "./player/start-time";
 import type { SetlistView } from "./setlist/view";
 import { SITE_NAME } from "./site";
 
@@ -33,10 +34,26 @@ const concertUrl = (slug: string) => abs(`/concerts/${slug}`);
 const performers = (c: ConcertView) =>
   c.artists.map((a) => ({ "@type": "MusicGroup", name: a.name, ...(a.hasPage ? { url: abs(`/artists/${a.slug}`) } : {}) }));
 
+/**
+ * Google "key moments" for a concert video: one Clip per setlist song with a known start time, ending
+ * where the next timed song starts (or at the end of the video), each linking to our own page at that
+ * second (?t=, honoured by src/components/player/StartFromUrl.tsx). Empty when the setlist has no times.
+ */
+export function songClips(c: { slug: string; durationSeconds: number }, setlist: SetlistView | null): Json[] {
+  const timed = (setlist?.tracks ?? []).filter((t) => t.time !== null && t.time < c.durationSeconds);
+  const clips: Json[] = [];
+  timed.forEach((t, i) => {
+    const end = timed.slice(i + 1).find((n) => n.time! > t.time!)?.time ?? c.durationSeconds;
+    if (t.unidentified || end <= t.time!) return;
+    clips.push({ "@type": "Clip", name: t.title, startOffset: t.time, endOffset: end, url: abs(startAtPath(c.slug, t.time!)) });
+  });
+  return clips;
+}
+
 /** schema.org VideoObject for a concert page (the video is YouTube's; we embed it). */
 export function concertJsonLd(c: ConcertView, setlist: SetlistView | null = null): Json {
   const url = concertUrl(c.slug);
-  const songs = setlist?.tracks.filter((t) => t.time !== null && !t.unidentified) ?? [];
+  const clips = songClips(c, setlist);
   const date = playedDate(c);
   return {
     "@context": "https://schema.org",
@@ -57,16 +74,15 @@ export function concertJsonLd(c: ConcertView, setlist: SetlistView | null = null
     },
     actor: performers(c),
     ...(date && (c.venue || c.city) ? { recordedAt: { "@id": `${url}#event` } } : {}),
-    // Songs as chapters ("key moments"): each starts at its time in the video.
-    ...(songs.length
+    // Songs as chapters ("key moments"), and how to link to any second of the concert on our page.
+    ...(clips.length
       ? {
-          hasPart: songs.map((t, i) => ({
-            "@type": "Clip",
-            name: t.title,
-            startOffset: t.time,
-            endOffset: songs[i + 1] ? songs[i + 1].time : c.durationSeconds,
-            url: `https://www.youtube.com/watch?v=${c.youtubeId}&t=${t.time}s`,
-          })),
+          hasPart: clips,
+          potentialAction: {
+            "@type": "SeekToAction",
+            target: `${url}?${START_PARAM}={seek_to_second_number}`,
+            "startOffset-input": "required name=seek_to_second_number",
+          },
         }
       : {}),
   };

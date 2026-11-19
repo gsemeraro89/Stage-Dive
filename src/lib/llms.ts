@@ -10,6 +10,7 @@
 import { bandAnswers, concertAnswers, type QA } from "./answers";
 import { noteText, type ConcertNote, type NotePart } from "./concert-notes";
 import { formatDuration } from "./format";
+import { startAtPath } from "./player/start-time";
 import { abs } from "./seo";
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
@@ -179,7 +180,7 @@ export function concertMarkdown(c: ConcertForMd, setlist: SetlistForMd, notes: C
   if (setlist?.tracks.length) {
     lines.push("## Setlist", "");
     setlist.tracks.forEach((t, i) => {
-      const time = t.time !== null ? `${formatDuration(t.time)} ` : "";
+      const time = t.time !== null ? `[${formatDuration(t.time)}](${abs(startAtPath(c.slug, t.time))}) ` : "";
       const song = t.unidentified ? "Unidentified song" : t.title;
       lines.push(`${i + 1}. ${time}${song}${t.artist && !c.artists.some((a) => a.name.toLowerCase() === t.artist!.toLowerCase()) ? ` (${t.artist})` : ""}`);
     });
