@@ -165,6 +165,15 @@ describe("decide", () => {
   const with_ = (patch: Partial<DecisionInput>, cls: Partial<DecisionInput["classification"]> = {}) =>
     decide({ ...base, ...patch, classification: { ...base.classification, ...cls } }, config);
 
+  it("keeps home and online sessions out, but not a livestream from a real stage (owner, 19 Nov 2026)", () => {
+    expect(with_({ ownerApproved: true }, { performed: "2020", venue: "Live From Home", venueKind: "Livestream" }).verdict).toBe("NOT_A_CONCERT");
+    expect(with_({}, { performed: "2020", venue: "Instagram live session", venueKind: "Livestream" }).verdict).toBe("NOT_A_CONCERT");
+    expect(with_({}, { performed: "2026", venue: "Electric Happy Hour", venueKind: "Livestream" }).verdict).toBe("NOT_A_CONCERT");
+    expect(with_({}, { performed: "2025", venue: "", city: "", venueKind: "Livestream" }).verdict).toBe("NOT_A_CONCERT");
+    expect(with_({}, { performed: "2020-08", venue: "Barrowland Ballroom", city: "Glasgow", venueKind: "Livestream" }).verdict).toBe("ACCEPTED");
+    expect(with_({}, { performed: "2019-10", venue: "", city: "Warsaw", venueKind: "Livestream" }).verdict).toBe("ACCEPTED");
+    expect(with_({}, { performed: "1991", venue: "", city: "", venueKind: "Room" }).verdict).toBe("ACCEPTED");
+  });
   it("keeps a concert without a year out, even for an owner-approved band (a missing venue is fine)", () => {
     expect(with_({ ownerApproved: true }, { performed: "" }).verdict).toBe("UNCERTAIN");
     expect(with_({}, { performed: "summer" }).verdict).toBe("UNCERTAIN");

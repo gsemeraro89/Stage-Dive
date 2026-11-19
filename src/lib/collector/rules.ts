@@ -225,6 +225,24 @@ export interface Classification {
   mainArtists: string[];
   /** When it was played (YYYY, YYYY-MM or YYYY-MM-DD), empty if unknown. Absent = not asked. */
   performed?: string;
+  /** Where it was played, as the classifier read it (empty if unknown). Absent = not asked. */
+  venue?: string;
+  city?: string;
+  venueKind?: string;
+}
+
+/** Venue names that mean a home or online session, not a show (owner, 19 Nov 2026). */
+const HOME_SESSION = /live from home|from home|home session|instagram|happy hour|quarantine|lockdown session/i;
+
+/**
+ * Owner rule (19 Nov 2026): home sessions and online livestream shows are not concerts. A livestream
+ * from a real stage (Biffy Clyro at the Barrowland) is fine: it has a venue or a city.
+ */
+export function isHomeOrOnlineSession(c: Pick<Classification, "venue" | "city" | "venueKind">): boolean {
+  const venue = (c.venue ?? "").trim();
+  const city = (c.city ?? "").trim();
+  if (HOME_SESSION.test(venue)) return true;
+  return c.venueKind === "Livestream" && !venue && !city;
 }
 
 export interface DecisionInput {
@@ -280,6 +298,9 @@ export function decide(input: DecisionInput, config: CollectorConfig): Decision 
   }
   if (input.excluded) return { verdict: "EXCLUDED", reason: "band on the owner's exclude list", signals };
   if (!input.official) return { verdict: "NOT_OFFICIAL", reason: "fan upload: report only (official sources only)", signals };
+  if (isHomeOrOnlineSession(c)) {
+    return { verdict: "NOT_A_CONCERT", reason: "home or online session, not a show", signals };
+  }
   // Owner rule (18 Nov 2026): no year, no concert. A missing venue is fine.
   if (c.performed !== undefined && readPerformed(c.performed).performedYear === null) {
     return { verdict: "UNCERTAIN", reason: "no date: the year it was played is unknown", signals };

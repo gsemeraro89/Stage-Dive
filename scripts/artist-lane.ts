@@ -8,7 +8,7 @@
 // (b) each artist's official channel (uploads playlist, capped), (c) one YouTube search per artist,
 // never repeated (results stored, so a dry run's searches serve the real run). Free filters come
 // first (src/lib/collector/lane.ts); only official videos that pass them are sent to Claude Haiku.
-// Settings (environment): CLAUDE_BUDGET_USD (default 3), LANE_CLASSIFIER (auto | haiku | haiku+opus),
+// Settings (environment): CLAUDE_BUDGET_USD (default: no cap, owner 19 Nov 2026; a number sets a cap), LANE_CLASSIFIER (auto | haiku | haiku+opus),
 // YOUTUBE_UNIT_BUDGET, LANE_SEARCHES (most searches this run; default: as many as the units allow),
 // LANE_CHANNEL_CAP (uploads read per artist channel, default 150), LANE_WAIT_MINUTES (default 40).
 import "dotenv/config";
@@ -35,6 +35,7 @@ import {
   artistsInTitle,
   chooseClassifierMode,
   ClaudeBudget,
+  budgetFromEnv,
   costOf,
   DEFAULT_LANE_CLASSIFIER,
   handleChannelMatches,
@@ -80,7 +81,7 @@ const waitMinutes = Number(process.env.LANE_WAIT_MINUTES ?? 40);
 /** Write-ups must come back within the run, so the real run can publish at once (owner, 17 Nov 2026). */
 const writeUpWaitMinutes = Number(process.env.LANE_WRITEUP_WAIT_MINUTES ?? 30);
 const unitBudget = Number(process.env.YOUTUBE_UNIT_BUDGET ?? 8000);
-const budget = new ClaudeBudget(Number(process.env.CLAUDE_BUDGET_USD || 3));
+const budget = new ClaudeBudget(budgetFromEnv(process.env.CLAUDE_BUDGET_USD));
 const ttlDays = Number(process.env.DECISION_TTL_DAYS ?? 30);
 const channelCap = Number(process.env.LANE_CHANNEL_CAP || 150);
 const maxSearchesSetting = process.env.LANE_SEARCHES ? Number(process.env.LANE_SEARCHES) : Infinity;

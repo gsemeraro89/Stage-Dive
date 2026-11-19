@@ -47,7 +47,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `Back up database` (`backup.yml`) | Mondays | `pg_dump` kept as a private download for 30 days. |
 | `Artist profiles`, `Similar artists`, `Setlist coverage` | by hand / weekly | Bios (Wikimedia/MusicBrainz), similar bands (ListenBrainz), setlist report. |
 
-Rules (brief section 2): one band's full concert or festival show, 40+ minutes; official sources only (fan uploads only in the report); no view threshold; Haiku via the Batch API, at most $3 per run.
+Rules (brief section 2): one band's full concert or festival show, 40+ minutes; official sources only (fan uploads only in the report); no view threshold; Haiku via the Batch API, no cost cap (owner, 19 Nov 2026); no home sessions or online livestream shows.
 
 Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH` is `true`; otherwise they are dry runs.
 
@@ -55,7 +55,7 @@ Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH`
 
 GitHub → Settings → Secrets and variables → Actions:
 - Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
-- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `CLAUDE_BUDGET_USD` (`3`), `YOUTUBE_UNIT_BUDGET` (`8000`)
+- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`)
 
 ### Restore a backup
 

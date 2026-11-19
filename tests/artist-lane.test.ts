@@ -502,3 +502,14 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.artistLookup.delete({ where: { nameKey: "lane test artist" } });
   });
 });
+
+describe("budgetFromEnv (owner, 19 Nov 2026: no cap unless a number is given)", () => {
+  it("means no cap when empty, zero or a word", async () => {
+    const { budgetFromEnv } = await import("../src/lib/collector/lane");
+    expect(budgetFromEnv(undefined)).toBe(Infinity);
+    expect(budgetFromEnv("")).toBe(Infinity);
+    expect(budgetFromEnv("0")).toBe(Infinity);
+    expect(budgetFromEnv("unlimited")).toBe(Infinity);
+    expect(budgetFromEnv("5")).toBe(5);
+  });
+});

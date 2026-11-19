@@ -168,5 +168,8 @@ export function toDecisionInput(c: FullClassification): Classification {
     genres: c.genres,
     mainArtists: c.mainArtists.map((a) => a.trim()).filter(Boolean),
     performed: c.performed ?? "",
+    venue: c.venue ?? "",
+    city: c.city ?? "",
+    venueKind: c.venueKind,
   };
 }

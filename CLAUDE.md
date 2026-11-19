@@ -41,7 +41,8 @@ Source: YouTube API Services Terms & Developer Policies (developers.google.com/y
 ## Product rules
 - A concert = one band's full concert or full festival show, at least 40 minutes. No compilations, single songs, documentaries, "best of", half-show phone footage.
 - Official, free sources only: festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band and label channels. Fan uploads appear only in the collector report.
-- No view threshold. Free filters before any AI; Claude Haiku via the Batch API with prompt caching; at most $3 per run.
+- No view threshold. Free filters before any AI; Claude Haiku via the Batch API with prompt caching; no cost cap per run (owner, 19 Nov 2026).
+- No home sessions or online livestream shows (owner, 19 Nov 2026); a livestream from a real stage is fine. Audio-only official concerts are fine.
 - Dry run with a per-band report, then the owner's OK, then a real run.
 - The setlist is a first-class object: every concert page shows it; clicking a song jumps to its time.
 

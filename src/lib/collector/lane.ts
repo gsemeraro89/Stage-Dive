@@ -263,10 +263,16 @@ export function costOf(model: PricedModel, usage: Usage, batch: boolean): number
 }
 
 /**
- * The run's Claude budget (CLAUDE_BUDGET_USD, default $3). Real costs are added as answers come in;
+ * The run's Claude budget (CLAUDE_BUDGET_USD, default no cap). Real costs are added as answers come in;
  * requests still out (a batch not back yet) count with their estimate, so nothing is sent that could
  * take the run over the cap. Once the cap is reached, nothing more is sent: the rest waits.
  */
+/** CLAUDE_BUDGET_USD: empty, 0, "none" or "unlimited" = no cap (owner, 19 Nov 2026); a positive number caps the run. */
+export function budgetFromEnv(value: string | undefined): number {
+  const n = Number((value ?? "").trim());
+  return Number.isFinite(n) && n > 0 ? n : Infinity;
+}
+
 export class ClaudeBudget {
   spentUsd = 0;
   committedUsd = 0;

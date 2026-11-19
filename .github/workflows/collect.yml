@@ -6,7 +6,7 @@
 # A scheduled run publishes only when the repository variable COLLECTOR_PUBLISH is true.
 # Secrets (repository Settings -> Secrets and variables -> Actions):
 #   DATABASE_URL (Render "External Database URL"), YOUTUBE_API_KEY, ANTHROPIC_API_KEY
-# Optional variables: MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET, CLAUDE_BUDGET_USD (artist lane).
+# Optional variables: MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET. Claude has no cap (owner, 19 Nov 2026).
 # Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
 # No view threshold (brief section 2). Archives are read first (data/channels.json).
 name: Collect concerts
@@ -68,7 +68,7 @@ on:
         type: boolean
         default: false
       claude_budget:
-        description: "Most Claude may cost in this run, in US dollars (artist_search / haiku_test; default 3)"
+        description: "Most Claude may cost in this run, in US dollars (artist_search / haiku_test; empty = no cap, owner 19 Nov 2026)"
         default: ""
       lane_classifier:
         description: "artist_search classifier: haiku (owner default), auto (follows the last Haiku test), or haiku+opus (Opus for Haiku answers below 0.75)"
@@ -118,7 +118,7 @@ jobs:
       - name: Artist search / Haiku test only
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.artist_search || inputs.haiku_test) && !(inputs.similarity_only || inputs.admin_ops) }}
         env:
-          CLAUDE_BUDGET_USD: ${{ inputs.claude_budget || vars.CLAUDE_BUDGET_USD || '3' }}
+          CLAUDE_BUDGET_USD: ${{ inputs.claude_budget }}
           LANE_CLASSIFIER: ${{ inputs.lane_classifier }}
           LANE_SOURCES: ${{ inputs.lane_sources }}
           LANE_SEARCHES: ${{ inputs.searches }}
