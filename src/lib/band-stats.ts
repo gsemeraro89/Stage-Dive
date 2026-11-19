@@ -5,7 +5,7 @@
 // closer also needs a real plurality (see usualSong). Nothing is guessed.
 // Pure functions, tested in tests/band-stats.test.ts.
 import { songKey } from "./text";
-import { canonicalSlugs, songTally } from "./songs";
+import { canonicalSlugs, songsIn, songTally } from "./songs";
 import { songTitleBase } from "./song-title";
 
 /** Concerts (or setlists) needed before any figure about the band is stated. */
@@ -75,7 +75,8 @@ export function usualSong(songs: string[], setlists: number, key: (title: string
  * titles of each of their setlists, in playing order.
  */
 export function bandStats(concerts: StatsConcert[], setlists: string[][]): BandStats {
-  const lists = setlists.filter((l) => l.length > 0);
+  // Songs only (medleys split, solos, intros, jams and notes left out); idempotent on lists already cleaned.
+  const lists = setlists.map(songsIn).filter((l) => l.length > 0);
   const enough = concerts.length >= MIN_FOR_BAND_STAT;
   const years = concerts.map((c) => c.performedYear).filter((y): y is number => y !== null);
   const [from, to] = [Math.min(...years), Math.max(...years)];
@@ -85,6 +86,10 @@ export function bandStats(concerts: StatsConcert[], setlists: string[][]): BandS
   // Spellings filed under one song page (src/lib/songs.ts), so the opener links to the right page.
   const canon = canonicalSlugs(lists.flat());
   const key = (title: string) => canon.get(songKey(title)) ?? songKey(title);
+  // The name a song is shown under everywhere (its song page's title).
+  const tally = songTally(lists);
+  const titles = new Map(tally.map((s) => [s.slug, s.title]));
+  const named = (u: UsualSong | null) => (u ? { ...u, title: titles.get(u.slug) ?? u.title } : null);
   return {
     concerts: concerts.length,
     setlists: lists.length,
@@ -94,8 +99,8 @@ export function bandStats(concerts: StatsConcert[], setlists: string[][]): BandS
       : null,
     years: years.length >= MIN_FOR_BAND_STAT && from !== to ? { from, to } : null,
     averageSongs: lists.length >= MIN_FOR_BAND_STAT ? Math.round((lists.reduce((n, l) => n + l.length, 0) / lists.length) * 10) / 10 : null,
-    opener: usualSong(ordered.map((l) => l[0]), ordered.length, key),
-    closer: usualSong(ordered.map((l) => l[l.length - 1]), ordered.length, key),
-    mostPlayed: lists.length >= MIN_FOR_BAND_STAT ? songTally(lists).filter((s) => s.count >= MIN_FOR_BAND_STAT).slice(0, TOP_SONGS) : [],
+    opener: named(usualSong(ordered.map((l) => l[0]), ordered.length, key)),
+    closer: named(usualSong(ordered.map((l) => l[l.length - 1]), ordered.length, key)),
+    mostPlayed: lists.length >= MIN_FOR_BAND_STAT ? tally.filter((s) => s.count >= MIN_FOR_BAND_STAT).slice(0, TOP_SONGS) : [],
   };
 }

@@ -10,7 +10,7 @@
 import { decadeOf } from "./catalogue";
 import { startAtPath } from "./player/start-time";
 import { isBandName } from "./setlist/parse";
-import { shortSongSlug, songSlug, songTitleBase } from "./song-title";
+import { compactSlug, shortSongSlug, songParts, songSlug, songTitleBase } from "./song-title";
 
 /** The address of a song page, and of a band's list of songs. */
 export const songPath = (bandSlug: string, songSlug: string) => `/songs/${bandSlug}/${songSlug}`;
@@ -100,42 +100,78 @@ export const MAX_SONG_SECONDS = 30 * 60;
 export const MIN_VERSIONS_FOR_PATTERN = 2;
 
 /**
- * The address each spelling of a song is filed under, for one band. A title with a subtitle in
- * brackets is filed with its short form when the band's setlists also have that ("Street Spirit
- * (Fade Out)" and "Street Spirit" -> "street-spirit"). The short form always wins, so an address
- * does not change back and forth as counts change.
+ * The address each spelling of a song is filed under, for one band. Spellings are filed together when
+ * their addresses only differ by hyphens ("Bloodbuzz Ohio" / "Blood Buzz Ohio", "Anybody" / "Any
+ * Body"), or when one is the other with a subtitle in brackets ("Street Spirit (Fade Out)" /
+ * "Street Spirit"). A group takes the address of its most common spelling (on a tie the shorter
+ * address); an old address keeps working, the song page redirects it.
  */
 export function canonicalSlugs(titles: string[]): Map<string, string> {
-  const raw = new Set(titles.map(songSlug).filter(Boolean));
-  const out = new Map<string, string>();
+  const counts = new Map<string, number>();
+  const shorts = new Map<string, string>();
   for (const t of titles) {
     const slug = songSlug(t);
     if (!slug) continue;
+    counts.set(slug, (counts.get(slug) ?? 0) + 1);
     const short = shortSongSlug(t);
-    out.set(slug, short && short !== slug && raw.has(short) ? short : slug);
+    if (short && short !== slug) shorts.set(slug, short);
+  }
+  const parent = new Map([...counts.keys()].map((k) => [k, k]));
+  const find = (k: string): string => {
+    while (parent.get(k) !== k) k = parent.get(k)!;
+    return k;
+  };
+  const union = (a: string, b: string) => parent.set(find(a), find(b));
+  const byCompact = new Map<string, string>();
+  for (const slug of counts.keys()) {
+    const c = compactSlug(slug);
+    if (byCompact.has(c)) union(slug, byCompact.get(c)!);
+    else byCompact.set(c, slug);
+  }
+  for (const [slug, short] of shorts) {
+    const plain = byCompact.get(compactSlug(short));
+    if (plain) union(slug, plain);
+  }
+  const groups = new Map<string, string[]>();
+  for (const slug of counts.keys()) groups.set(find(slug), [...(groups.get(find(slug)) ?? []), slug]);
+  const out = new Map<string, string>();
+  for (const members of groups.values()) {
+    const best = [...members].sort((a, b) => counts.get(b)! - counts.get(a)! || a.length - b.length || a.localeCompare(b))[0];
+    for (const m of members) out.set(m, best);
   }
   return out;
 }
 
-/** A function from a setlist title to its song page, for one band; null for a line without a page. */
-export function songLinker(bandSlug: string, allTitles: string[]): (title: string) => string | null {
-  const slugs = canonicalSlugs(allTitles);
+/** The songs of a list of setlist lines, cleaned, medleys split, non-songs left out (src/lib/song-title.ts). */
+export const songsIn = (lines: string[]): string[] => lines.flatMap(songParts);
+
+/**
+ * A function from a setlist line to its song page, for one band; null for a line that is not a song,
+ * a medley, or a song played in fewer than `minSetlists` of the band's setlists (owner, 19 Nov 2026:
+ * the concert page only links songs with two versions or more; the other pages still exist).
+ */
+export function songLinker(bandSlug: string, setlists: string[][], minSetlists = 1): (title: string) => string | null {
+  const slugs = canonicalSlugs(setlists.flatMap(songsIn));
+  const counts = new Map(songTally(setlists).map((s) => [s.slug, s.count]));
   return (title) => {
-    const slug = songSlug(title);
+    const parts = songParts(title);
+    if (parts.length !== 1) return null;
+    const slug = songSlug(parts[0]);
     const canonical = slug ? (slugs.get(slug) ?? slug) : "";
-    return canonical ? songPath(bandSlug, canonical) : null;
+    return canonical && (counts.get(canonical) ?? 0) >= minSetlists ? songPath(bandSlug, canonical) : null;
   };
 }
 
 /**
  * Songs across a band's setlists, most setlists first (a song counts once per setlist), with the
- * address of each song's page. Each setlist is a list of identified song titles.
+ * address of each song's page. Each setlist is a list of setlist lines (cleaned and split here).
  */
 export function songTally(setlists: string[][]): { slug: string; title: string; count: number }[] {
-  const slugs = canonicalSlugs(setlists.flat());
+  const lists = setlists.map(songsIn);
+  const slugs = canonicalSlugs(lists.flat());
   const songs = new Map<string, { slug: string; spellings: Map<string, number>; count: number; first: number }>();
   let order = 0;
-  for (const list of setlists) {
+  for (const list of lists) {
     const seen = new Set<string>();
     for (const title of list) {
       const slug = slugs.get(songSlug(title));
@@ -150,14 +186,23 @@ export function songTally(setlists: string[][]): { slug: string; title: string; 
   }
   return [...songs.values()]
     .sort((a, b) => b.count - a.count || a.first - b.first)
-    .map((e) => ({ slug: e.slug, title: mostCommon(e.spellings), count: e.count }));
+    .map((e) => ({ slug: e.slug, title: mostCommon(e.spellings, e.slug), count: e.count }));
 }
 
-/** The most frequent spelling; on a tie the fuller one ("Street Spirit (Fade Out)" over "Street Spirit"), then the first seen. */
-function mostCommon(counts: Map<string, number>): string {
+/**
+ * The most frequent spelling; on a tie one with capitals over an all-lower-case one, then the fuller
+ * one ("Street Spirit (Fade Out)" over "Street Spirit"), then the first seen.
+ */
+function mostCommon(all: Map<string, number>, slug?: string): string {
+  // Prefer the spellings filed at the song's own address ("Is There Anybody Out There?" for /is-there-anybody-out-there).
+  const own = slug ? [...all].filter(([k]) => songSlug(k) === slug) : [];
+  const counts = own.length ? new Map(own) : all;
+  const capital = (k: string) => (/\p{Lu}/u.test(k) ? 1 : 0);
   let best = "";
   let n = -1;
-  for (const [k, c] of counts) if (c > n || (c === n && k.length > best.length)) [best, n] = [k, c];
+  for (const [k, c] of counts) {
+    if (c > n || (c === n && (capital(k) > capital(best) || (capital(k) === capital(best) && k.length > best.length)))) [best, n] = [k, c];
+  }
   return best;
 }
 
@@ -228,29 +273,29 @@ function countBy<T>(items: T[], key: (t: T) => string | null): { key: string; it
  * songs from songs the setlist credits to someone else.
  */
 export function bandSongs(band: { names: string[] }, concerts: SongConcert[]): Song[] {
-  const usable = (t: SongTrack) => !t.unidentified && Boolean(songSlug(t.title));
-  const slugs = canonicalSlugs(concerts.flatMap((c) => c.tracks.filter(usable).map((t) => t.title)));
+  const perConcert = concerts.map((c) => ({ c, songs: setlistSongs(c.tracks) }));
+  const slugs = canonicalSlugs(perConcert.flatMap((p) => p.songs.map((x) => x.title)));
   const bySlug = new Map<string, SongVersion[]>();
 
-  for (const c of concerts) {
+  for (const { c, songs: known } of perConcert) {
     const { tracks, ...concert } = c;
-    const known = tracks.filter(usable);
     const seen = new Set<string>();
-    tracks.forEach((t, i) => {
-      if (!usable(t)) return;
-      const slug = slugs.get(songSlug(t.title))!;
+    known.forEach((x, k) => {
+      const slug = slugs.get(songSlug(x.title))!;
       if (seen.has(slug)) return; // a song played twice in one night counts once (its first time)
       seen.add(slug);
-      const position = known.indexOf(t) + 1;
+      const t = x.track;
+      const position = k + 1;
       const credit = t.artist && !/^ID$/i.test(t.artist) && !isBandName(t.artist, band.names) ? t.artist : null;
       const version: SongVersion = {
         concert,
         position,
         of: known.length,
         slot: slotOf(position, known.length),
+        // A medley's songs all start where the medley does.
         time: t.time,
-        lengthSeconds: songLength(tracks, i),
-        title: t.title,
+        lengthSeconds: x.medley ? null : songLength(tracks, x.index),
+        title: x.title,
         creditedTo: credit,
         // The first second needs no ?t= (the concert starts there anyway).
         href: t.time !== null && t.time > 0 && t.time < c.durationSeconds ? startAtPath(c.slug, t.time) : `/concerts/${c.slug}`,
@@ -271,7 +316,7 @@ export function bandSongs(band: { names: string[] }, concerts: SongConcert[]): S
     }
     songs.push({
       slug,
-      title: mostCommon(spellings),
+      title: mostCommon(spellings, slug),
       versions,
       oldest: dated.length ? dated[dated.length - 1] : null,
       newest: dated.length ? dated[0] : null,
@@ -296,7 +341,24 @@ export function bandSongs(band: { names: string[] }, concerts: SongConcert[]): S
   return songs.sort((a, b) => b.versions.length - a.versions.length || latest(b) - latest(a) || a.title.localeCompare(b.title));
 }
 
-/** How many of a band's headline concerts have a setlist with at least one identified song. */
+/**
+ * The songs of a setlist in playing order: unidentified lines and lines that are not songs left out,
+ * a medley's songs one after the other, each cleaned, with the line it comes from.
+ */
+export function setlistSongs<T extends { title: string; unidentified: boolean }>(tracks: T[]): { title: string; track: T; index: number; medley: boolean }[] {
+  return tracks.flatMap((track, index) => {
+    if (track.unidentified) return [];
+    const parts = songParts(track.title);
+    return parts.map((title) => ({ title, track, index, medley: parts.length > 1 }));
+  });
+}
+
+/** How many songs a setlist has: its songs (a medley counts each) and the unidentified ones; not solos, intros or notes. */
+export function songCount(tracks: { title: string; unidentified: boolean }[]): number {
+  return tracks.filter((t) => t.unidentified).length + setlistSongs(tracks).length;
+}
+
+/** How many of a band's headline concerts have a setlist with at least one song. */
 export function setlistCount(concerts: SongConcert[]): number {
-  return concerts.filter((c) => c.tracks.some((t) => !t.unidentified && songSlug(t.title))).length;
+  return concerts.filter((c) => setlistSongs(c.tracks).length > 0).length;
 }
