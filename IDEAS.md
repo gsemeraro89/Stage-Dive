@@ -84,3 +84,15 @@ Each idea: date, the idea, why it fits the zine, effort.
 
 ### 10. The homepage's "Find your next band": four layouts tried, the crossroads chosen
 **Decision (owner, 18 Nov 2026).** Four layouts were built behind a switch and compared: the box + a scrap of the wall, a sticker sheet, band of the day with tear-off tabs, and the crossroads. The owner chose **the crossroads** (you are here, then Louder / Softer / Older / Newer, up to three bands per sign, each with its genre). The other three and the switch are deleted. The sticker sheet and the tear-off flyer stay here as ideas for other pages (a band page's foot, the newsletter).
+
+---
+
+## 2026-11-19 · landing pages for search (engineering note, after the SEO step)
+
+Not built: for the owner to approve, after keyword research (a keywords script like OpenDecks' `scripts/keywords.ts`). All generated from the database, indexed only when strong enough, in the sitemap and IndexNow like the rest.
+
+1. **Band at festival** (`/artists/metallica/pinkpop`): every concert by one band at one festival or room, with the years, setlists side by side and the songs that changed. People search exactly this ("metallica pinkpop", "radiohead glastonbury 1997"). Only when the band played there at least twice; otherwise the concert page is the answer.
+2. **Best of a festival or decade** (`/best/glastonbury`, `/best/1990s`): the most watched concerts, ranked by views on YouTube, with one line each from our data. Answers "best glastonbury performances" / "best 90s rock concerts".
+3. **Festival year** (`/venues/pinkpop/1996`): the line-up we hold for one edition, in running order when known. For "pinkpop 1996 line up".
+4. **Genre by decade** (`/genres/grunge/1990s`): the crossings with enough concerts. "90s grunge concerts".
+5. **Songs** (`/songs/enter-sandman`, the coordinator's approved item): every live version with a jump to the song's time. The data helpers are ready: `songKey` / `songCounts` in `src/lib/text.ts`, `bandConcertsWithSongs` in `src/lib/queries.ts`, deep links via `startAtPath` in `src/lib/player/start-time.ts`.

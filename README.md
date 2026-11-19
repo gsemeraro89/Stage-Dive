@@ -1,6 +1,6 @@
 # STAGEDIVE
 
-A fanzine that plays: full-length rock concerts that are free to watch on YouTube, played on our own pages.
+A fanzine that plays: full rock concerts, the whole show, played on our own pages (YouTube embeds).
 Started on 18 Nov 2026 from a copy of OpenDecks/FullDJSet (`gsemeraro89/opendecks` at `426011f`).
 
 - Brief: `docs/BRIEF.md` (order of work in section 5). Supply check: `docs/SUPPLY-CHECK.md`.
@@ -36,6 +36,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/genres`, `/decades`, `/tours`, `/map`, `/admin` |
 | `src/lib/setlist/` | Setlists from the video description, chapters or comments |
 | `src/lib/collector/` | Collector rules, YouTube client, Claude classifier (Haiku lane), MusicBrainz |
+| `src/lib/seo.ts`, `structured-data.ts`, `answers.ts`, `concert-notes.ts`, `llms.ts`, `sitemap.ts`, `robots.ts`, `indexnow.ts` | Search and AI assistants (CLAUDE.md "SEO, AEO and AI search"): what is indexed, titles, schema.org, answer-first leads, FAQ, concert notes, `/llms.txt`, `.md` copies, sitemap, IndexNow |
 | `tests/` | Automated tests (Vitest); `tests/fixtures/seed-concerts.json` is test data only |
 
 ## Collector and jobs (GitHub Actions, free)
@@ -43,7 +44,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | Workflow | When | What |
 |---|---|---|
 | `Collect concerts` (`collect.yml`) | by hand (daily schedule paused until step 6) | Reads festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band channels; free filters, then Claude. By hand it defaults to a **dry run**. |
-| `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. |
+| `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. Then thumbnail sizes for new concerts and IndexNow. |
 | `Back up database` (`backup.yml`) | Mondays | `pg_dump` kept as a private download for 30 days. |
 | `Artist profiles`, `Similar artists`, `Setlist coverage` | by hand / weekly | Bios (Wikimedia/MusicBrainz), similar bands (ListenBrainz), setlist report. |
 
@@ -55,7 +56,7 @@ Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH`
 
 GitHub → Settings → Secrets and variables → Actions:
 - Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
-- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`)
+- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, once there is one: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
 
 ### Restore a backup
 
@@ -68,11 +69,15 @@ pg_restore --no-owner --no-privileges --clean --if-exists -d "<new database URL>
 ## Deploy (Render, test service `stagedive-test`)
 
 Web service (Node, Frankfurt), auto-deploys from `main`:
-- Build command: `npm ci && npm run build`
-- Start command: `npm run start:render` (migrations, seed import, thumbnails, then the app)
+- Build command: `npm ci && npm run build` (Prisma client, migrations, then the Next build; the build reads the database)
+- Start command: `npm run start:render` (migrations, then the app; fast cold start). After changing `data/seed-concerts.json`, run `npm run db:seed` and `npm run db:thumbnails` by hand.
 - Health check path: `/api/health`
 - Environment: `DATABASE_URL` (the Neon production branch, Frankfurt), `NODE_VERSION=22`; `ADMIN_PASSWORD` only when the admin page is wanted (without it `/admin` does not exist); `SITE_SOURCES` empty = show everything
-- Live at https://stagedive-test.onrender.com
+- Live at https://stagedive-test.onrender.com (closed to search engines: `SITE_INDEXABLE` is not set)
+
+## Search engines and AI assistants
+
+Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://<final domain>`. Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
 
 ## Admin
 
