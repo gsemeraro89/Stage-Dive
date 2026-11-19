@@ -12,8 +12,10 @@ import { defaultMapArtist, filterOptions, findArtistByText, getMap, mapArtistInd
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Find your next band",
+  title: "Find Your Next Band · Bands Like the Ones You Love",
   description: "Type a band and find the ones like them. Every name plays a full concert in one click.",
+  // Every search (?artist=, ?q=) is a view of this one page.
+  alternates: { canonical: "/map" },
 };
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;

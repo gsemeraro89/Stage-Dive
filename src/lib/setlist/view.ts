@@ -63,7 +63,7 @@ export function sourceNote(source: string | null): string {
     case "DESCRIPTION":
       return "Setlist from the video description.";
     case "CHANNEL_COMMENT":
-      return "Setlist from the uploader's comment.";
+      return "Setlist from the channel's own comment.";
     case "COMMENT":
       return "Setlist from a viewer's comment. It may contain mistakes.";
     default:

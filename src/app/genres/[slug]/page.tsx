@@ -7,11 +7,19 @@ import { Collection, pileData } from "@/components/gig/Collection";
 import { EmptyNote, PageHead, TagLinks } from "@/components/gig/PageHead";
 import { cutName } from "@/components/gig/words";
 import { getGenrePage, listGenres } from "@/lib/queries";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { genreLead } from "@/lib/answers";
+import { clip, genreSearchTitle, hubIsStrong, robotsFor, shareImages, titleCase } from "@/lib/seo";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 
 // One database read per request, shared by the page and its title/description.
 const load = cache(getGenrePage);
 
-export const dynamic = "force-dynamic";
+// Built on its first visit, then served ready-made and rebuilt at most every 10 minutes.
+export const revalidate = 600;
+export function generateStaticParams() {
+  return [];
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -19,13 +27,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await load((await params).slug);
   if (!page) return {};
   const { genre, concerts } = page;
-  const artists = [...new Set(concerts.flatMap((s) => s.artists.map((a) => a.name)))].slice(0, 4).join(", ");
+  const title = genreSearchTitle(genre.name, concerts.some((c) => c.hasSetlist));
+  const description = clip(genreLead(genre.name, concerts));
+  const path = `/genres/${genre.slug}`;
   return {
-    title: `${genre.name} — full concerts`,
-    description: `${concerts.length} full ${genre.name} ${concerts.length === 1 ? "concert" : "concerts"} to watch free${artists ? `, with ${artists}` : ""}.`,
-    alternates: { canonical: `/genres/${genre.slug}` },
-    // A genre with no concerts yet has nothing worth indexing.
-    robots: concerts.length === 0 ? { index: false, follow: true } : undefined,
+    title,
+    description,
+    alternates: { canonical: path },
+    // A genre with fewer than two concerts has nothing of its own worth indexing.
+    robots: robotsFor(hubIsStrong(concerts.length)),
+    openGraph: { title, description, url: path, images: shareImages(concerts[0]?.thumbnail.src) },
   };
 }
 
@@ -36,13 +47,28 @@ export default async function GenrePage({ params }: Props) {
   // The genres that do have gigs: somewhere to go next.
   const others = (await listGenres()).filter((g) => g.slug !== genre.slug);
   const otherGenres = <TagLinks label={concerts.length ? "Other noise" : "Play these instead"} items={others.map((g) => ({ href: `/genres/${g.slug}`, label: g.name }))} />;
+  const path = `/genres/${genre.slug}`;
   return (
     <main data-od="genre" className="pg">
+      <JsonLd
+        data={[
+          breadcrumbs([
+            ["Home", "/"],
+            ["Genres", "/genres"],
+            [titleCase(genre.name), path],
+          ]),
+          concerts.length ? itemList(`Full ${genre.name} concerts`, concerts.map((c) => ({ path: `/concerts/${c.slug}`, name: c.credits }))) : null,
+        ]}
+      />
       <PageHead
         trail={[{ label: "Genres", href: "/genres" }, { label: genre.name }]}
         lines={cutName(genre.name.replace(" / ", " + "))}
         data={<span data-od="result-count">{pileData(concerts)}</span>}
-      />
+      >
+        <p className="pg-lead" data-od="genre-lead">
+          {genreLead(genre.name, concerts)}
+        </p>
+      </PageHead>
       {concerts.length === 0 ? (
         <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
           <p>No {genre.name} on the wall yet.</p>

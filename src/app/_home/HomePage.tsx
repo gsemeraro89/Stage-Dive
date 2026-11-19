@@ -341,7 +341,7 @@ export default async function HomePage() {
               <p className="zn-label">STAGEDIVE /// THE DEAL</p>
               <p className="hm-deal-text">
                 No login. No algorithm. No &ldquo;recommended for you&rdquo;. We&rsquo;ve got scissors, glue and every full gig we
-                could find. Free, like the flyer on the venue wall.
+                could find. Open to all, like the flyer on the venue wall.
               </p>
               <p className="zn-marker" data-size="big">
                 One click. Jump in.

@@ -1,29 +1,27 @@
 // Home page (17 Nov 2026): direction B "Places" with "Four ways in" (owner choice). The page itself
 // is src/app/_home/HomePage.tsx; the full list of concerts is at /concerts.
-// Old links to the list with filters ("/?genre=techno") keep working: they are sent to /concerts.
+// Old links to the list with filters ("/?genre=metal") are sent to /concerts by src/proxy.ts before
+// they reach this page, so it can be served ready-made.
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organization, website } from "@/lib/structured-data";
 import HomePage from "./_home/HomePage";
 
-export const dynamic = "force-dynamic";
+// Rebuilt in the background at most every 10 minutes (speed, lesson from OpenDecks).
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: { absolute: "STAGEDIVE — full rock gigs, free" },
+  title: { absolute: "STAGEDIVE · Full Rock Concerts and Setlists" },
   description:
-    "Every free, full rock concert, played right here: festival archives and band channels, by band, festival, room, decade, genre and tour.",
+    "Full rock concerts, the whole show, played right here: festivals, rooms and band channels, by band, festival, decade, genre and tour, with setlists you can click.",
   alternates: { canonical: "/" },
 };
 
-const LIST_PARAMS = ["q", "genre", "artist", "venue", "venueKind", "sort", "page"];
-
-type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
-
-export default async function Home({ searchParams }: Props) {
-  const params = await searchParams;
-  if (LIST_PARAMS.some((k) => params[k] !== undefined)) {
-    const query = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) for (const one of [v].flat()) if (one !== undefined) query.append(k, one);
-    redirect(`/concerts?${query.toString()}`);
-  }
-  return <HomePage />;
+export default function Home() {
+  return (
+    <>
+      <JsonLd data={[website(), organization()]} />
+      <HomePage />
+    </>
+  );
 }

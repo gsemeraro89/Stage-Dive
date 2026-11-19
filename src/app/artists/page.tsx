@@ -1,5 +1,7 @@
 // Bands: a few on the wall as pictures, then every band A to Z, typed like a contents page.
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { EmptyNote, PageHead, SectionTitle } from "@/components/gig/PageHead";
@@ -8,11 +10,12 @@ import { PaperStrip, PhotoFrame } from "@/components/zine";
 import { bandPhotosFor } from "@/lib/photos/view";
 import { listArtists } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+// Served ready-made, rebuilt in the background at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: "Bands — every band with a full gig",
-  description: "Every band on STAGEDIVE with a full concert you can watch free.",
+  title: "Bands · Every Band with a Full Concert",
+  description: "Every rock band on STAGEDIVE with a full concert to watch, A to Z: the whole show, with setlists where we have them.",
   alternates: { canonical: "/artists" },
 };
 
@@ -38,6 +41,7 @@ export default async function ArtistsPage() {
 
   return (
     <main data-od="artists-index" className="pg">
+      <JsonLd data={[breadcrumbs([["Home", "/"], ["Bands", "/artists"]]), itemList("Bands", artists.map((a) => ({ path: `/artists/${a.slug}`, name: a.name })))]} />
       <PageHead
         trail={[{ label: "Bands" }]}
         lines={["Bands"]}

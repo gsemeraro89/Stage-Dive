@@ -7,6 +7,7 @@ import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { gigs } from "@/components/gig/words";
 import { hasActiveFilters, parseFilters, SORT_LABELS } from "@/lib/filters";
 import { filterOptions, listConcerts } from "@/lib/queries";
+import { robotsFor } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const filters = parseFilters(await searchParams);
   const filtered = hasActiveFilters(filters) || filters.sort !== "newest";
   return {
-    title: filters.q ? `Gigs matching "${filters.q}"` : "Every full gig",
-    description: "Every full rock concert on STAGEDIVE, free to watch: search by band, venue or year, or sort the lot.",
+    title: filters.q ? `Concerts matching "${filters.q}"` : "Every Full Rock Concert · Search and Sort",
+    description: "Every full rock concert on STAGEDIVE in one list: search by band, venue or year, or sort by length and views.",
     alternates: { canonical: "/concerts" },
-    // Filtered views repeat content that has its own pages (band, venue, genre).
-    robots: filtered ? { index: false, follow: true } : undefined,
+    // Filtered views repeat content that has its own pages (band, venue, genre): noindex, follow.
+    robots: robotsFor(!filtered),
   };
 }
 

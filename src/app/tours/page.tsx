@@ -1,16 +1,19 @@
 // Tours index: every tour with a concert on the site.
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import { PageHead, TagLinks } from "@/components/gig/PageHead";
 import { gigs } from "@/components/gig/words";
 import { Sheet } from "@/components/zine";
 import { listTours } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+// Served ready-made, rebuilt in the background at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: "Tours",
-  description: "Full rock concerts by tour, free to watch.",
+  title: "Rock Tours · Full Concerts by Tour",
+  description: "Full rock concerts grouped by tour, in the order the bands played them.",
   alternates: { canonical: "/tours" },
 };
 
@@ -18,6 +21,7 @@ export default async function ToursPage() {
   const tours = await listTours();
   return (
     <main data-od="tours-index" className="pg">
+      <JsonLd data={[breadcrumbs([["Home", "/"], ["Tours", "/tours"]]), itemList("Tours", tours.map((t) => ({ path: `/tours/${t.slug}`, name: t.name })))]} />
       <PageHead
         trail={[{ label: "Tours" }]}
         lines={["Tours"]}

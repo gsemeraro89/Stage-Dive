@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/zine/SiteHeader";
 import { Wordmark } from "@/components/zine/Wordmark";
 import { issueLabel } from "@/lib/home";
 import { decadeIndex } from "@/lib/queries";
+import { robotsFor, shareImages } from "@/lib/seo";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -24,9 +25,14 @@ const permanentMarker = Permanent_Marker({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} — full rock gigs, free`, template: `%s — ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} · Full Rock Concerts and Setlists`, template: `%s · ${SITE_NAME}` },
   description:
-    "Full rock concerts, free: the whole set, by band, festival, room, decade, genre and tour. Press play once and keep listening.",
+    "Full rock concerts, the whole set, by band, festival, room, decade, genre and tour, with setlists. Press play once and keep listening.",
+  // Pages are indexed only on the live site (SITE_INDEXABLE=true, src/lib/seo.ts); a page can still opt out.
+  robots: robotsFor(true),
+  applicationName: SITE_NAME,
+  openGraph: { siteName: SITE_NAME, type: "website", locale: "en_GB", images: shareImages() },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { themeColor: "#ECEAE4", colorScheme: "light" };
@@ -41,14 +47,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PlayerProvider>
           {/* The top strip (board 04). Phones get the short version (board 07). */}
           <p className="zn-band zn-issue" data-od="issue-strip">
-            ISSUE {issueLabel(new Date())} /// FREE <span className="zn-issue-long">/// FULL ROCK GIGS, STRAIGHT OFF YOUTUBE </span>
+            ISSUE {issueLabel(new Date())} /// THE WHOLE SET <span className="zn-issue-long">/// FULL ROCK GIGS, OFFICIAL SOURCES ONLY </span>
             /// NO LOGIN<span className="zn-issue-long">, NO NONSENSE</span>
           </p>
           <SiteHeader logo={<Wordmark variant="full" width={300} label="" />} decades={decades} />
           {children}
           <footer className="zn-foot" data-od="footer">
-            <p>{SITE_NAME} /// every gig here is an official, freely available upload. We just glue them together.</p>
+            <p>{SITE_NAME} /// every gig here is an official concert, played in full. We just glue them together.</p>
             <Link href="/map">FIND YOUR NEXT BAND &gt;&gt;</Link>
+            {/* Required by the YouTube API Services terms: how the site uses them, and Google's privacy policy. */}
+            <Link href="/privacy" data-od="footer-privacy">
+              Privacy
+            </Link>
           </footer>
           <PlayerDock />
         </PlayerProvider>

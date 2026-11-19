@@ -1,16 +1,19 @@
 // Genres: "Sort by noise" (board 04). Quiet on the left, loud on the right; the type grows with the noise.
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { gigs } from "@/components/gig/words";
 import { homeData } from "@/lib/home";
 
-export const dynamic = "force-dynamic";
+// Served ready-made, rebuilt in the background at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: "Genres",
-  description: "Full rock concerts by genre: punk, post-punk, metal, grunge, shoegaze and more.",
+  title: "Rock Genres · Full Concerts by Genre",
+  description: "Full rock concerts by genre: classic rock, punk, post-punk, metal, grunge, shoegaze, stoner and more.",
   alternates: { canonical: "/genres" },
 };
 
@@ -23,6 +26,7 @@ export default async function GenresPage() {
   const live = noise.filter((g) => g.count > 0);
   return (
     <main data-od="genres-index" className="pg">
+      <JsonLd data={[breadcrumbs([["Home", "/"], ["Genres", "/genres"]]), itemList("Genres", live.map((g) => ({ path: `/genres/${g.slug}`, name: g.name })))]} />
       <PageHead
         trail={[{ label: "Genres" }]}
         lines={["Sort by", "noise"]}

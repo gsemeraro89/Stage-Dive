@@ -1,15 +1,18 @@
 // Fields + Rooms: the festivals ("the fields") and everything with a roof ("the rooms").
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { gigs } from "@/components/gig/words";
 import { listPlaces } from "@/lib/home";
 
-export const dynamic = "force-dynamic";
+// Served ready-made, rebuilt in the background at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: "Fields + Rooms — festivals and venues",
-  description: "Full rock concerts by where they happened: the festival fields and the rooms, free to watch.",
+  title: "Festivals and Venues · Full Rock Concerts",
+  description: "Full rock concerts by where they happened: the festival fields and the rooms, from Glastonbury and Pinkpop to small clubs.",
   alternates: { canonical: "/venues" },
 };
 
@@ -27,6 +30,7 @@ export default async function VenuesPage() {
 
   return (
     <main data-od="venues-index" className="pg">
+      <JsonLd data={[breadcrumbs([["Home", "/"], ["Fields + Rooms", "/venues"]]), itemList("Festivals and venues", [...fields, ...rooms].map((v) => ({ path: `/venues/${v.slug}`, name: v.name })))]} />
       <PageHead
         trail={[{ label: "Fields + Rooms" }]}
         lines={["Fields", "+ Rooms"]}

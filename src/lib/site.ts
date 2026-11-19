@@ -1,5 +1,5 @@
 export const SITE_NAME = "STAGEDIVE";
-export const SITE_TAGLINE = "A fanzine that plays. Full rock gigs, free, the whole set.";
+export const SITE_TAGLINE = "A fanzine that plays. Full rock gigs, the whole set.";
 
 /** Public address of the site, used for canonical links. Set SITE_URL on the server. */
 export function siteUrl(): string {

@@ -1,5 +1,7 @@
 // Decades index: every decade that has a concert, by the year it was played (not uploaded).
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
@@ -7,11 +9,12 @@ import { gigs } from "@/components/gig/words";
 import { DECADE_LINES } from "@/lib/home";
 import { decadeIndex } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+// Served ready-made, rebuilt in the background at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: "Decades",
-  description: "Full rock concerts by the decade they were played: the eighties, the nineties and on, free to watch.",
+  title: "Rock Concerts by Decade · Full Shows and Setlists",
+  description: "Full rock concerts by the decade they were played: the seventies, eighties, nineties and on, with setlists.",
   alternates: { canonical: "/decades" },
 };
 
@@ -24,6 +27,7 @@ export default async function DecadesPage() {
   const total = decades.reduce((n, d) => n + d.count, 0);
   return (
     <main data-od="decades-index" className="pg">
+      <JsonLd data={[breadcrumbs([["Home", "/"], ["Decades", "/decades"]]), itemList("Decades", decades.map((d) => ({ path: `/decades/${d.label}`, name: `The ${d.label}` })))]} />
       <PageHead
         trail={[{ label: "Decades" }]}
         lines={["Pick a", "decade"]}
