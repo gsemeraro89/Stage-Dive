@@ -45,7 +45,7 @@ describe("structured data", () => {
       recordedAt: { "@id": `${page}#event` },
       interactionStatistic: { userInteractionCount: 2_400_000 },
     });
-    expect(ld.description).toMatch(/^Metallica live at L\.C\. Walker Arena/);
+    expect(ld.description).toMatch(/^Metallica · full concert · 1 November 1991 · L\.C\. Walker Arena/);
     expect(String(ld.description)).not.toMatch(BANNED);
   });
 

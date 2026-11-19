@@ -67,13 +67,19 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
   const opener = known[0];
   const closer = known.length > 1 ? known[known.length - 1] : undefined;
 
-  const lead = [
-    `${c.credits} live${place ? ` at ${place}` : ""}${when ? ` ${when}` : ""}${c.tour ? `, on ${tourWords(c.tour.name)}` : ""}:`,
-    ` the full concert, ${spokenDuration(c.durationSeconds)}${genres.length ? ` of ${listWords(genres)}` : ""}`,
-    songs.length ? `, with a ${songs.length}-song setlist${opener ? ` that opens with ${quoted(opener.title)}` : ""}` : "",
-    ".",
-    c.channel.isOfficial ? ` ${officialLine(c.channel)}` : "",
-  ].join("");
+  // Facts only (owner, 19 Nov 2026): the write-up tells the story, the lead must not repeat it.
+  const lead =
+    [
+      `${c.credits} · full concert`,
+      when?.replace(/^(on|in)\s+/, ""),
+      place,
+      c.tour?.name,
+      spokenDuration(c.durationSeconds),
+      songs.length ? `${plural(songs.length, "song")}${opener ? `, opening with ${quoted(opener.title)}` : ""}` : "",
+      c.channel.isOfficial ? `official concert from ${c.channel.name}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ") + ".";
 
   const questions: QA[] = [];
   if (place || when) {

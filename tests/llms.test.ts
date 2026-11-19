@@ -50,7 +50,7 @@ describe("Markdown copies", () => {
   const notes = concertNotes({ concert: c, band: { slug: "metallica", name: "Metallica" }, siblings: [], setlist, decade: { label: "1990s", count: 4 } });
   const md = concertMarkdown(c, setlist, notes);
   it("gives a concert's lead, facts, write-up, setlist with deep links, notes and questions", () => {
-    expect(md.startsWith(`# ${c.title}\n\nMetallica live at L.C. Walker Arena`)).toBe(true);
+    expect(md.startsWith(`# ${c.title}\n\nMetallica · full concert · 1 November 1991 · L.C. Walker Arena`)).toBe(true);
     expect(md).toContain("- **Band:** [Metallica](https://stagedive.example/artists/metallica)");
     expect(md).toContain("- **Played:** 1991-11-01");
     expect(md).toContain("- **Views on YouTube:** 2,400,000");

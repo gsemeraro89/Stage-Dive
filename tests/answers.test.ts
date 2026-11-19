@@ -36,17 +36,17 @@ describe("words", () => {
 });
 
 describe("concert answers", () => {
-  it("leads with who, where, when, the tour, how long, the genre and the setlist", () => {
+  it("leads with the facts only: when, where, the tour, how long and the setlist", () => {
     const a = concertAnswers(concertView(), setlist);
     expect(a.lead).toBe(
-      "Metallica live at L.C. Walker Arena, Muskegon, US on 1 November 1991, on the Wherever We May Roam Tour: " +
-        "the full concert, 2 hours 22 minutes of metal, with a 5-song setlist that opens with “Enter Sandman”. Official concert from Metallica.",
+      "Metallica · full concert · 1 November 1991 · L.C. Walker Arena, Muskegon, US · Wherever We May Roam Tour · 2 hours 22 minutes · " +
+        "5 songs, opening with “Enter Sandman” · official concert from Metallica.",
     );
   });
   it("says nothing about facts it does not hold", () => {
     const bare = concertView({ venue: null, city: null, country: null, performedOn: null, performedYear: null, tour: null, genres: [], venueKind: null, channel: { name: "Fan", isOfficial: false } });
     const a = concertAnswers(bare, null);
-    expect(a.lead).toBe("Metallica live: the full concert, 2 hours 22 minutes.");
+    expect(a.lead).toBe("Metallica · full concert · 2 hours 22 minutes.");
     expect(a.questions.map((q) => q.question)).toEqual(["How long is the concert?", "Where can I watch Metallica's full concert?"]);
   });
   it("asks about the setlist, the tour and the genre when known", () => {
