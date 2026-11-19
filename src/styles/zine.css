@@ -1580,3 +1580,45 @@ button.zn-cutout {
     margin-left: 0;
   }
 }
+
+/* A song with its own page: the row is the play button plus a narrow typed tab to "every version".
+   The tab is quiet (grey type, a dashed edge) so the setlist still reads as one list. */
+.zn-setlist li:has(> .zn-setlist-page) {
+  display: flex;
+  align-items: stretch;
+}
+
+.zn-setlist li:has(> .zn-setlist-page) > .zn-setlist-song {
+  flex: 1;
+  min-width: 0;
+}
+
+.zn-setlist-page {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 62px;
+  min-height: var(--touch);
+  margin-left: 2px;
+  border-left: 2px dashed var(--toner-soft);
+  color: var(--label-grey);
+  font-family: var(--font-type);
+  font-size: 11.5px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.zn-setlist-page:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.zn-setlist-page:focus-visible {
+  outline: 3px dashed var(--toner);
+  outline-offset: -3px;
+}

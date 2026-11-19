@@ -141,6 +141,33 @@
   font-size: 19px;
 }
 
+/* A plain setlist where a song has its own page: the title is the link, a finger tall. */
+.hm-setlist-plain li:has(> a) {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.hm-setlist-plain li > a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding-top: 4px;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.hm-setlist-plain li > a:hover {
+  background: var(--toner);
+  color: var(--paper);
+  text-decoration: none;
+}
+
 .hm-setlist-plain li {
   padding: 8px 8px 4px;
   font-size: clamp(16px, 1.3vw, 18.5px);

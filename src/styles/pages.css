@@ -1541,3 +1541,371 @@
     font-size: 15.5px;
   }
 }
+
+/* ================= Songs played live (song page, band song index, band page; 19 Nov 2026) ================= */
+
+/* Song page and song index: everything sits inside the page margins, one column of reading width. */
+.sg > :not(.pg-head),
+.sgi > :not(.pg-head) {
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+}
+
+/* Facts: label left, typed value right, a dashed rule under each (as the concert page's facts). */
+.sg-facts {
+  max-width: 820px;
+  margin-top: 0;
+  margin-bottom: 0;
+  border-top: var(--frame) solid var(--toner);
+}
+
+.sg-facts > div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  min-height: var(--touch);
+  padding: 12px 0 6px;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.sg-facts dt {
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  color: var(--label-grey);
+}
+
+.sg-facts dd {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sg-facts a,
+.bp-stats a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.sg-facts a:hover,
+.bp-stats a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* Every live version: the play label, the gig on the heavy hand, the typed data under it. */
+.sg-versions {
+  margin-top: clamp(34px, 4vw, 54px);
+  padding-top: 26px;
+  border-top: var(--cut);
+}
+
+.sg-versions .pg-title {
+  margin-bottom: 18px;
+}
+
+.pg .sg-version-list {
+  max-width: 980px;
+  border-top: var(--frame) solid var(--toner);
+}
+
+.sg-version {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  grid-template-areas:
+    "play gig"
+    "play data";
+  align-items: center;
+  gap: 0 18px;
+  padding: 6px 0;
+  border-bottom: 2px dashed var(--toner);
+}
+
+/* Dead straight: you press it. Black when it jumps to the song, white when it starts the whole gig. */
+.sg-version-play {
+  grid-area: play;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 3px 12px 0;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-type);
+  font-size: 14.5px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sg-version-play::before {
+  content: "";
+  flex: none;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+  margin-top: -3px;
+}
+
+.sg-version[data-timed] .sg-version-play {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+}
+
+.sg-version-play:hover,
+.sg-version[data-timed] .sg-version-play:hover {
+  background: var(--pink);
+  color: var(--toner);
+  outline: 0;
+}
+
+.sg-version-play:focus-visible,
+.sg-version-gig:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 3px;
+}
+
+.sg-version-gig {
+  grid-area: gig;
+  align-self: end;
+  padding-top: 4px;
+  font-family: var(--font-strip);
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.sg-version-gig:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+
+.sg-version-data {
+  grid-area: data;
+  align-self: start;
+  padding-top: 2px;
+  font-size: 14px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.sg-more {
+  max-width: 640px;
+  margin-top: clamp(34px, 4vw, 54px);
+  padding-top: 26px;
+  border-top: var(--cut);
+}
+
+.sg-more .pg-title {
+  margin-bottom: 8px;
+}
+
+.sg-links,
+.sgi-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin-top: 28px;
+  margin-bottom: 0;
+}
+
+/* The band's song index: a numbered list, most played first. */
+.pg .sgi-list {
+  max-width: 980px;
+  counter-reset: song;
+  border-top: var(--frame) solid var(--toner);
+}
+
+.sgi-song {
+  counter-increment: song;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+  min-height: var(--touch);
+  padding: 10px 0 6px;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.sgi-song::before {
+  content: counter(song, decimal-leading-zero);
+  flex: none;
+  min-width: 2.2em;
+  font-family: var(--font-strip);
+  font-size: 20px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sgi-song-name {
+  font-family: var(--font-strip);
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.sgi-song-name:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.sgi-song-data {
+  font-size: 14px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+/* Band page: the band live, in numbers (typed rows in two columns), and its songs played live. */
+.bp-stats,
+.bp-songs {
+  margin-top: clamp(34px, 4vw, 54px);
+  padding-top: 26px;
+  border-top: var(--cut);
+}
+
+.bp-stats .pg-title,
+.bp-songs .pg-title {
+  margin-bottom: 12px;
+}
+
+.bp-stats dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+
+.bp-stats dl > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-height: 64px;
+  padding: 10px 0 6px;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.bp-stats dt {
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  color: var(--label-grey);
+}
+
+.bp-stats dd {
+  margin: 0;
+  font-family: var(--font-strip);
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.pg .bp-songs-list {
+  columns: 2;
+  column-gap: 32px;
+  counter-reset: live;
+}
+
+.bp-songs-list li {
+  counter-increment: live;
+  break-inside: avoid;
+}
+
+.bp-songs-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: var(--touch);
+  padding: 12px 0 5px;
+  border-bottom: 2px dashed var(--toner);
+  text-decoration: none;
+}
+
+.bp-songs-list a::before {
+  content: counter(live, decimal-leading-zero);
+  flex: none;
+  min-width: 1.6em;
+  font-family: var(--font-type);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-song-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-strip);
+  font-size: 16.5px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.bp-songs-list .zn-data {
+  flex: none;
+  font-size: 14px;
+}
+
+.bp-songs-list a:hover .bp-song-name {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.bp-songs-all {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .sg-facts > div {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .sg-facts dd {
+    font-size: 15.5px;
+  }
+
+  .sg-version {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "gig"
+      "data"
+      "play";
+    gap: 2px 0;
+    padding: 10px 0 12px;
+  }
+
+  .sg-version-play {
+    justify-self: start;
+    margin-top: 8px;
+  }
+
+  .sgi-song::before {
+    font-size: 17px;
+  }
+
+  .bp-stats dl,
+  .pg .bp-songs-list {
+    grid-template-columns: minmax(0, 1fr);
+    columns: 1;
+  }
+}

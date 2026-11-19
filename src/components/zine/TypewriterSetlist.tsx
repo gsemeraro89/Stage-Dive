@@ -87,9 +87,9 @@ export function TypewriterSetlist({
               {played && <i className="zn-strike" aria-hidden="true" />}
             </button>
             {song.href && (
-              // Unstyled for now (designer): the song's page, beside the button that plays it.
+              // The song's own page, beside the button that plays it: a narrow typed tab, two short lines.
               <Link href={song.href} className="zn-setlist-page" data-od="song-page-link" aria-label={`${song.title}: every live version`}>
-                every version
+                <span aria-hidden="true">every</span> <span aria-hidden="true">version</span>
               </Link>
             )}
           </li>
