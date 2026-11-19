@@ -11,7 +11,7 @@
 import { formatDuration } from "./format";
 import { placeLine, SITE_NAME } from "./site";
 import { bandStats, type BandStats, type UsualSong } from "./band-stats";
-import type { Song, TypicalPosition } from "./songs";
+import { setlistSongs, songCount, type Song, type TypicalPosition } from "./songs";
 import { listWords, plural, quoted, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
 
 export interface QA {
@@ -65,7 +65,9 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
   const when = whenWords(c);
   const genres = c.genres.map((g) => g.name.toLowerCase());
   const songs = setlist?.tracks ?? [];
-  const known = songs.filter((t) => !t.unidentified);
+  // Only songs open or close a set: solos, intros, jams and notes do not (src/lib/song-title.ts).
+  const known = setlistSongs(songs).map((x) => ({ ...x.track, title: x.title }));
+  const count = songCount(songs);
   const opener = known[0];
   const closer = known.length > 1 ? known[known.length - 1] : undefined;
 
@@ -77,7 +79,7 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
       place,
       c.tour?.name,
       spokenDuration(c.durationSeconds),
-      songs.length ? `${plural(songs.length, "song")}${opener ? `, opening with ${quoted(opener.title)}` : ""}` : "",
+      count ? `${plural(count, "song")}${opener ? `, opening with ${quoted(opener.title)}` : ""}` : "",
       c.channel.isOfficial ? `official concert from ${c.channel.name}` : "",
     ]
       .filter(Boolean)
@@ -94,12 +96,12 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
     question: `How long is the concert?`,
     answer: `${spokenDuration(c.durationSeconds)} (${formatDuration(c.durationSeconds)}), the whole show.`,
   });
-  if (songs.length) {
+  if (count) {
     const first = known.slice(0, 3).map((t) => quoted(t.title));
     questions.push({
       question: `What songs did ${c.credits} play?`,
       answer:
-        `${plural(songs.length, "song")}${first.length ? `, opening with ${listWords(first)}` : ""}` +
+        `${plural(count, "song")}${first.length ? `, opening with ${listWords(first)}` : ""}` +
         `${closer && known.length > 3 ? ` and closing with ${quoted(closer.title)}` : ""}.` +
         ` The full setlist${songs.some((t) => t.time !== null) ? ", with the time each song starts," : ""} is on the concert page.`,
     });

@@ -11,7 +11,8 @@ import { buildQueue, relatedByGenre } from "./upnext";
 import { layoutMap } from "./similarity/layout";
 import { nameKey } from "./collector/musicbrainz";
 import { concertNotes, type ConcertNote, type SiblingConcert } from "./concert-notes";
-import { bandSongs, setlistCount, songLinker, type SongConcert } from "./songs";
+import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } from "./songs";
+import { MIN_SONG_VERSIONS } from "./seo";
 
 /**
  * Artists that have their own page (owner rule, 13 Nov 2026): only artists with a concert of their own
@@ -293,7 +294,8 @@ export async function getConcertPage(slug: string) {
       : Promise.resolve(0),
   ]);
   // Each song of the setlist links to its song page (src/lib/songs.ts), filed as the band's other setlists file it.
-  const linkSong = band ? songLinker(band.slug, siblings.flatMap((s) => s.songs ?? [])) : () => null;
+  // Only songs with two versions or more are linked from the setlist (owner, 19 Nov 2026).
+  const linkSong = band ? songLinker(band.slug, siblings.map((s) => s.songs ?? []), MIN_SONG_VERSIONS) : () => null;
   const songLinks: Record<string, string> = {};
   for (const t of setlist?.tracks ?? []) {
     const href = t.unidentified ? null : linkSong(t.title);
@@ -348,7 +350,8 @@ export async function bandConcertsWithSongs(artistId: number): Promise<SiblingCo
       performedYear: r.performedYear,
       venue: r.venue,
       tour: r.tour,
-      songs: view ? view.tracks.filter((t) => !t.unidentified).map((t) => t.title) : null,
+      // Songs only: medleys split, solos, intros, jams and notes left out (src/lib/songs.ts setlistSongs).
+      songs: view ? setlistSongs(view.tracks).map((s) => s.title) : null,
     };
   });
 }

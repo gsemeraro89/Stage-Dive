@@ -1,7 +1,8 @@
 // Song pages and a band's songs page for search engines and AI assistants: strong-page rules, titles,
 // sitemap entries, structured data, answers, Markdown copies, llms-full.txt and the copy rules.
 import { afterEach, describe, expect, it } from "vitest";
-import { bandSongsAnswers, songAnswers } from "../src/lib/answers";
+import { bandSongsAnswers, concertAnswers, songAnswers } from "../src/lib/answers";
+import { concertNotes, noteText } from "../src/lib/concert-notes";
 import { bandMarkdown, bandSongsMarkdown, concertMarkdown, llmsFullTxt, llmsTxt, songMarkdown } from "../src/lib/llms";
 import { bandSongsSearchTitle, robotsFor, songIndexIsStrong, songIsStrong, songSearchTitle } from "../src/lib/seo";
 import { buildSitemap } from "../src/lib/sitemap";
@@ -127,7 +128,7 @@ describe("structured data", () => {
     expect(l.itemListElement[0]).toMatchObject({ position: 1, url: "https://stagedive.example/songs/radiohead/creep", name: "Creep" });
   });
   it("links the songs a concert performed to their pages", () => {
-    const link = songLinker("metallica", ["Enter Sandman", "Creeping Death"]);
+    const link = songLinker("metallica", [["Enter Sandman", "Creeping Death"]]);
     const event = concertEventJsonLd(concertView(), setlist, link) as Record<string, any>;
     expect(event.workPerformed[0]).toEqual({ "@type": "MusicComposition", name: "Enter Sandman", url: "https://stagedive.example/songs/metallica/enter-sandman" });
   });
@@ -218,5 +219,19 @@ describe("Markdown copies and llms files", () => {
       expect(t).not.toMatch(BANNED);
       expect(youtubeOnlyWithViews(t)).toBe(true);
     }
+  });
+  it("never opens or counts a concert with a line that is not a song", () => {
+    const withJunk = {
+      source: "DESCRIPTION",
+      tracks: [
+        { time: 0, artist: null, title: "Lars Intro", unidentified: false, artistSlug: null },
+        ...setlist.tracks.map((t) => ({ ...t, time: (t.time ?? 0) + 60 })),
+        { time: 2000, artist: null, title: "Kirk Solo", unidentified: false, artistSlug: null },
+      ],
+    };
+    const lead = concertAnswers(concertView(), withJunk).lead;
+    expect(lead).toContain("5 songs, opening with “Enter Sandman”");
+    const notes = concertNotes({ concert: concertView(), band: { slug: "metallica", name: "Metallica" }, siblings: [], setlist: withJunk, decade: null });
+    expect(noteText(notes.find((n) => n.id === "setlist")!)).toBe("5 songs: opens with “Enter Sandman”, closes with “Seek & Destroy”.");
   });
 });

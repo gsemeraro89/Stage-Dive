@@ -16,6 +16,7 @@ import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading } from
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import { getConcertPage } from "@/lib/queries";
+import { songCount as countSongs } from "@/lib/songs";
 import { sourceNote, type TrackView } from "@/lib/setlist/view";
 import { compactNumber, placeLine } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -98,7 +99,9 @@ export default async function ConcertPage({ params }: Props) {
 
   const songs = setlist?.tracks ?? [];
   const timed = songs.length > 0 && songs.every((t) => t.time !== null);
-  const songCount = songs.length ? `${songs.length} ${songs.length === 1 ? "song" : "songs"}` : null;
+  // Songs only: solos, intros, jams and notes stay on the setlist but are not counted (src/lib/songs.ts).
+  const songTotal = countSongs(songs);
+  const songCount = songTotal ? `${songTotal} ${songTotal === 1 ? "song" : "songs"}` : null;
   const where = [concert.venue?.name, concert.city].filter(Boolean).join(", ");
   const data = [where, playedOn(concert)].filter(Boolean).join(" /// ");
   const kind = kindWord(concert.venueKind);

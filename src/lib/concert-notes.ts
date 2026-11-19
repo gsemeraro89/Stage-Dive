@@ -5,8 +5,10 @@
 // up in the band's other setlists. Nothing is guessed: a note is left out when its data is missing.
 // Pure functions, tested in tests/concert-notes.test.ts.
 import { formatDuration } from "./format";
-import { songLinker } from "./songs";
-import { listWords, ordinal, plural, quoted, songKey } from "./text";
+import { MIN_SONG_VERSIONS } from "./seo";
+import { canonicalSlugs, setlistSongs, songCount, songLinker, songsIn } from "./songs";
+import { songParts, songSlug } from "./song-title";
+import { listWords, ordinal, plural, quoted } from "./text";
 
 /** A piece of a note: plain text, or a link to another page on the site. */
 export type NotePart = string | { href: string; text: string };
@@ -122,15 +124,17 @@ export function concertNotes({ concert, band, siblings, setlist, decade }: Notes
   }
 
   // The setlist itself.
+  // Only songs count: solos, intros, jams, speeches and notes stay on the setlist but not here (src/lib/song-title.ts).
   const songs = setlist?.tracks ?? [];
-  const known = songs.filter((t) => !t.unidentified);
-  if (songs.length) {
+  const known = setlistSongs(songs);
+  const count = songCount(songs);
+  if (count) {
     const opener = known[0];
     const closer = known.length > 1 ? known[known.length - 1] : undefined;
     notes.push({
       id: "setlist",
       parts: [
-        `${plural(songs.length, "song")}${opener ? `: opens with ${quoted(opener.title)}` : ""}${closer ? `, closes with ${quoted(closer.title)}` : ""}.`,
+        `${plural(count, "song")}${opener ? `: opens with ${quoted(opener.title)}` : ""}${closer ? `, closes with ${quoted(closer.title)}` : ""}.`,
       ],
     });
   }
@@ -139,17 +143,21 @@ export function concertNotes({ concert, band, siblings, setlist, decade }: Notes
   let longest: { title: string; seconds: number } | null = null;
   for (let i = 0; i < songs.length - 1; i++) {
     const [a, b] = [songs[i], songs[i + 1]];
-    if (a.time === null || b.time === null || a.unidentified) continue;
+    if (a.time === null || b.time === null || a.unidentified || songParts(a.title).length !== 1) continue;
     const seconds = b.time - a.time;
-    if (seconds > 0 && (!longest || seconds > longest.seconds)) longest = { title: a.title, seconds };
+    if (seconds > 0 && (!longest || seconds > longest.seconds)) longest = { title: songParts(a.title)[0], seconds };
   }
   if (longest && longest.seconds >= 240) {
     notes.push({ id: "longest-song", parts: [`Longest song: ${quoted(longest.title)} (${formatDuration(longest.seconds)}).`] });
   }
 
   // Songs this setlist shares with the band's other setlists (each linked to its song page), and the ones only played here.
-  const linkSong = band ? songLinker(band.slug, siblings.flatMap((s) => s.songs ?? [])) : () => null;
-  const otherSetlists = others.filter((s) => s.songs?.length).map((s) => new Set(s.songs!.map(songKey)));
+  const lists = siblings.map((s) => s.songs ?? []);
+  const linkSong = band ? songLinker(band.slug, lists, MIN_SONG_VERSIONS) : () => null;
+  // Spellings of one song count as one ("Blood Buzz Ohio" / "Bloodbuzz Ohio").
+  const canon = canonicalSlugs([...lists.flatMap(songsIn), ...known.map((t) => t.title)]);
+  const songKey = (title: string) => canon.get(songSlug(title)) ?? songSlug(title);
+  const otherSetlists = others.filter((s) => s.songs?.length).map((s) => new Set(songsIn(s.songs!).map(songKey)));
   if (known.length && otherSetlists.length) {
     const shared = known
       .map((t) => ({ title: t.title, count: otherSetlists.filter((set) => set.has(songKey(t.title))).length }))
