@@ -36,6 +36,8 @@ export function proxy(request: NextRequest) {
     to.searchParams.delete("sort");
     return NextResponse.rewrite(to);
   }
+  // Anything else that is not the admin (e.g. /artists/<slug>.md) goes straight through.
+  if (!url.pathname.startsWith("/admin")) return NextResponse.next();
   const password = process.env.ADMIN_PASSWORD;
   if (!password) return new NextResponse("Not found", { status: 404 });
   const header = request.headers.get("authorization") ?? "";
