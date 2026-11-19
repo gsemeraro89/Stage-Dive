@@ -98,7 +98,7 @@ describe("descriptions and sharing", () => {
     process.env.SITE_URL = "https://stagedive.example";
     expect(shareImages("https://i.ytimg.com/vi/x/hqdefault.jpg")).toEqual([{ url: "https://i.ytimg.com/vi/x/hqdefault.jpg" }]);
     expect(shareImages("/photos/bands/metallica?v=1")).toEqual([{ url: "https://stagedive.example/photos/bands/metallica?v=1" }]);
-    expect(shareImages(null)).toEqual([{ url: "https://stagedive.example/apple-icon.png" }]);
+    expect(shareImages(null)).toEqual([{ url: "https://stagedive.example/share-card.png" }]);
     expect(abs("concerts/x")).toBe("https://stagedive.example/concerts/x");
   });
 });

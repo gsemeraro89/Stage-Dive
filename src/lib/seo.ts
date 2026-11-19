@@ -128,7 +128,7 @@ export function clip(text: string, max = 160): string {
  * Render server has 512 MB; OpenDecks dropped next/og for memory). The designer may replace this
  * with a 1200x630 share card in public/.
  */
-export const SHARE_FALLBACK_IMAGE = "/apple-icon.png";
+export const SHARE_FALLBACK_IMAGE = "/share-card.png";
 
 /** Open Graph images: the page's own photo or thumbnail when it has one, else the site's mark. */
 export function shareImages(src?: string | null): { url: string }[] {
