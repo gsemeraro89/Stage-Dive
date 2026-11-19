@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",
@@ -16,7 +16,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx scripts/seed.ts",
     "test": "vitest run",
-    "start:render": "prisma migrate deploy && tsx scripts/seed.ts && tsx scripts/thumbnails.ts && next start",
+    "start:render": "prisma migrate deploy && next start",
     "db:thumbnails": "tsx scripts/thumbnails.ts",
     "collect": "tsx scripts/collect.ts",
     "refresh": "tsx scripts/refresh.ts",
@@ -27,7 +27,8 @@
     "artist-lane": "tsx scripts/artist-lane.ts",
     "admin-ops": "tsx scripts/admin-ops.ts",
     "seed-check": "tsx scripts/seed-check.ts",
-    "band-photos": "tsx scripts/band-photos.ts"
+    "band-photos": "tsx scripts/band-photos.ts",
+    "indexnow": "tsx scripts/indexnow.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
