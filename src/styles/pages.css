@@ -1268,3 +1268,276 @@
   outline: 4px dashed var(--toner);
   outline-offset: 4px;
 }
+
+/* ================= Search answers, notes, questions, privacy (SEO step, 19 Nov 2026) =================
+   Lead sentences answer the page's question first. They are typed, a little larger than body text,
+   held by a black rule on the left (a line someone ruled with a marker). No pink, no tape. */
+
+.cp-lead,
+.bp-lead,
+.pg-lead {
+  margin: 0;
+  max-width: 64ch;
+  padding: 2px 0 2px 16px;
+  border-left: 6px solid var(--toner);
+  font-size: clamp(17px, 1.45vw, 19.5px);
+  line-height: 1.55;
+}
+
+/* Concert page: the lead spans both columns of the details, above the write-up and the facts. */
+.cp-details > .cp-lead {
+  grid-column: 1 / -1;
+}
+
+.bp-lead {
+  margin-bottom: clamp(20px, 2.4vw, 30px);
+}
+
+.pg-head > .pg-lead {
+  margin-top: 8px;
+}
+
+/* Concert notes: a clean sheet glued under the facts, the heading on a black strip. */
+.cp-notes {
+  grid-column: 1 / -1;
+  position: relative;
+  margin-top: 6px;
+  padding: 0 22px 14px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.4deg;
+}
+
+.cp-notes h2 {
+  display: inline-block;
+  margin: -14px 0 6px -8px;
+  padding: 8px 12px 5px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1deg;
+}
+
+.cp-notes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cp-notes li {
+  position: relative;
+  padding: 9px 0 7px 22px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.cp-notes li + li {
+  border-top: 2px dashed var(--toner);
+}
+
+/* A typed "///" in front of each fact instead of a bullet. */
+.cp-notes li::before {
+  content: "//";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  font-size: 14px;
+  letter-spacing: -0.05em;
+}
+
+.cp-notes a,
+.pg-faq dd a,
+.pg-prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.cp-notes a:hover,
+.pg-faq dd a:hover,
+.pg-prose a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* Questions (closed by default): the summary is a black label, dead straight, a finger tall. */
+.pg-faq {
+  margin-top: clamp(30px, 3.6vw, 48px);
+  border-top: var(--cut);
+  padding-top: clamp(18px, 2vw, 26px);
+}
+
+.pg > .pg-faq {
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+}
+
+.pg-faq > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch);
+  padding: 4px 16px 0;
+  background: var(--toner);
+  color: var(--paper);
+  box-shadow: var(--shadow-rest);
+  font-family: var(--font-strip);
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+}
+
+.pg-faq > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* "+" closed, "−" open: typed, in a small paper square. */
+.pg-faq > summary::after {
+  content: "+";
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding-top: 2px;
+  background: var(--paper);
+  color: var(--toner);
+  font-family: var(--font-type);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.pg-faq[open] > summary::after {
+  content: "\2212";
+}
+
+.pg-faq > summary:hover {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.pg-faq > summary:hover::after {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.pg-faq > summary:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+.pg-faq dl {
+  max-width: 78ch;
+  margin: 18px 0 0;
+}
+
+.pg-faq dl > div {
+  padding: 12px 0 10px;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.pg-faq dt {
+  font-family: var(--font-strip);
+  font-size: 17px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.pg-faq dd {
+  margin: 6px 0 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+/* Privacy: a typed page. The title on a cut strip, headings in the heavy hand, links underlined. */
+.pg-prose {
+  max-width: 72ch;
+  padding: clamp(28px, 4vw, 56px) var(--margin) 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.pg-prose h1 {
+  display: inline-block;
+  margin: 0 0 22px;
+  padding: 10px 18px 6px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(34px, 4.4vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  rotate: -1.5deg;
+}
+
+.pg-prose h2 {
+  display: inline-block;
+  margin: 30px 0 8px;
+  padding: 7px 12px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(18px, 1.7vw, 22px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.pg-prose h2:nth-of-type(even) {
+  rotate: 0.8deg;
+}
+
+.pg-prose h2:nth-of-type(odd) {
+  rotate: -0.8deg;
+}
+
+.pg-prose p {
+  margin: 0 0 14px;
+}
+
+@media (max-width: 760px) {
+  .cp-lead,
+  .bp-lead,
+  .pg-lead {
+    padding-left: 12px;
+    border-left-width: 5px;
+    font-size: 16.5px;
+  }
+
+  .cp-notes {
+    padding: 0 14px 10px;
+    rotate: none;
+  }
+
+  .cp-notes li {
+    font-size: 15px;
+  }
+
+  .pg-faq > summary {
+    font-size: 15px;
+    padding: 4px 12px 0;
+  }
+
+  .pg-faq dt {
+    font-size: 15.5px;
+  }
+}

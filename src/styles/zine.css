@@ -1469,8 +1469,19 @@ button.zn-cutout {
 }
 
 .zn-foot p {
+  flex: 1 1 420px;
   margin: 0;
   max-width: 80ch;
+}
+
+/* The two links sit together on the right. */
+.zn-foot > a:first-of-type {
+  margin-left: auto;
+}
+
+/* "Privacy": the last, quietest link, typed in caps like its neighbour. */
+.zn-foot [data-od="footer-privacy"] {
+  text-transform: uppercase;
 }
 
 .zn-foot a {
@@ -1561,5 +1572,11 @@ button.zn-cutout {
     top: 100%;
     left: var(--margin);
     right: var(--margin);
+  }
+}
+
+@media (max-width: 760px) {
+  .zn-foot > a:first-of-type {
+    margin-left: 0;
   }
 }
