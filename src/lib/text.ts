@@ -1,6 +1,7 @@
 // Small helpers that turn data into plain English, shared by the answers (src/lib/answers.ts), the
 // concert notes (src/lib/concert-notes.ts) and the Markdown copies (src/lib/llms.ts). Pure functions.
 import { formatDuration } from "./format";
+import { songSlug } from "./song-title";
 
 /** "A", "A and B", "A, B and C". */
 export function listWords(xs: string[]): string {
@@ -53,14 +54,12 @@ export function topCounts(values: string[], n: number): string[] {
     .map(([v]) => v);
 }
 
-/** One key per song, so "One (Live)" and "one" count as the same song. */
+/**
+ * One key per song, so "One (Live)", "one" and "Encore: One" count as the same song. The same key is
+ * the song's address on its song page (src/lib/song-title.ts).
+ */
 export function songKey(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/\((live|remix|intro|outro|reprise|acoustic)[^)]*\)|\[[^\]]*\]/g, "")
-    .replace(/&/g, "and")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim();
+  return songSlug(title);
 }
 
 /**
