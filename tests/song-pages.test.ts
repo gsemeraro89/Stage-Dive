@@ -74,8 +74,8 @@ describe("strong pages", () => {
 
 describe("titles", () => {
   it("are written the way people search", () => {
-    expect(songSearchTitle("Creep", "Radiohead", 4)).toBe("Creep · Radiohead · Every Live Version");
-    expect(songSearchTitle("Lucky", "Radiohead", 1)).toBe("Lucky · Radiohead · Live Version");
+    expect(songSearchTitle("Creep", "Radiohead", 4)).toBe("Creep Live · Radiohead · Every Live Version");
+    expect(songSearchTitle("Lucky", "Radiohead", 1)).toBe("Lucky Live · Radiohead · Live Version");
     expect(bandSongsSearchTitle("Radiohead")).toBe("Radiohead · Songs Played Live");
   });
 });

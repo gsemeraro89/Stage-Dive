@@ -8,6 +8,7 @@
 //   Full Concert + Setlist"), "·" as the separator; the site name is added by the layout's template.
 // - Structured data lives in src/lib/structured-data.ts; answers in src/lib/answers.ts.
 // Pure functions, tested in tests/seo.test.ts.
+import { DOMAIN_BRAND_NAMES, genreSearchName, shortDecade } from "./keyword-targets";
 import { SITE_NAME, siteUrl } from "./site";
 
 /** True only on the live site with its final domain. The test service and local copies are never indexed. */
@@ -80,8 +81,16 @@ export function robotsFor(worthIndexing: boolean): { index: boolean; follow: boo
 
 // ---- Titles and descriptions ----
 
-/** The other ways people type the brand, so "stage dive" is read as this site, not as a phrase. */
-export const SITE_ALTERNATE_NAMES = ["Stage Dive", "Stagedive", "STAGEDIVE", "stagedive"];
+/** The home page (keyword targets: "full concert(s)", "full concert live", "full rock concerts"). */
+export const HOME_TITLE = `Full Concerts Live · Full Rock Concerts and Setlists · ${SITE_NAME}`;
+export const HOME_DESCRIPTION =
+  "Full concerts, the whole show, played here: full rock concerts live from festivals and rooms, by band, decade, genre and tour, with setlists you can click.";
+
+/**
+ * The other ways people type the brand, so "stage dive" is read as this site, not as a phrase; and the
+ * live domain (owner, 20 Nov 2026: https://fullconcert.live) with its spoken form "Full Concert Live".
+ */
+export const SITE_ALTERNATE_NAMES = ["Stage Dive", "Stagedive", "STAGEDIVE", "stagedive", ...DOMAIN_BRAND_NAMES];
 
 /** "new wave / synth" -> "New Wave / Synth" (genre names are stored lower case). */
 export function titleCase(s: string): string {
@@ -133,14 +142,18 @@ export function venueYearName(name: string, year: number): string {
   return name.includes(String(year)) ? name : `${name} ${year}`;
 }
 
-/** "Grunge · Full Concerts and Setlists" */
+/**
+ * "Full Grunge Concerts · Live Shows and Setlists", written the way people search a genre ("full metal
+ * concert", "full trip hop concert"; src/lib/keyword-targets.ts). A double genre goes by the name people
+ * type ("new wave / synth" -> "Full New Wave Concerts"); the description carries the whole name.
+ */
 export function genreSearchTitle(name: string, anySetlist: boolean): string {
-  return `${titleCase(name)} · Full Concerts${anySetlist ? " and Setlists" : ""}`;
+  return `Full ${genreSearchName(name)} Concerts · Live Shows${anySetlist ? " and Setlists" : ""}`;
 }
 
-/** "1990s Rock Concerts · Full Shows and Setlists" */
+/** "Full 1990s Rock Concerts · Live 90s Rock Shows and Setlists" ("90s rock concerts" is how people search). */
 export function decadeSearchTitle(label: string, anySetlist: boolean): string {
-  return `${label} Rock Concerts · Full Shows${anySetlist ? " and Setlists" : ""}`;
+  return `Full ${label} Rock Concerts · Live ${shortDecade(label)} Rock Shows${anySetlist ? " and Setlists" : ""}`;
 }
 
 /** "Metallica · Wherever We May Roam Tour · Full Concerts" ("Tour" is added when the name lacks it). */
@@ -149,9 +162,9 @@ export function tourSearchTitle(tour: string, band: string | null): string {
   return `${band ? `${band} · ` : ""}${name} · Full Concerts`;
 }
 
-/** "Creep · Radiohead · Every Live Version" ("Live Version" while there is only one). */
+/** "Creep Live · Radiohead · Every Live Version" ("Live Version" while there is only one): people search "creep live". */
 export function songSearchTitle(song: string, band: string, versions: number): string {
-  return `${song} · ${band} · ${versions > 1 ? "Every Live Version" : "Live Version"}`;
+  return `${song} Live · ${band} · ${versions > 1 ? "Every Live Version" : "Live Version"}`;
 }
 
 /** "Radiohead · Songs Played Live" */

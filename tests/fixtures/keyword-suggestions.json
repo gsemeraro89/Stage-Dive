@@ -1,0 +1,15 @@
+{
+  "_note": "Answers in the shape Google (client=firefox) and Bing (osjson) return them, for tests/keywords.test.ts. Google adds extra elements after the list.",
+  "google": {
+    "full concert": ["full concert", ["full concert", "full concert metallica", "full concert 4k", "full concert live", "full concert pink floyd", "full concert hd", "full concert nirvana live", "full concert guitar tabs"], [], { "google:suggestsubtypes": [[512], [512], [512], [512], [512], [512], [512], [512]] }],
+    "pinkpop 1995": ["pinkpop 1995", ["pinkpop 1995", "pinkpop 1995 lineup", "pinkpop 1995 metallica", "pinkpop 1995 tickets"], [], {}],
+    "metallica live": ["metallica live", ["metallica live", "metallica live 1991", "metallica live seattle 1989", "metallica last concert", "metallica tour 2031", "metallica net worth"], [], {}],
+    "full metal concert": ["full metal concert", ["full metal concert", "full metal jacket", "full metal concert 2024"], [], {}]
+  },
+  "bing": {
+    "full concert": ["full concert", ["full concert", "full concert live", "full concert 4k", "full concerts on youtube", "full concert video"]],
+    "pinkpop 1995": ["pinkpop 1995", ["pinkpop 1995", "pinkpop 1995 line up", "pinkpop 1995 metallica full concert"]],
+    "metallica live": ["metallica live", ["metallica live", "metallica live 1991", "metallica live at pinkpop"]],
+    "full metal concert": ["full metal concert", ["full metal concert", "full metal alchemist"]]
+  }
+}
