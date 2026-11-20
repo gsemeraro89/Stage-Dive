@@ -152,7 +152,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
     return dup
       ? { status: "replaced" as const, concertId: concert.id, slug, replacedYoutubeId: dup.identity.youtubeId }
       : { status: "created" as const, concertId: concert.id, slug };
-  });
+  }, { timeout: 20_000, maxWait: 10_000 }); // Neon from GitHub Actions can be slow: 5 s was too short (20 Nov 2026)
 }
 
 /**
