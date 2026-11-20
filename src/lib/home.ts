@@ -48,7 +48,9 @@ export const DECADE_LINES: Record<string, string> = {
 
 /** "Sort by noise": genres from the quietest to the loudest. */
 export const NOISE_ORDER: readonly (typeof GENRES)[number][] = [
+  "trip hop",
   "shoegaze",
+  "art pop / experimental",
   "indie",
   "new wave / synth",
   "post-punk",
@@ -58,6 +60,7 @@ export const NOISE_ORDER: readonly (typeof GENRES)[number][] = [
   "grunge",
   "stoner",
   "emo / post-hardcore",
+  "electronic rock / big beat",
   "punk",
   "hard rock",
   "metal",

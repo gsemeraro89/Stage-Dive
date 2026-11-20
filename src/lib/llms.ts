@@ -19,7 +19,7 @@ import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
 
 export const SITE_SUMMARY =
-  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore), the whole show by one band, from official festival, broadcaster, band and label channels. Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
+  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore, plus trip hop, electronic rock and big beat, art pop and experimental), the whole show by one band, from official festival, broadcaster, band and label channels. Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
 
 interface Named {
   slug: string;

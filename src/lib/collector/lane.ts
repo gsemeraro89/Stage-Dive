@@ -8,7 +8,7 @@
 // Only what is left is sent to Claude.
 
 import type { ArtistRule, ChannelKindName, Decision } from "./rules";
-import { titleSaysNotAConcert } from "./rules";
+import { saysDjSet, titleSaysNotAConcert } from "./rules";
 
 // ---------- 1. Is the artist's name in the title? ----------
 
@@ -85,6 +85,7 @@ export function excludedTitleWord(title: string): string | null {
     const m = title.match(NOT_A_CONCERT_WORD);
     return (m?.[1] ?? "trailer").toLowerCase();
   }
+  if (saysDjSet(title)) return "dj set";
   return LANE_EXCLUDED.find((x) => x.pattern.test(title))?.word ?? null;
 }
 

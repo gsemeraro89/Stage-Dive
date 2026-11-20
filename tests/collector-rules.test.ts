@@ -15,6 +15,8 @@ import {
   resolveDuplicate,
   titleSaysNotAConcert,
   worthRemembering,
+  saysDjSet,
+  DJ_NAMES,
   sourceRank,
   inReadingOrder,
   readPerformed,
@@ -62,7 +64,8 @@ describe("titles and long videos (saving calls and tokens)", () => {
       expect(titleSaysNotAConcert(t), t).toBe(true);
     for (const t of ["Stephan Bodzin live at Cercle", "Anyma presents Afterlife Tulum (Full Concert)", "Recapitulation live concert", "Moviemaker b2b DJ"])
       expect(titleSaysNotAConcert(t), t).toBe(false);
-    expect(checkRules(video({ title: "Time Warp 2024 Aftermovie" }), config)).toEqual(["not-a-concert-title"]);
+    expect(checkRules(video({ title: "Pinkpop 2024 Aftermovie" }), config)).toEqual(["not-a-concert-title"]);
+    expect(checkRules(video({ title: "Time Warp 2024 Aftermovie" }), config)).toEqual(["not-a-concert-title", "dj-set"]);
   });
 
   it("remembers long videos kept out only by things that can change", () => {
@@ -138,6 +141,64 @@ describe("genresInText", () => {
     expect(genresInText("Live at the Hard Rock Cafe")).toEqual([]);
     expect(genresInText("Pop punk all-dayer")).toEqual([]);
     expect(genresInText("Techno and house night")).toEqual([]);
+  });
+});
+
+describe("DJ sets stay out for free (owner, 20 Nov 2026)", () => {
+  it("leaves out DJ sets, DJ-only events and the DJs the owner named, from the title or the channel", () => {
+    for (const t of [
+      "Adam Beyer @ Time Warp 2019",
+      "Chris Liebing | Stone Techno Festival 2023",
+      "Maceo Plex - Awakenings 2022 (DJ Set)",
+      "Ben Klock DJ-set at Berghain",
+      "Boiler Room Berlin: Someone",
+      "Amelie Lens b2b Charlotte de Witte",
+      "Underworld DJ Mix 1998",
+    ])
+      expect(saysDjSet(t), t).toBe(true);
+    expect(saysDjSet("Live 2019", "Time Warp")).toBe(true);
+    expect(checkRules(video({ title: "Adam Beyer live at Time Warp 2019" }), config)).toEqual(["dj-set"]);
+    // A DJ set never becomes a concert: not remembered for a later look.
+    expect(worthRemembering(checkRules(video({ title: "Ben Klock DJ set" }), config))).toBe(false);
+  });
+  it("lets live acts through, including the new genres' bands", () => {
+    for (const t of [
+      "The Prodigy - Live at Glastonbury 2009",
+      "The Chemical Brothers live at Glastonbury 2011",
+      "Massive Attack live at Pinkpop 1999",
+      "Björk - Live at Primavera Sound 2023",
+      "Leftfield live at Rock Werchter",
+      "DJ Shadow and his band? no: Ladyhawke live",
+      "Djehuty live at the Arena",
+    ])
+      expect(saysDjSet(t), t).toBe(false);
+    expect(checkRules(video({ title: "Underworld live at Pinkpop 1998", channelTitle: "Pinkpop Archive" }), config)).toEqual([]);
+    expect(DJ_NAMES).toEqual(["Adam Beyer", "Chris Liebing", "Maceo Plex", "Ben Klock"]);
+  });
+});
+
+describe("new genres (owner, 20 Nov 2026)", () => {
+  it("tells both classifiers about the new genres and that DJ sets are never ours", async () => {
+    const { GENRE_RULES } = await import("../src/lib/collector/classify");
+    for (const word of ["trip hop", "electronic rock / big beat", "art pop / experimental", "Massive Attack", "The Prodigy", "Björk", "DJ set", "Time Warp", "Stone Techno", "Adam Beyer", "hip hop", "reggae", "jazz"])
+      expect(GENRE_RULES, word).toContain(word);
+  });
+  it("finds trip hop, big beat and art pop words in the video's own text", () => {
+    expect(genresInText("Massive Attack - Trip-Hop legends live")).toEqual(["trip hop"]);
+    expect(genresInText("", "", ["#triphop", "#bristolsound"])).toEqual(["trip hop"]);
+    expect(genresInText("The Prodigy: big beat at its loudest")).toEqual(["electronic rock / big beat"]);
+    expect(genresInText("Electronic rock night")).toEqual(["electronic rock / big beat"]);
+    expect(genresInText("Björk, art pop pioneer, live")).toEqual(["art pop / experimental"]);
+    expect(genresInText("Techno, house and electronic music all night")).toEqual([]);
+    expect(genresInText("Experimental techno set")).toEqual([]);
+  });
+  it("counts MusicBrainz's trip hop, big beat and art pop, but not techno or electronic alone", () => {
+    expect(isRockGenreList(["trip hop", "electronic", "downtempo"])).toBe(true);
+    expect(isRockGenreList(["big beat", "breakbeat", "electronic"])).toBe(true);
+    expect(isRockGenreList(["art pop", "experimental", "electronic"])).toBe(true);
+    expect(isRockGenreList(["techno", "electronic", "minimal techno"])).toBe(false);
+    expect(isRockGenreList(["reggae", "dub"])).toBe(false);
+    expect(isRockGenreList(["jazz", "classical"])).toBe(false);
   });
 });
 

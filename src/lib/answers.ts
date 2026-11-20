@@ -107,7 +107,7 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
     });
   }
   if (c.tour) questions.push({ question: `Which tour was it part of?`, answer: `${c.tour.name}.` });
-  if (genres.length) questions.push({ question: `What kind of rock is it?`, answer: `${listWords(c.genres.map((g) => g.name))}.` });
+  if (genres.length) questions.push({ question: `What kind of music is it?`, answer: `${listWords(c.genres.map((g) => g.name))}.` });
   questions.push({
     question: `Where can I watch ${c.credits}'s full concert?`,
     answer: `On ${SITE_NAME}, in full, in the player on the concert page${c.channel.isOfficial ? `, from the official ${c.channel.name} channel` : ""}. No account needed.`,
