@@ -11,6 +11,7 @@ import { VISIBLE } from "./filters";
 import { PAGE_ARTIST, songCatalogue } from "./queries";
 import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsStrong } from "./seo";
 import { bandSongsPath, songPath } from "./songs";
+import { bestIsStrong, bestPath, bestSlugsFor } from "./best";
 
 export interface SitemapEntry {
   path: string;
@@ -82,6 +83,10 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
       .filter(([, v]) => hubIsStrong(v.count))
       .map(([k, v]): SitemapEntry => ({ path: path(k), lastModified: v.updated, priority, changeFrequency }));
 
+  const best = [...tally(concerts, bestSlugsFor)]
+    .filter(([, v]) => bestIsStrong(v))
+    .map(([k, v]): SitemapEntry => ({ path: bestPath(k), lastModified: v.updated, priority: 0.6, changeFrequency: "daily" }));
+  if (best.length) best.unshift({ path: "/best", lastModified: best.reduce<Date | undefined>((d, e) => later(d, e.lastModified!), undefined), priority: 0.7, changeFrequency: "daily" });
   return [
     ...FIXED_PAGES,
     ...bands
@@ -93,6 +98,8 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
     ...hubs((c) => c.genreSlugs, (k) => `/genres/${k}`, 0.7, "weekly"),
     ...hubs((c) => [c.performedYear && parseDecade(decadeOf(c.performedYear)) !== null ? decadeOf(c.performedYear) : null], (k) => `/decades/${k}`, 0.6, "weekly"),
     ...hubs((c) => [c.tourSlug], (k) => `/tours/${k}`, 0.6, "monthly"),
+    // "Best of" rankings from ten concerts (src/lib/best.ts); views change every night.
+    ...best,
     ...concerts
       .filter(concertIsStrong)
       .map((c): SitemapEntry => ({ path: `/concerts/${c.slug}`, lastModified: c.updatedAt, priority: 0.7, changeFrequency: "monthly" })),
@@ -127,6 +134,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
         writeUp: true,
         performedYear: true,
         venue: { select: { slug: true } },
+        venueKind: { select: { slug: true } },
         tour: { select: { slug: true } },
         credits: { select: { artist: { select: { slug: true } } } },
         genres: { select: { genre: { select: { slug: true } } } },
@@ -145,6 +153,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       writeUp: c.writeUp,
       performedYear: c.performedYear,
       venueSlug: c.venue?.slug ?? null,
+      venueKindSlug: c.venueKind?.slug ?? null,
       tourSlug: c.tour?.slug ?? null,
       artistSlugs: c.credits.map((a) => a.artist.slug),
       genreSlugs: c.genres.map((g) => g.genre.slug),

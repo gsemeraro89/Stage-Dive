@@ -300,12 +300,16 @@ export function breadcrumbs(items: [name: string, path: string][]): Json {
   };
 }
 
-/** schema.org ItemList of pages (concerts on a venue, genre, decade or tour page; bands on the index). At most 50 entries. */
-export function itemList(name: string, items: { path: string; name?: string }[]): Json {
+/**
+ * schema.org ItemList of pages (concerts on a venue, genre, decade or tour page; bands on the index). At
+ * most 50 entries. `ranked`: the order is a ranking, best first (the "best of" lists).
+ */
+export function itemList(name: string, items: { path: string; name?: string }[], ranked = false): Json {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name,
+    ...(ranked ? { itemListOrder: "https://schema.org/ItemListOrderDescending" } : {}),
     numberOfItems: items.length,
     itemListElement: items.slice(0, 50).map((it, i) => ({ "@type": "ListItem", position: i + 1, url: abs(it.path), ...(it.name ? { name: it.name } : {}) })),
   };

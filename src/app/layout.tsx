@@ -55,6 +55,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <footer className="zn-foot" data-od="footer">
             <p>{SITE_NAME} /// every gig here is an official concert, played in full. We just glue them together.</p>
             <Link href="/map">FIND YOUR NEXT BAND &gt;&gt;</Link>
+            <Link href="/best" data-od="footer-best">
+              MOST WATCHED &gt;&gt;
+            </Link>
             {/* Required by the YouTube API Services terms: how the site uses them, and Google's privacy policy. */}
             <Link href="/privacy" data-od="footer-privacy">
               Privacy

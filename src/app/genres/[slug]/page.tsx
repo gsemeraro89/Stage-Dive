@@ -6,7 +6,8 @@ import Link from "next/link";
 import { Collection, pileData } from "@/components/gig/Collection";
 import { EmptyNote, PageHead, TagLinks } from "@/components/gig/PageHead";
 import { cutName } from "@/components/gig/words";
-import { getGenrePage, listGenres } from "@/lib/queries";
+import { bestCatalogue, getGenrePage, listGenres } from "@/lib/queries";
+import { bestIsStrong, bestPath, genreSlug } from "@/lib/best";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { genreLead } from "@/lib/answers";
 import { clip, genreSearchTitle, hubIsStrong, robotsFor, shareImages, titleCase } from "@/lib/seo";
@@ -45,7 +46,10 @@ export default async function GenrePage({ params }: Props) {
   if (!page) notFound();
   const { genre, concerts } = page;
   // The genres that do have gigs: somewhere to go next.
-  const others = (await listGenres()).filter((g) => g.slug !== genre.slug);
+  const [genres, rankings] = await Promise.all([listGenres(), bestCatalogue()]);
+  const others = genres.filter((g) => g.slug !== genre.slug);
+  // "Best live metal concerts" (src/lib/best.ts), when it has ten concerts or more.
+  const ranking = rankings.find((l) => l.slug === genreSlug(genre.slug) && bestIsStrong(l));
   const otherGenres = <TagLinks label={concerts.length ? "Other noise" : "Play these instead"} items={others.map((g) => ({ href: `/genres/${g.slug}`, label: g.name }))} />;
   const path = `/genres/${genre.slug}`;
   return (
@@ -76,6 +80,11 @@ export default async function GenrePage({ params }: Props) {
         </EmptyNote>
       ) : (
         <Collection concerts={concerts} label={`Every ${genre.name} gig`}>
+          {ranking && (
+            <Link href={bestPath(ranking.slug)} className="hm-more" data-od="best-link">
+              MOST WATCHED {genre.name.toUpperCase()} &gt;&gt;
+            </Link>
+          )}
           {otherGenres}
         </Collection>
       )}

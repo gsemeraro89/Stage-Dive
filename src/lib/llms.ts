@@ -14,6 +14,7 @@ import { formatDuration } from "./format";
 import { startAtPath } from "./player/start-time";
 import { abs, bestListIsStrong, venueYearIsStrong, venueYearName } from "./seo";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
+import { bestHeading, bestLead, bestPath, bestQuestions, rankedName, type BestList } from "./best";
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
 
@@ -66,6 +67,9 @@ export function llmsTxt(data: LlmsData): string {
     `- [Genres](${abs("/genres")}): concerts by genre`,
     `- [Tours](${abs("/tours")}): concerts by tour`,
     `- [Find your next band](${abs("/map")}): bands similar to one you like`,
+    ...(data.best?.some((b) => bestListIsStrong(b.count))
+      ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
+      : []),
     "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
     "",
@@ -131,6 +135,13 @@ function songSections(bands: SongCatalogueBand[]): string[] {
   ];
 }
 
+/** The full index's "best of" rankings with ten concerts or more. */
+function bestSection(lists: { slug: string; title: string; count: number }[]): string[] {
+  const strong = lists.filter((l) => bestListIsStrong(l.count));
+  if (!strong.length) return [];
+  return [`## Rankings by views on YouTube (${strong.length})`, "", ...strong.map((l) => `- [${l.title}](${abs(bestPath(l.slug))}): top ${l.count}`), ""];
+}
+
 /** The full index's festival and venue years with two or more concerts, newest first. */
 function venueYearSection(years: VenueYear[]): string[] {
   const strong = years.filter((y) => venueYearIsStrong(y.count)).sort((a, b) => b.year - a.year || a.name.localeCompare(b.name));
@@ -173,6 +184,7 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
           "",
         ]
       : []),
+    ...bestSection(data.best ?? []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
     "## Most watched concerts",
@@ -420,6 +432,28 @@ export function venueYearMarkdown(
       ? [`## Other years at ${venue.name}`, "", ...others.map((y) => `- [${venueYearName(venue.name, y.year)}](${abs(venueYearPath(venue.slug, y.year))}): ${count(y.count)}`), ""]
       : []),
     ...qaMarkdown(answers.questions),
+    `Source: ${SITE_NAME}, ${abs(path)}`,
+    "",
+  ].join("\n");
+}
+
+// ---- "Best of" rankings (src/lib/best.ts) ----
+
+/** A ranking as Markdown: lead, every concert in order with its views, questions. */
+export function bestMarkdown(list: BestList, concerts: (ConcertLine & { viewCount: number; artists: { name: string; role: "MAIN" | "WITH" }[] })[]): string {
+  const path = bestPath(list.slug);
+  return [
+    `# ${bestHeading(list)}`,
+    "",
+    bestLead(list, concerts),
+    "",
+    "## The ranking, most watched first",
+    "",
+    ...concerts.map((c, i) => `${i + 1}. [${rankedName(c)}](${abs(`/concerts/${c.slug}`)}): ${c.viewCount.toLocaleString("en-GB")} views on YouTube, ${formatDuration(c.durationSeconds)}${c.hasSetlist ? ", setlist" : ""}`),
+    "",
+    ...qaMarkdown(bestQuestions(list, concerts)),
+    `Every ranking: ${abs("/best")}`,
+    "",
     `Source: ${SITE_NAME}, ${abs(path)}`,
     "",
   ].join("\n");

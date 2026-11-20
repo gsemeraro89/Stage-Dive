@@ -14,6 +14,7 @@ import { concertNotes, type ConcertNote, type SiblingConcert } from "./concert-n
 import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } from "./songs";
 import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
+import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList } from "./best";
 
 /**
  * Artists that have their own page (owner rule, 13 Nov 2026): only artists with a concert of their own
@@ -677,6 +678,30 @@ export async function getGenrePage(slug: string) {
   return { genre, concerts: rows.map(toConcertView) };
 }
 
+// ---- "Best of" rankings (src/lib/best.ts) ----
+
+/** Every ranking the catalogue can make, with how many concerts each has. */
+async function bestCatalogueUncached(): Promise<BestList[]> {
+  const [total, decades, options] = await Promise.all([getDb().concert.count({ where: VISIBLE }), decadeIndex(), filterOptions()]);
+  return bestLists({ total, decades, genres: options.genres, venueKinds: options.venueKinds });
+}
+
+/** A ranking and its concerts, most watched first (at most BEST_SIZE). Null for an unknown or empty ranking. */
+export async function getBestPage(slug: string) {
+  const list = (await bestCatalogue()).find((l) => l.slug === slug);
+  if (!list) return null;
+  const scope =
+    list.kind === "decade"
+      ? { performedYear: { gte: parseDecade(list.key!)!, lte: parseDecade(list.key!)! + 9 } }
+      : list.kind === "genre"
+        ? { genres: { some: { genre: { slug: list.key! } } } }
+        : list.kind === "place"
+          ? { venueKind: { slug: list.key! } }
+          : {};
+  const rows = await findConcerts({ where: { AND: [VISIBLE, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
+  return { list, concerts: rows.map(toConcertView) };
+}
+
 // ---- Index pages ----
 
 /** Picture for an artist, venue or genre: the thumbnail of its newest visible concert. */
@@ -907,6 +932,9 @@ export const mapArtistIndex = cached("mapArtistIndex", mapArtistIndexUncached);
 export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
+export const bestCatalogue = cached("bestCatalogue", bestCatalogueUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts). */
 export const venueYearIndex = cached("venueYearIndex", venueYearIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
@@ -925,16 +953,18 @@ export async function findConcertViews(args: { where: object; orderBy?: object |
 
 /** Everything /llms.txt and /llms-full.txt list (src/lib/llms.ts): every band, place, genre, decade and tour with concerts. */
 export async function llmsData() {
-  const [bands, options, genres, decades, tours, venueYears] = await Promise.all([
+  const [bands, options, genres, decades, tours, venueYears, best] = await Promise.all([
     listArtists(),
     filterOptions(),
     listGenres(),
     decadeIndex(),
     listTours(),
     venueYearIndex(),
+    bestCatalogue(),
   ]);
   return {
     venueYears,
+    best: best.filter(bestIsStrong).map((l) => ({ slug: l.slug, title: bestHeading(l), count: shownIn(l) })),
     bands: bands.map((b) => ({ slug: b.slug, name: b.name, concerts: b.concerts })),
     venues: options.venues.map((v) => ({ slug: v.slug, name: v.name, concerts: v.count })),
     genres: genres.map((g) => ({ slug: g.slug, name: g.name, count: g.count })),
