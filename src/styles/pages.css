@@ -2052,15 +2052,41 @@
   color: var(--paper);
 }
 
-/* Band page: one small typed line of outbound links. */
+/* Band page: one small typed line of outbound links. The "///" hangs at the end of each link
+   (never at the start of a wrapped line), stuck to its link so it cannot wrap on its own. */
 .bp-elsewhere {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 4px;
+  gap: 0 10px;
   margin: clamp(30px, 3.6vw, 44px) 0 0;
   padding-top: 14px;
   border-top: var(--cut);
+}
+
+.bp-elsewhere-label {
+  white-space: nowrap;
+}
+
+.pg .bp-elsewhere-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bp-elsewhere-list li {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.bp-elsewhere-list li:not(:last-child)::after {
+  content: "///";
+  margin-left: 10px;
 }
 
 .bp-elsewhere a {
@@ -2076,6 +2102,11 @@
 .bp-elsewhere a:hover {
   background: var(--toner);
   color: var(--paper);
+}
+
+.bp-elsewhere a:focus-visible {
+  outline: 3px dashed var(--toner);
+  outline-offset: 2px;
 }
 
 @media (max-width: 760px) {
