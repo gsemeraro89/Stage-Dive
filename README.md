@@ -53,6 +53,8 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 
 Rules (brief section 2): one band's full concert or festival show, 40+ minutes; official sources only (fan uploads only in the report); no view threshold; Haiku via the Batch API, no cost cap (owner, 19 Nov 2026); no home sessions or online livestream shows.
 
+Classifier (owner, 20 Nov 2026): the collector asks Claude Haiku (Batch API, cached instructions; up to 1,500 videos a run), Claude Opus only when Haiku is unsure (below 0.75 or UNCERTAIN, official sources only), and Haiku's write-up pass for every accepted concert; a concert waits for its write-up rather than going up without one. Answers are stored and shared with the per-artist lane. Genres include trip hop, electronic rock / big beat and art pop / experimental; DJ sets never. To look again at videos kept out as not rock or uncertain after a rule change: `Collect concerts` with `reconsider` on (`reconsider_scope` official by default: fan uploads are not asked again).
+
 Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH` is `true`; otherwise they are dry runs.
 
 ## Secrets and settings
