@@ -1,4 +1,5 @@
 // Home page filters, search and sorting. Pure functions: URL parameters in, database query out.
+import { SOURCE_FILTERS, sourceKindFor, type SourceFilter } from "./bootlegs";
 
 export const SORTS = ["newest", "most-viewed", "longest", "shortest"] as const;
 export type Sort = (typeof SORTS)[number];
@@ -16,6 +17,8 @@ export interface ConcertFilters {
   artist: string | null; // artist slug
   venue: string | null; // venue slug
   venueKind: string | null; // venueKind slug
+  /** Official concerts or bootlegs only (?source=official / ?source=bootleg); null = both, official first. */
+  source: SourceFilter | null;
   sort: Sort;
 }
 
@@ -43,12 +46,13 @@ export function parseFilters(params: RawParams): ConcertFilters {
     artist: slugParam(params.artist),
     venue: slugParam(params.venue),
     venueKind: slugParam(params.venueKind),
+    source: (SOURCE_FILTERS as readonly string[]).includes(first(params.source) ?? "") ? (first(params.source) as SourceFilter) : null,
     sort,
   };
 }
 
 export function hasActiveFilters(f: ConcertFilters): boolean {
-  return Boolean(f.q || f.genre || f.artist || f.venue || f.venueKind);
+  return Boolean(f.q || f.genre || f.artist || f.venue || f.venueKind || f.source);
 }
 
 const SOURCES = ["SEED", "COLLECTOR", "MANUAL"] as const;
@@ -84,6 +88,7 @@ export function buildWhere(f: ConcertFilters) {
   if (f.artist) and.push({ credits: { some: { artist: { slug: f.artist } } } });
   if (f.venue) and.push({ venue: { slug: f.venue } });
   if (f.venueKind) and.push({ venueKind: { slug: f.venueKind } });
+  if (f.source) and.push({ sourceKind: sourceKindFor(f.source) });
   if (f.q) {
     // Every word must appear somewhere: title, artist, venue, city or country.
     for (const word of f.q.split(" ")) {
@@ -102,7 +107,17 @@ export function buildWhere(f: ConcertFilters) {
   return { ...VISIBLE, AND: and };
 }
 
+/** Official concerts always come first (owner, 20 Nov 2026: bootlegs after them, whatever the sort). */
+export const OFFICIAL_FIRST = { sourceKind: "asc" as const };
+
+/** Only official concerts (the "best of" rankings, src/lib/best.ts). */
+export const OFFICIAL_ONLY = { sourceKind: "OFFICIAL" as const };
+
 export function buildOrderBy(sort: Sort) {
+  return [OFFICIAL_FIRST, ...sortOrder(sort)];
+}
+
+function sortOrder(sort: Sort) {
   switch (sort) {
     case "most-viewed":
       return [{ viewCount: "desc" as const }, { id: "asc" as const }];
@@ -123,6 +138,7 @@ export function filtersToQuery(f: Partial<ConcertFilters>): string {
   if (f.artist) params.set("artist", f.artist);
   if (f.venue) params.set("venue", f.venue);
   if (f.venueKind) params.set("venueKind", f.venueKind);
+  if (f.source) params.set("source", f.source);
   if (f.sort && f.sort !== "newest") params.set("sort", f.sort);
   const s = params.toString();
   return s ? `?${s}` : "";

@@ -25,6 +25,7 @@ export function concertView(over: Partial<ConcertView> = {}): ConcertView {
     thumbnail: { src: "https://i.ytimg.com/vi/IA9xKr_Dmek/hqdefault.jpg", srcSet: "", width: 480, height: 360 },
     hasSetlist: true,
     curated: false,
+    bootleg: null,
     ...over,
   };
 }
