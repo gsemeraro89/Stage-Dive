@@ -366,19 +366,21 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
           </div>
 
           {elsewhere.length > 0 && (
-            // Unstyled for now (designer): one small line of outbound links.
-            <p className="zn-label bp-elsewhere" data-od="band-elsewhere">
-              <span>Elsewhere: </span>
-              {elsewhere.map((l, i) => (
-                <span key={l.id} data-link={l.id}>
-                  {i > 0 && " /// "}
-                  {/* setlist.fm is a search, not the band's own record: not vouched for (nofollow). */}
-                  <a href={l.href} rel={l.sameAs ? "noopener" : "nofollow noopener"}>
-                    {l.label}
-                  </a>
-                </span>
-              ))}
-            </p>
+            // One small line of outbound links, as a list: the separators between them are CSS (designer),
+            // so a wrapped line never starts with one. A <div>, since a list cannot sit inside a <p>.
+            <div className="zn-label bp-elsewhere" data-od="band-elsewhere">
+              <span className="bp-elsewhere-label">Elsewhere: </span>
+              <ul className="bp-elsewhere-list" aria-label={`${artist.name} elsewhere`}>
+                {elsewhere.map((l) => (
+                  <li key={l.id} data-link={l.id}>
+                    {/* setlist.fm is a search, not the band's own record: not vouched for (nofollow). */}
+                    <a href={l.href} rel={l.sameAs ? "noopener" : "nofollow noopener"}>
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {answers.questions.length > 0 && (
