@@ -1,18 +1,102 @@
 {
-  "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. handle is tried first (1 unit); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel.",
-  "channels": [
-    { "name": "Pinkpop Archive", "search": "Pinkpop Archive", "expect": "pinkpop", "kind": "ARCHIVE" },
-    { "name": "Rock in Rio", "search": "Rock in Rio", "expect": "rock in rio", "kind": "ARCHIVE" },
-    { "name": "Primavera Sound", "search": "Primavera Sound", "expect": "primavera sound", "kind": "ARCHIVE" },
-    { "name": "ARTE Concert", "search": "ARTE Concert", "expect": "arte concert", "kind": "ARCHIVE" },
-    { "name": "Metallica", "search": "Metallica", "expect": "metallica", "kind": "ARTIST" },
-    { "name": "The Cure", "search": "The Cure", "expect": "the cure", "kind": "ARTIST" }
-  ],
-  "_artistChannels": "Official channels of bands in the catalogue are added automatically by the refresh job (kind ARTIST).",
-  "discovery": {
-    "_note": "A few YouTube searches per run (100 units each), rotating through catalogue bands. Results from fan channels are reported, never published.",
-    "searchesPerRun": 10,
-    "queryTemplate": "{artist} full concert"
+ "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. handle is tried first (1 unit); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel. Added 20 Nov 2026 (owner): official festival, broadcaster, venue and band channels found by the fan-video check.",
+ "channels": [
+  {
+   "name": "Pinkpop Archive",
+   "search": "Pinkpop Archive",
+   "expect": "pinkpop",
+   "kind": "ARCHIVE"
   },
-  "newChannelsPerRun": 6
+  {
+   "name": "Rock in Rio",
+   "search": "Rock in Rio",
+   "expect": "rock in rio",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Primavera Sound",
+   "search": "Primavera Sound",
+   "expect": "primavera sound",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "ARTE Concert",
+   "search": "ARTE Concert",
+   "expect": "arte concert",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Metallica",
+   "search": "Metallica",
+   "expect": "metallica",
+   "kind": "ARTIST"
+  },
+  {
+   "name": "The Cure",
+   "search": "The Cure",
+   "expect": "the cure",
+   "kind": "ARTIST"
+  },
+  {
+   "name": "WDR Rockpalast",
+   "search": "WDR Rockpalast",
+   "expect": "rockpalast",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Resurrection Fest",
+   "search": "Resurrection Fest",
+   "expect": "resurrection fest",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Sziget Festival",
+   "search": "Sziget Festival",
+   "expect": "sziget",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Outbreak Fest",
+   "search": "Outbreak Fest",
+   "expect": "outbreak",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "Pickathon",
+   "search": "Pickathon",
+   "expect": "pickathon",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "3voor12",
+   "search": "3voor12",
+   "expect": "3voor12",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "The Current",
+   "search": "The Current Minnesota Public Radio",
+   "expect": "the current",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "AB - Ancienne Belgique",
+   "search": "Ancienne Belgique",
+   "expect": "ancienne belgique",
+   "kind": "ARCHIVE"
+  },
+  {
+   "name": "R.E.M. (remhq)",
+   "search": "remhq",
+   "expect": "remhq",
+   "kind": "ARTIST"
+  }
+ ],
+ "_artistChannels": "Official channels of bands in the catalogue are added automatically by the refresh job (kind ARTIST).",
+ "discovery": {
+  "_note": "A few YouTube searches per run (100 units each), rotating through catalogue bands. Results from fan channels are reported, never published.",
+  "searchesPerRun": 10,
+  "queryTemplate": "{artist} full concert"
+ },
+ "newChannelsPerRun": 6
 }
