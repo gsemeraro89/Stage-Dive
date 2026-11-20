@@ -193,7 +193,7 @@ export async function recentDecisions(
   db: PrismaClient,
   youtubeIds: string[],
   ttlDays: number,
-  lookAgain: ("UNCERTAIN" | "NOT_ROCK")[] = [],
+  lookAgain: ("UNCERTAIN" | "NOT_ROCK" | "NOT_OFFICIAL")[] = [],
 ): Promise<Set<string>> {
   const found = new Set<string>();
   for (const slice of chunks(youtubeIds)) {
