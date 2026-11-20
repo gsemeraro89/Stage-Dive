@@ -1909,3 +1909,181 @@
     columns: 1;
   }
 }
+
+/* ================= Festival and venue years, rankings, elsewhere (hubs, 20 Nov 2026) ================= */
+
+/* "By year" on a venue page, in the side column under "On the bill": a grid of small cut-out years.
+   A year with its own page is a black label; a one-gig year (it opens that gig) is white with a
+   dashed edge. Every one is a finger tall. */
+.pg-years h2 {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 7px 12px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1deg;
+}
+
+.pg .pg-years ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.pg-years a {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 56px;
+  padding: 6px 10px 4px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: 2px dashed var(--toner);
+  outline-offset: -2px;
+  text-decoration: none;
+}
+
+.pg-years li[data-page] a {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+  box-shadow: var(--shadow-rest);
+}
+
+.pg-years li:nth-child(odd) a {
+  rotate: -1deg;
+}
+
+.pg-years li:nth-child(even) a {
+  rotate: 1deg;
+}
+
+.pg-years-year {
+  font-family: var(--font-strip);
+  font-size: 20px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.pg-years .zn-data {
+  font-size: 12.5px;
+}
+
+.pg-years a:hover,
+.pg-years li[data-page] a:hover {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  rotate: none;
+}
+
+.pg-years a:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 3px;
+}
+
+/* A link in the side column of a pile ("every gig at…", "most watched of…"): its own line, wraps. */
+.pg-pile-side > .hm-more {
+  display: flex;
+  width: fit-content;
+  white-space: normal;
+}
+
+/* The rankings index: the groups side by side on a desktop, each a black strip and a typed list. */
+.pg-best {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(30px, 3.6vw, 48px) clamp(30px, 4vw, 64px);
+  padding: 0 var(--margin);
+}
+
+.pg-best section {
+  padding-top: 22px;
+  border-top: var(--cut);
+}
+
+.pg-best h2 {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 7px 12px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(18px, 1.7vw, 22px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.pg-best section:nth-child(odd) h2 {
+  rotate: -1deg;
+}
+
+.pg-best section:nth-child(even) h2 {
+  rotate: 1deg;
+}
+
+.pg-best a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px 14px;
+  min-height: var(--touch);
+  padding: 14px 0 5px;
+  border-bottom: 2px dashed var(--toner);
+  text-decoration: none;
+}
+
+.pg-best .zn-data {
+  flex: none;
+  font-size: 14px;
+}
+
+.pg-best a:hover .pg-list-name {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* Band page: one small typed line of outbound links. */
+.bp-elsewhere {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+  margin: clamp(30px, 3.6vw, 44px) 0 0;
+  padding-top: 14px;
+  border-top: var(--cut);
+}
+
+.bp-elsewhere a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 4px;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.bp-elsewhere a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+@media (max-width: 760px) {
+  .pg-best {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pg .pg-years ul {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
+}
