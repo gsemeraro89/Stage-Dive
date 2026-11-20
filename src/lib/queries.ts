@@ -652,6 +652,17 @@ export async function getVenuePage(slug: string) {
   return { venue: { ...venue, country: countryName(venue.country) }, concerts: rows.map(toConcertView) };
 }
 
+/**
+ * For a bootleg hidden behind its official version (owner, 20 Nov 2026), the official concert's slug, so its old
+ * address leads there (a temporary redirect: the bootleg comes back if the official version goes). Null otherwise.
+ */
+export async function officialTwinSlug(slug: string): Promise<string | null> {
+  const row = await getDb().concert.findUnique({ where: { slug }, select: { sourceKind: true, status: true, officialTwinId: true } });
+  if (!row || row.sourceKind !== "FAN_PRO_SHOT" || row.status !== "HIDDEN" || row.officialTwinId === null) return null;
+  const twin = await getDb().concert.findFirst({ where: { ...VISIBLE, id: row.officialTwinId }, select: { slug: true } });
+  return twin?.slug ?? null;
+}
+
 /** The kept venue's slug for the old slug of a merged venue (admin op merge-venue), or null. */
 export async function venueAliasTarget(slug: string): Promise<string | null> {
   const alias = await getDb().venueAlias.findUnique({ where: { slug }, select: { venue: { select: { slug: true } } } });

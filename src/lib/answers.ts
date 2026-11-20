@@ -13,6 +13,7 @@ import { placeLine, SITE_NAME } from "./site";
 import { bandStats, type BandStats, type UsualSong } from "./band-stats";
 import { setlistSongs, songCount, type Song, type TypicalPosition } from "./songs";
 import { listWords, plural, quoted, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
+import { BOOTLEG_EXPLAINED, type BootlegMark } from "./bootlegs";
 
 export interface QA {
   question: string;
@@ -39,6 +40,8 @@ interface ConcertForAnswers {
   durationSeconds: number;
   viewCount: number;
   channel: { name: string; isOfficial: boolean };
+  /** A bootleg (src/lib/bootlegs.ts): said honestly, with the fan channel it comes from. */
+  bootleg?: BootlegMark;
 }
 
 interface SongForAnswers {
@@ -80,7 +83,7 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
       c.tour?.name,
       spokenDuration(c.durationSeconds),
       count ? `${plural(count, "song")}${opener ? `, opening with ${quoted(opener.title)}` : ""}` : "",
-      c.channel.isOfficial ? `official concert from ${c.channel.name}` : "",
+      c.bootleg ? `bootleg, professionally filmed, from ${c.bootleg.from}` : c.channel.isOfficial ? `official concert from ${c.channel.name}` : "",
     ]
       .filter(Boolean)
       .join(" · ") + ".";
@@ -110,8 +113,9 @@ export function concertAnswers(c: ConcertForAnswers, setlist: SetlistForAnswers)
   if (genres.length) questions.push({ question: `What kind of rock is it?`, answer: `${listWords(c.genres.map((g) => g.name))}.` });
   questions.push({
     question: `Where can I watch ${c.credits}'s full concert?`,
-    answer: `On ${SITE_NAME}, in full, in the player on the concert page${c.channel.isOfficial ? `, from the official ${c.channel.name} channel` : ""}. No account needed.`,
+    answer: `On ${SITE_NAME}, in full, in the player on the concert page${c.bootleg ? `, from ${c.bootleg.from}` : c.channel.isOfficial ? `, from the official ${c.channel.name} channel` : ""}. No account needed.`,
   });
+  if (c.bootleg) questions.push({ question: `Is this an official recording?`, answer: `No. ${BOOTLEG_EXPLAINED}` });
   return { lead, questions };
 }
 
@@ -129,6 +133,7 @@ interface ListConcert {
   durationSeconds: number;
   viewCount: number;
   hasSetlist: boolean;
+  bootleg?: BootlegMark;
 }
 
 const yearsOf = (cs: ListConcert[]) => cs.map((c) => c.performedYear).filter((y): y is number => y !== null);
@@ -153,12 +158,15 @@ export function bandAnswers(
   const places = topCounts(concerts.map((c) => c.venue?.name).filter((x): x is string => Boolean(x)), 3);
   const years = yearsOf(concerts);
   const setlistCount = withSetlists(concerts);
+  const bootlegs = concerts.filter((c) => c.bootleg).length;
+  const official = concerts.filter((c) => !c.bootleg);
 
   const lead =
     `${SITE_NAME} has ${plural(concerts.length, "full concert")} by ${band.name}${band.origin ? `, from ${band.origin}` : ""}: ` +
     `${totalTime(concerts)} of ${genres.length ? listWords(genres) : "live rock"}` +
     `${years.length ? `, played ${spanWords(years)}` : ""}${places.length ? `, at places such as ${listWords(places)}` : ""}. ` +
-    `Every concert plays in full on its own page${setlistCount ? `, ${setlistCount === concerts.length ? "each" : `${setlistCount}`} with its setlist` : ""}.`;
+    `Every concert plays in full on its own page${setlistCount ? `, ${setlistCount === concerts.length ? "each" : `${setlistCount}`} with its setlist` : ""}.` +
+    (bootlegs ? ` ${bootlegs === concerts.length ? (bootlegs === 1 ? "It is a bootleg" : "All of them are bootlegs") : `${bootlegs} of them ${bootlegs === 1 ? "is a bootleg" : "are bootlegs"}`}: professionally filmed shows shared by fans, listed after the official concerts.` : "");
 
   const questions: QA[] = [
     {
@@ -173,7 +181,8 @@ export function bandAnswers(
     questions.push({ question: `Which festivals has ${band.name} played?`, answer: `Full festival shows here: ${listWords(festivals.slice(0, 8))}${festivals.length > 8 ? " and more" : ""}.` });
   }
   if (concerts.length > 1) {
-    const top = mostWatched(concerts);
+    // The official concerts are named first: the most watched official one when there is one.
+    const top = mostWatched(official.length ? official : concerts);
     questions.push({ question: `What is ${band.name}'s most watched concert?`, answer: `${gigName(top)}, with ${views(top.viewCount)}.` });
   }
   const dated = concerts.filter((c) => c.performedYear !== null).sort((a, b) => a.performedYear! - b.performedYear!);

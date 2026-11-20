@@ -14,6 +14,7 @@ import { Crumbs, EmptyNote, SectionTitle } from "@/components/gig/PageHead";
 import { cutName, hoursOf, kindWord, placeYear, yearSpan } from "@/components/gig/words";
 import { PlayButton } from "@/components/player/PlayButton";
 import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
+import { bootlegNote, FAN_SECTION_TITLE, splitBootlegs } from "@/lib/bootlegs";
 import { decadeOf } from "@/lib/catalogue";
 import { formatDuration } from "@/lib/format";
 import { bandPhotoFor } from "@/lib/photos/view";
@@ -92,10 +93,13 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
   // Where the band is known elsewhere (src/lib/entity-links.ts): the same links as sameAs, plus a setlist.fm search.
   const elsewhere = elsewhereLinks(artist.name, ids);
   const genreNames = [...new Set(concerts.flatMap((c) => c.genres.map((g) => g.name)))];
-  const rows = sorted(concerts, sort);
-  const best = sorted(concerts, "watched")[0];
-  // The band's own YouTube picture: the still chosen for the band, else its newest gig.
-  const still = concerts.find((c) => c.youtubeId === artist.coverYoutubeId) ?? concerts[0];
+  // Official concerts are the main list; bootlegs come after them, in their own section (owner, 20 Nov 2026).
+  const { official, bootlegs } = splitBootlegs(concerts);
+  const rows = sorted(official, sort);
+  const fanRows = sorted(bootlegs, sort);
+  const best = sorted(official, "watched")[0] ?? sorted(bootlegs, "watched")[0];
+  // The band's own YouTube picture: the still chosen for the band, else its newest gig (official first).
+  const still = concerts.find((c) => c.youtubeId === artist.coverYoutubeId) ?? official[0] ?? concerts[0];
   const avatar = artist.coverUseAvatar && artist.imageUrl ? avatarSources(artist.imageUrl) : null;
 
   const topGenre = [...new Map(concerts.flatMap((c) => c.genres).map((g) => [g.slug, g])).values()];
@@ -242,11 +246,11 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
             <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
               <p>Every gig by {artist.name} is off the wall right now. They come back when the videos do.</p>
             </EmptyNote>
-          ) : (
+          ) : official.length === 0 ? null : (
             <section aria-labelledby="every-gig" data-od="archive">
               <div className="pg-block-head">
-                <SectionTitle id="every-gig">{concerts.length === 1 ? "1 full gig" : `${concerts.length} full gigs`}</SectionTitle>
-                {concerts.length >= 3 ? (
+                <SectionTitle id="every-gig">{official.length === 1 ? "1 full gig" : `${official.length} full gigs`}</SectionTitle>
+                {official.length >= 3 ? (
                   <p className="zn-data bp-sorts">
                     <span className="od-sr">Sort: </span>
                     {(Object.keys(SORTS) as Sort[]).map((s, i) => (
@@ -263,7 +267,7 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                     ))}
                   </p>
                 ) : (
-                  <span className="zn-label">{[yearSpan(concerts), hoursOf(concerts)].filter(Boolean).join(" /// ")}</span>
+                  <span className="zn-label">{[yearSpan(official), hoursOf(official)].filter(Boolean).join(" /// ")}</span>
                 )}
               </div>
               <GigRows concerts={rows.slice(0, FIRST_GIGS)} label={`Every full gig by ${artist.name}`} lead="year" name="place" />
@@ -279,6 +283,23 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                 </details>
               )}
               {concerts.length === 1 && <p className="zn-marker bp-thin">one so far. more when we find them.</p>}
+            </section>
+          )}
+
+          {fanRows.length > 0 && (
+            // Unstyled for now (designer): bootlegs, after the official gigs (owner, 20 Nov 2026). Each row carries
+            // its "Bootleg" label (data-od="bootleg-label"); the page and its rows never call them uploads.
+            <section aria-labelledby="from-the-fans" data-od="band-bootlegs" className="bp-fans">
+              <div className="pg-block-head">
+                <SectionTitle id="from-the-fans" tilt={-1} small>
+                  {FAN_SECTION_TITLE}
+                </SectionTitle>
+                <span className="zn-label">{fanRows.length === 1 ? "1 bootleg" : `${fanRows.length} bootlegs`}</span>
+              </div>
+              <p className="bp-fans-note" data-od="band-bootlegs-note">
+                {bootlegNote(fanRows.length)}
+              </p>
+              <GigRows concerts={fanRows} label={`Bootlegs of ${artist.name}`} lead="year" name="place" />
             </section>
           )}
 

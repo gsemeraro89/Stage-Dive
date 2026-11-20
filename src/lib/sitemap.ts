@@ -35,6 +35,8 @@ export interface SitemapConcert {
   /** Every band credited (headline or guest), as on the band pages. */
   artistSlugs: string[];
   genreSlugs: string[];
+  /** A bootleg: indexed by the same strong-page rule as any concert, but never counted in the rankings. */
+  bootleg?: boolean;
 }
 
 /** A band with a page (a headline concert of its own). */
@@ -83,7 +85,8 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
       .filter(([, v]) => hubIsStrong(v.count))
       .map(([k, v]): SitemapEntry => ({ path: path(k), lastModified: v.updated, priority, changeFrequency }));
 
-  const best = [...tally(concerts, bestSlugsFor)]
+  // Rankings are official concerts only (owner, 20 Nov 2026), as on the pages (src/lib/queries.ts bestCatalogue).
+  const best = [...tally(concerts.filter((c) => !c.bootleg), bestSlugsFor)]
     .filter(([, v]) => bestIsStrong(v))
     .map(([k, v]): SitemapEntry => ({ path: bestPath(k), lastModified: v.updated, priority: 0.6, changeFrequency: "daily" }));
   if (best.length) best.unshift({ path: "/best", lastModified: best.reduce<Date | undefined>((d, e) => later(d, e.lastModified!), undefined), priority: 0.7, changeFrequency: "daily" });
@@ -133,6 +136,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
         curated: true,
         writeUp: true,
         performedYear: true,
+        sourceKind: true,
         venue: { select: { slug: true } },
         venueKind: { select: { slug: true } },
         tour: { select: { slug: true } },
@@ -157,6 +161,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       tourSlug: c.tour?.slug ?? null,
       artistSlugs: c.credits.map((a) => a.artist.slug),
       genreSlugs: c.genres.map((g) => g.genre.slug),
+      bootleg: c.sourceKind === "FAN_PRO_SHOT",
     })),
     bands,
     songBands,

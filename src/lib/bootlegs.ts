@@ -13,6 +13,13 @@ export const BOOTLEG_LABEL = "Bootleg";
 export const BOOTLEG_EXPLAINED =
   "A bootleg: a professionally filmed recording of the whole show, shared by a fan channel, not an official release.";
 
+/** The note under a band page's "From the fans": what these are, for one or several. */
+export function bootlegNote(count: number): string {
+  return count === 1
+    ? BOOTLEG_EXPLAINED
+    : "Bootlegs: professionally filmed recordings of whole shows, shared by fan channels, not official releases. The official concerts come first.";
+}
+
 /** The heading of a band page's bootleg section. */
 export const FAN_SECTION_TITLE = "From the fans";
 

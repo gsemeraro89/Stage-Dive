@@ -1,5 +1,6 @@
 import Form from "next/form";
 import Link from "next/link";
+import { SOURCE_FILTER_LABELS, SOURCE_FILTERS } from "@/lib/bootlegs";
 import { SORT_LABELS, SORTS, type ConcertFilters } from "@/lib/filters";
 
 interface Option {
@@ -45,6 +46,18 @@ export function GigFilters({
       {select("venue", "Field or room", "Anywhere", filters.venue, options.venues)}
       {select("genre", "Genre", "Any noise", filters.genre, options.genres)}
       {select("venueKind", "Kind of place", "Any kind", filters.venueKind, options.venueKinds)}
+      {/* Official concerts or bootlegs (?source=official / ?source=bootleg); the same field markup as the others. */}
+      <label className="pg-field" data-on={filters.source ? "" : undefined} data-od="source-filter">
+        <span className="zn-label">Source</span>
+        <select name="source" defaultValue={filters.source ?? ""}>
+          <option value="">Official first, then bootlegs</option>
+          {SOURCE_FILTERS.map((s) => (
+            <option key={s} value={s}>
+              {SOURCE_FILTER_LABELS[s]}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="pg-field">
         <span className="zn-label">Order</span>
         <select name="sort" defaultValue={filters.sort}>

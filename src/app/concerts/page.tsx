@@ -17,7 +17,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const filters = parseFilters(await searchParams);
   const filtered = hasActiveFilters(filters) || filters.sort !== "newest";
   return {
-    title: filters.q ? `Concerts matching "${filters.q}"` : "Every Full Rock Concert · Search and Sort",
+    title: filters.q
+      ? `Concerts matching "${filters.q}"`
+      : filters.source === "bootleg"
+        ? "Rock Concert Bootlegs · Pro-Shot Full Shows"
+        : "Every Full Rock Concert · Search and Sort",
     description: "Every full rock concert on STAGEDIVE in one list: search by band, venue or year, or sort by length and views.",
     alternates: { canonical: "/concerts" },
     // Filtered views repeat content that has its own pages (band, venue, genre): noindex, follow.

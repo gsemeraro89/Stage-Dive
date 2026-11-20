@@ -7,6 +7,7 @@ import { formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
 import type { ConcertView } from "@/lib/queries";
 import { compactNumber } from "@/lib/site";
+import { BOOTLEG_LABEL, bootlegCredit } from "@/lib/bootlegs";
 import { kindWord, placeYear, playedOn } from "./words";
 
 type Props = {
@@ -58,8 +59,14 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
               )}
               {/* Name and facts are kept to one line each and cut with "…"; the full text stays in the
                   link (screen readers read all of it) and in its title (shown on hover). */}
-              <Link href={`/concerts/${c.slug}`} className="pg-row-text" title={`${title} /// ${line}`}>
+              <Link href={`/concerts/${c.slug}`} className="pg-row-text" title={`${title}${c.bootleg ? ` (${BOOTLEG_LABEL.toLowerCase()})` : ""} /// ${line}`}>
                 <span className="pg-row-name">{title}</span>
+                {/* Unstyled for now (designer): a bootleg is always marked (owner, 20 Nov 2026). */}
+                {c.bootleg && (
+                  <span className="pg-row-bootleg" data-od="bootleg-label" title={bootlegCredit(c.bootleg.from)}>
+                    {BOOTLEG_LABEL}
+                  </span>
+                )}
                 <span className="zn-data pg-row-data">
                   {facts}
                   {views && (
