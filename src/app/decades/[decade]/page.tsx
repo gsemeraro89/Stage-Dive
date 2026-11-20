@@ -7,11 +7,13 @@ import { Collection, pileData } from "@/components/gig/Collection";
 import { EmptyNote, PageHead, TagLinks } from "@/components/gig/PageHead";
 import { parseDecade } from "@/lib/catalogue";
 import { DECADE_LINES } from "@/lib/home";
-import { decadeIndex, getDecadePage } from "@/lib/queries";
+import { bestCatalogue, decadeIndex, getDecadePage, venueYearIndex } from "@/lib/queries";
+import { bestIsStrong, bestPath, decadeSlug } from "@/lib/best";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { decadeLead } from "@/lib/answers";
-import { clip, decadeSearchTitle, hubIsStrong, robotsFor, shareImages } from "@/lib/seo";
+import { clip, decadeSearchTitle, hubIsStrong, robotsFor, shareImages, venueYearName } from "@/lib/seo";
 import { breadcrumbs, itemList } from "@/lib/structured-data";
+import { strongYearsInDecade, venueYearPath } from "@/lib/venue-years";
 
 const load = cache(async (label: string) => {
   const start = parseDecade(label);
@@ -44,7 +46,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DecadePage({ params }: Props) {
   const page = await load((await params).decade);
   if (!page) notFound();
-  const others = (await decadeIndex()).filter((d) => d.label !== page.label);
+  const [index, places, rankings] = await Promise.all([decadeIndex(), venueYearIndex(), bestCatalogue()]);
+  // "The most watched rock concerts of the 1990s" (src/lib/best.ts), when it has ten concerts or more.
+  const ranking = rankings.find((l) => l.slug === decadeSlug(page.label) && bestIsStrong(l));
+  const others = index.filter((d) => d.label !== page.label);
+  // Festivals and rooms with two or more concerts in one year of this decade ("Pinkpop 1995").
+  const editions = strongYearsInDecade(places, page.start);
+  const editionLinks = (
+    <TagLinks label="Festival and venue years" items={editions.map((v) => ({ href: venueYearPath(v.slug, v.year), label: venueYearName(v.name, v.year) }))} />
+  );
   const otherDecades = <TagLinks label={"Other decades"} items={others.map((d) => ({ href: `/decades/${d.label}`, label: d.label }))} />;
   const path = `/decades/${page.label}`;
   return (
@@ -76,6 +86,12 @@ export default async function DecadePage({ params }: Props) {
         </EmptyNote>
       ) : (
         <Collection concerts={page.concerts} label={`Every gig from the ${page.label}`}>
+          {ranking && (
+            <Link href={bestPath(ranking.slug)} className="hm-more" data-od="best-link">
+              MOST WATCHED OF THE {page.label} &gt;&gt;
+            </Link>
+          )}
+          {editionLinks}
           {otherDecades}
         </Collection>
       )}

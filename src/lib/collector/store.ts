@@ -1,6 +1,7 @@
 // Database side of the collector: find duplicates, save accepted concerts, record decisions, refresh.
 import type { PrismaClient } from "../../generated/prisma/client";
 import { VENUE_KINDS, SITE_GENRES } from "../catalogue";
+import { countryName, matchVenue } from "../places";
 import { slugify } from "../slug";
 import { thumbnailUrl, type ThumbnailName } from "../thumbnails";
 import type { FullClassification } from "./classify";
@@ -87,13 +88,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
       update: {},
     });
 
-    const venue = c.venue
-      ? await tx.venue.upsert({
-          where: { slug: slugify(c.venue) },
-          create: { slug: slugify(c.venue), name: c.venue, city: c.city || null, country: c.country || null },
-          update: {},
-        })
-      : null;
+    const venue = c.venue ? await findOrCreateVenue(tx as unknown as PrismaClient, c.venue, c.city || null, c.country || null) : null;
 
     const venueKind =
       c.venueKind !== "Unknown" && (VENUE_KINDS as readonly string[]).includes(c.venueKind)
@@ -136,7 +131,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         publishedAt: new Date(Date.UTC(v.publishedAt.getUTCFullYear(), v.publishedAt.getUTCMonth(), v.publishedAt.getUTCDate())),
         ...readPerformed(c.performed),
         city: c.city || null,
-        country: c.country || null,
+        country: countryName(c.country),
         writeUp: c.writeUp || null,
         thumbnailUrl: n.thumbnail ? thumbnailUrl(v.youtubeId, n.thumbnail) : null,
         source: "COLLECTOR",
@@ -158,6 +153,23 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
       ? { status: "replaced" as const, concertId: concert.id, slug, replacedYoutubeId: dup.identity.youtubeId }
       : { status: "created" as const, concertId: concert.id, slug };
   });
+}
+
+/**
+ * The venue a concert was played at: the stored venue with this slug, a venue merged under it (its
+ * alias), or a stored venue with the same name once case, accents, "the" and "festival" are ignored in
+ * the same country and city (src/lib/places.ts), so "Pinkpop Festival" files under "Pinkpop" and keeps
+ * that name. Only a new place creates a venue, with its country written in full.
+ */
+export async function findOrCreateVenue(db: PrismaClient, name: string, city: string | null, country: string | null) {
+  const slug = slugify(name);
+  const bySlug = await db.venue.findUnique({ where: { slug } });
+  if (bySlug) return bySlug;
+  const alias = await db.venueAlias.findUnique({ where: { slug }, include: { venue: true } });
+  if (alias) return alias.venue;
+  const same = matchVenue(await db.venue.findMany({ orderBy: { id: "asc" } }), { name, city, country });
+  if (same) return same;
+  return db.venue.create({ data: { slug, name, city, country: countryName(country) } });
 }
 
 /** Channel names are unique in our table; two YouTube channels can share a display name. */

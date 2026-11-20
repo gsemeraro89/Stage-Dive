@@ -2,7 +2,8 @@
 // (scripts/indexnow.ts). Only pages worth indexing are listed, by the same rules as the pages' own
 // robots tags (src/lib/seo.ts), so Google is never sent to a page that then says "noindex".
 // Everything comes from the database: a new concert, a new setlist or a new bio puts its page (and
-// the band, venue, genre, decade, tour and song pages it strengthens) in the sitemap by itself.
+// the band, venue, venue-year, genre, decade, tour, song and "best of" pages it strengthens) in the
+// sitemap by itself.
 // buildSitemap is pure (tests/sitemap.test.ts); sitemapEntries reads the database.
 import { decadeOf, parseDecade } from "./catalogue";
 import { getDb } from "./db";
@@ -10,6 +11,7 @@ import { VISIBLE } from "./filters";
 import { PAGE_ARTIST, songCatalogue } from "./queries";
 import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsStrong } from "./seo";
 import { bandSongsPath, songPath } from "./songs";
+import { bestIsStrong, bestPath, bestSlugsFor } from "./best";
 
 export interface SitemapEntry {
   path: string;
@@ -27,6 +29,8 @@ export interface SitemapConcert {
   writeUp: string | null;
   performedYear: number | null;
   venueSlug: string | null;
+  /** "festival", "room"... (the "best of" rankings by kind of place). */
+  venueKindSlug?: string | null;
   tourSlug: string | null;
   /** Every band credited (headline or guest), as on the band pages. */
   artistSlugs: string[];
@@ -79,15 +83,23 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
       .filter(([, v]) => hubIsStrong(v.count))
       .map(([k, v]): SitemapEntry => ({ path: path(k), lastModified: v.updated, priority, changeFrequency }));
 
+  const best = [...tally(concerts, bestSlugsFor)]
+    .filter(([, v]) => bestIsStrong(v))
+    .map(([k, v]): SitemapEntry => ({ path: bestPath(k), lastModified: v.updated, priority: 0.6, changeFrequency: "daily" }));
+  if (best.length) best.unshift({ path: "/best", lastModified: best.reduce<Date | undefined>((d, e) => later(d, e.lastModified!), undefined), priority: 0.7, changeFrequency: "daily" });
   return [
     ...FIXED_PAGES,
     ...bands
       .filter((b) => bandIsStrong({ concerts: byBand.get(b.slug)?.count ?? 0, bio: b.bio }))
       .map((b): SitemapEntry => ({ path: `/artists/${b.slug}`, lastModified: later(byBand.get(b.slug)?.updated, b.updatedAt), priority: 0.8, changeFrequency: "weekly" })),
     ...hubs((c) => [c.venueSlug], (k) => `/venues/${k}`, 0.7, "weekly"),
+    // Festival and venue years ("Pinkpop 1995"), from two concerts that year (src/lib/venue-years.ts).
+    ...hubs((c) => [c.venueSlug && c.performedYear ? `${c.venueSlug}/${c.performedYear}` : null], (k) => `/venues/${k}`, 0.6, "monthly"),
     ...hubs((c) => c.genreSlugs, (k) => `/genres/${k}`, 0.7, "weekly"),
     ...hubs((c) => [c.performedYear && parseDecade(decadeOf(c.performedYear)) !== null ? decadeOf(c.performedYear) : null], (k) => `/decades/${k}`, 0.6, "weekly"),
     ...hubs((c) => [c.tourSlug], (k) => `/tours/${k}`, 0.6, "monthly"),
+    // "Best of" rankings from ten concerts (src/lib/best.ts); views change every night.
+    ...best,
     ...concerts
       .filter(concertIsStrong)
       .map((c): SitemapEntry => ({ path: `/concerts/${c.slug}`, lastModified: c.updatedAt, priority: 0.7, changeFrequency: "monthly" })),
@@ -122,6 +134,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
         writeUp: true,
         performedYear: true,
         venue: { select: { slug: true } },
+        venueKind: { select: { slug: true } },
         tour: { select: { slug: true } },
         credits: { select: { artist: { select: { slug: true } } } },
         genres: { select: { genre: { select: { slug: true } } } },
@@ -140,6 +153,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       writeUp: c.writeUp,
       performedYear: c.performedYear,
       venueSlug: c.venue?.slug ?? null,
+      venueKindSlug: c.venueKind?.slug ?? null,
       tourSlug: c.tour?.slug ?? null,
       artistSlugs: c.credits.map((a) => a.artist.slug),
       genreSlugs: c.genres.map((g) => g.genre.slug),

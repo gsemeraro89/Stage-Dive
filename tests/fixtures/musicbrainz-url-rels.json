@@ -1,0 +1,12 @@
+{
+  "id": "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+  "name": "Metallica",
+  "type": "Group",
+  "relations": [
+    { "type": "official homepage", "ended": false, "direction": "forward", "target-type": "url", "url": { "id": "a1", "resource": "https://www.metallica.com/" } },
+    { "type": "wikipedia", "ended": true, "direction": "forward", "target-type": "url", "url": { "id": "a2", "resource": "https://de.wikipedia.org/wiki/Metallica" } },
+    { "type": "wikipedia", "ended": false, "direction": "forward", "target-type": "url", "url": { "id": "a3", "resource": "https://en.wikipedia.org/wiki/Metallica" } },
+    { "type": "wikidata", "ended": false, "direction": "forward", "target-type": "url", "url": { "id": "a4", "resource": "https://www.wikidata.org/wiki/Q15920" } },
+    { "type": "youtube", "ended": false, "direction": "forward", "target-type": "url", "url": { "id": "a5", "resource": "https://www.youtube.com/channel/UCbulh9WdLtEXiooRcYK7SWw" } }
+  ]
+}

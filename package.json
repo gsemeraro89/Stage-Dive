@@ -28,6 +28,7 @@
     "admin-ops": "tsx scripts/admin-ops.ts",
     "seed-check": "tsx scripts/seed-check.ts",
     "band-photos": "tsx scripts/band-photos.ts",
+    "entity-links": "tsx scripts/entity-links.ts",
     "indexnow": "tsx scripts/indexnow.ts"
   },
   "dependencies": {

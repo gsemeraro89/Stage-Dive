@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/concerts/:slug([a-z0-9-]+)\\.md", destination: "/md/concerts/:slug" },
       { source: "/artists/:slug([a-z0-9-]+)\\.md", destination: "/md/artists/:slug" },
+      // Festival and venue years (src/lib/venue-years.ts).
+      { source: "/venues/:slug([a-z0-9-]+)/:year(\\d{4})\\.md", destination: "/md/venues/:slug/:year" },
+      // "Best of" rankings (src/lib/best.ts).
+      { source: "/best/:slug([a-z0-9-]+)\\.md", destination: "/md/best/:slug" },
       // Songs played live (src/lib/songs.ts): a band's songs and one song.
       { source: "/songs/:band([a-z0-9-]+)\\.md", destination: "/md/songs/:band" },
       { source: "/songs/:band([a-z0-9-]+)/:song([a-z0-9-]+)\\.md", destination: "/md/songs/:band/:song" },

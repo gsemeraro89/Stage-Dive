@@ -37,6 +37,18 @@ export function hubIsStrong(concerts: number): boolean {
   return concerts >= MIN_HUB_CONCERTS;
 }
 
+/** A festival-year or venue-year page ("Pinkpop 1995") needs two concerts played there that year. */
+export function venueYearIsStrong(concerts: number): boolean {
+  return hubIsStrong(concerts);
+}
+
+/** A "best of" ranking (src/lib/best.ts) is worth indexing from this many concerts. */
+export const MIN_BEST_CONCERTS = 10;
+
+export function bestListIsStrong(concerts: number): boolean {
+  return concerts >= MIN_BEST_CONCERTS;
+}
+
 /** A band page is worth indexing with two or more concerts, or one concert and a bio. */
 export function bandIsStrong(b: { concerts: number; bio: string | null }): boolean {
   return b.concerts >= 2 || (b.concerts >= 1 && Boolean(b.bio?.trim()));
@@ -109,6 +121,16 @@ export function bandSearchTitle(name: string, anySetlist: boolean): string {
 /** "Pinkpop · Full Concerts and Setlists" */
 export function venueSearchTitle(name: string, anySetlist: boolean): string {
   return `${name} · Full Concerts${anySetlist ? " and Setlists" : ""}`;
+}
+
+/** "Pinkpop 1995 · Full Concerts and Setlists" (the year is not repeated when the name has it). */
+export function venueYearSearchTitle(name: string, year: number, anySetlist: boolean): string {
+  return `${venueYearName(name, year)} · Full Concerts${anySetlist ? " and Setlists" : ""}`;
+}
+
+/** "Pinkpop 1995"; a name that already carries the year ("Woodstock 1969") stays as it is. */
+export function venueYearName(name: string, year: number): string {
+  return name.includes(String(year)) ? name : `${name} ${year}`;
 }
 
 /** "Grunge · Full Concerts and Setlists" */

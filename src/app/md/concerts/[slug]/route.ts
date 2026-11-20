@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const page = await getConcertPage(slug);
   if (!page) return new Response("Not found", { status: 404 });
-  return new Response(concertMarkdown(page.concert, page.setlist, page.notes, page.songLinks), {
+  return new Response(concertMarkdown(page.concert, page.setlist, page.notes, page.songLinks, page.venueYear), {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
       Link: `<${abs(`/concerts/${slug}`)}>; rel="canonical"`,

@@ -145,13 +145,90 @@ export function concertEventJsonLd(
   };
 }
 
-/** Where a band is known elsewhere, as links: MusicBrainz, Wikidata, the band's own channel. Only IDs we hold. */
-export function bandSameAs(ids: { mbid?: string | null; wikidataId?: string | null; youtubeChannelId?: string | null }): string[] {
+// ---- Festival and venue years (src/lib/venue-years.ts) ----
+
+/** The day span of a set of concerts as schema.org dates, or the year alone when no day is known. */
+function dateSpan(concerts: { performedOn: Date | null }[], year: number): { startDate: string; endDate?: string } {
+  const days = concerts
+    .map((c) => (c.performedOn ? new Date(c.performedOn).toISOString().slice(0, 10) : null))
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  // Every concert needs a day for a day span to be true; otherwise only the year is certain.
+  if (!days.length || days.length < concerts.length) return { startDate: String(year) };
+  return days[0] === days[days.length - 1] ? { startDate: days[0] } : { startDate: days[0], endDate: days[days.length - 1] };
+}
+
+/**
+ * A festival year ("Pinkpop 1995"): a Festival event in the venue's series, held at the place, with
+ * each concert as a MusicEvent sub-event (the same @id as on the concert page). For a room, which is
+ * not one event, the place itself with its concerts as events. Only facts we hold.
+ */
+export function venueYearJsonLd(
+  venue: { slug: string; name: string; city: string | null; country: string | null },
+  name: string,
+  year: number,
+  path: string,
+  concerts: ConcertView[],
+  festival: boolean,
+): Json {
+  const url = abs(path);
+  const address = [venue.city, venue.country].some(Boolean)
+    ? { address: { "@type": "PostalAddress", ...(venue.city ? { addressLocality: venue.city } : {}), ...(venue.country ? { addressCountry: venue.country } : {}) } }
+    : {};
+  const place = { "@type": "Place", name: venue.name, url: abs(`/venues/${venue.slug}`), ...address };
+  const events = concerts.map((c) => ({
+    "@type": "MusicEvent",
+    "@id": `${concertUrl(c.slug)}#event`,
+    name: `${c.credits} live at ${venue.name} ${year}`,
+    url: concertUrl(c.slug),
+    startDate: playedDate(c) ?? String(year),
+    location: { "@type": "Place", name: venue.name },
+    performer: performers(c),
+  }));
+  if (!festival) {
+    return { "@context": "https://schema.org", ...place, "@id": `${url}#place`, event: events };
+  }
+  const bands = [...new Map(concerts.flatMap((c) => performers(c)).map((p) => [p.name, p])).values()];
+  return {
+    "@context": "https://schema.org",
+    "@type": "Festival",
+    "@id": `${url}#event`,
+    name,
+    url,
+    ...dateSpan(concerts, year),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: place,
+    superEvent: { "@type": "EventSeries", name: venue.name, url: abs(`/venues/${venue.slug}`) },
+    performer: bands,
+    subEvent: events,
+  };
+}
+
+/** Where a band is known elsewhere, as links: MusicBrainz, Wikidata, English Wikipedia, the band's own channel. Only IDs we hold. */
+export function bandSameAs(ids: { mbid?: string | null; wikidataId?: string | null; wikipediaUrl?: string | null; youtubeChannelId?: string | null }): string[] {
   return [
     ids.mbid ? `https://musicbrainz.org/artist/${ids.mbid}` : null,
     ids.wikidataId ? `https://www.wikidata.org/wiki/${ids.wikidataId}` : null,
+    ids.wikipediaUrl ?? null,
     ids.youtubeChannelId ? `https://www.youtube.com/channel/${ids.youtubeChannelId}` : null,
   ].filter((u): u is string => Boolean(u));
+}
+
+/**
+ * The band page's visible "Elsewhere" line: MusicBrainz, Wikidata and Wikipedia when we hold them (the
+ * same links as sameAs, so structured data never says more than the page), and a setlist.fm search,
+ * which is a plain outbound link (its API terms need a commercial agreement; no data is read from it).
+ */
+export function elsewhereLinks(
+  bandName: string,
+  ids: { mbid?: string | null; wikidataId?: string | null; wikipediaUrl?: string | null },
+): { id: "wikipedia" | "wikidata" | "musicbrainz" | "setlistfm"; label: string; href: string; sameAs: boolean }[] {
+  return [
+    ids.wikipediaUrl ? { id: "wikipedia" as const, label: "Wikipedia", href: ids.wikipediaUrl, sameAs: true } : null,
+    ids.wikidataId ? { id: "wikidata" as const, label: "Wikidata", href: `https://www.wikidata.org/wiki/${ids.wikidataId}`, sameAs: true } : null,
+    ids.mbid ? { id: "musicbrainz" as const, label: "MusicBrainz", href: `https://musicbrainz.org/artist/${ids.mbid}`, sameAs: true } : null,
+    { id: "setlistfm" as const, label: "setlist.fm", href: `https://www.setlist.fm/search?query=${encodeURIComponent(bandName)}`, sameAs: false },
+  ].filter((l): l is NonNullable<typeof l> => l !== null);
 }
 
 /** schema.org MusicGroup for a band page. */
@@ -241,12 +318,16 @@ export function breadcrumbs(items: [name: string, path: string][]): Json {
   };
 }
 
-/** schema.org ItemList of pages (concerts on a venue, genre, decade or tour page; bands on the index). At most 50 entries. */
-export function itemList(name: string, items: { path: string; name?: string }[]): Json {
+/**
+ * schema.org ItemList of pages (concerts on a venue, genre, decade or tour page; bands on the index). At
+ * most 50 entries. `ranked`: the order is a ranking, best first (the "best of" lists).
+ */
+export function itemList(name: string, items: { path: string; name?: string }[], ranked = false): Json {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name,
+    ...(ranked ? { itemListOrder: "https://schema.org/ItemListOrderDescending" } : {}),
     numberOfItems: items.length,
     itemListElement: items.slice(0, 50).map((it, i) => ({ "@type": "ListItem", position: i + 1, url: abs(it.path), ...(it.name ? { name: it.name } : {}) })),
   };

@@ -4,6 +4,7 @@
 import type { PrismaClient } from "../../generated/prisma/client";
 import { GENRES, VENUE_KINDS, SITE_GENRES } from "../catalogue";
 import { slugify } from "../slug";
+import { countryName } from "../places";
 import type { NormalizedSeed } from "./normalize";
 
 export interface ImportSummary {
@@ -55,7 +56,7 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
 
       const venueIds = new Map<string, number>();
       for (const venue of seed.venues) {
-        const data = { name: venue.name, city: venue.city, country: venue.country };
+        const data = { name: venue.name, city: venue.city, country: countryName(venue.country) };
         const row = await tx.venue.upsert({
           where: { slug: venue.slug },
           create: { slug: venue.slug, ...data },
@@ -90,7 +91,7 @@ export async function importSeed(db: PrismaClient, seed: NormalizedSeed): Promis
           performedYear: concert.performedYear,
           performedOn: concert.performedOn,
           city: concert.city,
-          country: concert.country,
+          country: countryName(concert.country),
           writeUp: concert.writeUp,
           channelId: channelIds.get(concert.channelName)!,
           venueId: concert.venueSlug ? venueIds.get(concert.venueSlug)! : null,

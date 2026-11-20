@@ -2,6 +2,7 @@
 // database can only be written from GitHub Actions.
 
 import type { PrismaClient } from "../../generated/prisma/client";
+import { countryName } from "../places";
 
 export interface MergeResult {
   from: string;
@@ -105,4 +106,63 @@ export async function splitArtist(db: PrismaClient, groupSlug: string, memberSlu
 export async function hideConcert(db: PrismaClient, slug: string): Promise<string> {
   const concert = await db.concert.update({ where: { slug }, data: { status: "HIDDEN" } });
   return concert.slug;
+}
+
+// ---- Places (owner, 20 Nov 2026: "Pinkpop" and "Pinkpop Festival" were two pages) ----
+
+export interface VenueMergeResult {
+  from: string;
+  into: string;
+  concertsMoved: number;
+  /** True when there was nothing left to do (the merge had already run). */
+  alreadyDone: boolean;
+}
+
+/**
+ * Two records for the same venue: every concert moves to `intoSlug` (its slug and name are kept), the
+ * other venue's slug and its own old slugs become aliases of the kept one, so /venues/<from> and its
+ * year pages redirect permanently (308), then the empty venue is deleted. Safe to run again.
+ */
+export async function mergeVenues(db: PrismaClient, fromSlug: string, intoSlug: string): Promise<VenueMergeResult> {
+  if (fromSlug === intoSlug) throw new Error("merge-venue: same venue");
+  return db.$transaction(async (tx) => {
+    const into = await tx.venue.findUniqueOrThrow({ where: { slug: intoSlug } });
+    const from = await tx.venue.findUnique({ where: { slug: fromSlug } });
+    if (!from) {
+      const alias = await tx.venueAlias.findUnique({ where: { slug: fromSlug } });
+      if (alias?.venueId === into.id) return { from: fromSlug, into: intoSlug, concertsMoved: 0, alreadyDone: true };
+      throw new Error(`merge-venue: no venue "${fromSlug}"`);
+    }
+    const moved = await tx.concert.updateMany({ where: { venueId: from.id }, data: { venueId: into.id } });
+    await tx.venueAlias.updateMany({ where: { venueId: from.id }, data: { venueId: into.id } });
+    await tx.venueAlias.upsert({ where: { slug: fromSlug }, create: { slug: fromSlug, venueId: into.id }, update: { venueId: into.id } });
+    // The kept venue's own slug can never be an alias.
+    await tx.venueAlias.deleteMany({ where: { slug: intoSlug } });
+    await tx.venue.update({
+      where: { id: into.id },
+      data: { city: into.city ?? from.city, country: countryName(into.country ?? from.country) },
+    });
+    await tx.venue.delete({ where: { id: from.id } });
+    return { from: fromSlug, into: intoSlug, concertsMoved: moved.count, alreadyDone: false };
+  });
+}
+
+/** Every country on concerts and venues as its full English name ("NL" -> "Netherlands"). Safe to run again. */
+export async function normalizeCountries(db: PrismaClient): Promise<{ concerts: number; venues: number; changes: string[] }> {
+  const changes = new Set<string>();
+  let concerts = 0;
+  let venues = 0;
+  for (const { country } of await db.concert.findMany({ where: { country: { not: null } }, distinct: ["country"], select: { country: true } })) {
+    const name = countryName(country);
+    if (name === country) continue;
+    concerts += (await db.concert.updateMany({ where: { country }, data: { country: name } })).count;
+    changes.add(`${country} -> ${name}`);
+  }
+  for (const { country } of await db.venue.findMany({ where: { country: { not: null } }, distinct: ["country"], select: { country: true } })) {
+    const name = countryName(country);
+    if (name === country) continue;
+    venues += (await db.venue.updateMany({ where: { country }, data: { country: name } })).count;
+    changes.add(`${country} -> ${name}`);
+  }
+  return { concerts, venues, changes: [...changes].sort() };
 }

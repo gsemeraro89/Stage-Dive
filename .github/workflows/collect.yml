@@ -58,7 +58,7 @@ on:
         description: "Decide again on just these YouTube IDs (comma-separated), e.g. after approving their artists; reuses stored answers"
         default: ""
       admin_ops:
-        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;tidy-review (no YouTube quota, no Claude cost)"
+        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;merge-venue:from-slug>into-slug;normalize-countries;tidy-review (no YouTube quota, no Claude cost)"
         default: ""
       artist_search:
         description: "Per-artist lane only: every official full concert of the bands marked allConcerts in data/artist-rules.json (respects dry_run)"
@@ -162,6 +162,10 @@ jobs:
       - name: Artist profiles (short bios for new artists)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run profiles
+      - name: Entity links (MusicBrainz, Wikidata and Wikipedia for band pages; open data, no quota)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        continue-on-error: true
+        run: npm run entity-links
       - name: Artist pictures (official YouTube channel avatars)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run artist-images

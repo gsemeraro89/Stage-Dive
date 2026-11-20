@@ -7,12 +7,14 @@
 // All built from the database at request time (cached for a while), so new concerts, setlists and
 // bios show up here by themselves. Copy rules as everywhere (src/lib/answers.ts).
 // Pure functions, tested in tests/llms.test.ts.
-import { bandAnswers, bandSongsAnswers, bandStatLines, bandStatsFor, concertAnswers, positionLabel, songAnswers, type QA } from "./answers";
+import { bandAnswers, bandSongsAnswers, bandStatLines, bandStatsFor, concertAnswers, positionLabel, songAnswers, venueYearAnswers, type QA } from "./answers";
 import { bandSongsPath, songPath, songTally, type Song } from "./songs";
 import { noteText, type ConcertNote, type NotePart } from "./concert-notes";
 import { formatDuration } from "./format";
 import { startAtPath } from "./player/start-time";
-import { abs } from "./seo";
+import { abs, bestListIsStrong, venueYearIsStrong, venueYearName } from "./seo";
+import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
+import { bestHeading, bestLead, bestPath, bestQuestions, rankedName, type BestList } from "./best";
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
 
@@ -41,6 +43,10 @@ export interface LlmsData {
   genres: { slug: string; name: string; count: number }[];
   decades: { label: string; count: number }[];
   tours: { slug: string; name: string; count: number; artist: { name: string } | null }[];
+  /** Every place and year with concerts (src/lib/venue-years.ts); only strong ones are listed. */
+  venueYears?: VenueYear[];
+  /** The "best of" rankings (src/lib/best.ts); only strong ones are listed. */
+  best?: { slug: string; title: string; count: number }[];
 }
 
 export function llmsTxt(data: LlmsData): string {
@@ -61,6 +67,10 @@ export function llmsTxt(data: LlmsData): string {
     `- [Genres](${abs("/genres")}): concerts by genre`,
     `- [Tours](${abs("/tours")}): concerts by tour`,
     `- [Find your next band](${abs("/map")}): bands similar to one you like`,
+    ...(data.best?.some((b) => bestListIsStrong(b.count))
+      ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
+      : []),
+    "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
     "",
     "## Most featured bands",
@@ -125,6 +135,25 @@ function songSections(bands: SongCatalogueBand[]): string[] {
   ];
 }
 
+/** The full index's "best of" rankings with ten concerts or more. */
+function bestSection(lists: { slug: string; title: string; count: number }[]): string[] {
+  const strong = lists.filter((l) => bestListIsStrong(l.count));
+  if (!strong.length) return [];
+  return [`## Rankings by views on YouTube (${strong.length})`, "", ...strong.map((l) => `- [${l.title}](${abs(bestPath(l.slug))}): top ${l.count}`), ""];
+}
+
+/** The full index's festival and venue years with two or more concerts, newest first. */
+function venueYearSection(years: VenueYear[]): string[] {
+  const strong = years.filter((y) => venueYearIsStrong(y.count)).sort((a, b) => b.year - a.year || a.name.localeCompare(b.name));
+  if (!strong.length) return [];
+  return [
+    `## Festival and venue years (${strong.length})`,
+    "",
+    ...strong.map((y) => `- [${venueYearName(y.name, y.year)}](${abs(venueYearPath(y.slug, y.year))}): ${count(y.count)}`),
+    "",
+  ];
+}
+
 export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; mostWatched: ConcertLine[]; latest: ConcertLine[] }): string {
   return [
     `# ${SITE_NAME}: full index`,
@@ -155,6 +184,8 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
           "",
         ]
       : []),
+    ...bestSection(data.best ?? []),
+    ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
     "## Most watched concerts",
     "",
@@ -198,6 +229,8 @@ export function concertMarkdown(
   notes: ConcertNote[] = [],
   /** Setlist title -> its song page (src/lib/songs.ts). */
   songLinks: Record<string, string> = {},
+  /** The other concerts from the same place and year (src/lib/venue-years.ts). */
+  venueYear: VenueYearLink | null = null,
 ): string {
   const link = (text: string, path: string) => `[${text}](${abs(path)})`;
   const facts: [string, string | null | undefined][] = [
@@ -225,6 +258,16 @@ export function concertMarkdown(
     lines.push("");
   }
   if (notes.length) lines.push("## Concert notes", "", ...notes.map((n) => `- ${noteMarkdown(n)}`), "");
+  if (venueYear?.others.length) {
+    lines.push(
+      `## More from ${venueYear.name}`,
+      "",
+      ...venueYear.others.map((o) => `- ${link(o.credits, `/concerts/${o.slug}`)}`),
+      "",
+      `Every concert from ${venueYear.name} (${venueYear.count}): ${abs(venueYear.path)}`,
+      "",
+    );
+  }
   lines.push(...qaMarkdown(answers.questions));
   lines.push(`Source: ${SITE_NAME}, ${abs(`/concerts/${c.slug}`)}`, "");
   return lines.join("\n");
@@ -357,3 +400,61 @@ const yearOrName = (v: Song["versions"][number]) => String(v.concert.performedYe
 
 /** Plain text of the notes, joined (for descriptions). */
 export const notesText = (notes: ConcertNote[]) => notes.map(noteText).join(" ");
+
+// ---- Festival and venue years (src/lib/venue-years.ts) ----
+
+/** A festival-year or venue-year page as Markdown: lead, facts, every concert, other years, questions. */
+export function venueYearMarkdown(
+  venue: { slug: string; name: string; city: string | null; country: string | null },
+  year: number,
+  concerts: (ConcertForMd & { performedOn: Date | null; viewCount: number })[],
+  festival: boolean,
+  otherYears: { year: number; count: number }[] = [],
+): string {
+  const name = venueYearName(venue.name, year);
+  const path = venueYearPath(venue.slug, year);
+  const answers = venueYearAnswers(venue, name, year, concerts, festival);
+  const others = otherYears.filter((y) => y.year !== year && venueYearIsStrong(y.count));
+  return [
+    `# ${name}: full concerts`,
+    "",
+    answers.lead,
+    "",
+    `- **Place:** [${venue.name}](${abs(`/venues/${venue.slug}`)})${[venue.city, venue.country].some(Boolean) ? `, ${[venue.city, venue.country].filter(Boolean).join(", ")}` : ""}`,
+    `- **Year:** ${year}`,
+    `- **Full concerts:** ${concerts.length}`,
+    "",
+    "## Concerts",
+    "",
+    ...concerts.map(concertLine),
+    "",
+    ...(others.length
+      ? [`## Other years at ${venue.name}`, "", ...others.map((y) => `- [${venueYearName(venue.name, y.year)}](${abs(venueYearPath(venue.slug, y.year))}): ${count(y.count)}`), ""]
+      : []),
+    ...qaMarkdown(answers.questions),
+    `Source: ${SITE_NAME}, ${abs(path)}`,
+    "",
+  ].join("\n");
+}
+
+// ---- "Best of" rankings (src/lib/best.ts) ----
+
+/** A ranking as Markdown: lead, every concert in order with its views, questions. */
+export function bestMarkdown(list: BestList, concerts: (ConcertLine & { viewCount: number; artists: { name: string; role: "MAIN" | "WITH" }[] })[]): string {
+  const path = bestPath(list.slug);
+  return [
+    `# ${bestHeading(list)}`,
+    "",
+    bestLead(list, concerts),
+    "",
+    "## The ranking, most watched first",
+    "",
+    ...concerts.map((c, i) => `${i + 1}. [${rankedName(c)}](${abs(`/concerts/${c.slug}`)}): ${c.viewCount.toLocaleString("en-GB")} views on YouTube, ${formatDuration(c.durationSeconds)}${c.hasSetlist ? ", setlist" : ""}`),
+    "",
+    ...qaMarkdown(bestQuestions(list, concerts)),
+    `Every ranking: ${abs("/best")}`,
+    "",
+    `Source: ${SITE_NAME}, ${abs(path)}`,
+    "",
+  ].join("\n");
+}

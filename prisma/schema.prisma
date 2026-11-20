@@ -91,6 +91,14 @@ model Artist {
   coverLocked      Boolean                 @default(false) @map("cover_locked")
   /// The concert IDs the choice was made among; the choice is made again when they change.
   coverChosenFrom  String?                 @map("cover_chosen_from")
+  /// Where the band is known elsewhere (entity links job, src/lib/entity-links.ts): its MusicBrainz ID,
+  /// Wikidata item ("Q15920") and English Wikipedia article. Used for sameAs and the band page's
+  /// "Elsewhere" line. Null = not known; nothing is linked then. Open data, not YouTube data.
+  mbid             String?
+  wikidataId       String?                 @map("wikidata_id")
+  wikipediaUrl     String?                 @map("wikipedia_url")
+  /// Last time MusicBrainz and Wikidata were asked. Null = never (asked first).
+  linksCheckedAt   DateTime?               @map("links_checked_at")
   credits          ConcertArtist[]
   tours            Tour[]
   photo            BandPhoto?
@@ -148,10 +156,24 @@ model Venue {
   city      String?
   country   String?
   concerts  Concert[]
+  /// Old addresses of venues merged into this one: they redirect here (308).
+  aliases   VenueAlias[]
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@map("venues")
+}
+
+/// The slug of a venue that was merged into another ("pinkpop-festival" -> Pinkpop), so its old pages
+/// redirect permanently and the collector files new concerts under the kept venue (admin op merge-venue).
+model VenueAlias {
+  slug      String   @id
+  venueId   Int      @map("venue_id")
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([venueId])
+  @@map("venue_aliases")
 }
 
 model Genre {

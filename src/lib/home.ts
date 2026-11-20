@@ -10,6 +10,7 @@ import { cached } from "./memo";
 import { bandPhotosFor, type BandPhotoView } from "./photos/view";
 import { decadeIndex, findConcertViews, type ConcertView } from "./queries";
 import { readSetlist, type SetlistView } from "./setlist/view";
+import { countryName } from "./places";
 
 // ---------- The issue number ----------
 
@@ -151,7 +152,7 @@ async function places(kind: "festival" | "room", take: number) {
     select: { slug: true, name: true, city: true, country: true, _count: { select: { concerts: { where: VISIBLE } } } },
   });
   return venues
-    .map((v) => ({ slug: v.slug, name: v.name, city: v.city, country: v.country, count: v._count.concerts }))
+    .map((v) => ({ slug: v.slug, name: v.name, city: v.city, country: countryName(v.country), count: v._count.concerts }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, take);
 }

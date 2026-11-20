@@ -13,3 +13,6 @@ next-env.d.ts
 # Collector reports (contain YouTube data: not committed)
 reports/
 tracklist-report.json
+
+# Claude Code agent worktrees
+.claude/worktrees/
