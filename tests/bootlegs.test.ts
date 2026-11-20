@@ -10,12 +10,15 @@ import {
   bootlegCredit,
   bootlegNote,
   FAN_SECTION_TITLE,
+  FOOTER_LINE,
+  ISSUE_STRIP_SOURCES,
+  startHere,
   officialFirst,
   sourceCredit,
   splitBootlegs,
 } from "../src/lib/bootlegs";
 import { buildWhere, filtersToQuery, hasActiveFilters, parseFilters } from "../src/lib/filters";
-import { bandMarkdown, concertMarkdown, llmsTxt } from "../src/lib/llms";
+import { bandMarkdown, concertMarkdown, llmsTxt, SITE_SUMMARY } from "../src/lib/llms";
 import { concertIsStrong, concertSearchTitle } from "../src/lib/seo";
 import { buildSitemap, type SitemapConcert } from "../src/lib/sitemap";
 import { concertJsonLd } from "../src/lib/structured-data";
@@ -137,6 +140,67 @@ describe("SEO: indexed when strong, titled honestly", () => {
     ]);
     expect(a.lead).toContain("1 of them is a bootleg");
     expect(a.questions.find((q) => q.question.includes("most watched"))?.answer).toContain("L.C. Walker Arena");
+  });
+});
+
+describe("a band with only bootlegs (e.g. Nirvana)", () => {
+  const onlyBootlegs = [nirvana, { ...nirvana, id: 10, slug: "nirvana-paradiso-1991-bootleg", venue: { slug: "paradiso", name: "Paradiso" }, viewCount: 5 }];
+  it("the lead and the fans note never promise official concerts that are not there", () => {
+    const a = bandAnswers({ name: "Nirvana", origin: null }, onlyBootlegs);
+    expect(a.lead).toContain("All of them are bootlegs");
+    expect(a.lead).not.toContain("official concerts");
+    expect(bootlegNote(2, false)).not.toContain("official concerts come first");
+    expect(bootlegNote(1, false)).toBe(BOOTLEG_EXPLAINED);
+    expect(bootlegNote(2, true)).toContain("The official concerts come first.");
+  });
+  it("the Markdown copy drops 'come first' too", () => {
+    const md = bandMarkdown({ name: "Nirvana", slug: "nirvana", bio: null, origin: null, bornYear: null, label: null, aka: null }, onlyBootlegs);
+    expect(md).toContain("## From the fans (bootlegs)");
+    expect(md).not.toContain("come first");
+    expect(md).not.toContain("listed after the official concerts");
+  });
+  it("a single bootleg is described in the singular", () => {
+    const a = bandAnswers({ name: "Nirvana", origin: null }, [nirvana]);
+    expect(a.lead).toContain("It is a bootleg: a professionally filmed show shared by a fan channel.");
+  });
+});
+
+describe("Start here never recommends a bootleg over an official concert", () => {
+  const boot = { id: 1, viewCount: 9_000_000, bootleg: { from: "Fan" } };
+  const off = { id: 2, viewCount: 10, bootleg: null };
+  it("picks the official concert even when a bootleg has more views, and does not call it the most watched overall", () => {
+    const s = startHere([boot, off])!;
+    expect(s.pick.id).toBe(2);
+    expect(s.after).toBe(": the most watched of the official concerts (10 views on YouTube).");
+  });
+  it("only bootlegs: picks one and says it is a bootleg", () => {
+    expect(startHere([boot])!.after).toBe(", a bootleg, professionally filmed: the whole set.");
+    const s = startHere([boot, { ...boot, id: 3, viewCount: 1 }])!;
+    expect(s.pick.id).toBe(1);
+    expect(s.after).toContain("a bootleg, professionally filmed");
+  });
+  it("only official concerts: the usual wording, no bootleg words", () => {
+    expect(startHere([off])!.after).toBe(", the whole set.");
+    expect(startHere([off, { ...off, id: 3, viewCount: 99 }])!.after).toBe(": the most watched of them (99 views on YouTube).");
+    expect(startHere([])).toBeNull();
+  });
+  it("keeps the copy rules", () => {
+    for (const s of [startHere([boot]), startHere([boot, off]), startHere([off, { ...off, id: 3 }])]) {
+      expect(`${s!.before}${s!.after}`).not.toMatch(BANNED);
+      expect(youtubeOnlyWithViews(`${s!.before}${s!.after}`)).toBe(true);
+    }
+  });
+});
+
+describe("site-wide words about sources", () => {
+  it("footer, issue strip and llms summary say official first, then bootlegs", () => {
+    expect(FOOTER_LINE).toBe("every gig here is a whole show, played in full: official concerts first, then bootlegs. We just glue them together.");
+    expect(ISSUE_STRIP_SOURCES).toBe("FULL ROCK GIGS, OFFICIAL FIRST");
+    expect(SITE_SUMMARY).toContain("then bootlegs shared by fan channels");
+    for (const t of [FOOTER_LINE, ISSUE_STRIP_SOURCES, SITE_SUMMARY]) {
+      expect(t).not.toMatch(/official (sources|concerts?) only|only official/i);
+      expect(t).not.toMatch(BANNED);
+    }
   });
 });
 

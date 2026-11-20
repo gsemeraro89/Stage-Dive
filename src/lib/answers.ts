@@ -166,7 +166,7 @@ export function bandAnswers(
     `${totalTime(concerts)} of ${genres.length ? listWords(genres) : "live rock"}` +
     `${years.length ? `, played ${spanWords(years)}` : ""}${places.length ? `, at places such as ${listWords(places)}` : ""}. ` +
     `Every concert plays in full on its own page${setlistCount ? `, ${setlistCount === concerts.length ? "each" : `${setlistCount}`} with its setlist` : ""}.` +
-    (bootlegs ? ` ${bootlegs === concerts.length ? (bootlegs === 1 ? "It is a bootleg" : "All of them are bootlegs") : `${bootlegs} of them ${bootlegs === 1 ? "is a bootleg" : "are bootlegs"}`}: professionally filmed shows shared by fans, listed after the official concerts.` : "");
+    (bootlegs ? ` ${bootlegs === concerts.length ? (bootlegs === 1 ? "It is a bootleg" : "All of them are bootlegs") : `${bootlegs} of them ${bootlegs === 1 ? "is a bootleg" : "are bootlegs"}`}: ${bootlegs === 1 ? "a professionally filmed show shared by a fan channel" : "professionally filmed shows shared by fans"}${bootlegs < concerts.length ? ", listed after the official concerts" : ""}.` : "");
 
   const questions: QA[] = [
     {

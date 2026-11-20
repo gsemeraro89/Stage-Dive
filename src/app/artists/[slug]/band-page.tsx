@@ -14,13 +14,12 @@ import { Crumbs, EmptyNote, SectionTitle } from "@/components/gig/PageHead";
 import { cutName, hoursOf, kindWord, placeYear, yearSpan } from "@/components/gig/words";
 import { PlayButton } from "@/components/player/PlayButton";
 import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
-import { bootlegNote, FAN_SECTION_TITLE, splitBootlegs } from "@/lib/bootlegs";
+import { bootlegNote, FAN_SECTION_TITLE, splitBootlegs, startHere } from "@/lib/bootlegs";
 import { decadeOf } from "@/lib/catalogue";
 import { formatDuration } from "@/lib/format";
 import { bandPhotoFor } from "@/lib/photos/view";
 import { toTrack } from "@/lib/player-types";
 import { avatarSources, getArtistPage, type ConcertView } from "@/lib/queries";
-import { compactNumber } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { bandAnswers, bandStatLines, bandStatsFor } from "@/lib/answers";
 import { bandSongsPath, songPath, songTally } from "@/lib/songs";
@@ -97,7 +96,8 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
   const { official, bootlegs } = splitBootlegs(concerts);
   const rows = sorted(official, sort);
   const fanRows = sorted(bootlegs, sort);
-  const best = sorted(official, "watched")[0] ?? sorted(bootlegs, "watched")[0];
+  const pick = startHere(concerts);
+  const best = pick?.pick;
   // The band's own YouTube picture: the still chosen for the band, else its newest gig (official first).
   const still = concerts.find((c) => c.youtubeId === artist.coverYoutubeId) ?? official[0] ?? concerts[0];
   const avatar = artist.coverUseAvatar && artist.imageUrl ? avatarSources(artist.imageUrl) : null;
@@ -214,15 +214,13 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
               )}
               <p className="bp-bio">
                 {concerts.length === 1 ? "One full gig" : `${concerts.length} full gigs`}, {hoursOf(concerts)} of band.{" "}
-                {concerts.length > 1 ? (
-                  <>
-                    If you watch one, make it <Link href={`/concerts/${best.slug}`}>{placeYear(best) || best.title}</Link>: it is the one
-                    YouTube has watched most ({compactNumber(best.viewCount)} views).
-                  </>
-                ) : (
-                  <>
-                    It is <Link href={`/concerts/${best.slug}`}>{placeYear(best) || best.title}</Link>, the whole set.
-                  </>
+                {/* An official concert first; a bootleg only when there is none, and then it says so (src/lib/bootlegs.ts). */}
+                {pick && (
+                  <span data-od="start-here-pick" data-bootleg={best.bootleg ? "" : undefined}>
+                    {pick.before}
+                    <Link href={`/concerts/${best.slug}`}>{placeYear(best) || best.title}</Link>
+                    {pick.after}
+                  </span>
                 )}
               </p>
               {(artist.label || artist.aka) && (
@@ -297,7 +295,7 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                 <span className="zn-label">{fanRows.length === 1 ? "1 bootleg" : `${fanRows.length} bootlegs`}</span>
               </div>
               <p className="bp-fans-note" data-od="band-bootlegs-note">
-                {bootlegNote(fanRows.length)}
+                {bootlegNote(fanRows.length, official.length > 0)}
               </p>
               <GigRows concerts={fanRows} label={`Bootlegs of ${artist.name}`} lead="year" name="place" />
             </section>

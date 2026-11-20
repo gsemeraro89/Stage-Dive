@@ -20,7 +20,7 @@ import { plural } from "./text";
 import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
-  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore, plus trip hop, electronic rock and big beat, art pop and experimental), the whole show by one band, from official festival, broadcaster, band and label channels. Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
+  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore, plus trip hop, electronic rock and big beat, art pop and experimental), the whole show by one band, from official festival, broadcaster, band and label channels first, then bootlegs shared by fan channels (marked as such). Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
 
 interface Named {
   slug: string;
@@ -310,7 +310,7 @@ export function bandMarkdown(
     "",
     // Bootlegs after the official concerts, said for what they are (owner, 20 Nov 2026).
     ...(concerts.some((c) => c.bootleg)
-      ? [`## ${FAN_SECTION_TITLE} (bootlegs)`, "", bootlegNote(concerts.filter((c) => c.bootleg).length), "", ...concerts.filter((c) => c.bootleg).map(concertLine), ""]
+      ? [`## ${FAN_SECTION_TITLE} (bootlegs)`, "", bootlegNote(concerts.filter((c) => c.bootleg).length, concerts.some((c) => !c.bootleg)), "", ...concerts.filter((c) => c.bootleg).map(concertLine), ""]
       : []),
     ...(stats.length ? ["## Live statistics", "", ...stats.map((l) => `- **${l.label}:** ${l.value}`), ""] : []),
     ...(songs.length
