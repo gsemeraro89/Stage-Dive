@@ -18,8 +18,8 @@ describe("countries", () => {
     expect(countryName("USA")).toBe("United States");
     expect(countryName("UK")).toBe("United Kingdom");
     expect(countryName("GB")).toBe("United Kingdom");
-    expect(countryName("England")).toBe("United Kingdom");
-    expect(countryName("Scotland")).toBe("United Kingdom");
+    expect(countryName("England")).toBe("England");
+    expect(countryName("Scotland")).toBe("Scotland");
     expect(countryName("DE")).toBe("Germany");
     expect(countryName(" Brazil ")).toBe("Brazil");
     expect(countryName("")).toBeNull();

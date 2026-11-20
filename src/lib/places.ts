@@ -1,7 +1,7 @@
 // Places written one way (owner, 20 Nov 2026): the same festival stored as "Pinkpop" and "Pinkpop
 // Festival" split its page in two, and the Netherlands appeared as "NL" and "Netherlands".
 // - countryName(): every country as its full English name ("NL" -> "Netherlands", "USA" -> "United
-//   States"; England, Scotland, Wales and Northern Ireland -> "United Kingdom"). Used when storing
+//   States"; England, Scotland, Wales and Northern Ireland stay as written: owner, 20 Nov 2026). Used when storing
 //   (collector, seed import), when showing, and by the admin op "normalize-countries".
 // - venueKey() / sameVenue(): two venue names are the same place when they are equal after dropping
 //   case, accents, punctuation, a leading "the" and a leading or trailing "festival"/"fest", and their
@@ -21,10 +21,6 @@ const COUNTRY_ALIASES: Record<string, string> = {
   "u k": "United Kingdom",
   "great britain": "United Kingdom",
   britain: "United Kingdom",
-  england: "United Kingdom",
-  scotland: "United Kingdom",
-  wales: "United Kingdom",
-  "northern ireland": "United Kingdom",
   holland: "Netherlands",
   "the netherlands": "Netherlands",
   "czech republic": "Czechia",
