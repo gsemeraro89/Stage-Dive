@@ -6,14 +6,20 @@
 //   reject-review:<id>,<id>         the owner said no to these videos in the review queue
 //   merge-venue:<from-slug>><into-slug>  two records for the same venue become one; the old address redirects
 //   normalize-countries             every country written as its full English name ("NL" -> "Netherlands")
+//   keyword-research[:k=v,...]      keyword research (scripts/keywords.ts; read-only, no quota, no Claude):
+//                                   e.g. keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no
+//                                   Runs after the other operations, so its result ends the log.
 import "dotenv/config";
 import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { recompute } from "../src/lib/similarity/job";
+import { keywordArgs, keywordResearch } from "./keywords";
 
 async function main() {
-  const ops = (process.argv[2] ?? "").split(";").map((s) => s.trim()).filter(Boolean);
-  if (!ops.length) throw new Error("no operations given");
+  const all = (process.argv[2] ?? "").split(";").map((s) => s.trim()).filter(Boolean);
+  if (!all.length) throw new Error("no operations given");
+  const research = all.filter((op) => /^keyword-research(:|$)/.test(op));
+  const ops = all.filter((op) => !research.includes(op));
   const db = getDb();
   const out: unknown[] = [];
   for (const op of ops) {
@@ -32,7 +38,13 @@ async function main() {
   }
   // A merge changes who is similar to whom: recompute now rather than at the next collector run.
   if (ops.some((op) => op.startsWith("merge:") || op.startsWith("split:"))) out.push({ similarityPairs: (await recompute(db)).length });
-  console.log(JSON.stringify(out, null, 2));
+  if (ops.length) console.log(JSON.stringify(out, null, 2));
+  // Keyword research last: the end of the job log is its result (the agents cannot read artifacts).
+  // In the job, the time budget defaults to 120 minutes (collect.yml allows 180, and other jobs queue behind it).
+  for (const op of research) {
+    const args = keywordArgs(op.split(":")[1] ?? "");
+    await keywordResearch(args.includes("--minutes") ? args : [...args, "--minutes", "120"]);
+  }
   await db.$disconnect();
 }
 

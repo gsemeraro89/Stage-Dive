@@ -29,7 +29,8 @@
     "seed-check": "tsx scripts/seed-check.ts",
     "band-photos": "tsx scripts/band-photos.ts",
     "entity-links": "tsx scripts/entity-links.ts",
-    "indexnow": "tsx scripts/indexnow.ts"
+    "indexnow": "tsx scripts/indexnow.ts",
+    "keywords": "tsx scripts/keywords.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

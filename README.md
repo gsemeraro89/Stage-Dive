@@ -84,6 +84,8 @@ Web service (Node, Frankfurt), auto-deploys from `main`:
 
 Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://fullconcert.live` (the domain the owner bought on 20 Nov 2026). Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, `/venues/<slug>/<year>.md`, `/best/<slug>.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
 
+Keyword research (owner, 20 Nov 2026): `Collect concerts` with `admin_ops` = `keyword-research` (read-only, no quota, no Claude; about an hour, at most two). It asks Google and Bing search suggestions about every band, festival and edition, venue, genre, decade, tour and top song, plus the head terms around "full concert", and reports each phrase with its score, intent and the page that should rank for it, or the missing page type (`reports/keywords-<date>.md`, and the top 300 phrases, gaps and counts at the end of the job log). Locally: `npm run keywords -- --plan`. The target phrases every page title carries are in `src/lib/keyword-targets.ts`.
+
 ## Admin
 
 `/admin`, protected by `ADMIN_PASSWORD` (any user name): last job runs, videos the collector was unsure about (publish or reject), recently added concerts (hide or show).
