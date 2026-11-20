@@ -45,10 +45,24 @@ describe("slugify", () => {
 });
 
 describe("catalogue", () => {
-  it("has the 12 genres of the brief plus new wave / synth", () => {
-    expect(GENRES).toHaveLength(13);
+  it("has the 12 genres of the brief plus new wave / synth and the owner's three wider genres", () => {
+    expect(GENRES).toHaveLength(16);
     expect(GENRES).toContain("new wave / synth");
     expect(GENRES).toContain("emo / post-hardcore");
+    expect(GENRES.slice(-3)).toEqual(["trip hop", "electronic rock / big beat", "art pop / experimental"]);
+  });
+  it("gives the new genres clean page slugs", async () => {
+    const { slugify } = await import("../src/lib/slug");
+    expect(GENRES.slice(-3).map(slugify)).toEqual(["trip-hop", "electronic-rock-big-beat", "art-pop-experimental"]);
+  });
+  it("maps the new genres' spellings, and keeps techno, hip hop, reggae and jazz out", () => {
+    expect(normalizeGenre("Trip-Hop")).toBe("trip hop");
+    expect(normalizeGenre("triphop")).toBe("trip hop");
+    expect(normalizeGenre("Big Beat")).toBe("electronic rock / big beat");
+    expect(normalizeGenre("electronic rock")).toBe("electronic rock / big beat");
+    expect(normalizeGenre("Art Pop")).toBe("art pop / experimental");
+    expect(normalizeGenre("experimental")).toBe("art pop / experimental");
+    for (const g of ["techno", "house", "hip hop", "reggae", "jazz", "classical", "pop"]) expect(normalizeGenre(g), g).toBeNull();
   });
   it("maps genre spellings onto the list and rejects others", () => {
     expect(normalizeGenre("Metal")).toBe("metal");

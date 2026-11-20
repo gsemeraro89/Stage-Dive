@@ -17,6 +17,20 @@ export interface YouTubeComment {
 
 export class QuotaBudgetExceeded extends Error {}
 
+/** YouTube answered 404: the thing asked for does not exist (or is not public). */
+export class YouTubeNotFound extends Error {}
+
+/**
+ * A channel's uploads playlist ("UU" + the channel ID without "UC") that YouTube does not return.
+ * Normal for a channel with no public uploads (all private, unlisted or removed), a closed channel,
+ * or a stored playlist ID that is wrong. The collector skips the channel with a report line.
+ */
+export class PlaylistNotFound extends Error {
+  constructor(readonly playlistId: string) {
+    super(`uploads playlist ${playlistId} not found (no public uploads, closed channel or wrong ID)`);
+  }
+}
+
 export interface YouTubeVideo extends VideoFacts {
   channelId: string;
   channelTitle: string;
@@ -62,6 +76,7 @@ export class YouTubeClient {
       if (res.status === 403 && /quotaExceeded|dailyLimitExceeded/.test(body)) {
         throw new QuotaBudgetExceeded("YouTube daily quota used up; the rest waits for the next run");
       }
+      if (res.status === 404) throw new YouTubeNotFound(`YouTube ${endpoint} failed: 404 ${body.slice(0, 300)}`);
       if (res.status >= 500 && attempt < 4) {
         await new Promise((r) => setTimeout(r, this.retryDelayMs * 2 ** attempt));
         continue;
@@ -144,13 +159,20 @@ export class YouTubeClient {
   async playlistVideoIds(playlistId: string, since: Date | null, maxPages = 400): Promise<string[]> {
     const ids: string[] = [];
     let pageToken: string | undefined;
+    if (!playlistId) throw new PlaylistNotFound("(none)");
     for (let page = 0; page < maxPages; page++) {
-      const data = await this.get("playlistItems", {
-        part: "contentDetails",
-        playlistId,
-        maxResults: "50",
-        ...(pageToken ? { pageToken } : {}),
-      });
+      let data: any;
+      try {
+        data = await this.get("playlistItems", {
+          part: "contentDetails",
+          playlistId,
+          maxResults: "50",
+          ...(pageToken ? { pageToken } : {}),
+        });
+      } catch (error) {
+        if (error instanceof YouTubeNotFound) throw new PlaylistNotFound(playlistId);
+        throw error;
+      }
       let reachedOld = false;
       for (const item of data.items ?? []) {
         const published = item.contentDetails?.videoPublishedAt;

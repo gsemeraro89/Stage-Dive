@@ -77,6 +77,8 @@ export interface VideoFacts {
   uploadStatus: string;
   /** Key countries (KEY_REGIONS) where YouTube blocks the video. Empty: playable in all of them. */
   blockedIn: string[];
+  /** The uploading channel's name, when known (the DJ-set rule reads it). */
+  channelTitle?: string;
 }
 
 export type RuleFailure =
@@ -88,7 +90,8 @@ export type RuleFailure =
   | "live-or-upcoming"
   | "not-processed"
   | "region-blocked"
-  | "not-a-concert-title";
+  | "not-a-concert-title"
+  | "dj-set";
 
 /**
  * Titles that say the video is not a concert, so it is left out without asking the classifier.
@@ -99,6 +102,27 @@ const NOT_A_CONCERT_TITLE =
 
 export function titleSaysNotAConcert(title: string): boolean {
   return NOT_A_CONCERT_TITLE.test(title);
+}
+
+/**
+ * Owner (20 Nov 2026): a DJ set is not a concert by a band or live act, even now that trip hop, big beat
+ * and art pop are in. Club and techno events that only book DJs, and solo DJs the archives post, are left
+ * out for free from the title or the channel name. A live act's own concert never says "DJ set".
+ */
+const DJ_SET_WORDS = [
+  "dj set", "dj-set", "djset", "dj mix", "dj-mix", "b2b",
+  "time warp", "timewarp", "stone techno", "boiler room",
+];
+/** Solo DJs the owner named (20 Nov 2026). Matched as whole words in the title or channel name. */
+export const DJ_NAMES = ["Adam Beyer", "Chris Liebing", "Maceo Plex", "Ben Klock"];
+const DJ_SET = new RegExp(
+  `(^|[^a-z0-9])(${[...DJ_SET_WORDS, ...DJ_NAMES].map(escapeRegExp).join("|")})($|[^a-z0-9])`,
+  "i",
+);
+
+/** Whether a video's title or channel name says it is a DJ set or a DJ-only event (not ours). */
+export function saysDjSet(title: string, channelTitle = ""): boolean {
+  return DJ_SET.test(title) || DJ_SET.test(channelTitle);
 }
 
 /**
@@ -116,6 +140,7 @@ export function checkRules(video: VideoFacts, config: CollectorConfig): RuleFail
   if (video.durationSeconds < config.minDurationSeconds) failures.push("too-short");
   if (video.viewCount < config.viewThreshold) failures.push("below-view-threshold");
   if (titleSaysNotAConcert(video.title)) failures.push("not-a-concert-title");
+  if (saysDjSet(video.title, video.channelTitle)) failures.push("dj-set");
   return failures;
 }
 
@@ -155,6 +180,9 @@ const GENRE_SPELLINGS: Record<(typeof GENRES)[number], string[]> = {
   "shoegaze": ["shoegaze", "dream pop"],
   "stoner": ["stoner rock", "stoner metal", "desert rock"],
   "emo / post-hardcore": ["emo", "post-hardcore", "post hardcore", "screamo"],
+  "trip hop": ["trip hop", "trip-hop", "triphop", "bristol sound"],
+  "electronic rock / big beat": ["big beat", "big-beat", "electronic rock", "electro rock", "electro-rock"],
+  "art pop / experimental": ["art pop", "art-pop", "avant-pop", "experimental pop", "art rock", "experimental rock"],
 };
 
 function escapeRegExp(text: string): string {
@@ -197,6 +225,8 @@ const ROCK_WORDS = [
   "rock", "punk", "metal", "grunge", "indie", "alternative", "post-punk", "new wave", "synth-pop", "synthpop",
   "shoegaze", "stoner", "garage", "emo", "hardcore", "post-hardcore", "britpop", "gothic", "darkwave",
   "noise", "psychedelic", "sludge", "doom", "thrash", "grindcore", "screamo", "math rock", "krautrock",
+  // Added with the wider genres (owner, 20 Nov 2026). Not "electronic", "techno" or "house" alone: DJs stay out.
+  "trip hop", "trip-hop", "big beat", "art pop", "art-pop", "avant-pop", "electronic rock", "electropunk",
 ];
 
 export function isRockGenreList(genres: string[]): boolean {

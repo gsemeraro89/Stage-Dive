@@ -8,7 +8,8 @@
 #   DATABASE_URL (Render "External Database URL"), YOUTUBE_API_KEY, ANTHROPIC_API_KEY
 # bootleg_check: a measuring dry run over the fan uploads the per-artist lane finds (never publishes).
 # bootleg_publish: bootlegs for real, following dry_run (on = report only). Both read data/fan-channels.json in full.
-# Optional variables: MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET. Claude has no cap (owner, 19 Nov 2026).
+# Optional variables: MAX_CLASSIFY_PER_RUN (default 1500), YOUTUBE_UNIT_BUDGET. Claude has no cap (owner, 19 Nov 2026).
+# Classifier (owner, 20 Nov 2026): Claude Haiku via the half-price Batch API, Opus only for unsure answers.
 # Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
 # No view threshold (brief section 2). Archives are read first (data/channels.json).
 name: Collect concerts
@@ -21,12 +22,22 @@ on:
         type: boolean
         default: true
       limit:
-        description: "Maximum videos to classify"
-        default: "100"
+        description: "Maximum videos to classify (Haiku: about $1.5-2 per 1,000)"
+        default: "1500"
       reconsider:
         description: "Look again at videos kept out as uncertain or not rock (free when answers are stored)"
         type: boolean
         default: false
+      reconsider_scope:
+        description: "With reconsider: which kept-out videos (official = our channels and official channels, no fan uploads; archive = archives only; all)"
+        type: choice
+        options: [official, archive, all]
+        default: official
+      classifier:
+        description: "Main collector classifier: haiku+opus (default: Haiku, Opus when Haiku is unsure), haiku (Haiku only), opus (Opus for all, the old way)"
+        type: choice
+        options: [haiku+opus, haiku, opus]
+        default: haiku+opus
       unit_budget:
         description: "YouTube quota units this run may use (default 8000)"
         default: ""
@@ -96,7 +107,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    # The per-artist lane may wait for up to three half-price batches (classify, Opus check, write-ups).
+    # The per-artist lane and the collector may wait for up to three half-price batches (Haiku, Opus check, write-ups).
     timeout-minutes: 180
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -104,10 +115,13 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ONLY_CHANNEL: ${{ inputs.only_channel }}
       ONLY_VIDEOS: ${{ inputs.only_videos }}
-      MAX_CLASSIFY_PER_RUN: ${{ vars.MAX_CLASSIFY_PER_RUN || '200' }}
+      MAX_CLASSIFY_PER_RUN: ${{ vars.MAX_CLASSIFY_PER_RUN || '1500' }}
       YOUTUBE_UNIT_BUDGET: ${{ inputs.unit_budget || vars.YOUTUBE_UNIT_BUDGET || '8000' }}
       NEW_CHANNELS_PER_RUN: ${{ inputs.new_channels }}
       DISCOVERY_SEARCHES: ${{ inputs.searches }}
+      # Empty on scheduled runs: the defaults (haiku+opus, official) apply.
+      COLLECT_CLASSIFIER: ${{ inputs.classifier }}
+      RECONSIDER_SCOPE: ${{ inputs.reconsider_scope }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,5 +1,5 @@
 {
- "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. handle is tried first (1 unit); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel. Added 20 Nov 2026 (owner): official festival, broadcaster, venue and band channels found by the fan-video check.",
+ "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. handle is tried first (1 unit); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel (The Current: @TheCurrent, Minnesota Public Radio, confirmed by the owner 20 Nov 2026). A channel whose uploads playlist YouTube does not return (404: no public uploads, closed channel or wrong ID) is skipped with a line under skippedChannels in the run report; if it stays like that, put its ID in skipIds. Added 20 Nov 2026 (owner): official festival, broadcaster, venue and band channels found by the fan-video check.",
  "channels": [
   {
    "name": "Pinkpop Archive",
@@ -75,6 +75,7 @@
   },
   {
    "name": "The Current",
+   "handle": "@TheCurrent",
    "search": "The Current Minnesota Public Radio",
    "expect": "the current",
    "kind": "ARCHIVE"

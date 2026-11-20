@@ -16,7 +16,7 @@ What changes for rock:
 - Unit = one band's full concert or full festival show, at least 40 minutes. No compilations, single songs, documentaries, "best of", half-show phone footage.
 - Setlist is a first-class object: every concert page shows it; clicking a song jumps to its timestamp. Source: YouTube description/chapters. Optional later: setlist.fm API (check terms first).
 - Browse by decade and tour too, not only band, venue/festival and genre.
-- Genres (editable): classic rock, hard rock, punk, post-punk, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo/post-hardcore.
+- Genres (editable): classic rock, hard rock, punk, post-punk, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo/post-hardcore; new wave / synth (owner, 18 Nov 2026); trip hop, electronic rock / big beat, art pop / experimental (owner, 20 Nov 2026: Massive Attack, The Prodigy, Björk). DJ sets, hip hop, reggae, jazz, classical and solo pop acts stay out.
 - Venues/festivals: Glastonbury, Reading & Leeds, Roskilde, Rock am Ring, Hellfest, Download, Primavera Sound, Mad Cool, Pinkpop, Rock Werchter, Lollapalooza; rooms like Madison Square Garden, Royal Albert Hall, Wembley, CBGB, The 100 Club, Paradiso.
 
 ## 2. Collector (cheap by design)

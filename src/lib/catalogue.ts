@@ -2,7 +2,11 @@
 
 /**
  * Genres shown on the site (docs/BRIEF.md section 1, editable). "new wave / synth" added by the owner
- * on 18 Nov 2026 for Depeche Mode-type acts (docs/SUPPLY-CHECK.md). Names are shown as written here.
+ * on 18 Nov 2026 for Depeche Mode-type acts (docs/SUPPLY-CHECK.md). The last three added by the owner on
+ * 20 Nov 2026, for the bands the official archives hold beyond rock: Massive Attack, Portishead, Tricky
+ * (trip hop); The Prodigy, The Chemical Brothers live, Leftfield, Underworld (electronic rock / big beat:
+ * live acts, never DJ sets); Björk, Kate Bush (art pop / experimental). Names are shown as written here;
+ * page slugs come from slugify(): trip-hop, electronic-rock-big-beat, art-pop-experimental.
  */
 export const GENRES = [
   "classic rock",
@@ -18,6 +22,9 @@ export const GENRES = [
   "shoegaze",
   "stoner",
   "emo / post-hardcore",
+  "trip hop",
+  "electronic rock / big beat",
+  "art pop / experimental",
 ] as const;
 
 export type GenreName = (typeof GENRES)[number];
@@ -35,6 +42,17 @@ export const GENRE_ALIASES: Record<string, GenreName> = {
   "synth-pop": "new wave / synth",
   "synthpop": "new wave / synth",
   "new wave/synth": "new wave / synth",
+  "trip-hop": "trip hop",
+  "triphop": "trip hop",
+  "big beat": "electronic rock / big beat",
+  "big-beat": "electronic rock / big beat",
+  "electronic rock": "electronic rock / big beat",
+  "electro-rock": "electronic rock / big beat",
+  "electronic rock/big beat": "electronic rock / big beat",
+  "art pop": "art pop / experimental",
+  "art-pop": "art pop / experimental",
+  "experimental": "art pop / experimental",
+  "art pop/experimental": "art pop / experimental",
 };
 
 /** A genre label in our list, or null when it is not one of ours. */

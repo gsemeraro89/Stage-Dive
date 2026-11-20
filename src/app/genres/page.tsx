@@ -13,7 +13,7 @@ export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: "Rock Genres · Full Concerts by Genre",
-  description: "Full rock concerts by genre: classic rock, punk, post-punk, metal, grunge, shoegaze, stoner and more.",
+  description: "Full rock concerts by genre: classic rock, punk, post-punk, metal, grunge, shoegaze, stoner, trip hop, big beat, art pop and more.",
   alternates: { canonical: "/genres" },
 };
 
