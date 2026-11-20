@@ -145,6 +145,65 @@ export function concertEventJsonLd(
   };
 }
 
+// ---- Festival and venue years (src/lib/venue-years.ts) ----
+
+/** The day span of a set of concerts as schema.org dates, or the year alone when no day is known. */
+function dateSpan(concerts: { performedOn: Date | null }[], year: number): { startDate: string; endDate?: string } {
+  const days = concerts
+    .map((c) => (c.performedOn ? new Date(c.performedOn).toISOString().slice(0, 10) : null))
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  // Every concert needs a day for a day span to be true; otherwise only the year is certain.
+  if (!days.length || days.length < concerts.length) return { startDate: String(year) };
+  return days[0] === days[days.length - 1] ? { startDate: days[0] } : { startDate: days[0], endDate: days[days.length - 1] };
+}
+
+/**
+ * A festival year ("Pinkpop 1995"): a Festival event in the venue's series, held at the place, with
+ * each concert as a MusicEvent sub-event (the same @id as on the concert page). For a room, which is
+ * not one event, the place itself with its concerts as events. Only facts we hold.
+ */
+export function venueYearJsonLd(
+  venue: { slug: string; name: string; city: string | null; country: string | null },
+  name: string,
+  year: number,
+  path: string,
+  concerts: ConcertView[],
+  festival: boolean,
+): Json {
+  const url = abs(path);
+  const address = [venue.city, venue.country].some(Boolean)
+    ? { address: { "@type": "PostalAddress", ...(venue.city ? { addressLocality: venue.city } : {}), ...(venue.country ? { addressCountry: venue.country } : {}) } }
+    : {};
+  const place = { "@type": "Place", name: venue.name, url: abs(`/venues/${venue.slug}`), ...address };
+  const events = concerts.map((c) => ({
+    "@type": "MusicEvent",
+    "@id": `${concertUrl(c.slug)}#event`,
+    name: `${c.credits} live at ${venue.name} ${year}`,
+    url: concertUrl(c.slug),
+    startDate: playedDate(c) ?? String(year),
+    location: { "@type": "Place", name: venue.name },
+    performer: performers(c),
+  }));
+  if (!festival) {
+    return { "@context": "https://schema.org", ...place, "@id": `${url}#place`, event: events };
+  }
+  const bands = [...new Map(concerts.flatMap((c) => performers(c)).map((p) => [p.name, p])).values()];
+  return {
+    "@context": "https://schema.org",
+    "@type": "Festival",
+    "@id": `${url}#event`,
+    name,
+    url,
+    ...dateSpan(concerts, year),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: place,
+    superEvent: { "@type": "EventSeries", name: venue.name, url: abs(`/venues/${venue.slug}`) },
+    performer: bands,
+    subEvent: events,
+  };
+}
+
 /** Where a band is known elsewhere, as links: MusicBrainz, Wikidata, the band's own channel. Only IDs we hold. */
 export function bandSameAs(ids: { mbid?: string | null; wikidataId?: string | null; youtubeChannelId?: string | null }): string[] {
   return [

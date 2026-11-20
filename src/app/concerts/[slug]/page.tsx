@@ -88,7 +88,7 @@ function setlistSource(source: string | null): string {
 export default async function ConcertPage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { concert, queue, moreFromArtist, similarCards, setlist, notes, songLinks } = page;
+  const { concert, queue, moreFromArtist, similarCards, setlist, notes, songLinks, venueYear } = page;
   const track = toTrack(concert);
   const band = mainArtist(concert);
   const name = bandName(concert);
@@ -330,7 +330,7 @@ export default async function ConcertPage({ params }: Props) {
         </div>
       </div>
 
-      {(more.length > 0 || upNext.length > 0 || similarCards.length > 0) && (
+      {(more.length > 0 || upNext.length > 0 || similarCards.length > 0 || venueYear) && (
         <div className="cp-after">
           <div className="cp-after-main">
             {more.length > 0 && band && (
@@ -348,6 +348,29 @@ export default async function ConcertPage({ params }: Props) {
                     <GigCard key={c.id} concert={c} index={i} name="place" sizes="(min-width: 901px) 22vw, 50vw" />
                   ))}
                 </ul>
+              </section>
+            )}
+            {venueYear && (
+              // Unstyled for now (designer): the other concerts from the same place and year, and that year's page.
+              <section aria-labelledby="venue-year" data-od="venue-year-more" className="pg-block">
+                <div className="pg-block-head">
+                  <SectionTitle id="venue-year" tilt={-1} small>
+                    More from {venueYear.name}
+                  </SectionTitle>
+                </div>
+                <ul className="pg-list">
+                  {venueYear.others.slice(0, 8).map((c) => (
+                    <li key={c.id}>
+                      <Link href={`/concerts/${c.slug}`}>
+                        <span className="pg-list-name">{c.credits}</span>
+                        <span className="zn-data">{formatDuration(c.durationSeconds)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link href={venueYear.path} className="hm-more" data-od="venue-year-link">
+                  ALL {venueYear.count} GIGS FROM {venueYear.name.toUpperCase()} &gt;&gt;
+                </Link>
               </section>
             )}
             {upNext.length > 0 && (

@@ -12,7 +12,8 @@ import { layoutMap } from "./similarity/layout";
 import { nameKey } from "./collector/musicbrainz";
 import { concertNotes, type ConcertNote, type SiblingConcert } from "./concert-notes";
 import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } from "./songs";
-import { MIN_SONG_VERSIONS } from "./seo";
+import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
+import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
 
 /**
  * Artists that have their own page (owner rule, 13 Nov 2026): only artists with a concert of their own
@@ -301,6 +302,25 @@ export async function getConcertPage(slug: string) {
     const href = t.unidentified ? null : linkSong(t.title);
     if (href) songLinks[t.title] = href;
   }
+  // "More from Pinkpop 1995": the other concerts played at the same place in the same year.
+  const sameYear =
+    row.venueId && row.performedYear
+      ? (
+          await findConcerts({
+            where: { ...VISIBLE, venueId: row.venueId, performedYear: row.performedYear, id: { not: row.id } },
+            orderBy: [{ performedOn: "asc" }, { id: "asc" }],
+          })
+        ).map(toConcertView)
+      : [];
+  const venueYear: VenueYearLink<ConcertView> | null =
+    concert.venue && concert.performedYear && sameYear.length
+      ? {
+          name: venueYearName(concert.venue.name, concert.performedYear),
+          path: venueYearPath(concert.venue.slug, concert.performedYear),
+          count: sameYear.length + 1,
+          others: sameYear,
+        }
+      : null;
   const notes: ConcertNote[] = concertNotes({
     concert,
     band: band ? { slug: band.slug, name: band.name } : null,
@@ -314,6 +334,8 @@ export async function getConcertPage(slug: string) {
     /** Setlist title -> its song page. */
     songLinks,
     notes,
+    /** The other concerts from the same place and year, and that year's page (null when there are none). */
+    venueYear,
     /** "You might also like": similar artists with a concert to play (never one with this concert's artists). */
     similarCards: (await artistCards(similar.slice(0, 12), current.artistIds)).slice(0, 4),
     queue: pick(queueIds),
@@ -598,6 +620,53 @@ export async function getVenuePage(slug: string) {
   return { venue, concerts: rows.map(toConcertView) };
 }
 
+// ---- Festival and venue years ("Pinkpop 1995", src/lib/venue-years.ts) ----
+
+/** Every concert played at a place in one year, in the order they were played. Null when there is none. */
+export async function getVenueYearPage(slug: string, year: number) {
+  if (!Number.isInteger(year) || year < 1900 || year > 2100) return null;
+  const venue = await getDb().venue.findUnique({ where: { slug } });
+  if (!venue) return null;
+  const [rows, years] = await Promise.all([
+    findConcerts({
+      where: { ...VISIBLE, venueId: venue.id, performedYear: year },
+      orderBy: [{ performedOn: "asc" }, { id: "asc" }],
+    }),
+    getDb().concert.groupBy({
+      by: ["performedYear"],
+      where: { ...VISIBLE, venueId: venue.id, performedYear: { not: null } },
+      _count: { _all: true },
+    }),
+  ]);
+  if (!rows.length) return null;
+  return {
+    venue,
+    year,
+    concerts: rows.map(toConcertView),
+    /** Every year with a concert at this place, newest first, with how many. */
+    years: years.map((y) => ({ year: y.performedYear!, count: y._count._all })).sort((a, b) => b.year - a.year),
+  };
+}
+
+/** Every place and year with a visible concert, and how many (decade pages, llms-full.txt). */
+async function venueYearIndexUncached(): Promise<VenueYear[]> {
+  try {
+    const rows = await getDb().concert.groupBy({
+      by: ["venueId", "performedYear"],
+      where: { ...VISIBLE, venueId: { not: null }, performedYear: { not: null } },
+      _count: { _all: true },
+    });
+    const venues = await getDb().venue.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.venueId!))] } }, select: { id: true, slug: true, name: true } });
+    const byId = new Map(venues.map((v) => [v.id, v]));
+    return rows
+      .map((r) => ({ slug: byId.get(r.venueId!)?.slug ?? "", name: byId.get(r.venueId!)?.name ?? "", year: r.performedYear!, count: r._count._all }))
+      .filter((r) => r.slug)
+      .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
 export async function getGenrePage(slug: string) {
   const genre = await getDb().genre.findUnique({ where: { slug } });
   if (!genre) return null;
@@ -838,6 +907,9 @@ export const mapArtistIndex = cached("mapArtistIndex", mapArtistIndexUncached);
 export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
+export const venueYearIndex = cached("venueYearIndex", venueYearIndexUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts). */
 export const listTours = cached("listTours", listToursUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts): one entry per band, shared by all its song pages. */
@@ -853,8 +925,16 @@ export async function findConcertViews(args: { where: object; orderBy?: object |
 
 /** Everything /llms.txt and /llms-full.txt list (src/lib/llms.ts): every band, place, genre, decade and tour with concerts. */
 export async function llmsData() {
-  const [bands, options, genres, decades, tours] = await Promise.all([listArtists(), filterOptions(), listGenres(), decadeIndex(), listTours()]);
+  const [bands, options, genres, decades, tours, venueYears] = await Promise.all([
+    listArtists(),
+    filterOptions(),
+    listGenres(),
+    decadeIndex(),
+    listTours(),
+    venueYearIndex(),
+  ]);
   return {
+    venueYears,
     bands: bands.map((b) => ({ slug: b.slug, name: b.name, concerts: b.concerts })),
     venues: options.venues.map((v) => ({ slug: v.slug, name: v.name, concerts: v.count })),
     genres: genres.map((g) => ({ slug: g.slug, name: g.name, count: g.count })),

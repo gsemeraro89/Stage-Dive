@@ -420,3 +420,63 @@ export function tourLead(tour: string, band: string | null, concerts: ListConcer
     `Every concert plays in full on its own page, in the order of the tour.`
   );
 }
+
+// ---- Festival and venue years (src/lib/venue-years.ts) ----
+
+interface YearConcert extends ListConcert {
+  performedOn: Date | null;
+}
+
+/** "3 June 1995", "3 to 5 June 1995", or null when no day is known. Only days we hold. */
+export function daySpan(concerts: { performedOn: Date | null }[]): string | null {
+  const days = concerts.map((c) => c.performedOn).filter((d): d is Date => Boolean(d)).map((d) => new Date(d).getTime()).sort((a, b) => a - b);
+  if (!days.length) return null;
+  const first = whenWords({ performedOn: new Date(days[0]), performedYear: null })!.replace(/^on /, "");
+  const last = whenWords({ performedOn: new Date(days[days.length - 1]), performedYear: null })!.replace(/^on /, "");
+  if (first === last) return first;
+  const [d1, m1, y1] = first.split(" ");
+  const [, m2, y2] = last.split(" ");
+  if (y1 !== y2) return `${first} to ${last}`;
+  return m1 === m2 ? `${d1} to ${last}` : `${d1} ${m1} to ${last}`;
+}
+
+/**
+ * Lead and questions for a festival-year or venue-year page ("Pinkpop 1995"). `name` is the page's
+ * name ("Pinkpop 1995"); `festival` says whether the place is a festival (any concert of the Festival kind).
+ */
+export function venueYearAnswers(
+  venue: { name: string; city: string | null; country: string | null },
+  name: string,
+  year: number,
+  concerts: YearConcert[],
+  festival: boolean,
+): Answers {
+  if (!concerts.length) return { lead: `No concert from ${name} is on ${SITE_NAME} right now.`, questions: [] };
+  const where = [venue.city, venue.country].filter(Boolean).join(", ");
+  const bands = [...new Set(mainBands(concerts))];
+  const shown = bands.length > 8 ? [...bands.slice(0, 8), `${bands.length - 8} more`] : bands;
+  const days = daySpan(concerts);
+  const from = festival ? `from ${name}` : `recorded at ${venue.name} in ${year}`;
+  const lead =
+    `${plural(concerts.length, "full concert")} ${from}${where ? ` (${where})` : ""}${bands.length ? `: ${listWords(shown)}` : ""}. ` +
+    `Every concert plays in full on its own page.`;
+  const questions: QA[] = [];
+  if (bands.length) {
+    questions.push({
+      question: festival ? `Who played ${name}?` : `Which bands played ${venue.name} in ${year}?`,
+      answer: `Full concerts here: ${listWords(bands)}.`,
+    });
+  }
+  if (days) questions.push({ question: festival ? `When was ${name}?` : `When were these concerts played?`, answer: `The concerts here were played ${days.includes(" to ") ? "from" : "on"} ${days}.` });
+  if (where) questions.push({ question: `Where was ${name}?`, answer: `${venue.name}, ${where}.` });
+  if (concerts.length > 1) {
+    const top = mostWatched(concerts);
+    questions.push({ question: `What is the most watched concert from ${name}?`, answer: `${top.credits}, with ${views(top.viewCount)}.` });
+  }
+  const setlistCount = withSetlists(concerts);
+  questions.push({
+    question: `How many full concerts from ${name} are there?`,
+    answer: `${concerts.length}, ${totalTime(concerts)} of music${setlistCount ? `, ${setlistCount === concerts.length ? "all" : setlistCount} with the setlist` : ""}.`,
+  });
+  return { lead, questions };
+}

@@ -4,13 +4,15 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Collection, pileData } from "@/components/gig/Collection";
+import { Faq } from "@/components/gig/Faq";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
-import { cutName, kindWord } from "@/components/gig/words";
+import { cutName, gigs, kindWord } from "@/components/gig/words";
 import { getVenuePage } from "@/lib/queries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { venueAnswers } from "@/lib/answers";
 import { clip, hubIsStrong, robotsFor, shareImages, venueSearchTitle } from "@/lib/seo";
 import { breadcrumbs, faqPage, itemList } from "@/lib/structured-data";
+import { venueYearLinks } from "@/lib/venue-years";
 
 // One database read per request, shared by the page and its title/description.
 const load = cache(getVenuePage);
@@ -43,24 +45,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function Faq({ title, questions }: { title: string; questions: { question: string; answer: string }[] }) {
-  if (!questions.length) return null;
-  // Closed by default (owner choice); native <details>, readable without JavaScript.
-  return (
-    <details className="pg-faq" data-od="faq">
-      <summary>{title}</summary>
-      <dl>
-        {questions.map((q) => (
-          <div key={q.question}>
-            <dt>{q.question}</dt>
-            <dd>{q.answer}</dd>
-          </div>
-        ))}
-      </dl>
-    </details>
-  );
-}
-
 export default async function VenuePage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
@@ -68,6 +52,23 @@ export default async function VenuePage({ params }: Props) {
   const kind = kindWord(concerts.find((s) => s.venueKind)?.venueKind) ?? "Place";
   const answers = venueAnswers(venue, concerts);
   const path = `/venues/${venue.slug}`;
+  // "By year": each edition with two concerts or more has its own page ("Pinkpop 1995").
+  const years = venueYearLinks(venue.slug, concerts);
+  const byYear = years.length > 0 && (
+    // Unstyled for now (designer): one link per year, to its year page or, for a one-concert year, to that concert.
+    <nav aria-labelledby="by-year" data-od="venue-years" className="pg-years">
+      <h2 id="by-year">By year</h2>
+      <ul>
+        {years.map((y) => (
+          <li key={y.year} data-page={y.page || undefined}>
+            <Link href={y.href}>
+              <span className="pg-years-year">{y.year}</span> <span className="zn-data">{gigs(y.count)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
   return (
     <main data-od="venue" className="pg">
       <JsonLd
@@ -102,7 +103,9 @@ export default async function VenuePage({ params }: Props) {
           </Link>
         </EmptyNote>
       ) : (
-        <Collection concerts={concerts} label={`Every gig at ${venue.name}`} />
+        <Collection concerts={concerts} label={`Every gig at ${venue.name}`}>
+          {byYear}
+        </Collection>
       )}
       <Faq title={`Questions about ${venue.name}`} questions={answers.questions} />
     </main>
