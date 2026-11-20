@@ -13,6 +13,7 @@ import { nameKey } from "./collector/musicbrainz";
 import { concertNotes, type ConcertNote, type SiblingConcert } from "./concert-notes";
 import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } from "./songs";
 import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
+import { countryName } from "./places";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
 import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList } from "./best";
 
@@ -88,7 +89,8 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     })),
     venue: concert.venue ? { slug: concert.venue.slug, name: concert.venue.name } : null,
     city: concert.city,
-    country: concert.country,
+    // One form per country ("NL" -> "Netherlands"), also before the admin op has fixed old rows.
+    country: countryName(concert.country),
     venueKind: concert.venueKind ? { slug: concert.venueKind.slug, name: concert.venueKind.name } : null,
     genres: concert.genres.map((g) => ({ slug: g.genre.slug, name: g.genre.name })),
     performedYear: concert.performedYear,
@@ -422,7 +424,7 @@ function toSongConcert(r: {
   tour: { slug: string; name: string } | null;
 }): SongConcert {
   const { setlist, setlistSource, ...rest } = r;
-  return { ...rest, tracks: readSetlist(setlist, setlistSource)?.tracks ?? [] };
+  return { ...rest, country: countryName(r.country), tracks: readSetlist(setlist, setlistSource)?.tracks ?? [] };
 }
 
 /**
@@ -634,7 +636,13 @@ export async function getVenuePage(slug: string) {
   const venue = await getDb().venue.findUnique({ where: { slug } });
   if (!venue) return null;
   const rows = await findConcerts({ where: { ...VISIBLE, venueId: venue.id }, orderBy: [{ publishedAt: "desc" }, { id: "asc" }] });
-  return { venue, concerts: rows.map(toConcertView) };
+  return { venue: { ...venue, country: countryName(venue.country) }, concerts: rows.map(toConcertView) };
+}
+
+/** The kept venue's slug for the old slug of a merged venue (admin op merge-venue), or null. */
+export async function venueAliasTarget(slug: string): Promise<string | null> {
+  const alias = await getDb().venueAlias.findUnique({ where: { slug }, select: { venue: { select: { slug: true } } } });
+  return alias?.venue.slug ?? null;
 }
 
 // ---- Festival and venue years ("Pinkpop 1995", src/lib/venue-years.ts) ----
@@ -657,7 +665,7 @@ export async function getVenueYearPage(slug: string, year: number) {
   ]);
   if (!rows.length) return null;
   return {
-    venue,
+    venue: { ...venue, country: countryName(venue.country) },
     year,
     concerts: rows.map(toConcertView),
     /** Every year with a concert at this place, newest first, with how many. */
@@ -789,7 +797,7 @@ async function listVenuesUncached() {
     slug: v.slug,
     name: v.name,
     city: v.city,
-    country: v.country,
+    country: countryName(v.country),
     concerts: v._count.concerts,
     cover: cover(v.concerts[0]),
   }));

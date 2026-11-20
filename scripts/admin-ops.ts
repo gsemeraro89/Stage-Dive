@@ -4,8 +4,10 @@
 //   split:<group-slug>><slug>,<slug> a group page becomes credits for each member
 //   hide-concert:<concert-slug>             take a concert off the site (kept in the database)
 //   reject-review:<id>,<id>         the owner said no to these videos in the review queue
+//   merge-venue:<from-slug>><into-slug>  two records for the same venue become one; the old address redirects
+//   normalize-countries             every country written as its full English name ("NL" -> "Netherlands")
 import "dotenv/config";
-import { closeStaleReviewItems, hideConcert, mergeArtists, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
+import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { recompute } from "../src/lib/similarity/job";
 
@@ -16,12 +18,15 @@ async function main() {
   const out: unknown[] = [];
   for (const op of ops) {
     const merge = op.match(/^merge:([a-z0-9-]+)>([a-z0-9-]+)$/);
-    if (merge) out.push({ merge: await mergeArtists(db, merge[1], merge[2]) });
+    const mergeVenue = op.match(/^merge-venue:([a-z0-9-]+)>([a-z0-9-]+)$/);
+    if (mergeVenue) out.push({ mergeVenue: await mergeVenues(db, mergeVenue[1], mergeVenue[2]) });
+    else if (op === "normalize-countries") out.push({ normalizeCountries: await normalizeCountries(db) });
+    else if (merge) out.push({ merge: await mergeArtists(db, merge[1], merge[2]) });
     else if (op.startsWith("reject-review:")) out.push({ reviewItemsRejected: await rejectReviewVideos(db, op.slice(14).split(",").map((x) => x.trim()).filter(Boolean)) });
     else if (op.startsWith("split:")) {
       const [group, members] = op.slice(6).split(">");
       out.push({ split: group, ...(await splitArtist(db, group, members.split(",").map((x) => x.trim()))) });
-    } else if (op.startsWith("hide-concert:")) out.push({ hidden: await hideConcert(db, op.slice(9).trim()) });
+    } else if (op.startsWith("hide-concert:")) out.push({ hidden: await hideConcert(db, op.slice("hide-concert:".length).trim()) });
     else if (op === "tidy-review") out.push({ reviewItemsClosed: await closeStaleReviewItems(db) });
     else throw new Error(`unknown operation: ${op}`);
   }

@@ -1,13 +1,13 @@
 // A field (festival) or a room: every gig recorded there.
 import type { Metadata } from "next";
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import { Collection, pileData } from "@/components/gig/Collection";
 import { Faq } from "@/components/gig/Faq";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { cutName, gigs, kindWord } from "@/components/gig/words";
-import { getVenuePage } from "@/lib/queries";
+import { getVenuePage, venueAliasTarget } from "@/lib/queries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { venueAnswers } from "@/lib/answers";
 import { clip, hubIsStrong, robotsFor, shareImages, venueSearchTitle } from "@/lib/seo";
@@ -46,8 +46,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function VenuePage({ params }: Props) {
-  const page = await load((await params).slug);
-  if (!page) notFound();
+  const { slug } = await params;
+  const page = await load(slug);
+  if (!page) {
+    // A venue merged into another (admin op merge-venue): its old address moves for good (308).
+    const target = await venueAliasTarget(slug);
+    if (target) permanentRedirect(`/venues/${target}`);
+    notFound();
+  }
   const { venue, concerts } = page;
   const kind = kindWord(concerts.find((s) => s.venueKind)?.venueKind) ?? "Place";
   const answers = venueAnswers(venue, concerts);

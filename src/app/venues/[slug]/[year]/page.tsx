@@ -4,14 +4,14 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Collection, pileData } from "@/components/gig/Collection";
 import { Faq } from "@/components/gig/Faq";
 import { PageHead, TagLinks } from "@/components/gig/PageHead";
 import { cutName, kindWord } from "@/components/gig/words";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { venueYearAnswers } from "@/lib/answers";
-import { getVenueYearPage } from "@/lib/queries";
+import { getVenueYearPage, venueAliasTarget } from "@/lib/queries";
 import { clip, robotsFor, shareImages, venueYearIsStrong, venueYearName, venueYearSearchTitle } from "@/lib/seo";
 import { breadcrumbs, faqPage, itemList, venueYearJsonLd } from "@/lib/structured-data";
 import { isFestival, parseYear, venueYearPath } from "@/lib/venue-years";
@@ -56,7 +56,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VenueYearPage({ params }: Props) {
   const { slug, year } = await params;
   const page = await load(slug, year);
-  if (!page) notFound();
+  if (!page) {
+    // A venue merged into another (admin op merge-venue): its year pages move for good (308).
+    const target = parseYear(year) !== null ? await venueAliasTarget(slug) : null;
+    if (target) permanentRedirect(venueYearPath(target, parseYear(year)!));
+    notFound();
+  }
   const { venue, concerts } = page;
   const { name, festival, path, answers } = facts(page);
   const kind = kindWord(concerts.find((c) => c.venueKind)?.venueKind) ?? "Place";

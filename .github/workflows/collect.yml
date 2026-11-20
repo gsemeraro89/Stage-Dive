@@ -57,7 +57,7 @@ on:
         description: "Decide again on just these YouTube IDs (comma-separated), e.g. after approving their artists; reuses stored answers"
         default: ""
       admin_ops:
-        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;tidy-review (no YouTube quota, no Claude cost)"
+        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;merge-venue:from-slug>into-slug;normalize-countries;tidy-review (no YouTube quota, no Claude cost)"
         default: ""
       artist_search:
         description: "Per-artist lane only: every official full concert of the bands marked allConcerts in data/artist-rules.json (respects dry_run)"
