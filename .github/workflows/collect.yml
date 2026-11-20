@@ -6,6 +6,7 @@
 # A scheduled run publishes only when the repository variable COLLECTOR_PUBLISH is true.
 # Secrets (repository Settings -> Secrets and variables -> Actions):
 #   DATABASE_URL (Render "External Database URL"), YOUTUBE_API_KEY, ANTHROPIC_API_KEY
+# bootleg_check: a measuring dry run over the fan uploads the per-artist lane finds (never publishes).
 # Optional variables: MAX_CLASSIFY_PER_RUN, YOUTUBE_UNIT_BUDGET. Claude has no cap (owner, 19 Nov 2026).
 # Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
 # No view threshold (brief section 2). Archives are read first (data/channels.json).
@@ -67,6 +68,10 @@ on:
         description: "Only compare Claude Haiku with the stored Opus answers (about 185 videos; publishes nothing)"
         type: boolean
         default: false
+      bootleg_check:
+        description: "Fan uploads (bootlegs) of the listed bands: pro-shot, complete, one per concert. Measuring dry run only, publishes nothing (owner 20 Nov 2026)"
+        type: boolean
+        default: false
       claude_budget:
         description: "Most Claude may cost in this run, in US dollars (artist_search / haiku_test; empty = no cap, owner 19 Nov 2026)"
         default: ""
@@ -115,8 +120,8 @@ jobs:
       - name: Similar artists only
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.similarity_only && !(inputs.admin_ops) }}
         run: npm run similarity
-      - name: Artist search / Haiku test only
-        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.artist_search || inputs.haiku_test) && !(inputs.similarity_only || inputs.admin_ops) }}
+      - name: Artist search / Haiku test / bootleg check only
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.artist_search || inputs.haiku_test || inputs.bootleg_check) && !(inputs.similarity_only || inputs.admin_ops) }}
         env:
           CLAUDE_BUDGET_USD: ${{ inputs.claude_budget }}
           LANE_CLASSIFIER: ${{ inputs.lane_classifier }}
@@ -125,7 +130,10 @@ jobs:
         run: |
           NO_BATCH=""
           if [ "${{ inputs.no_batch }}" = "true" ]; then NO_BATCH="--no-batch"; fi
-          if [ "${{ inputs.haiku_test }}" = "true" ]; then
+          if [ "${{ inputs.bootleg_check }}" = "true" ]; then
+            # Always a dry run: nothing is written to the concerts table.
+            npm run artist-lane -- --bootleg-check $NO_BATCH
+          elif [ "${{ inputs.haiku_test }}" = "true" ]; then
             npm run artist-lane -- --haiku-test $NO_BATCH
           elif [ "${{ inputs.dry_run }}" = "true" ]; then
             npm run artist-lane -- --dry-run $NO_BATCH
@@ -133,7 +141,7 @@ jobs:
             npm run artist-lane -- $NO_BATCH
           fi
       - name: Collect
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test) || (inputs.admin_ops)) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test || inputs.bootleg_check) || (inputs.admin_ops)) }}
         # Scheduled runs only publish once the owner sets the repository variable COLLECTOR_PUBLISH to "true"
         # (Settings -> Secrets and variables -> Actions -> Variables). Until then they are dry runs.
         run: |
@@ -152,16 +160,16 @@ jobs:
             npm run collect
           fi
       - name: Artist profiles (short bios for new artists)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run profiles
       - name: Artist pictures (official YouTube channel avatars)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run artist-images
       - name: Similar artists (recompute with the new sets)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run similarity -- --no-fetch
       - name: Announce new pages to search engines (IndexNow; skipped until the live site is open)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         continue-on-error: true
         env:
           LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
