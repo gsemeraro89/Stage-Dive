@@ -244,6 +244,10 @@ export interface ExistingConcert {
   publishedAt: Date;
   channelId: string;
   isOfficial: boolean;
+  /** A bootleg (sourceKind FAN_PRO_SHOT). */
+  bootleg?: boolean;
+  /** The concert's row ID, when read from the database. */
+  id?: number;
 }
 
 /**
