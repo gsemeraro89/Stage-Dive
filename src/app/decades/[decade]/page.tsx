@@ -88,7 +88,7 @@ export default async function DecadePage({ params }: Props) {
         <Collection concerts={page.concerts} label={`Every gig from the ${page.label}`}>
           {ranking && (
             <Link href={bestPath(ranking.slug)} className="hm-more" data-od="best-link">
-              MOST WATCHED OF THE {page.label.toUpperCase()} &gt;&gt;
+              MOST WATCHED OF THE {page.label} &gt;&gt;
             </Link>
           )}
           {editionLinks}
