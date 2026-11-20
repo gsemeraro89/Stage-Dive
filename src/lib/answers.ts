@@ -9,6 +9,7 @@
 // online. Copy rules (owner): never "free", "archive", "upload", "full-length"; "YouTube" only next to
 // a view count. Pure functions, tested in tests/answers.test.ts.
 import { formatDuration } from "./format";
+import { genreSearchName } from "./keyword-targets";
 import { placeLine, SITE_NAME } from "./site";
 import { bandStats, type BandStats, type UsualSong } from "./band-stats";
 import { setlistSongs, songCount, type Song, type TypicalPosition } from "./songs";
@@ -391,8 +392,11 @@ export function genreLead(name: string, concerts: ListConcert[]): string {
   if (!concerts.length) return `No ${name} concert is on ${SITE_NAME} right now.`;
   const bands = topCounts(mainBands(concerts), 4);
   const years = yearsOf(concerts);
+  // The name people search ("full metal concert", "full new wave concert"; src/lib/keyword-targets.ts),
+  // with the whole name after it when the genre has two ("new wave / synth").
+  const search = genreSearchName(name).toLowerCase();
   return (
-    `${plural(concerts.length, `full ${name} concert`)}, ${totalTime(concerts)} of music` +
+    `${plural(concerts.length, `full ${search} concert`)}${search === name.toLowerCase() ? "" : name.includes("/") ? ` (${name})` : ""}, ${totalTime(concerts)} of music` +
     `${bands.length ? `, from ${listWords(bands)}` : ""}${years.length ? `, played ${spanWords(years)}` : ""}. ` +
     `Every concert plays in full on its own page.`
   );

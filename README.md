@@ -61,7 +61,7 @@ Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH`
 
 GitHub → Settings → Secrets and variables → Actions:
 - Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
-- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, once there is one: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
+- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, `https://fullconcert.live`, once the live service is up: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
 
 ### Restore a backup
 
@@ -82,7 +82,7 @@ Web service (Node, Frankfurt), auto-deploys from `main`:
 
 ## Search engines and AI assistants
 
-Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://<final domain>`. Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, `/venues/<slug>/<year>.md`, `/best/<slug>.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
+Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://fullconcert.live` (the domain the owner bought on 20 Nov 2026). Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, `/venues/<slug>/<year>.md`, `/best/<slug>.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
 
 ## Admin
 

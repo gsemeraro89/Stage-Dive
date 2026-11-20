@@ -4,6 +4,7 @@
 // they reach this page, so it can be served ready-made.
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { HOME_DESCRIPTION, HOME_TITLE } from "@/lib/seo";
 import { organization, website } from "@/lib/structured-data";
 import HomePage from "./_home/HomePage";
 
@@ -11,9 +12,9 @@ import HomePage from "./_home/HomePage";
 export const revalidate = 600;
 
 export const metadata: Metadata = {
-  title: { absolute: "STAGEDIVE · Full Rock Concerts and Setlists" },
-  description:
-    "Full rock concerts, the whole show, played right here: festivals, rooms and band channels, by band, festival, decade, genre and tour, with setlists you can click.",
+  // Keyword targets (src/lib/keyword-targets.ts): "full concert(s)", "full concert live", "full rock concerts".
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: "/" },
 };
 

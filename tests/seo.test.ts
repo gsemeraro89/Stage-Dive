@@ -73,8 +73,10 @@ describe("search titles", () => {
     expect(bandSearchTitle("Metallica", true)).toBe("Metallica · Full Concerts and Setlists");
     expect(bandSearchTitle("Metallica", false)).toBe("Metallica · Full Concerts");
     expect(venueSearchTitle("Pinkpop", true)).toBe("Pinkpop · Full Concerts and Setlists");
-    expect(genreSearchTitle("new wave / synth", false)).toBe("New Wave / Synth · Full Concerts");
-    expect(decadeSearchTitle("1990s", true)).toBe("1990s Rock Concerts · Full Shows and Setlists");
+    expect(genreSearchTitle("new wave / synth", false)).toBe("Full New Wave Concerts · Live Shows");
+    expect(genreSearchTitle("metal", true)).toBe("Full Metal Concerts · Live Shows and Setlists");
+    expect(decadeSearchTitle("1990s", true)).toBe("Full 1990s Rock Concerts · Live 90s Rock Shows and Setlists");
+    expect(decadeSearchTitle("2000s", false)).toBe("Full 2000s Rock Concerts · Live 2000s Rock Shows");
     expect(tourSearchTitle("Wherever We May Roam", "Metallica")).toBe("Metallica · Wherever We May Roam Tour · Full Concerts");
     expect(tourSearchTitle("The Joshua Tree Tour", null)).toBe("The Joshua Tree Tour · Full Concerts");
     expect(titleCase("emo / post-hardcore")).toBe("Emo / Post-Hardcore");
