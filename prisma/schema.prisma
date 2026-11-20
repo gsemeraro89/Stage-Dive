@@ -381,7 +381,7 @@ model ClassifierBatch {
   youtubeIds    String[]  @map("youtube_ids")
   status        String    @default("PENDING") // PENDING, DONE, FAILED
   /// Which job sent it: "collect" (the main collector, Opus answers in classification_cache) or
-  /// "lane-classify" / "lane-writeup" (the per-artist lane, Haiku answers in lane_answers).
+  /// "lane-classify" / "lane-writeup" / "lane-bootleg" (the per-artist lane, Haiku answers in lane_answers).
   lane          String    @default("collect")
   createdAt     DateTime  @default(now()) @map("created_at")
   endedAt       DateTime? @map("ended_at")
