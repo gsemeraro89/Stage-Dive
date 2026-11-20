@@ -3,6 +3,13 @@
 //
 //   npm run artist-lane [-- --dry-run] [-- --no-batch]   the lane
 //   npm run artist-lane -- --haiku-test                  Haiku vs the stored Opus answers, nothing published
+//   npm run artist-lane -- --bootleg-check [--no-batch]  fan uploads ("bootlegs", owner 20 Nov 2026): measuring
+//                                                        dry run only, nothing written to the concerts table
+//   npm run artist-lane -- --bootleg-publish [--dry-run] bootlegs for real: pro-shot, complete, one per concert, from
+//                                                        fan channels only, official always wins; with --dry-run the
+//                                                        report only (write-ups are still asked, so the real run is free)
+// Bootleg modes also read the fan sources of data/fan-channels.json in full (fan channels from their first video,
+// playlists whole); a playlist video on an official channel is left to the normal (official) lane path.
 //
 // Sources, cheapest first: (a) the remembered long videos (long_videos) read again with videos.list,
 // (b) each artist's official channel (uploads playlist, capped), (c) one YouTube search per artist,
@@ -14,6 +21,25 @@
 import "dotenv/config";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createPrismaClient } from "../src/lib/db";
+import {
+  bootlegTitleDrop,
+  bootlegVerdict,
+  listedVersionOf,
+  pickBestPerConcert,
+  type BootlegAnswer,
+  type BootlegItem,
+  type BootlegVerdict,
+  type ExistingConcert,
+} from "../src/lib/collector/bootleg";
+import {
+  bootlegClassification,
+  emptyTally,
+  isOfficialSource,
+  parseFanSources,
+  sourceLine,
+  type ListedChannel,
+  type SourceTally,
+} from "../src/lib/collector/bootleg-publish";
 import { collectBatch, collectPendingBatches, submitBatch } from "../src/lib/collector/batch";
 import { cachedClassifications, storeClassification } from "../src/lib/collector/cache";
 import { Classifier, ClassificationSchema, PROMPT_VERSION, toDecisionInput, type FullClassification } from "../src/lib/collector/classify";
@@ -43,6 +69,7 @@ import {
   isTopicChannel,
   parseSources,
   laneFilter,
+  officialChannel,
   searchesThatFit,
   searchesToRun,
   searchQuery,
@@ -52,6 +79,7 @@ import {
 } from "../src/lib/collector/lane";
 import { nameKey, resolveArtistIdentity } from "../src/lib/collector/musicbrainz";
 import {
+  checkRules,
   configFromEnv,
   decide,
   expandGroups,
@@ -75,7 +103,12 @@ import { lookUpSetlist, setlistFields } from "../src/lib/setlist/lookup";
 
 const args = process.argv.slice(2);
 const haikuTest = args.includes("--haiku-test");
-const dryRun = args.includes("--dry-run");
+/** Fan uploads, measuring only (owner, 20 Nov 2026): always a dry run, no new searches. */
+const bootlegCheck = args.includes("--bootleg-check");
+/** Bootlegs for real (owner, 20 Nov 2026); with --dry-run, the report only. */
+const bootlegPublish = args.includes("--bootleg-publish") && !bootlegCheck;
+const bootlegMode = bootlegCheck || bootlegPublish;
+const dryRun = args.includes("--dry-run") || bootlegCheck;
 const useBatch = !args.includes("--no-batch");
 const waitMinutes = Number(process.env.LANE_WAIT_MINUTES ?? 40);
 /** Write-ups must come back within the run, so the real run can publish at once (owner, 17 Nov 2026). */
@@ -101,7 +134,9 @@ const excludedArtists = artistFile.exclude ?? [];
 const allRules = artistFile.include;
 const groups = artistFile.groups ?? [];
 const laneRules = allRules.filter((r) => r.allConcerts);
-const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as { channels: { name: string }[] };
+const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as { channels: ListedChannel[] };
+/** Fan channels and playlists read in full (owner, 20 Nov 2026). Never official. */
+const fanFile = parseFanSources(JSON.parse(await readFile("data/fan-channels.json", "utf8").catch(() => "{}")));
 
 const db = createPrismaClient();
 const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", unitBudget);
@@ -501,11 +536,13 @@ async function runLane() {
   }
 
   // 2. Where each video came from.
-  const origin = new Map<string, { long: boolean; earlier: boolean; artists: Map<string, Set<"channel" | "search">> }>();
-  const note = (id: string, from: { long?: boolean; earlier?: boolean; artist?: string; source?: "channel" | "search" }) => {
-    const o = origin.get(id) ?? { long: false, earlier: false, artists: new Map() };
+  /** fan: the fan source (data/fan-channels.json) the video was read from. */
+  const origin = new Map<string, { long: boolean; earlier: boolean; fan?: string; artists: Map<string, Set<"channel" | "search">> }>();
+  const note = (id: string, from: { long?: boolean; earlier?: boolean; fan?: string; artist?: string; source?: "channel" | "search" }) => {
+    const o = origin.get(id) ?? { long: false, earlier: false, fan: undefined as string | undefined, artists: new Map<string, Set<"channel" | "search">>() };
     if (from.long) o.long = true;
     if (from.earlier) o.earlier = true;
+    if (from.fan) o.fan ??= from.fan;
     if (from.artist && from.source) o.artists.set(from.artist, (o.artists.get(from.artist) ?? new Set()).add(from.source));
     origin.set(id, o);
   };
@@ -561,6 +598,55 @@ async function runLane() {
     for (const rule of laneRules) if (lookups.get(nameKey(rule.name))?.searchedAt) reports.get(rule.name)!.search = "earlier run";
   }
 
+  // (d) Fan sources read in full (owner, 20 Nov 2026; data/fan-channels.json): fan channels from their first video
+  // (bootleg modes only) and playlists whole (every mode: a playlist video on an official channel takes the normal
+  // path). 1 unit per 50 videos; a fan channel's ID is found from one of its videos and stored, never as official.
+  const tallies = new Map<string, SourceTally>();
+  for (const s of fanFile.sources) {
+    if (s.kind === "channel" && !bootlegMode) continue;
+    const tally = emptyTally(`${s.kind === "channel" ? "channel" : "playlist"}: ${s.name}`);
+    tallies.set(s.name, tally);
+    try {
+      let playlistId: string;
+      if (s.kind === "playlist") playlistId = s.playlistId;
+      else {
+        const stored = await db.channel.findFirst({ where: { name: s.name, isOfficial: false, youtubeChannelId: { not: null } }, select: { youtubeChannelId: true, uploadsPlaylistId: true } });
+        let channelId = stored?.youtubeChannelId ?? null;
+        let uploads = stored?.uploadsPlaylistId ?? null;
+        if (!channelId) channelId = (await yt.videos([s.fromVideo])).get(s.fromVideo)?.channelId ?? null;
+        if (!channelId) {
+          errors.push(`fan channel ${s.name}: video ${s.fromVideo} not found`);
+          continue;
+        }
+        if (official.listed.has(channelId) || official.approved.has(channelId) || artistChannel.has(channelId)) {
+          errors.push(`fan channel ${s.name}: ${channelId} is an official channel; read by the normal path, not as fan`);
+          continue;
+        }
+        if (!uploads) uploads = (await yt.channelsInfo([channelId])).get(channelId)?.uploadsPlaylistId ?? null;
+        if (!uploads) {
+          errors.push(`fan channel ${s.name}: no uploads to read`);
+          continue;
+        }
+        // Stored as a fan channel (not official, not crawled by the collector), so it is not looked up again.
+        const row = await db.channel.findUnique({ where: { youtubeChannelId: channelId } });
+        if (!row) {
+          const taken = await db.channel.findUnique({ where: { name: s.name } });
+          await db.channel.create({
+            data: { youtubeChannelId: channelId, name: taken ? `${s.name} (${channelId})` : s.name, isOfficial: false, crawl: false, kind: "UNKNOWN", uploadsPlaylistId: uploads },
+          });
+        } else if (!row.isOfficial && !row.uploadsPlaylistId) await db.channel.update({ where: { id: row.id }, data: { uploadsPlaylistId: uploads } });
+        playlistId = uploads;
+      }
+      const ids = await yt.playlistVideoIds(playlistId, null);
+      tally.videosRead = ids.length;
+      ids.forEach((id) => note(id, { fan: s.name }));
+    } catch (error) {
+      if (quotaOut(error)) break;
+      errors.push(`fan source ${s.name}: ${(error as Error).message.slice(0, 200)}`);
+    }
+  }
+  if (fanFile.skipped.length) errors.push(`data/fan-channels.json: skipped (bad ID) ${fanFile.skipped.join(", ")}`);
+
   // 3. Skip what is already a concert or already decided (UNCERTAIN and NOT_ROCK get a new look:
   // these artists are now approved by the owner, which changes the outcome).
   const known = new Set<string>();
@@ -571,7 +657,9 @@ async function runLane() {
     for (const slice of chunks(todo)) {
       (await db.concert.findMany({ where: { youtubeId: { in: slice } }, select: { youtubeId: true } })).forEach((s) => known.add(s.youtubeId));
     }
-    (await recentDecisions(db, todo, ttlDays, ["UNCERTAIN", "NOT_ROCK"])).forEach((id) => decided.add(id));
+    // The bootleg check looks again at fan uploads the lane already called NOT_OFFICIAL.
+    const lookAgain: ("UNCERTAIN" | "NOT_ROCK" | "NOT_OFFICIAL")[] = bootlegMode ? ["UNCERTAIN", "NOT_ROCK", "NOT_OFFICIAL"] : ["UNCERTAIN", "NOT_ROCK"];
+    (await recentDecisions(db, todo, ttlDays, lookAgain)).forEach((id) => decided.add(id));
     const ask = todo.filter((id) => !known.has(id) && !decided.has(id));
     // 50 at a time, so the videos read before the units run out are kept.
     for (let i = 0; i < ask.length; i += 50) {
@@ -586,7 +674,8 @@ async function runLane() {
   await fetchFresh([...origin.keys()]);
 
   // (c, this run) New searches with the units left, artists never searched first, in the owner's order.
-  if (sources.has("search")) {
+  // Not in the bootleg check: it only measures what the lane already found.
+  if (sources.has("search") && !bootlegMode) {
     const states = laneRules.map((r) => ({ name: r.name, searchedAt: reports.get(r.name)!.search === "not yet" ? null : new Date() }));
     const fit = Math.min(maxSearchesSetting, searchesThatFit(unitBudget - yt.unitsUsed));
     for (const s of searchesToRun(states, fit)) {
@@ -614,6 +703,11 @@ async function runLane() {
   // 4. Free filters, per video, for the artist it belongs to.
   const toClassify: { video: YouTubeVideo; kind: ChannelKindName; artist: string; otherChannel: boolean }[] = [];
   const matches: { youtubeId: string; artist: string }[] = [];
+  /** Long videos of a lane band on channels that are not official: the bootleg check's candidates. */
+  const fanUploads: BootlegCandidate[] = [];
+  const LANE_SOURCE = "lane (band channels, searches, long videos)";
+  /** Official channels: the channels table's official ones and the bands' own (never bootlegs). */
+  const officialIds = new Set([...official.listed.keys(), ...official.approved.keys(), ...artistChannel.keys()]);
   for (const [id, o] of origin) {
     const sourceArtists = [...o.artists.keys()];
     if (known.has(id) || decided.has(id)) {
@@ -626,6 +720,21 @@ async function runLane() {
     const video = videos.get(id);
     if (!video) continue; // gone from YouTube, not read (units), or a batch skipped after errors
     const inTitle = artistsInTitle(video.title, laneRules).map((r) => r.name);
+    if (o.fan) {
+      // A fan source read in full: every long video that passes the free rules goes to the bootleg check, whatever
+      // the band (only bands of data/artist-rules.json are published; others are reported). A video on an official
+      // channel (a playlist can hold some) takes the normal path below.
+      const tally = tallies.get(o.fan);
+      if (tally && video.durationSeconds >= config.minDurationSeconds) tally.longVideos++;
+      if (officialChannel(video.channelId, official) || isOfficialSource(video, { officialChannelIds: officialIds, listed: channelFile.channels })) {
+        if (tally) tally.official++;
+      } else {
+        if (bootlegMode && checkRules(video, config).length === 0) {
+          fanUploads.push({ video, artist: inTitle[0] ?? artistsInTitle(video.title, allRules)[0]?.name ?? "", source: o.fan });
+        }
+        continue;
+      }
+    }
     // The artist's own channel names the artist even when the title does not; a label or festival
     // channel of our list (e.g. an artist's label) does not count as "own".
     const own = official.listed.has(video.channelId) ? undefined : artistChannel.get(video.channelId);
@@ -651,8 +760,10 @@ async function runLane() {
     else if (result.outcome === "report-only") {
       rep.reportOnly.push({ title: video.title, url: url(id), channel: video.channelTitle, channelUrl: channelUrl(video.channelId) });
       totals.reportOnly++;
+      fanUploads.push({ video, artist, source: LANE_SOURCE });
     } else {
       const otherChannel = result.official.reason === "other-channel";
+      if (otherChannel) fanUploads.push({ video, artist, source: LANE_SOURCE });
       toClassify.push({ video, kind: result.official.kind, artist, otherChannel });
       rep.sentToClaude++;
       if (otherChannel) totals.viaOtherChannel++;
@@ -662,6 +773,10 @@ async function runLane() {
   // IDs only (and our own note), so the next pass can skip re-reading all long videos (LANE_SOURCES=matches).
   for (let i = 0; i < matches.length; i += 5_000) {
     await db.laneMatch.createMany({ data: matches.slice(i, i + 5_000), skipDuplicates: true });
+  }
+  if (bootlegMode) {
+    const ctx = { officialIds, tallies: [...tallies.values()], laneSource: LANE_SOURCE };
+    return { totals, reports: [...reports.values()], rows: [] as Record<string, unknown>[], bootleg: await runBootleg(fanUploads, ctx) };
   }
 
   // 5. Classifier answers: stored ones first (a stored Opus answer is used as it is, free).
@@ -816,7 +931,315 @@ async function runLane() {
   if (!dryRun) {
     await db.jobRun.create({ data: { job: "artist-lane", finishedAt: new Date(), ok: errors.length === 0, summary: { ...totals, claudeCostUsd: round(budget.spentUsd), youtubeUnits: yt.unitsUsed } } });
   }
-  return { totals, reports: [...reports.values()], rows };
+  return { totals, reports: [...reports.values()], rows, bootleg: null };
+}
+
+// ---------- Mode 3: fan uploads ("bootlegs"): measuring dry run, or publishing (owner, 20 Nov 2026) ----------
+
+/** A long video on a fan channel: the band of the list its title names ("" when none), and where it was read. */
+interface BootlegCandidate {
+  video: YouTubeVideo;
+  artist: string;
+  source: string;
+}
+
+interface BootlegBand {
+  band: string;
+  candidates: number;
+  freeDropped: number;
+  officialSkipped: number;
+  sentToClaude: number;
+  waitingForAnswer: number;
+  verdicts: Partial<Record<BootlegVerdict, number>>;
+  proShotComplete: number;
+  duplicatesCollapsed: number;
+  alreadyOfficial: number;
+  alreadyListedFanUpload: number;
+  wouldBe: number;
+}
+
+interface WouldBe {
+  band: string;
+  venue: string;
+  city: string;
+  date: string;
+  minutes: number;
+  views: number;
+  channel: string;
+  url: string;
+  title: string;
+  copies: number;
+  source: string;
+  /** Publishing run: "created <slug>", "duplicate of ...", "waiting for write-up"; dry run: empty. */
+  outcome: string;
+}
+
+/** Fan videos of rock bands that are not on the list: reported only, never published (owner, 20 Nov 2026). */
+interface OtherBand {
+  band: string;
+  verdict: BootlegVerdict;
+  url: string;
+  channel: string;
+  source: string;
+}
+
+const OTHER_BANDS = "(not a band of data/artist-rules.json)";
+
+/**
+ * Fan uploads (40 minutes or more, every free rule passed, on a channel that is not official) go through the
+ * bootleg free filters, then to Haiku (Batch API, cached instructions, answers kept in lane_answers so no video is
+ * paid twice). Then: pro-shot and complete only, bands of data/artist-rules.json only, one video per concert, and
+ * a concert already listed (above all an official one) always wins. A video from an official source is never a
+ * bootleg. With --bootleg-publish (and no --dry-run) the survivors are stored as bootlegs with a write-up (the
+ * lane's write-up pass, stored answers first) and their setlist; otherwise nothing is written to the concerts table.
+ */
+async function runBootleg(candidates: BootlegCandidate[], ctx: { officialIds: Set<string>; tallies: SourceTally[]; laneSource: string }) {
+  const publishing = bootlegPublish && !dryRun;
+  const bands = new Map<string, BootlegBand>();
+  const band = (name: string) => {
+    const key = name || OTHER_BANDS;
+    let b = bands.get(key);
+    if (!b) {
+      b = {
+        band: key, candidates: 0, freeDropped: 0, officialSkipped: 0, sentToClaude: 0, waitingForAnswer: 0, verdicts: {}, proShotComplete: 0,
+        duplicatesCollapsed: 0, alreadyOfficial: 0, alreadyListedFanUpload: 0, wouldBe: 0,
+      };
+      bands.set(key, b);
+    }
+    return b;
+  };
+  const tallies = new Map(ctx.tallies.map((t) => [t.source.replace(/^(channel|playlist): /, ""), t]));
+  const tallyOf = (source: string) => {
+    let t = tallies.get(source);
+    if (!t) {
+      t = emptyTally(source);
+      tallies.set(source, t);
+    }
+    return t;
+  };
+  const freeWords: Record<string, number> = {};
+  const toAsk: BootlegCandidate[] = [];
+  const seen = new Set<string>();
+  for (const c of candidates) {
+    if (seen.has(c.video.youtubeId)) continue;
+    seen.add(c.video.youtubeId);
+    const b = band(c.artist);
+    b.candidates++;
+    if (c.source === ctx.laneSource) tallyOf(c.source).longVideos++;
+    // Never a bootleg from an official source (channels table, data/channels.json, a band's own channel).
+    if (isOfficialSource(c.video, { officialChannelIds: ctx.officialIds, listed: channelFile.channels })) {
+      b.officialSkipped++;
+      tallyOf(c.source).official++;
+      continue;
+    }
+    const word = bootlegTitleDrop(c.video.title);
+    if (word) {
+      b.freeDropped++;
+      freeWords[word] = (freeWords[word] ?? 0) + 1;
+      continue;
+    }
+    b.sentToClaude++;
+    tallyOf(c.source).sentToClaude++;
+    toAsk.push(c);
+  }
+
+  // Answers: batches of earlier runs first, then stored answers, then Haiku for the rest (most watched first).
+  const spentBefore = budget.spentUsd;
+  const pending = await haiku.collectPending(db);
+  budget.addSpent(pending.costUsd);
+  const ids = toAsk.map((t) => t.video.youtubeId);
+  let answers = await storedLaneAnswers(db, ids, "bootleg", ttlDays);
+  const reused = answers.size;
+  const need = toAsk.filter((t) => !answers.has(t.video.youtubeId)).sort((a, b) => b.video.viewCount - a.video.viewCount);
+  const asked = await askHaiku("bootleg", need.map((t) => ({ video: t.video })), Number(process.env.BOOTLEG_WAIT_MINUTES ?? 120));
+  answers = await storedLaneAnswers(db, ids, "bootleg", ttlDays);
+
+  // Verdicts.
+  const verdictTotals: Partial<Record<BootlegVerdict, number>> = {};
+  const accepted: BootlegItem[] = [];
+  const found = new Map<string, { video: YouTubeVideo; answer: BootlegAnswer; rule: ArtistRule; source: string }>();
+  const otherBands: OtherBand[] = [];
+  let waiting = 0;
+  for (const t of toAsk) {
+    const answer = answers.get(t.video.youtubeId) as BootlegAnswer | undefined;
+    if (!answer) {
+      band(t.artist).waitingForAnswer++;
+      waiting++;
+      continue;
+    }
+    const named = expandGroups([answer.mainArtist], groups);
+    const rule = findArtistRule(named, allRules);
+    const b = band(rule?.name ?? t.artist);
+    const v = bootlegVerdict(answer, t.video.title, {
+      onList: Boolean(rule),
+      excluded: isExcludedArtist(named, excludedArtists),
+      minConfidence: config.minConfidence,
+    });
+    b.verdicts[v.verdict] = (b.verdicts[v.verdict] ?? 0) + 1;
+    verdictTotals[v.verdict] = (verdictTotals[v.verdict] ?? 0) + 1;
+    if (v.verdict === "OTHER_ARTIST") {
+      otherBands.push({ band: answer.mainArtist || "?", verdict: v.verdict, url: url(t.video.youtubeId), channel: t.video.channelTitle, source: t.source });
+    }
+    if (v.verdict !== "PRO_SHOT_COMPLETE" || !rule) continue;
+    b.proShotComplete++;
+    tallyOf(t.source).proShotComplete++;
+    found.set(t.video.youtubeId, { video: t.video, answer, rule, source: t.source });
+    accepted.push({
+      youtubeId: t.video.youtubeId,
+      artist: rule.name,
+      title: t.video.title,
+      channelId: t.video.channelId,
+      channelTitle: t.video.channelTitle,
+      durationSeconds: t.video.durationSeconds,
+      viewCount: t.video.viewCount,
+      publishedAt: t.video.publishedAt,
+      shotType: v.shotType,
+      complete: answer.complete,
+      venue: answer.venue,
+      city: answer.city,
+      performed: answer.performed,
+    });
+  }
+
+  // Concerts already listed (not REMOVED), official or bootleg: an official one always wins over a fan upload,
+  // and a bootleg already listed is not stored twice.
+  const existing: ExistingConcert[] = (
+    await db.concert.findMany({
+      where: { status: { not: "REMOVED" } },
+      select: {
+        id: true, youtubeId: true, slug: true, city: true, performedYear: true, performedOn: true, durationSeconds: true, publishedAt: true, sourceKind: true,
+        venue: { select: { name: true } },
+        channel: { select: { youtubeChannelId: true, isOfficial: true } },
+        credits: { where: { role: "MAIN" }, select: { artist: { select: { name: true } } } },
+      },
+    })
+  ).map((c) => ({
+    id: c.id, youtubeId: c.youtubeId, slug: c.slug, artists: c.credits.map((x) => x.artist.name), venue: c.venue?.name ?? null, city: c.city,
+    performedYear: c.performedYear, performedOn: c.performedOn, durationSeconds: c.durationSeconds, publishedAt: c.publishedAt,
+    channelId: c.channel.youtubeChannelId ?? "", isOfficial: c.channel.isOfficial && c.sourceKind === "OFFICIAL", bootleg: c.sourceKind === "FAN_PRO_SHOT",
+  }));
+
+  const wouldBe: (WouldBe & { youtubeId: string })[] = [];
+  const alreadyListed: { band: string; url: string; listed: string; official: boolean }[] = [];
+  let collapsed = 0;
+  for (const { best, collapsed: others } of pickBestPerConcert(accepted)) {
+    const b = band(best.artist);
+    b.duplicatesCollapsed += others.length;
+    collapsed += others.length;
+    const listed = listedVersionOf(best, existing);
+    if (listed) {
+      const official = !listed.bootleg;
+      if (official) b.alreadyOfficial++;
+      else b.alreadyListedFanUpload++;
+      alreadyListed.push({ band: best.artist, url: url(best.youtubeId), listed: listed.slug, official });
+      continue;
+    }
+    b.wouldBe++;
+    tallyOf(found.get(best.youtubeId)!.source).bootlegs++;
+    wouldBe.push({
+      youtubeId: best.youtubeId, band: best.artist, venue: best.venue, city: best.city, date: best.performed, minutes: Math.round(best.durationSeconds / 60),
+      views: best.viewCount, channel: best.channelTitle, url: url(best.youtubeId), title: best.title, copies: others.length + 1,
+      source: found.get(best.youtubeId)!.source, outcome: "",
+    });
+  }
+
+  // Publishing (and its dry run): original write-ups first, stored answers reused, so the real run pays nothing twice.
+  const published = { created: [] as string[], duplicates: 0, waitingForWriteUp: 0, writeUpsAsked: 0 };
+  if (bootlegPublish) {
+    const items = wouldBe.map((w) => {
+      const f = found.get(w.youtubeId)!;
+      return { w, video: f.video, classification: bootlegClassification(f.answer, f.rule) };
+    });
+    let texts = await storedLaneAnswers(db, items.map((i) => i.video.youtubeId), "writeup", ttlDays);
+    const todo = items.filter((i) => !texts.has(i.video.youtubeId));
+    const w = await askHaiku("writeup", todo.map((i) => ({ video: i.video, classification: i.classification })), writeUpWaitMinutes);
+    published.writeUpsAsked = w.sent;
+    texts = await storedLaneAnswers(db, items.map((i) => i.video.youtubeId), "writeup", ttlDays);
+    const extractor = process.env.ANTHROPIC_API_KEY ? new SetlistExtractor() : null;
+    for (const i of items) {
+      const id = i.video.youtubeId;
+      const text = (texts.get(id) as { writeUp: string } | undefined)?.writeUp ?? "";
+      if (!text) {
+        // No original text yet: the bootleg waits for its write-up (next run) rather than going up without one.
+        i.w.outcome = "waiting for write-up";
+        published.waitingForWriteUp++;
+        continue;
+      }
+      if (!publishing) {
+        i.w.outcome = "ready (dry run)";
+        continue;
+      }
+      const saved = await saveConcert(db, {
+        video: i.video,
+        classification: { ...i.classification, writeUp: text },
+        channel: { youtubeChannelId: i.video.channelId, name: i.video.channelTitle, isOfficial: false },
+        thumbnail: await findBestThumbnail(id),
+        bootleg: { creditName: i.video.channelTitle },
+      });
+      if (saved.status === "duplicate") {
+        i.w.outcome = `duplicate of ${saved.ofYoutubeId}`;
+        published.duplicates++;
+        await recordDecision(db, id, "DUPLICATE", `bootleg: same concert as ${saved.ofYoutubeId}`);
+        continue;
+      }
+      i.w.outcome = `created ${saved.slug}`;
+      published.created.push(saved.slug);
+      await recordDecision(db, id, "ACCEPTED", `bootleg (pro-shot, complete) from ${i.video.channelTitle}`);
+      try {
+        const setlist = await lookUpSetlist(yt, i.video, { extractor, claudeMax: 20, bands: [i.classification.mainArtists[0]] });
+        await db.concert.update({ where: { id: saved.concertId }, data: setlistFields(setlist, new Date()) });
+      } catch (error) {
+        // Never lose a new concert over its setlist: the refresh job looks again.
+        if (!(error instanceof QuotaBudgetExceeded)) errors.push(`setlist for ${saved.slug}: ${(error as Error).message}`);
+      }
+    }
+  }
+
+  wouldBe.sort((a, b) => a.band.localeCompare(b.band) || a.date.localeCompare(b.date));
+  const list = [...bands.values()].sort((a, b) => b.wouldBe - a.wouldBe || b.candidates - a.candidates || a.band.localeCompare(b.band));
+  const sum = (f: (b: BootlegBand) => number) => list.reduce((n, b) => n + f(b), 0);
+  const summary = {
+    mode: publishing
+      ? "bootleg-publish (bootlegs stored)"
+      : bootlegPublish
+        ? "bootleg-publish dry run (report only, write-ups asked)"
+        : "bootleg-check (dry run: nothing published, nothing written to concerts)",
+    bandsWithCandidates: list.length,
+    candidates: sum((b) => b.candidates),
+    officialSkipped: sum((b) => b.officialSkipped),
+    freeDropped: sum((b) => b.freeDropped),
+    freeDroppedBy: freeWords,
+    sentToClaude: toAsk.length,
+    reusedAnswers: reused,
+    haikuAskedNow: asked.sent,
+    notBackYet: asked.notBack,
+    refused: asked.refused.length,
+    failed: asked.failed.length,
+    waitingForAnswer: waiting,
+    verdicts: verdictTotals,
+    proShotCompleteAccepted: verdictTotals.PRO_SHOT_COMPLETE ?? 0,
+    audience: verdictTotals.AUDIENCE ?? 0,
+    audioOnly: verdictTotals.AUDIO_ONLY ?? 0,
+    partial: verdictTotals.PARTIAL ?? 0,
+    otherBands: otherBands.length,
+    duplicatesCollapsed: collapsed,
+    alreadyOfficial: sum((b) => b.alreadyOfficial),
+    alreadyListedFanUpload: sum((b) => b.alreadyListedFanUpload),
+    wouldBeBootlegs: wouldBe.length,
+    bandsWithBootlegs: list.filter((b) => b.wouldBe > 0).length,
+    writeUpsAsked: published.writeUpsAsked,
+    waitingForWriteUp: published.waitingForWriteUp,
+    created: published.created.length,
+    duplicatesAtSave: published.duplicates,
+    claudeCostUsd: round(budget.spentUsd - spentBefore),
+    claudeStillOutUsd: round(budget.committedUsd),
+  };
+  if (publishing) {
+    await db.jobRun.create({
+      data: { job: "bootleg-publish", finishedAt: new Date(), ok: errors.length === 0, summary: { ...summary, createdSlugs: published.created, youtubeUnits: yt.unitsUsed } },
+    });
+  }
+  return { summary, bands: list, wouldBe, alreadyListed, otherBands, sources: [...tallies.values()] };
 }
 
 // ---------- Run, then report ----------
@@ -839,7 +1262,39 @@ try {
       if (error instanceof QuotaBudgetExceeded) errors.push(`stopped: ${error.message}`);
       else throw error;
     }
-    if (out) {
+    if (out?.bootleg) {
+      const { summary: bootSummary, bands, wouldBe, alreadyListed, otherBands, sources } = out.bootleg;
+      const summary = {
+        ...bootSummary,
+        youtubeUnits: yt.unitsUsed,
+        lane: { sources: out.totals.sources, longVideosRead: out.totals.longVideosRead, reportOnly: out.totals.reportOnly, viaOtherChannel: out.totals.viaOtherChannel, stoppedEarly: out.totals.stoppedEarly },
+        errors,
+      };
+      const md = bootlegMarkdown(summary, bands, wouldBe, sources);
+      const name = `reports/${bootlegPublish ? "bootleg-publish" : "bootleg-check"}-${date}${bootlegPublish && dryRun ? "-dry-run" : ""}`;
+      await writeFile(`${name}.json`, JSON.stringify({ summary, sources, bands, wouldBe, alreadyListed, otherBands }, null, 2));
+      await writeFile(`${name}.md`, md + "\n");
+      if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+      // The job log's tail is what gets read (artifacts may be out of reach): sources, bands, other bands, the would-be
+      // list, then the summary LAST.
+      console.log("\n=== BOOTLEG: per source (videos read / long videos / official, normal path / sent to Claude / pro-shot complete / bootlegs) ===");
+      for (const s of sources) console.log(sourceLine(s));
+      console.log(`\n=== BOOTLEG: fan videos of bands not on the list (report only, ${otherBands.length}): band · channel · source · url ===`);
+      for (const o of otherBands.slice(0, Number(process.env.BOOTLEG_LOG_ROWS ?? 300))) console.log(`${o.band} · ${o.channel} · ${o.source} · ${o.url}`);
+      console.log("\n=== BOOTLEG: per band (fan uploads / free-dropped / sent to Claude / pro-shot complete / audience / audio only / partial / duplicates collapsed / already official / WOULD BE) ===");
+      for (const b of bands) {
+        const v = b.verdicts;
+        console.log(`${b.band} | ${b.candidates} / ${b.freeDropped} / ${b.sentToClaude} / ${b.proShotComplete} / ${v.AUDIENCE ?? 0} / ${v.AUDIO_ONLY ?? 0} / ${v.PARTIAL ?? 0} / ${b.duplicatesCollapsed} / ${b.alreadyOfficial} / ${b.wouldBe}`);
+      }
+      const shown = [...wouldBe].sort((a, b) => b.views - a.views).slice(0, Number(process.env.BOOTLEG_LOG_ROWS ?? 300));
+      console.log(`\n=== BOOTLEG: bootlegs, most watched first (${shown.length} of ${wouldBe.length}): band · venue, city · date · minutes · views · channel · url · outcome ===`);
+      for (const w of shown) {
+        const place = [w.venue, w.city].filter(Boolean).join(", ") || "?";
+        console.log(`${w.band} · ${place} · ${w.date || "?"} · ${w.minutes} min · ${w.views} views · ${w.channel} · ${w.url}${w.copies > 1 ? ` (best of ${w.copies})` : ""}${w.outcome ? ` · ${w.outcome}` : ""}`);
+      }
+      console.log("\n=== BOOTLEG: summary ===");
+      console.log(JSON.stringify(summary, null, 2));
+    } else if (out) {
       out.totals.claudeCostUsd = round(budget.spentUsd);
       out.totals.youtubeUnits = yt.unitsUsed;
       if (budget.stopped && !out.totals.stoppedEarly) out.totals.stoppedEarly = `Claude budget of $${budget.limitUsd} reached; the rest waits for the next run`;
@@ -900,4 +1355,38 @@ function laneMarkdown(summary: Record<string, unknown> & { created: string[] }, 
     ),
   ];
   return lines.join("\n");
+}
+
+function bootlegMarkdown(summary: Record<string, unknown>, bands: BootlegBand[], wouldBe: WouldBe[], sources: SourceTally[]): string {
+  const cell = (x: string) => x.replace(/\|/g, "/");
+  return [
+    `# Bootlegs ${date} (${summary.mode})`,
+    "",
+    `- Fan uploads found: ${summary.candidates} · dropped by free filters: ${summary.freeDropped} · sent to Claude: ${summary.sentToClaude} (stored answers reused: ${summary.reusedAnswers}; asked now: ${summary.haikuAskedNow}; still waiting: ${summary.waitingForAnswer})`,
+    `- Pro-shot and complete: ${summary.proShotCompleteAccepted} · audience: ${summary.audience} · audio only: ${summary.audioOnly} · partial: ${summary.partial}`,
+    `- Duplicates collapsed: ${summary.duplicatesCollapsed} · already official: ${summary.alreadyOfficial} · already listed (fan upload): ${summary.alreadyListedFanUpload}`,
+    `- **Would-be bootlegs: ${summary.wouldBeBootlegs}** for ${summary.bandsWithBootlegs} bands`,
+    `- Official sources skipped (never bootlegs): ${summary.officialSkipped} · fan videos of bands not on the list (report only): ${summary.otherBands} · write-ups asked now: ${summary.writeUpsAsked} · waiting for a write-up: ${summary.waitingForWriteUp} · stored: ${summary.created}`,
+    `- Claude cost: ~$${summary.claudeCostUsd} (still out: ~$${summary.claudeStillOutUsd}) · YouTube units: ${summary.youtubeUnits}`,
+    "",
+    "## Sources",
+    "",
+    ...sources.map((s) => `- ${cell(sourceLine(s))}`),
+    "",
+    "| Band | Fan uploads | Free-dropped | Sent to Claude | Pro-shot complete | Audience | Audio only | Partial | Duplicates | Already official | Would be |",
+    "|---|---|---|---|---|---|---|---|---|---|---|",
+    ...bands.map(
+      (b) =>
+        `| ${cell(b.band)} | ${b.candidates} | ${b.freeDropped} | ${b.sentToClaude} | ${b.proShotComplete} | ${b.verdicts.AUDIENCE ?? 0} | ${b.verdicts.AUDIO_ONLY ?? 0} | ${b.verdicts.PARTIAL ?? 0} | ${b.duplicatesCollapsed} | ${b.alreadyOfficial} | ${b.wouldBe} |`,
+    ),
+    "",
+    "## Would-be bootlegs",
+    "",
+    "| Band | Venue | Date | Minutes | Views | Channel | Video |",
+    "|---|---|---|---|---|---|---|",
+    ...wouldBe.map(
+      (w) =>
+        `| ${cell(w.band)} | ${cell([w.venue, w.city].filter(Boolean).join(", ") || "?")} | ${w.date || "?"} | ${w.minutes} | ${w.views} | ${cell(w.channel)} | [${cell(w.title)}](${w.url}) |`,
+    ),
+  ].join("\n");
 }

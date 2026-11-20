@@ -15,7 +15,7 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 /** Old links to the list with filters on the home page ("/?genre=metal") now live at /concerts. */
-const LIST_PARAMS = ["q", "genre", "artist", "venue", "venueKind", "sort", "page"];
+const LIST_PARAMS = ["q", "genre", "artist", "venue", "venueKind", "source", "sort", "page"];
 /** Band page orders other than the default (src/app/artists/[slug]/band-page.tsx). */
 const BAND_SORTS = ["length", "watched"];
 

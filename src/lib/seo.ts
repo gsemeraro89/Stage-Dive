@@ -106,15 +106,18 @@ interface ConcertForTitle {
   city: string | null;
   performedYear: number | null;
   hasSetlist: boolean;
+  /** A bootleg says so in its title (owner, 20 Nov 2026). */
+  bootleg?: unknown;
 }
 
 /**
- * The search title of a concert: "Radiohead at Glastonbury 1997 · Full Concert + Setlist".
+ * The search title of a concert: "Radiohead at Glastonbury 1997 · Full Concert + Setlist"; a bootleg:
+ * "Nirvana at Teatro Castello 1991 · Full Concert (Bootleg) + Setlist".
  * The year is the year it was played (never the year the video went online). Without a place or a
  * year we keep the video's own title, which usually names the gig better than we can.
  */
 export function concertSearchTitle(c: ConcertForTitle): string {
-  const kind = `Full Concert${c.hasSetlist ? " + Setlist" : ""}`;
+  const kind = `Full Concert${c.bootleg ? " (Bootleg)" : ""}${c.hasSetlist ? " + Setlist" : ""}`;
   const place = c.venue?.name ?? c.city;
   const year = c.performedYear && !(place && hasYear(place)) ? ` ${c.performedYear}` : "";
   if (place) return `${c.credits} at ${place}${year} · ${kind}`;

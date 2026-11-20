@@ -373,6 +373,8 @@ export interface ConcertIdentity {
   isOfficial: boolean;
   /** YouTube channel that uploaded it: festivals post a new show by the same artist every year. */
   channelId: string;
+  /** A bootleg (sourceKind FAN_PRO_SHOT): any official version of the same concert wins over it. */
+  isBootleg?: boolean;
 }
 
 /** Venue names written differently ("Cercle — Tour Saint-Jacques" / "Tour Saint-Jacques") still match. */
@@ -410,8 +412,13 @@ export function isSameConcert(a: ConcertIdentity, b: ConcertIdentity): boolean {
 
 export type DuplicateAction = "keep-existing" | "replace-existing";
 
-/** Product rule: keep the official upload. Between two of the same kind, keep the one already listed. */
+/**
+ * Product rule: keep the official upload. Between two of the same kind, keep the one already listed.
+ * Bootlegs (owner, 20 Nov 2026): a concert of the official path always wins over a bootleg, existing or
+ * later; a bootleg never replaces anything (the replaced bootleg is hidden, not deleted: src/lib/collector/store.ts).
+ */
 export function resolveDuplicate(existing: ConcertIdentity, candidate: ConcertIdentity): DuplicateAction {
+  if (Boolean(existing.isBootleg) !== Boolean(candidate.isBootleg)) return existing.isBootleg ? "replace-existing" : "keep-existing";
   return candidate.isOfficial && !existing.isOfficial ? "replace-existing" : "keep-existing";
 }
 
@@ -445,6 +452,17 @@ export function statusAfterRefresh(current: ConcertStatusName, action: RefreshAc
 }
 
 export type ConcertStatusName = "PUBLISHED" | "HIDDEN" | "REMOVED";
+
+/**
+ * The status of a bootleg after a refresh. A bootleg hidden because an official version is listed
+ * (hiddenByTwin) stays hidden while its video is fine, and becomes REMOVED (its YouTube data cleared, checked
+ * every night) when the video goes; whether the official twin is still there is decided afterwards
+ * (syncBootlegTwins). Any other bootleg follows statusAfterRefresh.
+ */
+export function bootlegStatusAfterRefresh(current: ConcertStatusName, action: RefreshAction, hiddenByTwin: boolean): ConcertStatusName {
+  if (current === "HIDDEN" && hiddenByTwin) return action === "remove" ? "REMOVED" : "HIDDEN";
+  return statusAfterRefresh(current, action);
+}
 
 /** Concerts due for a refresh: last refreshed more than `days` ago (kept below 30 for a safety margin). */
 export function isDueForRefresh(lastRefreshed: Date, now: Date, days = 25): boolean {

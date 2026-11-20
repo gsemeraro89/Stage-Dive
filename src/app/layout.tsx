@@ -9,6 +9,7 @@ import { issueLabel } from "@/lib/home";
 import { decadeIndex } from "@/lib/queries";
 import { robotsFor, shareImages } from "@/lib/seo";
 import { SITE_NAME, siteUrl } from "@/lib/site";
+import { FOOTER_LINE, ISSUE_STRIP_SOURCES } from "@/lib/bootlegs";
 import "./globals.css";
 
 // Self-hosted by Next.js: no request to Google from the visitor's browser.
@@ -47,13 +48,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PlayerProvider>
           {/* The top strip (board 04). Phones get the short version (board 07). */}
           <p className="zn-band zn-issue" data-od="issue-strip">
-            ISSUE {issueLabel(new Date())} /// THE WHOLE SET <span className="zn-issue-long">/// FULL ROCK GIGS, OFFICIAL SOURCES ONLY </span>
+            ISSUE {issueLabel(new Date())} /// THE WHOLE SET <span className="zn-issue-long">/// {ISSUE_STRIP_SOURCES} </span>
             /// NO LOGIN<span className="zn-issue-long">, NO NONSENSE</span>
           </p>
           <SiteHeader logo={<Wordmark variant="full" width={300} label="" />} decades={decades} />
           {children}
           <footer className="zn-foot" data-od="footer">
-            <p>{SITE_NAME} /// every gig here is an official concert, played in full. We just glue them together.</p>
+            <p>
+              {SITE_NAME} /// {FOOTER_LINE}
+            </p>
             <Link href="/map">FIND YOUR NEXT BAND &gt;&gt;</Link>
             <Link href="/best" data-od="footer-best">
               MOST WATCHED &gt;&gt;

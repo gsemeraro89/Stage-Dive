@@ -9,7 +9,7 @@ import { buildQueue, relatedByGenre, type QueueCandidate } from "../src/lib/upne
 describe("parseFilters", () => {
   it("defaults to newest with no filters", () => {
     const f = parseFilters({});
-    expect(f).toEqual({ q: null, genre: null, artist: null, venue: null, venueKind: null, sort: "newest" });
+    expect(f).toEqual({ q: null, genre: null, artist: null, venue: null, venueKind: null, source: null, sort: "newest" });
     expect(hasActiveFilters(f)).toBe(false);
   });
   it("reads valid values", () => {
@@ -42,10 +42,12 @@ describe("buildWhere / buildOrderBy", () => {
     expect(where.AND).toHaveLength(4);
   });
   it("sorts the four ways", () => {
-    expect(buildOrderBy("newest")[0]).toEqual({ publishedAt: "desc" });
-    expect(buildOrderBy("most-viewed")[0]).toEqual({ viewCount: "desc" });
-    expect(buildOrderBy("longest")[0]).toEqual({ durationSeconds: "desc" });
-    expect(buildOrderBy("shortest")[0]).toEqual({ durationSeconds: "asc" });
+    // Official concerts first whatever the sort (owner, 20 Nov 2026: bootlegs after them).
+    for (const s of ["newest", "most-viewed", "longest", "shortest"] as const) expect(buildOrderBy(s)[0]).toEqual({ sourceKind: "asc" });
+    expect(buildOrderBy("newest")[1]).toEqual({ publishedAt: "desc" });
+    expect(buildOrderBy("most-viewed")[1]).toEqual({ viewCount: "desc" });
+    expect(buildOrderBy("longest")[1]).toEqual({ durationSeconds: "desc" });
+    expect(buildOrderBy("shortest")[1]).toEqual({ durationSeconds: "asc" });
   });
   it("writes filters back as a query string without defaults", () => {
     expect(filtersToQuery(parseFilters({}))).toBe("");

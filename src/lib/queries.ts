@@ -1,6 +1,7 @@
 // All database reads for the pages. Every query only returns concerts that may be shown and embedded.
 import { getDb } from "./db";
-import { buildOrderBy, buildWhere, VISIBLE, type ConcertFilters } from "./filters";
+import { buildOrderBy, buildWhere, OFFICIAL_FIRST, OFFICIAL_ONLY, VISIBLE, type ConcertFilters } from "./filters";
+import { officialFirst, type BootlegMark } from "./bootlegs";
 import { formatCredits } from "./format";
 import { thumbnailSources, type ThumbnailSources } from "./thumbnails";
 import { cached } from "./memo";
@@ -38,7 +39,10 @@ const concertInclude = {
 
 async function findConcerts(args: { where: object; orderBy?: object | object[]; take?: number }) {
   // The setlist is only read by the concert page (getConcertPage), never for lists.
-  return getDb().concert.findMany({ ...args, include: concertInclude, omit: { setlist: true } });
+  // Official concerts always come first, bootlegs after them (owner, 20 Nov 2026), whatever the order asked.
+  const order = Array.isArray(args.orderBy) ? args.orderBy : args.orderBy ? [args.orderBy] : [];
+  const orderBy = order.some((o) => "sourceKind" in o) ? order : [OFFICIAL_FIRST, ...order];
+  return getDb().concert.findMany({ ...args, orderBy, include: concertInclude, omit: { setlist: true } });
 }
 type ConcertRow = Awaited<ReturnType<typeof findConcerts>>[number];
 
@@ -71,6 +75,8 @@ export interface ConcertView {
   hasSetlist: boolean;
   /** Hand-picked by the owner. */
   curated: boolean;
+  /** A bootleg (src/lib/bootlegs.ts): the fan channel it comes from; null for an official concert. */
+  bootleg: BootlegMark;
 }
 
 export function toConcertView(concert: ConcertRow): ConcertView {
@@ -105,6 +111,7 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     // The setlist and its source are written together (src/lib/setlist/lookup.ts setlistFields).
     hasSetlist: concert.setlistSource !== null,
     curated: concert.curated,
+    bootleg: concert.sourceKind === "FAN_PRO_SHOT" ? { from: concert.creditName || concert.channel.name } : null,
   };
 }
 
@@ -277,7 +284,8 @@ export async function getConcertPage(slug: string) {
   const views = new Map(
     (await concertViewsInOrder([...queueIds, ...relatedIds].map((c) => c.id))).map((v) => [v.id, v]),
   );
-  const pick = (list: LightCandidate[]) => list.map((c) => views.get(c.id)).filter((v): v is ConcertView => Boolean(v));
+  // Official concerts first in every suggestion list; bootlegs after them (owner, 20 Nov 2026).
+  const pick = (list: LightCandidate[]) => officialFirst(list.map((c) => views.get(c.id)).filter((v): v is ConcertView => Boolean(v)));
   // Only the concert page carries the setlist (lists stay light). Artists we have a page for
   // (with at least one visible concert) become links.
   const stored = await getDb().concert.findUnique({ where: { id: row.id }, select: { setlist: true } });
@@ -397,6 +405,7 @@ const songConcertSelect = {
   updatedAt: true,
   city: true,
   country: true,
+  sourceKind: true,
   setlist: true,
   setlistSource: true,
   venue: { select: { slug: true, name: true } },
@@ -417,14 +426,16 @@ function toSongConcert(r: {
   updatedAt: Date;
   city: string | null;
   country: string | null;
+  sourceKind: "OFFICIAL" | "FAN_PRO_SHOT";
   setlist: unknown;
   setlistSource: string | null;
   venue: { slug: string; name: string } | null;
   venueKind: { slug: string; name: string } | null;
   tour: { slug: string; name: string } | null;
 }): SongConcert {
-  const { setlist, setlistSource, ...rest } = r;
-  return { ...rest, country: countryName(r.country), tracks: readSetlist(setlist, setlistSource)?.tracks ?? [] };
+  const { setlist, setlistSource, sourceKind, ...rest } = r;
+  // Bootlegs count for the songs (owner, 20 Nov 2026: stats include them, marked, after the official versions).
+  return { ...rest, country: countryName(r.country), bootleg: sourceKind === "FAN_PRO_SHOT", tracks: readSetlist(setlist, setlistSource)?.tracks ?? [] };
 }
 
 /**
@@ -487,7 +498,7 @@ export async function getQueue(youtubeId: string): Promise<ConcertView[] | null>
   };
   const similar = await similarArtistIds(self.artistIds);
   const pool = await queueCandidates(self, similar);
-  return concertViewsInOrder(buildQueue(self, [self, ...pool], undefined, similar).map((c) => c.id));
+  return officialFirst(await concertViewsInOrder(buildQueue(self, [self, ...pool], undefined, similar).map((c) => c.id)));
 }
 
 // ---- Similar artists (phase 4) ----
@@ -538,8 +549,10 @@ export async function artistCards(ids: number[], excludeArtistIds: number[] = []
       (r) => r.credits.some((c) => c.artistId === id) && !r.credits.some((c) => excludeArtistIds.includes(c.artistId)),
     );
     if (!artist || !own.length) continue;
-    const latest = [...own].sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)[0];
-    const mostWatched = [...own].sort((a, b) => b.viewCount - a.viewCount || a.id - b.id)[0];
+    // An official concert is the one suggested whenever the artist has one (bootlegs come after).
+    const bootlegLast = (a: (typeof own)[number], b: (typeof own)[number]) => Number(a.sourceKind === "FAN_PRO_SHOT") - Number(b.sourceKind === "FAN_PRO_SHOT");
+    const latest = [...own].sort((a, b) => bootlegLast(a, b) || b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)[0];
+    const mostWatched = [...own].sort((a, b) => bootlegLast(a, b) || b.viewCount - a.viewCount || a.id - b.id)[0];
     const genreCount = new Map<string, { slug: string; name: string; n: number; order: number }>();
     for (const r of own)
       for (const g of r.genres) {
@@ -555,7 +568,7 @@ export async function artistCards(ids: number[], excludeArtistIds: number[] = []
       style: artist.style,
       genres: [...genreCount.values()].sort((a, b) => b.n - a.n || a.order - b.order).map(({ slug, name }) => ({ slug, name })),
       concerts: own.length,
-      cover: artistCover(artist, [...own].sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)),
+      cover: artistCover(artist, [...own].sort((a, b) => bootlegLast(a, b) || b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)),
       mostWatched: toConcertView(mostWatched),
       latest: toConcertView(latest),
     });
@@ -639,6 +652,17 @@ export async function getVenuePage(slug: string) {
   return { venue: { ...venue, country: countryName(venue.country) }, concerts: rows.map(toConcertView) };
 }
 
+/**
+ * For a bootleg hidden behind its official version (owner, 20 Nov 2026), the official concert's slug, so its old
+ * address leads there (a temporary redirect: the bootleg comes back if the official version goes). Null otherwise.
+ */
+export async function officialTwinSlug(slug: string): Promise<string | null> {
+  const row = await getDb().concert.findUnique({ where: { slug }, select: { sourceKind: true, status: true, officialTwinId: true } });
+  if (!row || row.sourceKind !== "FAN_PRO_SHOT" || row.status !== "HIDDEN" || row.officialTwinId === null) return null;
+  const twin = await getDb().concert.findFirst({ where: { ...VISIBLE, id: row.officialTwinId }, select: { slug: true } });
+  return twin?.slug ?? null;
+}
+
 /** The kept venue's slug for the old slug of a merged venue (admin op merge-venue), or null. */
 export async function venueAliasTarget(slug: string): Promise<string | null> {
   const alias = await getDb().venueAlias.findUnique({ where: { slug }, select: { venue: { select: { slug: true } } } });
@@ -704,10 +728,31 @@ export async function getGenrePage(slug: string) {
 
 // ---- "Best of" rankings (src/lib/best.ts) ----
 
-/** Every ranking the catalogue can make, with how many concerts each has. */
+/**
+ * Every ranking the catalogue can make, with how many concerts each has. Rankings are official concerts only
+ * (owner, 20 Nov 2026: bootlegs are kept out of "best of"), so they are counted apart.
+ */
 async function bestCatalogueUncached(): Promise<BestList[]> {
-  const [total, decades, options] = await Promise.all([getDb().concert.count({ where: VISIBLE }), decadeIndex(), filterOptions()]);
-  return bestLists({ total, decades, genres: options.genres, venueKinds: options.venueKinds });
+  const db = getDb();
+  const OFFICIAL = { ...VISIBLE, ...OFFICIAL_ONLY };
+  const [total, years, genreRows, kindRows] = await Promise.all([
+    db.concert.count({ where: OFFICIAL }),
+    db.concert.groupBy({ by: ["performedYear"], where: { ...OFFICIAL, performedYear: { not: null } }, _count: { _all: true } }),
+    db.genre.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { concerts: { where: { concert: OFFICIAL } } } } } }),
+    db.venueKind.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { concerts: { where: OFFICIAL } } } } }),
+  ]);
+  const byDecade = new Map<number, number>();
+  for (const r of years) {
+    const start = Math.floor(r.performedYear! / 10) * 10;
+    byDecade.set(start, (byDecade.get(start) ?? 0) + r._count._all);
+  }
+  const decades = [...byDecade.entries()].sort(([a], [b]) => a - b).map(([start, count]) => ({ label: decadeOf(start), count }));
+  return bestLists({
+    total,
+    decades,
+    genres: genreRows.map((g) => ({ slug: g.slug, name: g.name, count: g._count.concerts })).filter((g) => g.count > 0),
+    venueKinds: kindRows.map((k) => ({ slug: k.slug, count: k._count.concerts })).filter((k) => k.count > 0),
+  });
 }
 
 /** A ranking and its concerts, most watched first (at most BEST_SIZE). Null for an unknown or empty ranking. */
@@ -722,7 +767,7 @@ export async function getBestPage(slug: string) {
         : list.kind === "place"
           ? { venueKind: { slug: list.key! } }
           : {};
-  const rows = await findConcerts({ where: { AND: [VISIBLE, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
+  const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
   return { list, concerts: rows.map(toConcertView) };
 }
 

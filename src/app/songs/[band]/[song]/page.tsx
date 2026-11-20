@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import { cache, type ReactNode } from "react";
 import Link from "next/link";
+import { BOOTLEG_LABEL } from "@/lib/bootlegs";
 import { notFound, permanentRedirect } from "next/navigation";
 import { PageHead, SectionTitle } from "@/components/gig/PageHead";
 import { cutName } from "@/components/gig/words";
@@ -162,6 +163,14 @@ export default async function SongPage({ params }: Props) {
               <Link href={`/concerts/${v.concert.slug}`} className="sg-version-gig">
                 {gigName(v)}
               </Link>{" "}
+              {/* Unstyled for now (designer): bootleg versions come after the official ones and are marked. */}
+              {v.concert.bootleg && (
+                <>
+                  <span className="sg-version-bootleg" data-od="bootleg-label">
+                    {BOOTLEG_LABEL}
+                  </span>{" "}
+                </>
+              )}
               <span className="sg-version-data">
                 {[`song ${v.position} of ${v.of}`, v.lengthSeconds !== null ? formatDuration(v.lengthSeconds) : null, v.title !== song.title ? `as “${v.title}”` : null]
                   .filter(Boolean)

@@ -41,6 +41,8 @@ export interface SongConcert {
   country: string | null;
   venueKind: { slug: string; name: string } | null;
   tour: { slug: string; name: string } | null;
+  /** A bootleg (src/lib/bootlegs.ts): its versions count, are listed after the official ones and are marked. */
+  bootleg?: boolean;
   tracks: SongTrack[];
 }
 
@@ -306,8 +308,9 @@ export function bandSongs(band: { names: string[] }, concerts: SongConcert[]): S
 
   const songs: Song[] = [];
   for (const [slug, list] of bySlug) {
-    const versions = [...list].sort(newestFirst);
-    const dated = versions.filter((v) => playedAt(v.concert) > -Infinity);
+    // Official versions first, then bootlegs (owner, 20 Nov 2026); newest first within each.
+    const versions = [...list].sort((a, b) => Number(Boolean(a.concert.bootleg)) - Number(Boolean(b.concert.bootleg)) || newestFirst(a, b));
+    const dated = [...list].sort(newestFirst).filter((v) => playedAt(v.concert) > -Infinity);
     const lengths = versions.map((v) => v.lengthSeconds).filter((s): s is number => s !== null);
     const spellings = new Map<string, number>();
     for (const v of versions) {

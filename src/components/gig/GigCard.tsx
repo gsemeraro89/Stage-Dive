@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { PaperStrip, PhotoFrame } from "@/components/zine";
+import { BOOTLEG_LABEL } from "@/lib/bootlegs";
 import { formatDuration } from "@/lib/format";
 import type { BandPhotoView } from "@/lib/photos/view";
 import type { ConcertView } from "@/lib/queries";
@@ -52,6 +53,12 @@ export function GigCard({
         </YouTubePicture>
       )}
       <p className="zn-data hm-card-data">{name === "band" ? shortData(concert) : formatDuration(concert.durationSeconds)}</p>
+      {/* Unstyled for now (designer): a bootleg is always marked (owner, 20 Nov 2026). */}
+      {concert.bootleg && (
+        <p className="hm-card-bootleg" data-od="bootleg-label">
+          {BOOTLEG_LABEL}
+        </p>
+      )}
     </li>
   );
 }

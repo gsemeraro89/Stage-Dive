@@ -57,6 +57,8 @@ Classifier (owner, 20 Nov 2026): the collector asks Claude Haiku (Batch API, cac
 
 Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH` is `true`; otherwise they are dry runs.
 
+Bootlegs (owner, 20 Nov 2026): professionally filmed, complete shows shared by fan channels, for the bands of `data/artist-rules.json`, one per concert; an official version always wins (the bootleg hides itself, and comes back if the official one goes). `Collect concerts` with `bootleg_publish` on: `dry_run` on = report only, off = stored. Fan channels and playlists read in full: `data/fan-channels.json`. Rules and display: `src/lib/collector/bootleg.ts`, `bootleg-publish.ts`, `src/lib/bootlegs.ts`. Ads on bootleg pages stay off until `ADS_ON_BOOTLEGS=true` (after AdSense approval); any ad slot must call `adsAllowed()` in `src/lib/ads.ts`.
+
 ## Secrets and settings
 
 GitHub → Settings → Secrets and variables → Actions:

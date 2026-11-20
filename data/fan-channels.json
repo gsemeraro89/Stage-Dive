@@ -1,0 +1,39 @@
+{
+  "_note": "Fan sources read in full by the bootleg modes of the per-artist lane (owner, 20 Nov 2026; scripts/artist-lane.ts --bootleg-check / --bootleg-publish). channels: fan channels where the bootleg check found two or more pro-shot complete concerts; each is found from one of its videos (fromVideo, 1 unit), stored as a fan channel (never official) and read from its first video (1 unit per 50). Every long video goes through the bootleg rules: only bands of data/artist-rules.json are published, other bands are reported. playlists: read whole; a video on an official channel takes the normal official path, the rest the bootleg rules. Drop a source that yields nothing (see the per-source lines in the bootleg report).",
+  "channels": [
+    { "name": "Better Than Nothing Videos", "fromVideo": "7bxZwOpIccc" },
+    { "name": "Front Row Music", "fromVideo": "V22SXB-_N6E" },
+    { "name": "Radiohead Concerts", "fromVideo": "k8byXSML4bY" },
+    { "name": "Jakeflix", "fromVideo": "qwXjtba57YQ" },
+    { "name": "TheSteved111", "fromVideo": "p8hKsPtw4yY" },
+    { "name": "Limp Bizkit Brasil", "fromVideo": "sM80E6gemqY" },
+    { "name": "Rock Remastered", "fromVideo": "7E9n8RXAQbI" },
+    { "name": "Fernando Morales Rain", "fromVideo": "Db2ghAotCKQ" },
+    { "name": "markit aneight", "fromVideo": "khRr2NzwqHw" },
+    { "name": "Sepultura Community", "fromVideo": "XbUl8_6dBOw" },
+    { "name": "coribald", "fromVideo": "tyFkT60Selo" },
+    { "name": "Kevin Kultura", "fromVideo": "BgiYcRV8Q5E" },
+    { "name": "DeiDeiDo Dara", "fromVideo": "IpzLw8UUtAw" },
+    { "name": "RHCP Live", "fromVideo": "U_kMQ9Ekuz0" },
+    { "name": "progress6", "fromVideo": "yafcId3UYcE" },
+    { "name": "Nox Orae", "fromVideo": "UfUpgWG8bLk" },
+    { "name": "STPLIVE", "fromVideo": "Yo0RLGxR3Iw" },
+    { "name": "Victims Of A Down", "fromVideo": "aygb5grdH7g" },
+    { "name": "Ghost Video", "fromVideo": "vY4gOd7qCzI" },
+    { "name": "hAnD90", "fromVideo": "DdYFOWidP8s" },
+    { "name": "TCDB - The Cure Database", "fromVideo": "daGV2adlcoQ" },
+    { "name": "metfan4l", "fromVideo": "m6JZSGZ1-aw" },
+    { "name": "Roman Kaslivtsev", "fromVideo": "9dqcGMGztbI" },
+    { "name": "Crazyscorps", "fromVideo": "rW0AV7Vcdzg" },
+    { "name": "brainphreak", "fromVideo": "Pk4mlxY2row" },
+    { "name": "Chewed Tapes", "fromVideo": "X7Obnp08g3w" },
+    { "name": "Nonplusultraism", "fromVideo": "jUf4bV6lDdE" },
+    { "name": "Luchifer's Videos", "fromVideo": "4EAKiOS3sRg" },
+    { "name": "7thLvl", "fromVideo": "MLCNQ5r5h9g" },
+    { "name": "Ultimate Spidey", "fromVideo": "pSD4VR4OQ54" },
+    { "name": "sisterstekland aka pascal", "fromVideo": "U0tfZGRf2gA" }
+  ],
+  "playlists": [
+    { "name": "Owner playlist PL9760EA8B9633FCC0", "playlistId": "PL9760EA8B9633FCC0" }
+  ]
+}

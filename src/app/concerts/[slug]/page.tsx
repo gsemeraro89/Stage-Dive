@@ -4,7 +4,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { GigCard } from "@/components/gig/GigCard";
 import { GigRows } from "@/components/gig/GigRows";
 import { OnNowMark } from "@/components/gig/OnNowMark";
@@ -13,9 +13,10 @@ import { bandName, cutName, gigs, kindWord, mainArtist, placeYear, playedOn, pla
 import { PlayerSlot } from "@/components/player/PlayerSlot";
 import { StartFromUrl } from "@/components/player/StartFromUrl";
 import { CutOut, PaperStrip, PlayableSetlist, Sheet, Staple, StripHeading } from "@/components/zine";
+import { BOOTLEG_EXPLAINED, BOOTLEG_LABEL, bootlegCredit, sourceCredit } from "@/lib/bootlegs";
 import { formatDate, formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
-import { getConcertPage } from "@/lib/queries";
+import { getConcertPage, officialTwinSlug } from "@/lib/queries";
 import { songCount as countSongs } from "@/lib/songs";
 import { sourceNote, type TrackView } from "@/lib/setlist/view";
 import { compactNumber, placeLine } from "@/lib/site";
@@ -86,8 +87,14 @@ function setlistSource(source: string | null): string {
 }
 
 export default async function ConcertPage({ params }: Props) {
-  const page = await load((await params).slug);
-  if (!page) notFound();
+  const { slug } = await params;
+  const page = await load(slug);
+  if (!page) {
+    // A bootleg withdrawn because the official version is listed: its address leads to the official concert.
+    const twin = await officialTwinSlug(slug);
+    if (twin) redirect(`/concerts/${twin}`);
+    notFound();
+  }
   const { concert, queue, moreFromArtist, similarCards, setlist, notes, songLinks, venueYear } = page;
   const track = toTrack(concert);
   const band = mainArtist(concert);
@@ -144,6 +151,15 @@ export default async function ConcertPage({ params }: Props) {
           </div>
           <div className="cp-strips">
             <StripHeading as="h1" size="h1" lines={cutName(concert.credits, 14)} keyline />
+            {concert.bootleg && (
+              // Unstyled for now (designer): a bootleg is always marked, with where it comes from (owner, 20 Nov 2026).
+              <p className="cp-bootleg" data-od="bootleg-label">
+                <span className="cp-bootleg-label">{BOOTLEG_LABEL}</span>{" "}
+                <span className="cp-bootleg-credit" data-od="bootleg-credit">
+                  {bootlegCredit(concert.bootleg.from)}
+                </span>
+              </p>
+            )}
             {data && (
               <PaperStrip as="p" hand="type" tone="pink" tilt={-0.6} className="cp-data">
                 {data}
@@ -302,7 +318,13 @@ export default async function ConcertPage({ params }: Props) {
             <div>
               <dt className="zn-label">Source</dt>
               <dd>
-                {concert.channel.isOfficial ? "Official concert from" : "From"} {concert.channel.name}
+                {sourceCredit(concert)}
+                {concert.bootleg && (
+                  <span className="cp-bootleg-note" data-od="bootleg-note">
+                    {" "}
+                    /// {BOOTLEG_EXPLAINED}
+                  </span>
+                )}
               </dd>
             </div>
             <div>

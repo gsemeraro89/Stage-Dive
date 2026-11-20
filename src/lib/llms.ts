@@ -17,9 +17,10 @@ import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years
 import { bestHeading, bestLead, bestPath, bestQuestions, rankedName, type BestList } from "./best";
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
+import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
-  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore, plus trip hop, electronic rock and big beat, art pop and experimental), the whole show by one band, from official festival, broadcaster, band and label channels. Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
+  "STAGEDIVE is a fanzine that plays: full rock concerts (classic rock, hard rock, punk, post-punk, new wave, indie, alternative, grunge, metal, garage, shoegaze, stoner, emo and post-hardcore, plus trip hop, electronic rock and big beat, art pop and experimental), the whole show by one band, from official festival, broadcaster, band and label channels first, then bootlegs shared by fan channels (marked as such). Every concert plays on the site, in the player on its own page, organised by band, festival and room, decade, genre and tour, with the setlist (click a song to jump to it) where it is known.";
 
 interface Named {
   slug: string;
@@ -56,7 +57,7 @@ export function llmsTxt(data: LlmsData): string {
     "",
     `> ${SITE_SUMMARY}`,
     "",
-    "Each concert page gives the band, where and when it was played, its length, genres, tour, a short write-up when there is one, the setlist with the time each song starts when known, and notes such as other nights by the same band at the same place. Concerts are only listed while the video is public and embeddable. A Markdown copy of a concert or band page is at the same address with `.md` added.",
+    "Each concert page gives the band, where and when it was played, its length, genres, tour, a short write-up when there is one, the setlist with the time each song starts when known, and notes such as other nights by the same band at the same place. Concerts are only listed while the video is public and embeddable. Most concerts are official (festival, broadcaster, band and label channels); a few are bootlegs: complete shows filmed professionally (TV or pro-shot footage), not official releases, shared by fan channels, always marked \"bootleg\", listed after the official concerts and left out of the rankings; when an official version of the same concert is listed, the bootleg is withdrawn. A Markdown copy of a concert or band page is at the same address with `.md` added.",
     "",
     "## Main pages",
     "",
@@ -106,11 +107,13 @@ interface ConcertLine {
   performedYear: number | null;
   durationSeconds: number;
   hasSetlist: boolean;
+  /** A bootleg is marked in every list (owner, 20 Nov 2026). */
+  bootleg?: BootlegMark;
 }
 
 const concertLine = (c: ConcertLine) => {
   const where = placeLine(c);
-  const facts = [c.performedYear, formatDuration(c.durationSeconds), c.hasSetlist ? "setlist" : null].filter(Boolean).join(", ");
+  const facts = [c.performedYear, formatDuration(c.durationSeconds), c.hasSetlist ? "setlist" : null, c.bootleg ? "bootleg" : null].filter(Boolean).join(", ");
   return `- [${c.credits}${where ? ` at ${where}` : ""} (${facts})](${abs(`/concerts/${c.slug}`)})`;
 };
 
@@ -219,6 +222,7 @@ interface ConcertForMd extends ConcertLine {
   tour: { slug: string; name: string } | null;
   channel: { name: string; isOfficial: boolean };
   artists: { name: string; slug: string; hasPage: boolean; role: "MAIN" | "WITH"; creditNote: string | null }[];
+  bootleg?: BootlegMark;
 }
 
 type SetlistForMd = { tracks: { time: number | null; artist: string | null; title: string; unidentified: boolean }[] } | null;
@@ -242,7 +246,9 @@ export function concertMarkdown(
     ["Genres", c.genres.map((g) => link(g.name, `/genres/${g.slug}`)).join(", ")],
     ["Length", formatDuration(c.durationSeconds)],
     ["Views on YouTube", c.viewCount.toLocaleString("en-GB")],
-    ["Channel", `${c.channel.name}${c.channel.isOfficial ? " (official)" : ""}`],
+    ...(c.bootleg
+      ? ([["Source", `Bootleg, ${bootlegCredit(c.bootleg.from)}. ${BOOTLEG_EXPLAINED}`]] as [string, string][])
+      : ([["Channel", `${c.channel.name}${c.channel.isOfficial ? " (official)" : ""}`]] as [string, string][])),
     ["Watch", abs(`/concerts/${c.slug}`)],
   ];
   const answers = concertAnswers(c, setlist);
@@ -300,8 +306,12 @@ export function bandMarkdown(
     ...(band.sameAs?.length ? ["## Elsewhere", "", ...band.sameAs.map((u) => `- ${u}`), ""] : []),
     "## Concerts",
     "",
-    ...concerts.map(concertLine),
+    ...concerts.filter((c) => !c.bootleg).map(concertLine),
     "",
+    // Bootlegs after the official concerts, said for what they are (owner, 20 Nov 2026).
+    ...(concerts.some((c) => c.bootleg)
+      ? [`## ${FAN_SECTION_TITLE} (bootlegs)`, "", bootlegNote(concerts.filter((c) => c.bootleg).length, concerts.some((c) => !c.bootleg)), "", ...concerts.filter((c) => c.bootleg).map(concertLine), ""]
+      : []),
     ...(stats.length ? ["## Live statistics", "", ...stats.map((l) => `- **${l.label}:** ${l.value}`), ""] : []),
     ...(songs.length
       ? [
@@ -348,11 +358,11 @@ export function songMarkdown(
     "",
     ...facts.filter(([, v]) => v).map(([k, v]) => `- **${k}:** ${v}`),
     "",
-    "## Live versions, newest first",
+    song.versions.some((v) => v.concert.bootleg) ? "## Live versions, official first, then bootlegs; newest first" : "## Live versions, newest first",
     "",
     ...song.versions.map(
       (v, i) =>
-        `${i + 1}. [${versionLabel(v)}](${abs(v.href)}): song ${v.position} of ${v.of}` +
+        `${i + 1}. [${versionLabel(v)}](${abs(v.href)})${v.concert.bootleg ? " (bootleg)" : ""}: song ${v.position} of ${v.of}` +
         `${v.time !== null ? `, starts at ${formatDuration(v.time)}` : ""}${v.lengthSeconds !== null ? `, ${formatDuration(v.lengthSeconds)} long` : ""}`,
     ),
     "",

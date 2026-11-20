@@ -4,6 +4,8 @@ import { VENUE_KINDS, SITE_GENRES } from "../catalogue";
 import { countryName, matchVenue } from "../places";
 import { slugify } from "../slug";
 import { thumbnailUrl, type ThumbnailName } from "../thumbnails";
+import type { ExistingConcert } from "./bootleg";
+import { bootlegSlug, officialTwinOf, twinAction } from "./bootleg-publish";
 import type { FullClassification } from "./classify";
 import { isSameConcert, readPerformed, resolveDuplicate, type ConcertIdentity } from "./rules";
 import type { YouTubeVideo } from "./youtube";
@@ -13,6 +15,11 @@ export interface NewConcert {
   classification: FullClassification;
   channel: { youtubeChannelId: string; name: string; isOfficial: boolean };
   thumbnail: ThumbnailName | null;
+  /**
+   * A bootleg (owner, 20 Nov 2026): stored with sourceKind FAN_PRO_SHOT and the fan channel's name for the
+   * credit "From <channel>". Any official version of the same concert wins over it.
+   */
+  bootleg?: { creditName: string };
 }
 
 function identityOfNew(n: NewConcert): ConcertIdentity {
@@ -24,6 +31,7 @@ function identityOfNew(n: NewConcert): ConcertIdentity {
     durationSeconds: n.video.durationSeconds,
     isOfficial: n.channel.isOfficial,
     channelId: n.channel.youtubeChannelId,
+    isBootleg: Boolean(n.bootleg),
   };
 }
 
@@ -44,14 +52,15 @@ async function candidatesForDuplicate(db: PrismaClient, artistSlugs: string[]) {
       durationSeconds: r.durationSeconds,
       isOfficial: r.channel.isOfficial,
       channelId: r.channel.youtubeChannelId ?? `db:${r.channelId}`,
+      isBootleg: r.sourceKind === "FAN_PRO_SHOT",
     } satisfies ConcertIdentity,
   }));
 }
 
 export type SaveResult =
-  | { status: "created"; concertId: number; slug: string }
+  | { status: "created"; concertId: number; slug: string; hiddenBootlegs?: string[] }
   | { status: "duplicate"; ofYoutubeId: string }
-  | { status: "replaced"; concertId: number; slug: string; replacedYoutubeId: string };
+  | { status: "replaced"; concertId: number; slug: string; replacedYoutubeId: string; hiddenBootlegs?: string[] };
 
 async function uniqueSlug(db: PrismaClient, base: string, youtubeId: string): Promise<string> {
   const taken = await db.concert.findUnique({ where: { slug: base }, select: { youtubeId: true } });
@@ -62,6 +71,8 @@ async function uniqueSlug(db: PrismaClient, base: string, youtubeId: string): Pr
 /**
  * Save an accepted concert, unless the same concert is already listed.
  * A fan upload is replaced by the official upload of the same concert; hand-picked concerts are never replaced.
+ * Bootlegs (owner, 20 Nov 2026): a bootleg never replaces anything; a concert of the official path hides every
+ * bootleg of the same concert (status HIDDEN, officialTwinId set: shown again by the refresh if it goes).
  */
 export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<SaveResult> {
   const identity = identityOfNew(n);
@@ -77,10 +88,13 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
   const v = n.video;
   // The year it was played, as on seed concerts ("metallica-the-metro-1983"); the upload year when unknown.
   const year = readPerformed(c.performed).performedYear ?? v.publishedAt.getUTCFullYear();
-  const baseSlug = slugify([c.mainArtists[0], c.venue || v.title.slice(0, 40), year].join(" "));
+  const plainSlug = slugify([c.mainArtists[0], c.venue || v.title.slice(0, 40), year].join(" "));
+  const baseSlug = n.bootleg ? bootlegSlug(plainSlug) : plainSlug;
+  // A bootleg replaced by an official version is hidden (kept, so it can come back); anything else is deleted.
+  const hideDup = Boolean(dup?.identity.isBootleg);
 
   return db.$transaction(async (tx) => {
-    if (dup) await tx.concert.delete({ where: { id: dup.id } });
+    if (dup && !hideDup) await tx.concert.delete({ where: { id: dup.id } });
 
     const channel = await tx.channel.upsert({
       where: { youtubeChannelId: n.channel.youtubeChannelId },
@@ -136,6 +150,8 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         thumbnailUrl: n.thumbnail ? thumbnailUrl(v.youtubeId, n.thumbnail) : null,
         source: "COLLECTOR",
         status: "PUBLISHED",
+        sourceKind: n.bootleg ? "FAN_PRO_SHOT" : "OFFICIAL",
+        creditName: n.bootleg?.creditName || null,
         curated: false,
         embeddable: v.embeddable,
         privacyStatus: v.privacyStatus,
@@ -149,10 +165,136 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         genres: { create: genreRows.map((g) => ({ genreId: g.id })) },
       },
     });
+    // The official path: the bootleg it replaces, and every other listed bootleg of the same concert, is hidden behind it.
+    const hiddenBootlegs: string[] = [];
+    if (dup && hideDup) {
+      const hidden = await tx.concert.update({ where: { id: dup.id }, data: { status: "HIDDEN", officialTwinId: concert.id }, select: { slug: true } });
+      hiddenBootlegs.push(hidden.slug);
+    }
+    if (!n.bootleg) {
+      const mains = credits.filter((x) => x.role === "MAIN").map((x) => x.artistId);
+      hiddenBootlegs.push(...(await hideBootlegTwins(tx as unknown as PrismaClient, concert.id, mains)));
+    }
     return dup
-      ? { status: "replaced" as const, concertId: concert.id, slug, replacedYoutubeId: dup.identity.youtubeId }
-      : { status: "created" as const, concertId: concert.id, slug };
+      ? { status: "replaced" as const, concertId: concert.id, slug, replacedYoutubeId: dup.identity.youtubeId, hiddenBootlegs }
+      : { status: "created" as const, concertId: concert.id, slug, hiddenBootlegs };
   }, { timeout: 20_000, maxWait: 10_000 }); // Neon from GitHub Actions can be slow: 5 s was too short (20 Nov 2026)
+}
+
+// ---------- Bootlegs: an official version always wins (owner, 20 Nov 2026) ----------
+
+const twinSelect = {
+  id: true,
+  youtubeId: true,
+  slug: true,
+  status: true,
+  sourceKind: true,
+  officialTwinId: true,
+  embeddable: true,
+  privacyStatus: true,
+  city: true,
+  performedYear: true,
+  performedOn: true,
+  durationSeconds: true,
+  publishedAt: true,
+  venue: { select: { name: true } },
+  channel: { select: { youtubeChannelId: true, isOfficial: true } },
+  credits: { where: { role: "MAIN" as const }, select: { artist: { select: { name: true } } } },
+} as const;
+
+interface TwinRow {
+  id: number;
+  youtubeId: string;
+  slug: string;
+  status: "PUBLISHED" | "HIDDEN" | "REMOVED";
+  sourceKind: "OFFICIAL" | "FAN_PRO_SHOT";
+  officialTwinId: number | null;
+  embeddable: boolean;
+  privacyStatus: string;
+  city: string | null;
+  performedYear: number | null;
+  performedOn: Date | null;
+  durationSeconds: number;
+  publishedAt: Date;
+  venue: { name: string } | null;
+  channel: { youtubeChannelId: string | null; isOfficial: boolean };
+  credits: { artist: { name: string } }[];
+}
+
+function asExisting(r: TwinRow): ExistingConcert & { id: number } {
+  return {
+    id: r.id,
+    youtubeId: r.youtubeId,
+    slug: r.slug,
+    artists: r.credits.map((c) => c.artist.name),
+    venue: r.venue?.name ?? null,
+    city: r.city,
+    performedYear: r.performedYear,
+    performedOn: r.performedOn,
+    durationSeconds: r.durationSeconds,
+    publishedAt: r.publishedAt,
+    channelId: r.channel.youtubeChannelId ?? "",
+    isOfficial: r.channel.isOfficial,
+    bootleg: r.sourceKind === "FAN_PRO_SHOT",
+  };
+}
+
+/** Hide the published bootlegs that are the same concert as this official one. Returns their slugs. */
+async function hideBootlegTwins(db: PrismaClient, officialId: number, mainArtistIds: number[]): Promise<string[]> {
+  if (!mainArtistIds.length) return [];
+  const official = (await db.concert.findUnique({ where: { id: officialId }, select: twinSelect })) as TwinRow | null;
+  if (!official) return [];
+  const bootlegs = (await db.concert.findMany({
+    where: { sourceKind: "FAN_PRO_SHOT", status: "PUBLISHED", credits: { some: { role: "MAIN", artistId: { in: mainArtistIds } } } },
+    select: twinSelect,
+  })) as TwinRow[];
+  const hidden: string[] = [];
+  for (const b of bootlegs) {
+    if (!officialTwinOf(asExisting(b), [asExisting(official)])) continue;
+    await db.concert.update({ where: { id: b.id }, data: { status: "HIDDEN", officialTwinId: officialId } });
+    hidden.push(b.slug);
+  }
+  return hidden;
+}
+
+/**
+ * Bootlegs against the official concerts listed now (refresh job): a bootleg with an official twin is hidden; a
+ * bootleg hidden only for a twin that is no longer shown comes back while its own video plays. Bootlegs the owner
+ * hid (HIDDEN without a twin) are left alone.
+ */
+export async function syncBootlegTwins(db: PrismaClient): Promise<{ hidden: string[]; restored: string[] }> {
+  const bootlegs = (await db.concert.findMany({
+    where: { sourceKind: "FAN_PRO_SHOT", OR: [{ status: "PUBLISHED" }, { status: "HIDDEN", officialTwinId: { not: null } }] },
+    select: twinSelect,
+  })) as TwinRow[];
+  const out = { hidden: [] as string[], restored: [] as string[] };
+  if (!bootlegs.length) return out;
+  const artists = [...new Set(bootlegs.flatMap((b) => b.credits.map((c) => c.artist.name)))];
+  const officials = (
+    (await db.concert.findMany({
+      where: {
+        sourceKind: "OFFICIAL",
+        status: "PUBLISHED",
+        embeddable: true,
+        privacyStatus: "public",
+        credits: { some: { role: "MAIN", artist: { name: { in: artists } } } },
+      },
+      select: twinSelect,
+    })) as TwinRow[]
+  ).map(asExisting);
+  for (const b of bootlegs) {
+    const twin = officialTwinOf(asExisting(b), officials);
+    const playable = b.embeddable && b.privacyStatus === "public" && b.durationSeconds > 0;
+    const step = twinAction({ status: b.status, officialTwinId: b.officialTwinId, playable }, twin?.id ?? null);
+    if (step.action === "hide") {
+      await db.concert.update({ where: { id: b.id }, data: { status: "HIDDEN", officialTwinId: step.twinId } });
+      out.hidden.push(b.slug);
+    } else if (step.action === "restore") {
+      await db.concert.update({ where: { id: b.id }, data: { status: "PUBLISHED", officialTwinId: null } });
+      out.restored.push(b.slug);
+    }
+  }
+  return out;
 }
 
 /**
@@ -205,7 +347,7 @@ export async function recentDecisions(
   db: PrismaClient,
   youtubeIds: string[],
   ttlDays: number,
-  lookAgain: ("UNCERTAIN" | "NOT_ROCK")[] = [],
+  lookAgain: ("UNCERTAIN" | "NOT_ROCK" | "NOT_OFFICIAL")[] = [],
 ): Promise<Set<string>> {
   const found = new Set<string>();
   for (const slice of chunks(youtubeIds)) {
