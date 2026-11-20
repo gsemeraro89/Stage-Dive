@@ -1,0 +1,13 @@
+{
+  "entities": {
+    "Q15920": {
+      "type": "item",
+      "id": "Q15920",
+      "labels": { "en": { "language": "en", "value": "Metallica" } },
+      "sitelinks": {
+        "dewiki": { "site": "dewiki", "title": "Metallica", "badges": [], "url": "https://de.wikipedia.org/wiki/Metallica" },
+        "enwiki": { "site": "enwiki", "title": "Metallica", "badges": [], "url": "https://en.wikipedia.org/wiki/Metallica" }
+      }
+    }
+  }
+}

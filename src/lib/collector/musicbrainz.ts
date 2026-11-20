@@ -12,13 +12,13 @@ export interface MusicBrainzArtist {
 }
 
 let lastCall = 0;
-async function politeFetch(url: string, fetchFn: typeof fetch): Promise<Response> {
+async function politeFetch(url: string, fetchFn: typeof fetch, userAgent = USER_AGENT): Promise<Response> {
   // MusicBrainz answers 503 when it is busy or we are too fast: wait and try again, up to 3 times.
   for (let attempt = 0; ; attempt++) {
     const wait = lastCall + 1100 - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     lastCall = Date.now();
-    const res = await fetchFn(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" } });
+    const res = await fetchFn(url, { headers: { "User-Agent": userAgent, Accept: "application/json" } });
     if (res.status !== 503 || attempt >= 3) return res;
     await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
   }
@@ -164,6 +164,33 @@ export function wikidataIdFromRelations(relations: UrlRelation[] | undefined): s
     if (m) return m[1];
   }
   return null;
+}
+
+/** How the entity links job names itself to MusicBrainz and Wikidata (owner, 20 Nov 2026: no personal email). */
+export const LINKS_USER_AGENT = "STAGEDIVE/1.0 ( contact-later )";
+
+/** An artist's Wikidata item and English Wikipedia article as MusicBrainz links them. */
+export interface EntityLinks {
+  wikidataId: string | null;
+  /** Only an English Wikipedia article ("https://en.wikipedia.org/wiki/Metallica"). */
+  wikipediaUrl: string | null;
+}
+
+/** The Wikidata item and English Wikipedia article among an artist's current MusicBrainz links. Pure, for tests. */
+export function entityLinksFromRelations(relations: UrlRelation[] | undefined): EntityLinks {
+  const wikipedia = (relations ?? []).find(
+    (rel) => !rel.ended && rel.url?.resource && /^https?:\/\/en\.wikipedia\.org\/wiki\/[^/?#]+$/.test(rel.url.resource),
+  );
+  return { wikidataId: wikidataIdFromRelations(relations), wikipediaUrl: wikipedia?.url?.resource?.replace(/^http:/, "https:") ?? null };
+}
+
+/** One MusicBrainz call (url-rels): the artist's Wikidata item and English Wikipedia article. */
+export async function artistEntityLinks(mbid: string, fetchFn: typeof fetch = fetch): Promise<EntityLinks> {
+  const res = await politeFetch(`${API}/artist/${mbid}?inc=url-rels&fmt=json`, fetchFn, LINKS_USER_AGENT);
+  if (res.status === 404) return { wikidataId: null, wikipediaUrl: null };
+  if (!res.ok) throw new Error(`MusicBrainz links failed: ${res.status}`);
+  const data = (await res.json()) as { relations?: UrlRelation[] };
+  return entityLinksFromRelations(data.relations);
 }
 
 /** The first current YouTube channel link among an artist's MusicBrainz links. Pure, for tests. */

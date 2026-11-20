@@ -570,13 +570,29 @@ export async function recommendationsFor(youtubeId: string, limit = 4): Promise<
   return (await artistCards(ids.slice(0, limit * 3), playing)).slice(0, limit);
 }
 
-/** IDs a band is known by elsewhere, for structured data (sameAs). Only what the jobs have stored. */
-async function bandIds(artist: { id: number; name: string; youtubeChannelId: string | null }) {
+/**
+ * IDs a band is known by elsewhere, for structured data (sameAs) and the "Elsewhere" line. Only what the
+ * jobs have stored: the entity links job (src/lib/entity-links.ts) first, then the collector's and the
+ * photo job's lookups.
+ */
+async function bandIds(artist: {
+  id: number;
+  name: string;
+  youtubeChannelId: string | null;
+  mbid: string | null;
+  wikidataId: string | null;
+  wikipediaUrl: string | null;
+}) {
   const [lookup, photoCheck] = await Promise.all([
-    getDb().artistLookup.findUnique({ where: { nameKey: nameKey(artist.name) }, select: { mbid: true } }),
-    getDb().bandPhotoCheck.findUnique({ where: { artistId: artist.id }, select: { wikidataId: true } }),
+    artist.mbid ? null : getDb().artistLookup.findUnique({ where: { nameKey: nameKey(artist.name) }, select: { mbid: true } }),
+    artist.wikidataId ? null : getDb().bandPhotoCheck.findUnique({ where: { artistId: artist.id }, select: { wikidataId: true } }),
   ]);
-  return { mbid: lookup?.mbid ?? null, wikidataId: photoCheck?.wikidataId ?? null, youtubeChannelId: artist.youtubeChannelId };
+  return {
+    mbid: artist.mbid ?? lookup?.mbid ?? null,
+    wikidataId: artist.wikidataId ?? photoCheck?.wikidataId ?? null,
+    wikipediaUrl: artist.wikipediaUrl,
+    youtubeChannelId: artist.youtubeChannelId,
+  };
 }
 
 export async function getArtistPage(slug: string) {

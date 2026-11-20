@@ -204,13 +204,31 @@ export function venueYearJsonLd(
   };
 }
 
-/** Where a band is known elsewhere, as links: MusicBrainz, Wikidata, the band's own channel. Only IDs we hold. */
-export function bandSameAs(ids: { mbid?: string | null; wikidataId?: string | null; youtubeChannelId?: string | null }): string[] {
+/** Where a band is known elsewhere, as links: MusicBrainz, Wikidata, English Wikipedia, the band's own channel. Only IDs we hold. */
+export function bandSameAs(ids: { mbid?: string | null; wikidataId?: string | null; wikipediaUrl?: string | null; youtubeChannelId?: string | null }): string[] {
   return [
     ids.mbid ? `https://musicbrainz.org/artist/${ids.mbid}` : null,
     ids.wikidataId ? `https://www.wikidata.org/wiki/${ids.wikidataId}` : null,
+    ids.wikipediaUrl ?? null,
     ids.youtubeChannelId ? `https://www.youtube.com/channel/${ids.youtubeChannelId}` : null,
   ].filter((u): u is string => Boolean(u));
+}
+
+/**
+ * The band page's visible "Elsewhere" line: MusicBrainz, Wikidata and Wikipedia when we hold them (the
+ * same links as sameAs, so structured data never says more than the page), and a setlist.fm search,
+ * which is a plain outbound link (its API terms need a commercial agreement; no data is read from it).
+ */
+export function elsewhereLinks(
+  bandName: string,
+  ids: { mbid?: string | null; wikidataId?: string | null; wikipediaUrl?: string | null },
+): { id: "wikipedia" | "wikidata" | "musicbrainz" | "setlistfm"; label: string; href: string; sameAs: boolean }[] {
+  return [
+    ids.wikipediaUrl ? { id: "wikipedia" as const, label: "Wikipedia", href: ids.wikipediaUrl, sameAs: true } : null,
+    ids.wikidataId ? { id: "wikidata" as const, label: "Wikidata", href: `https://www.wikidata.org/wiki/${ids.wikidataId}`, sameAs: true } : null,
+    ids.mbid ? { id: "musicbrainz" as const, label: "MusicBrainz", href: `https://musicbrainz.org/artist/${ids.mbid}`, sameAs: true } : null,
+    { id: "setlistfm" as const, label: "setlist.fm", href: `https://www.setlist.fm/search?query=${encodeURIComponent(bandName)}`, sameAs: false },
+  ].filter((l): l is NonNullable<typeof l> => l !== null);
 }
 
 /** schema.org MusicGroup for a band page. */

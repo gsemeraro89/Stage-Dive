@@ -24,7 +24,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { bandAnswers, bandStatLines, bandStatsFor } from "@/lib/answers";
 import { bandSongsPath, songPath, songTally } from "@/lib/songs";
 import { bandIsStrong, bandSearchTitle, clip, robotsFor, shareImages } from "@/lib/seo";
-import { bandJsonLd, bandSameAs, breadcrumbs, faqPage } from "@/lib/structured-data";
+import { bandJsonLd, bandSameAs, breadcrumbs, elsewhereLinks, faqPage } from "@/lib/structured-data";
 
 // One database read per request, shared by the page and its title/description.
 const load = cache(getArtistPage);
@@ -89,6 +89,8 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
     href: l.id === "opener" && stats.opener ? songPath(artist.slug, stats.opener.slug) : l.id === "closer" && stats.closer ? songPath(artist.slug, stats.closer.slug) : l.href,
   }));
   const liveSongs = songTally(setlists);
+  // Where the band is known elsewhere (src/lib/entity-links.ts): the same links as sameAs, plus a setlist.fm search.
+  const elsewhere = elsewhereLinks(artist.name, ids);
   const genreNames = [...new Set(concerts.flatMap((c) => c.genres.map((g) => g.name)))];
   const rows = sorted(concerts, sort);
   const best = sorted(concerts, "watched")[0];
@@ -362,6 +364,22 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
               </section>
             )}
           </div>
+
+          {elsewhere.length > 0 && (
+            // Unstyled for now (designer): one small line of outbound links.
+            <p className="zn-label bp-elsewhere" data-od="band-elsewhere">
+              <span>Elsewhere: </span>
+              {elsewhere.map((l, i) => (
+                <span key={l.id} data-link={l.id}>
+                  {i > 0 && " /// "}
+                  {/* setlist.fm is a search, not the band's own record: not vouched for (nofollow). */}
+                  <a href={l.href} rel={l.sameAs ? "noopener" : "nofollow noopener"}>
+                    {l.label}
+                  </a>
+                </span>
+              ))}
+            </p>
+          )}
 
           {answers.questions.length > 0 && (
             // Closed by default (owner choice); native <details>, so the answers are in the page for

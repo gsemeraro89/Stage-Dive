@@ -154,6 +154,10 @@ jobs:
       - name: Artist profiles (short bios for new artists)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run profiles
+      - name: Entity links (MusicBrainz, Wikidata and Wikipedia for band pages; open data, no quota)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        continue-on-error: true
+        run: npm run entity-links
       - name: Artist pictures (official YouTube channel avatars)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run artist-images
