@@ -17,6 +17,15 @@ enum ConcertSource {
   MANUAL // added by hand in the admin page
 }
 
+/// Whose recording a concert is (owner, 20 Nov 2026). OFFICIAL: from an official channel (festival,
+/// broadcaster, band, label) or the collector's normal path. FAN_PRO_SHOT: a "bootleg", a professionally
+/// filmed complete show shared by a fan channel; shown with a "Bootleg" label, listed after the official
+/// concerts, and hidden by itself when an official version of the same concert is listed.
+enum ConcertSourceKind {
+  OFFICIAL
+  FAN_PRO_SHOT
+}
+
 /// Whether a concert is shown on the site.
 enum ConcertStatus {
   PUBLISHED
@@ -264,6 +273,14 @@ model Concert {
 
   source  ConcertSource
   status  ConcertStatus @default(PUBLISHED)
+  /// Official recording or bootleg (FAN_PRO_SHOT). Official concerts always come first and always win.
+  sourceKind     ConcertSourceKind @default(OFFICIAL) @map("source_kind")
+  /// The name of the channel a bootleg comes from, for the credit "From <channel>". YouTube data:
+  /// refreshed by the refresh job with the rest, cleared when the video goes.
+  creditName     String?           @map("credit_name")
+  /// A bootleg hidden because this official concert (same band, year and place) is listed. Shown again
+  /// by the refresh job if the official concert goes. Null for every other concert.
+  officialTwinId Int?              @map("official_twin_id")
   /// Hand-picked by the owner: kept even if it breaks the collector's automatic rules
   /// (shorter than 40 minutes, fewer views than the threshold).
   curated Boolean       @default(false)
@@ -296,6 +313,7 @@ model Concert {
   @@index([status, publishedAt])
   @@index([status, performedYear])
   @@index([status, viewCount])
+  @@index([sourceKind, status])
   @@map("concerts")
 }
 
