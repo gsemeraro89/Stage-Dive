@@ -33,8 +33,8 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/lib/seed/`, `scripts/seed.ts` | Seed import (`npm run db:seed`) |
 | `src/lib/queries.ts` | Every database read used by the pages (only public, embeddable, published concerts) |
 | `src/components/player/` | The single persistent YouTube player: provider, concert-page slot, docked bar |
-| `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/venues/[slug]/[year]` (festival years), `/genres`, `/decades`, `/tours`, `/best`, `/best/[slug]` (most watched rankings), `/songs/[band]`, `/songs/[band]/[song]`, `/map`, `/admin` |
-| `src/lib/venue-years.ts`, `best.ts`, `entity-links.ts`, `live-albums.ts` | Festival and venue years ("Pinkpop 1995"), "best of" rankings by views, band links to MusicBrainz / Wikidata / Wikipedia, bands' live albums (MusicBrainz) |
+| `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/venues/[slug]/[year]` (festival years), `/genres`, `/decades`, `/tours`, `/best`, `/best/[slug]` (most watched rankings), `/hd` (full concerts in HD), `/songs/[band]`, `/songs/[band]/[song]`, `/map`, `/admin` |
+| `src/lib/venue-years.ts`, `best.ts`, `hd.ts`, `entity-links.ts`, `live-albums.ts` | Festival and venue years ("Pinkpop 1995"), "best of" rankings by views, concerts in HD, band links to MusicBrainz / Wikidata / Wikipedia, bands' live albums (MusicBrainz) |
 | `src/lib/songs.ts`, `song-title.ts`, `band-stats.ts` | Songs played live (a page per song, every live version, worked out from the setlists) and the band's live statistics |
 | `src/lib/setlist/` | Setlists from the video description, chapters or comments |
 | `src/lib/collector/` | Collector rules, YouTube client, Claude classifier (Haiku lane), MusicBrainz |
@@ -46,7 +46,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | Workflow | When | What |
 |---|---|---|
 | `Collect concerts` (`collect.yml`) | by hand (daily schedule paused until step 6) | Reads festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band channels; free filters, then Claude. By hand it defaults to a **dry run**. |
-| `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. Then thumbnail sizes for new concerts and IndexNow. |
+| `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. Also reads HD/SD for concerts that have none yet (the `/hd` page). Then thumbnail sizes for new concerts and IndexNow. |
 | `Back up database` (`backup.yml`) | Mondays | `pg_dump` kept as a private download for 30 days. |
 | `Artist profiles`, `Similar artists`, `Setlist coverage` | by hand / weekly | Bios (Wikimedia/MusicBrainz), similar bands (ListenBrainz), setlist report. |
 | `Band photos` (`band-photos.yml`) | monthly / by hand | Commons photos, then entity links (`npm run entity-links`: MusicBrainz, Wikidata, English Wikipedia for the band pages, then each band's live albums from MusicBrainz; also after new artists in `collect.yml`). |
@@ -84,7 +84,7 @@ Web service (Node, Frankfurt), auto-deploys from `main`:
 
 ## Search engines and AI assistants
 
-Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://fullconcert.live` (the domain the owner bought on 20 Nov 2026). Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, `/venues/<slug>/<year>.md`, `/best/<slug>.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
+Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://fullconcert.live` (the domain the owner bought on 20 Nov 2026). Then robots.txt opens (every AI crawler named), `/sitemap.xml` fills with the pages worth indexing, and pages drop their `noindex`. Everything is built from the database: `/llms.txt`, `/llms-full.txt`, `/concerts/<slug>.md`, `/artists/<slug>.md`, `/venues/<slug>/<year>.md`, `/best/<slug>.md`, `/hd.md`, titles, answers, FAQ and structured data update by themselves. `/concerts/<slug>?t=315` starts a concert at 5:15 (Google "key moments"). IndexNow key: `/indexnow-key.txt`.
 
 Keyword research (owner, 20 Nov 2026): `Collect concerts` with `admin_ops` = `keyword-research` (read-only, no quota, no Claude; about an hour, at most two). It asks Google and Bing search suggestions about every band, festival and edition, venue, genre, decade, tour and top song, plus the head terms around "full concert", and reports each phrase with its score, intent and the page that should rank for it, or the missing page type (`reports/keywords-<date>.md`, and the top 300 phrases, gaps and counts at the end of the job log). Locally: `npm run keywords -- --plan`. The target phrases every page title carries are in `src/lib/keyword-targets.ts`.
 

@@ -37,6 +37,8 @@ export interface YouTubeVideo extends VideoFacts {
   description: string;
   tags: string[];
   publishedAt: Date;
+  /** contentDetails.definition: "hd" or "sd" (the /hd page); absent when YouTube gives none. */
+  definition?: string;
 }
 
 export interface YouTubeChannel {
@@ -317,5 +319,6 @@ export function toVideo(item: any): YouTubeVideo | null {
     madeForKids: item.status?.madeForKids === true,
     uploadStatus: item.status?.uploadStatus ?? "unknown",
     blockedIn: blockedRegions(item.contentDetails?.regionRestriction),
+    ...(item.contentDetails?.definition ? { definition: String(item.contentDetails.definition) } : {}),
   };
 }

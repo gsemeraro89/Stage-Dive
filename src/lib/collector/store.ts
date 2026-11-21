@@ -156,6 +156,7 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         embeddable: v.embeddable,
         privacyStatus: v.privacyStatus,
         madeForKids: v.madeForKids,
+        definition: v.definition ?? null,
         ytCheckedAt: now,
         ytRefreshedAt: now,
         channelId: channel.id,

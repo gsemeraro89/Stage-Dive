@@ -12,6 +12,7 @@ import { PAGE_ARTIST, songCatalogue } from "./queries";
 import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsStrong } from "./seo";
 import { bandSongsPath, songPath } from "./songs";
 import { bestIsStrong, bestPath, bestSlugsFor } from "./best";
+import { HD_PATH, hdIsStrong } from "./hd";
 
 export interface SitemapEntry {
   path: string;
@@ -37,6 +38,8 @@ export interface SitemapConcert {
   genreSlugs: string[];
   /** A bootleg: indexed by the same strong-page rule as any concert, but never counted in the rankings. */
   bootleg?: boolean;
+  /** YouTube reports the video in HD (the /hd page, src/lib/hd.ts). */
+  hd?: boolean;
 }
 
 /** A band with a page (a headline concert of its own). */
@@ -89,6 +92,11 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
   const best = [...tally(concerts.filter((c) => !c.bootleg), bestSlugsFor)]
     .filter(([, v]) => bestIsStrong(v))
     .map(([k, v]): SitemapEntry => ({ path: bestPath(k), lastModified: v.updated, priority: 0.6, changeFrequency: "daily" }));
+  // Full concerts in HD: official ones only, as on the page; listed from ten.
+  const hd = concerts.filter((c) => c.hd && !c.bootleg);
+  if (hdIsStrong(hd.length)) {
+    best.push({ path: HD_PATH, lastModified: hd.reduce<Date | undefined>((d, c) => later(d, c.updatedAt), undefined), priority: 0.6, changeFrequency: "daily" });
+  }
   if (best.length) best.unshift({ path: "/best", lastModified: best.reduce<Date | undefined>((d, e) => later(d, e.lastModified!), undefined), priority: 0.7, changeFrequency: "daily" });
   return [
     ...FIXED_PAGES,
@@ -137,6 +145,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
         writeUp: true,
         performedYear: true,
         sourceKind: true,
+        definition: true,
         venue: { select: { slug: true } },
         venueKind: { select: { slug: true } },
         tour: { select: { slug: true } },
@@ -162,6 +171,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       artistSlugs: c.credits.map((a) => a.artist.slug),
       genreSlugs: c.genres.map((g) => g.genre.slug),
       bootleg: c.sourceKind === "FAN_PRO_SHOT",
+      hd: c.definition === "hd",
     })),
     bands,
     songBands,

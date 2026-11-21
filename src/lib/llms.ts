@@ -18,6 +18,7 @@ import { bestHeading, bestLead, bestPath, bestQuestions, rankedName, type BestLi
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
 import type { LiveAlbumView } from "./live-albums";
+import { HD_HEADING, HD_PATH, hdIsStrong, hdLead, hdQuestions } from "./hd";
 import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
@@ -49,6 +50,8 @@ export interface LlmsData {
   venueYears?: VenueYear[];
   /** The "best of" rankings (src/lib/best.ts); only strong ones are listed. */
   best?: { slug: string; title: string; count: number }[];
+  /** Official concerts in HD (src/lib/hd.ts); the page is listed from ten. */
+  hd?: number;
 }
 
 export function llmsTxt(data: LlmsData): string {
@@ -72,6 +75,7 @@ export function llmsTxt(data: LlmsData): string {
     ...(data.best?.some((b) => bestListIsStrong(b.count))
       ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
       : []),
+    ...(hdIsStrong(data.hd ?? 0) ? [`- [Full concerts in HD](${abs(HD_PATH)}): the ${data.hd} official concerts in high definition, most watched first`] : []),
     "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
     "",
@@ -189,6 +193,7 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
         ]
       : []),
     ...bestSection(data.best ?? []),
+    ...(hdIsStrong(data.hd ?? 0) ? ["## Full concerts in HD", "", `- [${HD_HEADING}](${abs(HD_PATH)}): ${count(data.hd!)} in high definition, most watched first`, ""] : []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
     "## Most watched concerts",
@@ -478,6 +483,27 @@ export function bestMarkdown(list: BestList, concerts: (ConcertLine & { viewCoun
     `Every ranking: ${abs("/best")}`,
     "",
     `Source: ${SITE_NAME}, ${abs(path)}`,
+    "",
+  ].join("\n");
+}
+
+// ---- Full concerts in HD (src/lib/hd.ts) ----
+
+/** The HD page as Markdown: lead, the concerts most watched first, questions. */
+export function hdMarkdown(total: number, concerts: (ConcertLine & { viewCount: number; artists: { name: string; role: "MAIN" | "WITH" }[] })[]): string {
+  return [
+    `# ${HD_HEADING}`,
+    "",
+    hdLead(total, concerts),
+    "",
+    "## The concerts, most watched first",
+    "",
+    ...concerts.map((c, i) => `${i + 1}. [${rankedName(c)}](${abs(`/concerts/${c.slug}`)}): ${c.viewCount.toLocaleString("en-GB")} views on YouTube, ${formatDuration(c.durationSeconds)}${c.hasSetlist ? ", setlist" : ""}`),
+    "",
+    ...qaMarkdown(hdQuestions(total, concerts)),
+    `Rankings by views: ${abs("/best")}`,
+    "",
+    `Source: ${SITE_NAME}, ${abs(HD_PATH)}`,
     "",
   ].join("\n");
 }

@@ -17,6 +17,7 @@ import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
 import { countryName } from "./places";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
 import { liveAlbumViews } from "./live-albums";
+import { HD_SIZE, HD_WHERE } from "./hd";
 import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList } from "./best";
 
 /**
@@ -775,6 +776,22 @@ export async function getBestPage(slug: string) {
   return { list, concerts: rows.map(toConcertView) };
 }
 
+// ---- Full concerts in HD (src/lib/hd.ts) ----
+
+/** How many official concerts YouTube reports in HD (bootlegs are kept out, as in the rankings). */
+async function hdCountUncached(): Promise<number> {
+  return getDb().concert.count({ where: { AND: [VISIBLE, OFFICIAL_ONLY, HD_WHERE] } });
+}
+
+/** The HD page: every official HD concert counted, the HD_SIZE most watched listed. */
+export async function getHdPage() {
+  const [total, rows] = await Promise.all([
+    hdCount(),
+    findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, HD_WHERE] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: HD_SIZE }),
+  ]);
+  return { total, concerts: rows.map(toConcertView) };
+}
+
 // ---- Index pages ----
 
 /** Picture for an artist, venue or genre: the thumbnail of its newest visible concert. */
@@ -1008,6 +1025,9 @@ export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 export const bestCatalogue = cached("bestCatalogue", bestCatalogueUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
+export const hdCount = cached("hdCount", hdCountUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts). */
 export const venueYearIndex = cached("venueYearIndex", venueYearIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
@@ -1026,7 +1046,7 @@ export async function findConcertViews(args: { where: object; orderBy?: object |
 
 /** Everything /llms.txt and /llms-full.txt list (src/lib/llms.ts): every band, place, genre, decade and tour with concerts. */
 export async function llmsData() {
-  const [bands, options, genres, decades, tours, venueYears, best] = await Promise.all([
+  const [bands, options, genres, decades, tours, venueYears, best, hd] = await Promise.all([
     listArtists(),
     filterOptions(),
     listGenres(),
@@ -1034,9 +1054,11 @@ export async function llmsData() {
     listTours(),
     venueYearIndex(),
     bestCatalogue(),
+    hdCount(),
   ]);
   return {
     venueYears,
+    hd,
     best: best.filter(bestIsStrong).map((l) => ({ slug: l.slug, title: bestHeading(l), count: shownIn(l) })),
     bands: bands.map((b) => ({ slug: b.slug, name: b.name, concerts: b.concerts })),
     venues: options.venues.map((v) => ({ slug: v.slug, name: v.name, concerts: v.count })),

@@ -51,6 +51,10 @@ export default async function ConcertsPage({ searchParams }: Props) {
 
       <section className="pg-section" aria-label="Search and sort" data-od="browse">
         <GigFilters filters={filters} options={options} />
+        {/* Unstyled for now (designer): the full concerts in HD (src/lib/hd.ts). */}
+        <p className="pg-thin" data-od="concerts-hd">
+          <Link href="/hd">Full concerts in HD</Link>
+        </p>
       </section>
 
       <section className="pg-section pg-section--cut" aria-label="Gigs">

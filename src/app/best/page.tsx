@@ -77,6 +77,10 @@ export default async function BestIndexPage() {
           })}
         </div>
       )}
+      {/* Unstyled for now (designer): the full concerts in HD (src/lib/hd.ts), ranked the same way. */}
+      <p className="pg-thin" data-od="best-hd">
+        <Link href="/hd">Full concerts in HD</Link>, most watched first.
+      </p>
     </main>
   );
 }
