@@ -8,11 +8,13 @@ import type { ExistingConcert } from "./bootleg";
 import { bootlegSlug, officialTwinOf, twinAction } from "./bootleg-publish";
 import type { FullClassification } from "./classify";
 import { isSameConcert, readPerformed, resolveDuplicate, type ConcertIdentity } from "./rules";
+import { decideTour, findOrCreateTour } from "./tours";
 import type { YouTubeVideo } from "./youtube";
 
 export interface NewConcert {
   video: YouTubeVideo;
-  classification: FullClassification;
+  /** `tour`: the band's tour as Claude Haiku read it from the text (lane answers), a hint for when the regex is unsure. */
+  classification: FullClassification & { tour?: string };
   channel: { youtubeChannelId: string; name: string; isOfficial: boolean };
   thumbnail: ThumbnailName | null;
   /**
@@ -135,6 +137,17 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
     }
     const now = new Date();
     const slug = await uniqueSlug(tx as unknown as PrismaClient, baseSlug, v.youtubeId);
+    // The main band's own tour, when the video's text names it (owner, 21 Nov 2026): the regex, then Haiku's reading.
+    // Unsure with no answer: tourCheckedAt stays empty and the tours backfill asks Haiku later.
+    const mains = credits.filter((x) => x.role === "MAIN");
+    const tour = decideTour(
+      { title: v.title, description: v.description, band: c.mainArtists[0] ?? "", performedYear: readPerformed(c.performed).performedYear },
+      c.tour ? { tour: c.tour } : null,
+    );
+    const tourRow =
+      tour.name && c.mainArtists[0]
+        ? await findOrCreateTour(tx as unknown as PrismaClient, mains.length === 1 ? { id: mains[0].artistId, name: c.mainArtists[0] } : null, tour.name)
+        : null;
     const concert = await tx.concert.create({
       data: {
         youtubeId: v.youtubeId,
@@ -161,6 +174,8 @@ export async function saveConcert(db: PrismaClient, n: NewConcert): Promise<Save
         channelId: channel.id,
         venueId: venue?.id ?? null,
         venueKindId: venueKind?.id ?? null,
+        tourId: tourRow?.id ?? null,
+        tourCheckedAt: tour.settled ? now : null,
         credits: { create: credits },
         genres: { create: genreRows.map((g) => ({ genreId: g.id })) },
       },

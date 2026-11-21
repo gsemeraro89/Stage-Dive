@@ -9,11 +9,17 @@
 //   keyword-research[:k=v,...]      keyword research (scripts/keywords.ts; read-only, no quota, no Claude):
 //                                   e.g. keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no
 //                                   Runs after the other operations, so its result ends the log.
+//   backfill-tours[:limit]          tours for listed concerts (src/lib/collector/tour-backfill.ts): re-reads title and
+//                                   description (videos.list, 1 unit per 50), regex first, Claude Haiku (Batch API) only
+//                                   when unsure; answers stored, never paid twice. Options: backfill-tours:limit=500,wait=30,no-batch
 import "dotenv/config";
 import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { recompute } from "../src/lib/similarity/job";
 import { keywordArgs, keywordResearch } from "./keywords";
+import { HaikuLane } from "../src/lib/collector/haiku";
+import { backfillTours, tourBackfillArgs } from "../src/lib/collector/tour-backfill";
+import { YouTubeClient } from "../src/lib/collector/youtube";
 
 async function main() {
   const all = (process.argv[2] ?? "").split(";").map((s) => s.trim()).filter(Boolean);
@@ -34,6 +40,13 @@ async function main() {
       out.push({ split: group, ...(await splitArtist(db, group, members.split(",").map((x) => x.trim()))) });
     } else if (op.startsWith("hide-concert:")) out.push({ hidden: await hideConcert(db, op.slice("hide-concert:".length).trim()) });
     else if (op === "tidy-review") out.push({ reviewItemsClosed: await closeStaleReviewItems(db) });
+    else if (/^backfill-tours(:|$)/.test(op)) {
+      const yt = new YouTubeClient(process.env.YOUTUBE_API_KEY ?? "", Number(process.env.YOUTUBE_UNIT_BUDGET ?? 8000));
+      const haiku = process.env.ANTHROPIC_API_KEY ? new HaikuLane() : null;
+      const result = await backfillTours(db, yt, haiku, tourBackfillArgs(op));
+      const tours = await db.tour.findMany({ where: { concerts: { some: { status: "PUBLISHED" } } }, select: { slug: true, name: true, _count: { select: { concerts: { where: { status: "PUBLISHED" } } } } }, orderBy: { name: "asc" } });
+      out.push({ backfillTours: result, tours: tours.map((t) => `${t._count.concerts}\t/tours/${t.slug}\t${t.name}`) });
+    }
     else throw new Error(`unknown operation: ${op}`);
   }
   // A merge changes who is similar to whom: recompute now rather than at the next collector run.

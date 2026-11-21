@@ -302,6 +302,9 @@ model Concert {
   venueKind   VenueKind? @relation(fields: [venueKindId], references: [id])
   tourId      Int?       @map("tour_id")
   tour        Tour?      @relation(fields: [tourId], references: [id])
+  /// When the tour was settled from the video's text (src/lib/collector/tours.ts), tour or none. Empty while the
+  /// rules were unsure and Claude has not been asked: the tours backfill (admin_ops backfill-tours) picks it up.
+  tourCheckedAt DateTime? @map("tour_checked_at")
 
   credits ConcertArtist[]
   genres  ConcertGenre[]
@@ -538,4 +541,29 @@ model BandPhotoCheck {
   checkedAt  DateTime @default(now()) @map("checked_at")
 
   @@map("band_photo_checks")
+}
+
+/// Bands people search for that are not on the site (keyword research, owner 21 Nov 2026): rebuilt by each
+/// keyword-research run from the phrases of the gap "band or event: not on the site", ranked by total score.
+/// The admin_ops missing-bands-check fills in what MusicBrainz says (identity, genres, our genre families).
+model KeywordMissingBand {
+  /// Merged spelling key ("acdc" for "AC/DC", "ac dc"; "the" dropped).
+  key       String    @id
+  name      String
+  score     Float
+  phrases   Int
+  rank      Int
+  /// A few of the phrases, highest score first.
+  examples  String[]
+  listedAt  DateTime  @map("listed_at")
+  mbid      String?
+  mbGenres  String[]  @map("mb_genres")
+  /// Our genres the MusicBrainz genres map to (genre family filter).
+  ourGenres String[]  @map("our_genres")
+  /// Result of the check: OURS (rock families), OTHER (pop, hip hop, country, jazz...), NO_GENRES, NO_IDENTITY, LISTED (already in data/artist-rules.json), EXCLUDED.
+  verdict   String?
+  checkedAt DateTime? @map("checked_at")
+
+  @@index([rank])
+  @@map("keyword_missing_bands")
 }

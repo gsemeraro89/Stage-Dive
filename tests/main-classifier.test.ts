@@ -23,6 +23,7 @@ const haikuAnswer = (over: Partial<LaneClassification> = {}): LaneClassification
   performed: "1999",
   genres: ["trip hop"],
   uploaderIsOfficial: true,
+  tour: "",
   ...over,
 });
 

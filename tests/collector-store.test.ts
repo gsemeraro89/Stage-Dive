@@ -190,6 +190,80 @@ describe.skipIf(!url)("saveConcert (database)", () => {
     expect(store.chunks([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
   });
 
+  it("links the main band's tour named in the title, and merges spellings of one tour (owner, 21 Nov 2026)", async () => {
+    const a = await store.saveConcert(db, {
+      video: ytVideo({ youtubeId: "TOURVID0001", title: "Metallica - Wherever We May Roam Tour 1992 - Live in San Diego" }),
+      classification: cls({ mainArtists: ["Metallica"], venue: "San Diego Sports Arena", city: "San Diego", country: "United States", venueKind: "Room", performed: "1992-01-13" }),
+      channel: officialChannel,
+      thumbnail: null,
+    });
+    const b = await store.saveConcert(db, {
+      video: ytVideo({ youtubeId: "TOURVID0002", title: "METALLICA - WHEREVER WE MAY ROAM WORLD TOUR - LIVE IN PARIS" }),
+      classification: cls({ mainArtists: ["Metallica"], venue: "Bercy", city: "Paris", country: "France", venueKind: "Room", performed: "1992-07-02" }),
+      channel: officialChannel,
+      thumbnail: null,
+    });
+    const rows = await db.concert.findMany({ where: { youtubeId: { in: ["TOURVID0001", "TOURVID0002"] } }, include: { tour: { include: { artist: true } } } });
+    expect(a.status).toBe("created");
+    expect(b.status).toBe("created");
+    // The seed already lists Metallica's "Wherever We May Roam": both concerts join that tour, under its spelling.
+    const seedTour = await db.tour.findFirstOrThrow({ where: { name: "Wherever We May Roam" } });
+    expect(rows.map((r) => r.tourId)).toEqual([seedTour.id, seedTour.id]);
+    expect(rows[0].tour?.artist?.slug).toBe("metallica");
+    expect(rows.every((r) => r.tourCheckedAt)).toBe(true);
+  });
+
+  it("creates a new tour for the band, its slug carrying the band", async () => {
+    await store.saveConcert(db, {
+      video: ytVideo({ youtubeId: "TOURVID0005", title: "Iron Maiden - Somewhere Back in Time World Tour 2008 (Live in Mumbai)" }),
+      classification: cls({ mainArtists: ["Iron Maiden"], venue: "Palace Grounds", city: "Bangalore", country: "India", venueKind: "Room", performed: "2008" }),
+      channel: officialChannel,
+      thumbnail: null,
+    });
+    const row = await db.concert.findUniqueOrThrow({ where: { youtubeId: "TOURVID0005" }, include: { tour: { include: { artist: true } } } });
+    expect(row.tour).toMatchObject({ name: "Somewhere Back in Time World Tour", slug: "iron-maiden-somewhere-back-in-time-world-tour" });
+    expect(row.tour?.artist?.slug).toBe("iron-maiden");
+  });
+
+  it("leaves the tour open when the rules are unsure and Haiku has not answered; a supported lane hint settles it", async () => {
+    await store.saveConcert(db, {
+      video: ytVideo({ youtubeId: "TOURVID0003", title: "Ghost live, supporting Metallica WorldWired Tour" }),
+      classification: cls({ mainArtists: ["Ghost"], venue: "Stade de France", city: "Paris", country: "France", venueKind: "Room", performed: "2019-07-06" }),
+      channel: officialChannel,
+      thumbnail: null,
+    });
+    await store.saveConcert(db, {
+      video: ytVideo({ youtubeId: "TOURVID0004", title: "muse drones world tour live in rome" }),
+      classification: { ...cls({ mainArtists: ["Muse"], venue: "Stadio Olimpico", city: "Rome", country: "Italy", venueKind: "Room", performed: "2016" }), tour: "Drones World Tour" },
+      channel: officialChannel,
+      thumbnail: null,
+    });
+    const ghost = await db.concert.findUniqueOrThrow({ where: { youtubeId: "TOURVID0003" } });
+    expect(ghost.tourId).toBeNull();
+    expect(ghost.tourCheckedAt).toBeNull();
+    const muse = await db.concert.findUniqueOrThrow({ where: { youtubeId: "TOURVID0004" }, include: { tour: true } });
+    expect(muse.tour?.name).toBe("Drones World Tour");
+  });
+
+  it("backfills tours once: regex first, nothing asked twice (admin_ops backfill-tours)", async () => {
+    const { backfillTours } = await import("../src/lib/collector/tour-backfill");
+    await db.concert.updateMany({ where: { youtubeId: { notIn: ["TOURVID0003"] } }, data: { tourCheckedAt: new Date() } });
+    await db.concert.updateMany({ where: { youtubeId: "TOURVID0003" }, data: { tourCheckedAt: null } });
+    const yt = {
+      unitsUsed: 0,
+      async videos(ids: string[]) {
+        this.unitsUsed++;
+        return new Map(ids.map((id) => [id, ytVideo({ youtubeId: id, title: "Ghost - Live in Paris", description: "Filmed during the Imperatour, part of their Imperatour World Tour 2019." })]));
+      },
+    };
+    const first = await backfillTours(db, yt as never, null);
+    expect(first.concertsLooked).toBe(1);
+    expect(first.byRegex).toBe(1);
+    expect((await db.concert.findUniqueOrThrow({ where: { youtubeId: "TOURVID0003" }, include: { tour: true } })).tour?.name).toBe("Imperatour World Tour");
+    const again = await backfillTours(db, yt as never, null);
+    expect(again.concertsLooked).toBe(0);
+  });
+
   it("retries errors on the next run", async () => {
     await store.recordDecision(db, "ERRORED0001", "ERROR", "timeout");
     expect((await store.recentDecisions(db, ["ERRORED0001"], 30)).size).toBe(0);

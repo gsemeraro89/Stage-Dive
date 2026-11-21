@@ -46,8 +46,8 @@ import { Classifier, ClassificationSchema, PROMPT_VERSION, toDecisionInput, type
 import {
   estimateUsd,
   HaikuLane,
-  LANE_CLASSIFY_VERSION,
   promptVersionOf,
+  readableVersionsOf,
   storedLaneAnswers,
   storeLaneAnswer,
   toFullClassification,
@@ -549,7 +549,7 @@ async function runLane() {
   // Earlier passes: the videos already matched to an artist, and those Haiku already classified.
   // Read first, so a cheap pass spends its few units on them.
   if (sources.has("answers")) {
-    for (const r of await db.laneAnswer.findMany({ where: { kind: "classify", promptVersion: LANE_CLASSIFY_VERSION }, select: { youtubeId: true } })) note(r.youtubeId, { earlier: true });
+    for (const r of await db.laneAnswer.findMany({ where: { kind: "classify", promptVersion: { in: readableVersionsOf("classify") } }, select: { youtubeId: true } })) note(r.youtubeId, { earlier: true });
   }
   if (sources.has("matches")) {
     for (const r of await db.laneMatch.findMany({ select: { youtubeId: true } })) note(r.youtubeId, { earlier: true });

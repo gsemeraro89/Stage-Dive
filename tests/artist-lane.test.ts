@@ -444,7 +444,7 @@ describe.skipIf(!url)("lane storage (database)", () => {
     await db.classifierBatch.deleteMany();
   });
 
-  const answer: import("../src/lib/collector/haiku").LaneClassification = { isFullConcert: true, notConcertReason: "", isRock: true, confidence: 0.9, mainArtists: ["Idles"], collaborators: [], venue: "Glastonbury", city: "Pilton", country: "United Kingdom", venueKind: "Festival", performed: "2022-06-24", genres: ["punk", "post-punk"], uploaderIsOfficial: true };
+  const answer: import("../src/lib/collector/haiku").LaneClassification = { isFullConcert: true, notConcertReason: "", isRock: true, confidence: 0.9, mainArtists: ["Idles"], collaborators: [], venue: "Glastonbury", city: "Pilton", country: "United Kingdom", venueKind: "Festival", performed: "2022-06-24", genres: ["punk", "post-punk"], uploaderIsOfficial: true, tour: "" };
 
   it("stores Haiku answers by prompt version and reuses them (a dry run's answers serve the real run)", async () => {
     await haiku.storeLaneAnswer(db, "LANEVID0001", "classify", haiku.LANE_CLASSIFY_VERSION, answer);

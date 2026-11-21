@@ -88,6 +88,8 @@ Only the future live service sets `SITE_INDEXABLE=true` and `SITE_URL=https://fu
 
 Keyword research (owner, 20 Nov 2026): `Collect concerts` with `admin_ops` = `keyword-research` (read-only, no quota, no Claude; about an hour, at most two). It asks Google and Bing search suggestions about every band, festival and edition, venue, genre, decade, tour and top song, plus the head terms around "full concert", and reports each phrase with its score, intent and the page that should rank for it, or the missing page type (`reports/keywords-<date>.md`, and the top 300 phrases, gaps and counts at the end of the job log). Locally: `npm run keywords -- --plan`. The target phrases every page title carries are in `src/lib/keyword-targets.ts`.
 
+Tours (owner, 21 Nov 2026): the collector links each new concert to the main band's own tour when the video's title or description names it (`src/lib/collector/tours.ts`: a regex first, Claude Haiku only when unsure; festival tours like Warped Tour and other bands' tours never count). For concerts already listed: `admin_ops` = `backfill-tours` (or `backfill-tours:500` for the first 500; options `limit=`, `wait=` minutes, `no-batch`). It re-reads title and description (1 YouTube unit per 50 concerts), asks Haiku through the half-price Batch API only for unsure ones (well under $1 for thousands), and never looks at a settled concert again. Tour pages become indexed from two concerts.
+
 ## Admin
 
 `/admin`, protected by `ADMIN_PASSWORD` (any user name): last job runs, videos the collector was unsure about (publish or reject), recently added concerts (hide or show).
