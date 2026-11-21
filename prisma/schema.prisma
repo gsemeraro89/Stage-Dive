@@ -65,60 +65,82 @@ enum ReviewStatus {
 }
 
 model Artist {
-  id               Int                     @id @default(autoincrement())
-  slug             String                  @unique
-  name             String
-  aka              String?
-  origin           String?
-  label            String?
-  bio              String?
+  id                  Int                     @id @default(autoincrement())
+  slug                String                  @unique
+  name                String
+  aka                 String?
+  origin              String?
+  label               String?
+  bio                 String?
   /// Names of similar artists, as written in the profile. Linked to real artist pages in phase 2.
-  similarNames     String[]                @map("similar_names")
+  similarNames        String[]                @map("similar_names")
   /// Birth year, only when a source states it (for "age" on the artist page).
-  bornYear         Int?                    @map("born_year")
+  bornYear            Int?                    @map("born_year")
   /// Short description of the music the artist plays, e.g. "melodic techno live act".
-  style            String?
+  style               String?
   /// Pages the generated bio was checked against.
-  bioSources       String[]                @map("bio_sources")
+  bioSources          String[]                @map("bio_sources")
   /// True when the bio was written by the profile job (owner-written bios are never overwritten).
-  bioGenerated     Boolean                 @default(false) @map("bio_generated")
-  profileCheckedAt DateTime?               @map("profile_checked_at")
+  bioGenerated        Boolean                 @default(false) @map("bio_generated")
+  profileCheckedAt    DateTime?               @map("profile_checked_at")
   /// Last time the collector searched YouTube for this artist's other concerts. Null = never (searched first).
-  lastSearchedAt   DateTime?               @map("last_searched_at")
+  lastSearchedAt      DateTime?               @map("last_searched_at")
   /// The artist's own picture: the avatar of their official YouTube channel (owner decision 13 Nov 2026,
   /// instead of concert thumbnails with baked-in titles). YouTube data: refreshed or cleared within 30 days.
-  imageUrl         String?                 @map("image_url")
-  imageCheckedAt   DateTime?               @map("image_checked_at")
+  imageUrl            String?                 @map("image_url")
+  imageCheckedAt      DateTime?               @map("image_checked_at")
   /// The artist's official YouTube channel (from our channels or MusicBrainz links).
-  youtubeChannelId String?                 @map("youtube_channel_id")
+  youtubeChannelId    String?                 @map("youtube_channel_id")
   /// The concert whose thumbnail is the artist's picture, chosen automatically (a person, least baked-in
   /// text) or by the owner. Null = the newest concert.
-  coverYoutubeId   String?                 @map("cover_youtube_id")
+  coverYoutubeId      String?                 @map("cover_youtube_id")
   /// True when every thumbnail is only graphics and text: the channel avatar is shown instead.
-  coverUseAvatar   Boolean                 @default(false) @map("cover_use_avatar")
+  coverUseAvatar      Boolean                 @default(false) @map("cover_use_avatar")
   /// True when the owner picked the cover by hand: the automatic choice never changes it.
-  coverLocked      Boolean                 @default(false) @map("cover_locked")
+  coverLocked         Boolean                 @default(false) @map("cover_locked")
   /// The concert IDs the choice was made among; the choice is made again when they change.
-  coverChosenFrom  String?                 @map("cover_chosen_from")
+  coverChosenFrom     String?                 @map("cover_chosen_from")
   /// Where the band is known elsewhere (entity links job, src/lib/entity-links.ts): its MusicBrainz ID,
   /// Wikidata item ("Q15920") and English Wikipedia article. Used for sameAs and the band page's
   /// "Elsewhere" line. Null = not known; nothing is linked then. Open data, not YouTube data.
-  mbid             String?
-  wikidataId       String?                 @map("wikidata_id")
-  wikipediaUrl     String?                 @map("wikipedia_url")
+  mbid                String?
+  wikidataId          String?                 @map("wikidata_id")
+  wikipediaUrl        String?                 @map("wikipedia_url")
   /// Last time MusicBrainz and Wikidata were asked. Null = never (asked first).
-  linksCheckedAt   DateTime?               @map("links_checked_at")
-  credits          ConcertArtist[]
-  tours            Tour[]
-  photo            BandPhoto?
+  linksCheckedAt      DateTime?               @map("links_checked_at")
+  /// Last time MusicBrainz was asked for the band's live albums (src/lib/live-albums.ts), and the
+  /// MusicBrainz ID it was asked with (asked again when the ID changes). Null = never.
+  liveAlbumsCheckedAt DateTime?               @map("live_albums_checked_at")
+  liveAlbumsMbid      String?                 @map("live_albums_mbid")
+  liveAlbums          ArtistLiveAlbum[]
+  credits             ConcertArtist[]
+  tours               Tour[]
+  photo               BandPhoto?
   /// Artists most like this one, computed weekly by the similarity job (best first).
-  similarTo        ArtistSimilarity[]      @relation("similarFrom")
-  similarOf        ArtistSimilarity[]      @relation("similarTo")
-  externalSimilar  ArtistExternalSimilar[]
-  createdAt        DateTime                @default(now()) @map("created_at")
-  updatedAt        DateTime                @updatedAt @map("updated_at")
+  similarTo           ArtistSimilarity[]      @relation("similarFrom")
+  similarOf           ArtistSimilarity[]      @relation("similarTo")
+  externalSimilar     ArtistExternalSimilar[]
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
 
   @@map("artists")
+}
+
+/// A band's live album as MusicBrainz lists it (release group of type Album with secondary type Live,
+/// official releases), for the band page's "Live albums" list and FAQ. Open data (CC0), not YouTube
+/// data. Replaced as a whole each time the band is asked again (src/lib/live-albums.ts).
+model ArtistLiveAlbum {
+  id       Int    @id @default(autoincrement())
+  artistId Int    @map("artist_id")
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  /// MusicBrainz release group ID (links to musicbrainz.org/release-group/<mbid>).
+  mbid     String
+  title    String
+  /// Year of the first release, when MusicBrainz knows it.
+  year     Int?
+
+  @@unique([artistId, mbid])
+  @@map("artist_live_albums")
 }
 
 /// How much two artists are alike, 0 to 1. Internal only: the site shows the ranking, never the score
@@ -159,16 +181,16 @@ model ArtistExternalSimilar {
 
 /// A venue, festival or special location.
 model Venue {
-  id        Int       @id @default(autoincrement())
-  slug      String    @unique
+  id        Int          @id @default(autoincrement())
+  slug      String       @unique
   name      String
   city      String?
   country   String?
   concerts  Concert[]
   /// Old addresses of venues merged into this one: they redirect here (308).
   aliases   VenueAlias[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   @@map("venues")
 }
@@ -271,8 +293,8 @@ model Concert {
   /// Best available thumbnail. Null = derive from the YouTube ID.
   thumbnailUrl     String?   @map("thumbnail_url")
 
-  source  ConcertSource
-  status  ConcertStatus @default(PUBLISHED)
+  source         ConcertSource
+  status         ConcertStatus     @default(PUBLISHED)
   /// Official recording or bootleg (FAN_PRO_SHOT). Official concerts always come first and always win.
   sourceKind     ConcertSourceKind @default(OFFICIAL) @map("source_kind")
   /// The name of the channel a bootleg comes from, for the credit "From <channel>". YouTube data:
@@ -283,7 +305,7 @@ model Concert {
   officialTwinId Int?              @map("official_twin_id")
   /// Hand-picked by the owner: kept even if it breaks the collector's automatic rules
   /// (shorter than 40 minutes, fewer views than the threshold).
-  curated Boolean       @default(false)
+  curated        Boolean           @default(false)
 
   // YouTube status (CLAUDE.md rules 1 and 4)
   embeddable    Boolean
@@ -293,6 +315,10 @@ model Concert {
   ytCheckedAt   DateTime @map("yt_checked_at")
   /// Last time YouTube data (title, stats) was refreshed. Must be under 30 days old.
   ytRefreshedAt DateTime @map("yt_refreshed_at")
+  /// YouTube's contentDetails.definition: "hd" or "sd" (the /hd page). Null = not read yet: the
+  /// refresh job fills it in (one videos.list call per 50 concerts). YouTube data: refreshed with the
+  /// rest, cleared when the video goes.
+  definition    String?
 
   channelId   Int        @map("channel_id")
   channel     Channel    @relation(fields: [channelId], references: [id])
@@ -317,6 +343,7 @@ model Concert {
   @@index([status, performedYear])
   @@index([status, viewCount])
   @@index([sourceKind, status])
+  @@index([definition, status])
   @@map("concerts")
 }
 

@@ -2249,3 +2249,139 @@
   }
 }
 
+
+/* ================= Live albums, HD (21 Nov 2026) ================= */
+
+/* Band page "Live albums": typed rows, oldest first. The album name is the link out (heavy hand),
+   the year typed beside it, and a small black label when we have the concert it was recorded at. */
+.bp-albums {
+  margin-top: clamp(34px, 4vw, 54px);
+  padding-top: 26px;
+  border-top: var(--cut);
+}
+
+.bp-albums .pg-title {
+  margin-bottom: 12px;
+}
+
+.pg .bp-albums-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bp-albums-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  min-height: var(--touch);
+  padding: 8px 0 6px;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.bp-album-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  font-family: var(--font-strip);
+  font-size: 16.5px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.bp-album-name:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.bp-album-year {
+  font-size: 14px;
+}
+
+.bp-albums-list [data-od="live-album-concert"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--touch);
+  margin-left: auto;
+  padding: 3px 12px 0;
+  background: var(--toner);
+  color: var(--paper);
+  font-size: 13.5px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.bp-albums-list [data-od="live-album-concert"]::before {
+  content: "";
+  width: 0;
+  height: 0;
+  margin-top: -3px;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.bp-albums-list [data-od="live-album-concert"]:hover {
+  background: var(--pink);
+  color: var(--toner);
+}
+
+.bp-albums-source {
+  margin: 10px 0 0;
+}
+
+.bp-albums-source a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* "Full concerts in HD" under the rankings and the browse filters: a typed line, the link a finger tall. */
+.pg > [data-od="best-hd"] {
+  margin: clamp(30px, 3.6vw, 44px) var(--margin) 0;
+  padding-top: 14px;
+  border-top: var(--cut);
+}
+
+[data-od="best-hd"],
+[data-od="concerts-hd"] {
+  font-size: 16px;
+  letter-spacing: var(--track-data);
+}
+
+[data-od="best-hd"] a,
+[data-od="concerts-hd"] a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+[data-od="best-hd"] a:hover,
+[data-od="concerts-hd"] a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+[data-od="concerts-hd"] a::after {
+  content: " >>";
+  white-space: pre;
+}
+
+@media (max-width: 760px) {
+  .bp-albums-list [data-od="live-album-concert"] {
+    margin-left: 0;
+  }
+}

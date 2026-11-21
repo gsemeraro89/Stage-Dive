@@ -15,6 +15,7 @@ import { bandStats, type BandStats, type UsualSong } from "./band-stats";
 import { setlistSongs, songCount, type Song, type TypicalPosition } from "./songs";
 import { listWords, plural, quoted, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
 import { BOOTLEG_EXPLAINED, type BootlegMark } from "./bootlegs";
+import { LIVE_ALBUMS_IN_ANSWER, sortAlbums, type LiveAlbumView } from "./live-albums";
 
 export interface QA {
   question: string;
@@ -127,10 +128,13 @@ interface ListConcert {
   artists: { name: string; role: "MAIN" | "WITH"; hasPage: boolean }[];
   venue: { name: string } | null;
   city: string | null;
+  /** For "where and when" sentences (first and most recent concert); optional for lists that do not need it. */
+  country?: string | null;
   venueKind: { slug: string } | null;
   genres: { name: string }[];
   tour: { name: string } | null;
   performedYear: number | null;
+  performedOn?: Date | null;
   durationSeconds: number;
   viewCount: number;
   hasSetlist: boolean;
@@ -153,6 +157,8 @@ export function bandAnswers(
   concerts: ListConcert[],
   /** Song titles of each of the band's setlists (for "most played live"). */
   setlists: string[][] = [],
+  /** The band's live albums from MusicBrainz (src/lib/live-albums.ts). */
+  liveAlbums: LiveAlbumView[] = [],
 ): Answers {
   if (!concerts.length) return { lead: `${band.name} has no concert on ${SITE_NAME} right now.`, questions: [] };
   const genres = topCounts(concerts.flatMap((c) => c.genres.map((g) => g.name.toLowerCase())), 3);
@@ -186,18 +192,92 @@ export function bandAnswers(
     const top = mostWatched(official.length ? official : concerts);
     questions.push({ question: `What is ${band.name}'s most watched concert?`, answer: `${gigName(top)}, with ${views(top.viewCount)}.` });
   }
-  const dated = concerts.filter((c) => c.performedYear !== null).sort((a, b) => a.performedYear! - b.performedYear!);
-  if (dated.length > 1 && dated[0].performedYear !== dated[dated.length - 1].performedYear) {
-    questions.push({
-      question: `What is the oldest ${band.name} concert here?`,
-      answer: `${gigName(dated[0])}. The newest is ${gigName(dated[dated.length - 1])}.`,
-    });
-  }
+  questions.push(...bandSpanQuestions(band.name, headlined(band.name, concerts)));
   const tours = [...new Set(concerts.map((c) => c.tour?.name).filter((x): x is string => Boolean(x)))];
   if (tours.length) questions.push({ question: `Which ${band.name} tours are here?`, answer: `${listWords(tours)}.` });
   questions.push(...bandStatQuestions(band.name, bandStatsFor(band.name, concerts, setlists)));
+  const albums = liveAlbumQuestion(band.name, liveAlbums);
+  if (albums) questions.push(albums);
   if (band.origin) questions.push({ question: `Where are ${band.name} from?`, answer: `${band.origin}.` });
   return { lead, questions };
+}
+
+/** A long gap between two concerts here, in years (owner, 21 Nov 2026). */
+export const GAP_YEARS = 8;
+
+type DatedConcert = ListConcert & { performedYear: number };
+
+/** Oldest first: by year, then by day (a concert known only by its year last in its year). */
+function byDate(concerts: ListConcert[]): DatedConcert[] {
+  const day = (c: ListConcert) => (c.performedOn ? new Date(c.performedOn).getTime() : Infinity);
+  return concerts.filter((c): c is DatedConcert => c.performedYear !== null).sort((a, b) => a.performedYear - b.performedYear || day(a) - day(b));
+}
+
+/** "at Pinkpop, Landgraaf, Netherlands, on 3 June 1995", "in 1993" (only what we hold). */
+function whereWhen(c: DatedConcert): string {
+  const place = placeLine({ venue: c.venue, city: c.city, country: c.country ?? null });
+  return [place ? `at ${place}` : "", whenWords({ performedOn: c.performedOn ?? null, performedYear: c.performedYear })].filter(Boolean).join(", ");
+}
+
+/**
+ * "First / last concert" and a long gap (owner, 21 Nov 2026, keyword research: "<band> first concert",
+ * "<band> last concert", "<band> reunion"). Worded about our catalogue only: the earliest and the most
+ * recent concert on STAGEDIVE, never the band's first or last show ever. A reunion cannot be told from
+ * our data, so it is never claimed: only a gap of GAP_YEARS or more between two concerts here is stated.
+ * `concerts` are the band's own (headline) concerts. Pure.
+ */
+export function bandSpanQuestions(name: string, concerts: ListConcert[]): QA[] {
+  const dated = byDate(concerts);
+  if (dated.length < 2) return [];
+  const first = dated[0];
+  const last = dated[dated.length - 1];
+  // Two concerts are only told apart in time by different years, or by two different known days.
+  const days = [first.performedOn, last.performedOn].map((d) => (d ? new Date(d).getTime() : null));
+  if (first.performedYear === last.performedYear && (days[0] === null || days[1] === null || days[0] === days[1])) return [];
+  const out: QA[] = [
+    {
+      question: `What is the first ${name} concert on ${SITE_NAME}?`,
+      answer: `The earliest full concert by ${name} on ${SITE_NAME} was played ${whereWhen(first)}. It is the oldest one here, not necessarily their first show ever.`,
+    },
+    {
+      question: `What is the most recent ${name} concert on ${SITE_NAME}?`,
+      answer: `The most recent full concert by ${name} on ${SITE_NAME} was played ${whereWhen(last)}. It is the newest one here, not necessarily their last show.`,
+    },
+  ];
+  // The longest stretch of years with no concert here (the first one when two are as long).
+  let gap: [DatedConcert, DatedConcert] | null = null;
+  for (let i = 1; i < dated.length; i++) {
+    const span = dated[i].performedYear - dated[i - 1].performedYear;
+    if (span >= GAP_YEARS && (!gap || span > gap[1].performedYear - gap[0].performedYear)) gap = [dated[i - 1], dated[i]];
+  }
+  if (gap) {
+    const [a, b] = gap;
+    const place = (c: DatedConcert) => c.venue?.name ?? c.city;
+    const at = (c: DatedConcert) => `${c.performedYear}${place(c) ? ` (${place(c)})` : ""}`;
+    out.push({
+      question: `Is there a long gap between ${name} concerts here?`,
+      answer: `Yes: ${name}${/s$/i.test(name) ? "'" : "'s"} full concerts on ${SITE_NAME} jump from ${at(a)} to ${at(b)}, ${b.performedYear - a.performedYear} years later, with none in between.`,
+    });
+  }
+  return out;
+}
+
+/**
+ * "What live albums has X released?" from MusicBrainz (src/lib/live-albums.ts), oldest first, up to
+ * LIVE_ALBUMS_IN_ANSWER by name; an album tied to one of our concerts says so. Null without albums. Pure.
+ */
+export function liveAlbumQuestion(name: string, albums: LiveAlbumView[]): QA | null {
+  if (!albums.length) return null;
+  const sorted = sortAlbums(albums);
+  const named = sorted.slice(0, LIVE_ALBUMS_IN_ANSWER).map((a) => `${quoted(a.title)}${a.year ? ` (${a.year})` : ""}`);
+  const more = sorted.length - named.length;
+  const tied = sorted.filter((a) => a.concert);
+  return {
+    question: `What live albums has ${name} released?`,
+    answer:
+      `MusicBrainz lists ${plural(sorted.length, "live album")} by ${name}: ${listWords(more > 0 ? [...named, `${more} more`] : named)}.` +
+      (tied.length ? ` ${listWords(tied.map((a) => quoted(a.title)))} ${tied.length === 1 ? "is" : "are"} also on ${SITE_NAME} as a full concert.` : ""),
+  };
 }
 
 /** The band's figures from its own (headline) concerts and its setlists (src/lib/band-stats.ts). */

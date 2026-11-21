@@ -1576,6 +1576,11 @@ button.zn-cutout {
 }
 
 @media (max-width: 760px) {
+  .zn-foot {
+    justify-content: flex-start;
+    column-gap: 26px;
+  }
+
   .zn-foot > a:first-of-type {
     margin-left: 0;
   }

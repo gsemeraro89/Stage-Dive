@@ -15,6 +15,7 @@ import { QuotaBudgetExceeded, YouTubeClient } from "../src/lib/collector/youtube
 import { SetlistExtractor } from "../src/lib/setlist/extract";
 import { lookUpSetlist, setlistFields } from "../src/lib/setlist/lookup";
 import { slugify } from "../src/lib/slug";
+import { backfillDefinitions } from "../src/lib/hd";
 
 const all = process.argv.includes("--all");
 const db = createPrismaClient();
@@ -37,6 +38,8 @@ const stats = {
   /** Bootlegs hidden because an official version is listed, and hidden bootlegs shown again because it went. */
   bootlegsHidden: [] as string[],
   bootlegsRestored: [] as string[],
+  /** Concerts whose HD/SD definition was read for the first time (the /hd page), outside the due ones. */
+  definitionsFilled: 0,
   errors: [] as string[],
   youtubeUnits: 0,
 };
@@ -78,6 +81,7 @@ try {
           viewCount: 0,
           durationSeconds: 0,
           thumbnailUrl: null,
+          definition: null,
           setlist: Prisma.DbNull,
           setlistSource: null,
           setlistCheckedAt: now,
@@ -102,6 +106,7 @@ try {
         embeddable: video!.embeddable,
         privacyStatus: video!.privacyStatus,
         madeForKids: video!.madeForKids,
+        definition: video!.definition ?? null,
         ytCheckedAt: now,
         ytRefreshedAt: now,
       },
@@ -143,6 +148,13 @@ try {
       }
     }
   }
+  // HD or SD for concerts not due tonight that have never had it read (the /hd page): one videos.list
+  // call per 50, definition only. Fills every concert on the first run after the column was added.
+  try {
+    stats.definitionsFilled = await backfillDefinitions(db, (ids) => yt.videos(ids), new Set(due.map((c) => c.id)));
+  } catch (error) {
+    if (!(error instanceof QuotaBudgetExceeded)) throw error;
+  }
   // Bootlegs (owner, 20 Nov 2026): an official version always wins; hidden bootlegs come back if it goes.
   const twins = await syncBootlegTwins(db);
   stats.bootlegsHidden = twins.hidden;
@@ -161,6 +173,6 @@ console.log(JSON.stringify(stats, null, 2));
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(
     process.env.GITHUB_STEP_SUMMARY,
-    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · hidden as removed: ${stats.removed.length} · back: ${stats.restored.length}\n${[...stats.removed.map((d) => `  - removed: ${d}`), ...stats.restored.map((d) => `  - back: ${d}`)].join("\n")}\n- Bootlegs hidden behind an official version: ${stats.bootlegsHidden.length} · shown again: ${stats.bootlegsRestored.length}\n- Artist channels added: ${stats.artistChannels}\n- Setlists: ${stats.withSetlist} concerts have one · removed (gone from YouTube): ${stats.setlistsRemoved} · not checked (quota): ${stats.setlistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
+    `## Refresh\n- Checked: ${stats.checked} · updated: ${stats.updated} · hidden as removed: ${stats.removed.length} · back: ${stats.restored.length}\n${[...stats.removed.map((d) => `  - removed: ${d}`), ...stats.restored.map((d) => `  - back: ${d}`)].join("\n")}\n- Bootlegs hidden behind an official version: ${stats.bootlegsHidden.length} · shown again: ${stats.bootlegsRestored.length}\n- Artist channels added: ${stats.artistChannels}\n- HD/SD read for the first time: ${stats.definitionsFilled}\n- Setlists: ${stats.withSetlist} concerts have one · removed (gone from YouTube): ${stats.setlistsRemoved} · not checked (quota): ${stats.setlistsNotChecked}\n- YouTube units: ${stats.youtubeUnits}\n`,
   );
 }

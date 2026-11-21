@@ -1,6 +1,6 @@
 # Band photos from Wikimedia Commons, photocopied and stored with their credit (src/lib/photos).
 # Monthly, or by hand. No YouTube quota, no Claude. Licences that allow changes only.
-# Then the entity links (MusicBrainz, Wikidata, Wikipedia) for the band pages.
+# Then the entity links (MusicBrainz, Wikidata, Wikipedia) and live albums (MusicBrainz) for the band pages.
 name: Band photos
 
 on:
@@ -37,7 +37,8 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm run band-photos -- --limit "${{ inputs.limit || '50' }}" ${{ inputs.force && '--force' || '' }}
       # Where each band is known elsewhere (MusicBrainz, Wikidata, English Wikipedia) for the band pages'
-      # sameAs and "Elsewhere" line (src/lib/entity-links.ts). Also run by collect.yml after new artists.
+      # sameAs and "Elsewhere" line (src/lib/entity-links.ts), then each band's live albums (src/lib/live-albums.ts).
+      # Also run by collect.yml after new artists.
       - name: Entity links
         if: ${{ !cancelled() }}
         continue-on-error: true

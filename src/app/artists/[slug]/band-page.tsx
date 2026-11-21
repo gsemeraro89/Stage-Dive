@@ -23,6 +23,7 @@ import { avatarSources, getArtistPage, type ConcertView } from "@/lib/queries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { bandAnswers, bandStatLines, bandStatsFor } from "@/lib/answers";
 import { bandSongsPath, songPath, songTally } from "@/lib/songs";
+import { artistUrl, LIVE_ALBUMS_SHOWN } from "@/lib/live-albums";
 import { bandIsStrong, bandSearchTitle, clip, robotsFor, shareImages } from "@/lib/seo";
 import { bandJsonLd, bandSameAs, breadcrumbs, elsewhereLinks, faqPage } from "@/lib/structured-data";
 
@@ -41,8 +42,8 @@ export function isSort(s: string | undefined): s is Sort {
 export async function bandMetadata(slug: string, sort: Sort): Promise<Metadata> {
   const [page, photo] = await Promise.all([load(slug), loadPhoto(slug)]);
   if (!page) return {};
-  const { artist, concerts, setlists } = page;
-  const answers = bandAnswers(artist, concerts, setlists);
+  const { artist, concerts, setlists, liveAlbums } = page;
+  const answers = bandAnswers(artist, concerts, setlists, liveAlbums);
   const description = clip([answers.lead, artist.bio].filter(Boolean).join(" "), 300);
   const title = bandSearchTitle(artist.name, concerts.some((c) => c.hasSetlist));
   const path = `/artists/${artist.slug}`;
@@ -78,10 +79,10 @@ const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
   const [page, photo] = await Promise.all([load(slug), loadPhoto(slug)]);
   if (!page) notFound();
-  const { artist, concerts, similar, setlists, ids } = page;
+  const { artist, concerts, similar, setlists, ids, liveAlbums } = page;
   // AEO: the answer-first lead under the name, and the questions in a closed FAQ at the bottom (owner
   // choice); FAQPage structured data carries exactly the questions shown.
-  const answers = bandAnswers(artist, concerts, setlists);
+  const answers = bandAnswers(artist, concerts, setlists, liveAlbums);
   // Live statistics and songs played live, from the band's own setlists (src/lib/band-stats.ts, src/lib/songs.ts).
   const stats = bandStatsFor(artist.name, concerts, setlists);
   const statLines = bandStatLines(stats).map((l) => ({
@@ -337,6 +338,45 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
               <Link href={bandSongsPath(artist.slug)} className="hm-more bp-songs-all">
                 EVERY SONG ({liveSongs.length}) &gt;&gt;
               </Link>
+            </section>
+          )}
+
+          {liveAlbums.length > 0 && (
+            // Unstyled for now (designer): the band's live albums from MusicBrainz (src/lib/live-albums.ts), oldest
+            // first, each linking to its MusicBrainz page (nofollow); one recorded at a concert of ours links to it.
+            <section aria-labelledby="live-albums" data-od="band-live-albums" className="bp-albums">
+              <SectionTitle id="live-albums" tilt={1} small>
+                Live albums
+              </SectionTitle>
+              <ol className="bp-albums-list">
+                {liveAlbums.slice(0, LIVE_ALBUMS_SHOWN).map((a) => (
+                  <li key={a.mbid} data-od="live-album">
+                    <a href={a.url} rel="nofollow noopener" className="bp-album-name">
+                      {a.title}
+                    </a>
+                    {a.year && <span className="zn-data bp-album-year"> {a.year}</span>}
+                    {a.concert && (
+                      <>
+                        {" "}
+                        <Link href={`/concerts/${a.concert.slug}`} data-od="live-album-concert">
+                          watch the concert
+                        </Link>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <p className="zn-label bp-albums-source" data-od="live-albums-source">
+                From{" "}
+                {ids.mbid ? (
+                  <a href={artistUrl(ids.mbid)} rel="nofollow noopener">
+                    MusicBrainz
+                  </a>
+                ) : (
+                  "MusicBrainz"
+                )}
+                {liveAlbums.length > LIVE_ALBUMS_SHOWN ? `, ${liveAlbums.length - LIVE_ALBUMS_SHOWN} more there` : ""}.
+              </p>
             </section>
           )}
 

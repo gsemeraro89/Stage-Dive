@@ -16,6 +16,8 @@ import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } f
 import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
 import { countryName } from "./places";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
+import { liveAlbumViews } from "./live-albums";
+import { HD_SIZE, HD_WHERE } from "./hd";
 import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList } from "./best";
 
 /**
@@ -614,14 +616,17 @@ export async function getArtistPage(slug: string) {
   const db = getDb();
   const artist = await db.artist.findFirst({ where: { slug, ...PAGE_ARTIST } });
   if (!artist) return null;
-  const [rows, songs, ids] = await Promise.all([
+  const [rows, songs, ids, albumRows] = await Promise.all([
     findConcerts({
       where: { ...VISIBLE, credits: { some: { artistId: artist.id } } },
       orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
     }),
     bandConcertsWithSongs(artist.id),
     bandIds(artist),
+    db.artistLiveAlbum.findMany({ where: { artistId: artist.id }, select: { mbid: true, title: true, year: true } }),
   ]);
+  /** Live albums from MusicBrainz (src/lib/live-albums.ts), each tied to our concert when that is certain. */
+  const liveAlbums = liveAlbumViews(albumRows, rows.map((r) => ({ slug: r.slug, venue: r.venue, performedYear: r.performedYear })));
   /** Song titles of each of the band's setlists (answers: "most played live"). */
   const setlists = songs.map((s) => s.songs).filter((x): x is string[] => Boolean(x?.length));
   // Similar artists: from the similarity job; the profile's hand-written list only when the job has none yet.
@@ -629,7 +634,7 @@ export async function getArtistPage(slug: string) {
   if (computed.length) {
     const cards = (await artistCards(computed.slice(0, 16), [artist.id])).slice(0, 8);
     const similar = cards.map((c) => ({ slug: c.slug, name: c.name, concerts: c.concerts, cover: c.cover }));
-    return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: cards, setlists, ids };
+    return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: cards, setlists, ids, liveAlbums };
   }
   // Only names we actually have a page (and concerts) for.
   const similarRows = artist.similarNames.length
@@ -642,7 +647,7 @@ export async function getArtistPage(slug: string) {
     .map((name) => similarRows.find((a) => a.name === name))
     .filter((a) => a !== undefined)
     .map((a) => ({ slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
-  return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: [] as ArtistCard[], setlists, ids };
+  return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: [] as ArtistCard[], setlists, ids, liveAlbums };
 }
 
 export async function getVenuePage(slug: string) {
@@ -769,6 +774,22 @@ export async function getBestPage(slug: string) {
           : {};
   const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
   return { list, concerts: rows.map(toConcertView) };
+}
+
+// ---- Full concerts in HD (src/lib/hd.ts) ----
+
+/** How many official concerts YouTube reports in HD (bootlegs are kept out, as in the rankings). */
+async function hdCountUncached(): Promise<number> {
+  return getDb().concert.count({ where: { AND: [VISIBLE, OFFICIAL_ONLY, HD_WHERE] } });
+}
+
+/** The HD page: every official HD concert counted, the HD_SIZE most watched listed. */
+export async function getHdPage() {
+  const [total, rows] = await Promise.all([
+    hdCount(),
+    findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, HD_WHERE] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: HD_SIZE }),
+  ]);
+  return { total, concerts: rows.map(toConcertView) };
 }
 
 // ---- Index pages ----
@@ -1004,6 +1025,9 @@ export const decadeIndex = cached("decadeIndex", decadeIndexUncached);
 export const bestCatalogue = cached("bestCatalogue", bestCatalogueUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
+export const hdCount = cached("hdCount", hdCountUncached);
+
+/** Cached for a few minutes (src/lib/memo.ts). */
 export const venueYearIndex = cached("venueYearIndex", venueYearIndexUncached);
 
 /** Cached for a few minutes (src/lib/memo.ts). */
@@ -1022,7 +1046,7 @@ export async function findConcertViews(args: { where: object; orderBy?: object |
 
 /** Everything /llms.txt and /llms-full.txt list (src/lib/llms.ts): every band, place, genre, decade and tour with concerts. */
 export async function llmsData() {
-  const [bands, options, genres, decades, tours, venueYears, best] = await Promise.all([
+  const [bands, options, genres, decades, tours, venueYears, best, hd] = await Promise.all([
     listArtists(),
     filterOptions(),
     listGenres(),
@@ -1030,9 +1054,11 @@ export async function llmsData() {
     listTours(),
     venueYearIndex(),
     bestCatalogue(),
+    hdCount(),
   ]);
   return {
     venueYears,
+    hd,
     best: best.filter(bestIsStrong).map((l) => ({ slug: l.slug, title: bestHeading(l), count: shownIn(l) })),
     bands: bands.map((b) => ({ slug: b.slug, name: b.name, concerts: b.concerts })),
     venues: options.venues.map((v) => ({ slug: v.slug, name: v.name, concerts: v.count })),

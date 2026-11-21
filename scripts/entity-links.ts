@@ -1,11 +1,13 @@
 // Where each band is known elsewhere: MusicBrainz ID, Wikidata item and English Wikipedia article
-// (src/lib/entity-links.ts), for the band pages' sameAs and "Elsewhere" line. Open data only: no
-// YouTube quota, no Claude. Run with: npm run entity-links [-- --limit 200] [-- --force]
+// (src/lib/entity-links.ts), for the band pages' sameAs and "Elsewhere" line, then each band's live
+// albums from MusicBrainz (src/lib/live-albums.ts). Open data only: no YouTube quota, no Claude.
+// Run with: npm run entity-links [-- --limit 200] [-- --force]
 import "dotenv/config";
 import { appendFile } from "node:fs/promises";
 import { artistEntityLinks, LINKS_USER_AGENT, lookupArtist } from "../src/lib/collector/musicbrainz";
 import { createPrismaClient } from "../src/lib/db";
 import { refreshEntityLinks } from "../src/lib/entity-links";
+import { fetchLiveAlbums, refreshLiveAlbums, type LiveAlbumStats } from "../src/lib/live-albums";
 import { wikipediaUrlFor } from "../src/lib/wikidata";
 
 const args = process.argv.slice(2);
@@ -20,6 +22,7 @@ const namedFetch: typeof fetch = (input, init) =>
 const db = createPrismaClient();
 const run = await db.jobRun.create({ data: { job: "entity-links" } });
 let stats;
+let albums: LiveAlbumStats | undefined;
 try {
   stats = await refreshEntityLinks(
     db,
@@ -30,12 +33,17 @@ try {
     },
     { limit, force },
   );
-  await db.jobRun.update({ where: { id: run.id }, data: { finishedAt: new Date(), ok: stats.errors.length === 0, summary: { ...stats } } });
+  // Live albums after the links, so a band linked just now is asked straight away.
+  albums = await refreshLiveAlbums(db, { liveAlbums: (mbid) => fetchLiveAlbums(mbid, namedFetch) }, { limit, force });
+  await db.jobRun.update({
+    where: { id: run.id },
+    data: { finishedAt: new Date(), ok: stats.errors.length === 0 && albums.errors.length === 0, summary: { ...stats, liveAlbums: { ...albums } } },
+  });
 } finally {
   await db.$disconnect();
 }
 
-console.log(JSON.stringify(stats, null, 2));
+console.log(JSON.stringify({ ...stats, liveAlbums: albums }, null, 2));
 if (process.env.GITHUB_STEP_SUMMARY && stats) {
   const list = (title: string, items: string[]) => (items.length ? `\n**${title}**\n${items.map((x) => `- ${x}`).join("\n")}\n` : "");
   await appendFile(
@@ -44,6 +52,11 @@ if (process.env.GITHUB_STEP_SUMMARY && stats) {
       list("Newly linked", stats.linked) +
       list("Changed", stats.changed) +
       list("Not found on MusicBrainz", stats.notFound) +
-      list("Errors", stats.errors),
+      list("Errors", stats.errors) +
+      (albums
+        ? `\n## Live albums (MusicBrainz)\n- Bands asked: ${albums.checked} · with live albums: ${albums.withAlbums.length} · none: ${albums.none}\n` +
+          list("Live albums found", albums.withAlbums) +
+          list("Live album errors", albums.errors)
+        : ""),
   );
 }
