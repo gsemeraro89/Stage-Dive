@@ -12,11 +12,13 @@ import { YouTubePicture } from "@/components/gig/GigPicture";
 import { GigRows } from "@/components/gig/GigRows";
 import { Crumbs, EmptyNote, SectionTitle } from "@/components/gig/PageHead";
 import { cutName, hoursOf, kindWord, placeYear, yearSpan } from "@/components/gig/words";
+import { LatestNews } from "@/components/news/LatestNews";
 import { PlayButton } from "@/components/player/PlayButton";
 import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } from "@/components/zine";
 import { bootlegNote, FAN_SECTION_TITLE, splitBootlegs, startHere } from "@/lib/bootlegs";
 import { decadeOf } from "@/lib/catalogue";
 import { formatDuration } from "@/lib/format";
+import { bandNews } from "@/lib/news/queries";
 import { bandPhotoFor } from "@/lib/photos/view";
 import { toTrack } from "@/lib/player-types";
 import { avatarSources, getArtistPage, type ConcertView } from "@/lib/queries";
@@ -76,7 +78,7 @@ const FIRST_GIGS = 10;
 const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 
 export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
-  const [page, photo] = await Promise.all([load(slug), loadPhoto(slug)]);
+  const [page, photo, news] = await Promise.all([load(slug), loadPhoto(slug), bandNews(slug)]);
   if (!page) notFound();
   const { artist, concerts, similar, setlists, ids } = page;
   // AEO: the answer-first lead under the name, and the questions in a closed FAQ at the bottom (owner
@@ -401,6 +403,9 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
               </ul>
             </div>
           )}
+
+          {/* News about the band (src/lib/news), unstyled: nothing when there is none. */}
+          <LatestNews items={news} about={artist.name} />
 
           {answers.questions.length > 0 && (
             // Closed by default (owner choice); native <details>, so the answers are in the page for
