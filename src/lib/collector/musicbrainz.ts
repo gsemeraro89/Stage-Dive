@@ -239,8 +239,12 @@ export interface ArtistIdentity {
 async function identityDetail(mbid: string, fetchFn: typeof fetch): Promise<IdentityCandidate> {
   const res = await politeFetch(`${API}/artist/${mbid}?inc=genres+tags+url-rels&fmt=json`, fetchFn);
   if (!res.ok) throw new Error(`MusicBrainz lookup failed: ${res.status}`);
-  const d = (await res.json()) as { genres?: { name: string }[]; tags?: { name: string; count: number }[]; relations?: UrlRelation[] };
-  const genres = [...(d.genres ?? []).map((g) => g.name), ...(d.tags ?? []).filter((t) => t.count > 0).map((t) => t.name)];
+  const d = (await res.json()) as { genres?: { name: string; count?: number }[]; tags?: { name: string; count: number }[]; relations?: UrlRelation[] };
+  // Most used first (the genre family check of the missing bands reads the first ones).
+  const genres = [
+    ...[...(d.genres ?? [])].sort((a, b) => (b.count ?? 0) - (a.count ?? 0)).map((g) => g.name),
+    ...(d.tags ?? []).filter((t) => t.count > 0).sort((a, b) => b.count - a.count).map((t) => t.name),
+  ];
   return { mbid, genres: [...new Set(genres.map((g) => g.toLowerCase()))], youtube: youtubeRefFromRelations(d.relations) };
 }
 

@@ -8,6 +8,11 @@
 //   npm run artist-lane -- --bootleg-publish [--dry-run] bootlegs for real: pro-shot, complete, one per concert, from
 //                                                        fan channels only, official always wins; with --dry-run the
 //                                                        report only (write-ups are still asked, so the real run is free)
+//   npm run artist-lane -- --rules-file <path> [--dry-run]  the lane for these bands only (same format as
+//                                                        data/artist-rules.json "include"), e.g. the bands people search
+//                                                        for that are not on the site (admin_ops missing-bands-check /
+//                                                        missing-bands-publish, scripts/missing-bands.ts); they count as
+//                                                        approved for this run only; data/artist-rules.json is not changed
 // Bootleg modes also read the fan sources of data/fan-channels.json in full (fan channels from their first video,
 // playlists whole); a playlist video on an official channel is left to the normal (official) lane path.
 //
@@ -130,10 +135,14 @@ const artistFile = JSON.parse(await readFile("data/artist-rules.json", "utf8")) 
   exclude?: ArtistExclusion[];
   groups?: ArtistGroup[];
 };
+/** --rules-file: the lane runs for these bands only (not in data/artist-rules.json), approved for this run only. */
+const rulesFileAt = args.indexOf("--rules-file");
+const rulesFile = rulesFileAt >= 0 ? args[rulesFileAt + 1] : null;
+const extraRules = rulesFile ? ((JSON.parse(await readFile(rulesFile, "utf8")) as { include: ArtistRule[] }).include ?? []) : [];
 const excludedArtists = artistFile.exclude ?? [];
-const allRules = artistFile.include;
+const allRules = [...artistFile.include, ...extraRules];
 const groups = artistFile.groups ?? [];
-const laneRules = allRules.filter((r) => r.allConcerts);
+const laneRules = rulesFile ? extraRules.map((r) => ({ ...r, allConcerts: true })) : allRules.filter((r) => r.allConcerts);
 const channelFile = JSON.parse(await readFile("data/channels.json", "utf8")) as { channels: ListedChannel[] };
 /** Fan channels and playlists read in full (owner, 20 Nov 2026). Never official. */
 const fanFile = parseFanSources(JSON.parse(await readFile("data/fan-channels.json", "utf8").catch(() => "{}")));
@@ -1301,10 +1310,12 @@ try {
       const summary = { ...out.totals, errors };
       console.log(JSON.stringify({ summary, artists: out.reports.map((r) => ({ ...r, reportOnly: r.reportOnly.length, viaOtherChannel: r.viaOtherChannel.length })) }, null, 2));
       const md = laneMarkdown(summary, out.reports);
-      const name = `reports/artist-search-${date}${dryRun ? "-dry-run" : ""}`;
+      const name = `reports/artist-search-${date}${rulesFile ? "-missing-bands" : ""}${dryRun ? "-dry-run" : ""}`;
       await writeFile(`${name}.json`, JSON.stringify({ summary, artists: out.reports, videos: out.rows }, null, 2));
       await writeFile(`${name}.md`, md + "\n");
       if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+      // Bands from a rules file (missing bands): per band, and every concert that would be published, last in the log.
+      if (rulesFile) for (const line of rulesFileTail(out.reports, out.rows, dryRun)) console.log(line);
     } else console.log(JSON.stringify({ errors, youtubeUnits: yt.unitsUsed }, null, 2));
   }
 } catch (error) {
@@ -1314,6 +1325,21 @@ try {
   await db.$disconnect();
 }
 process.exitCode = exitCode;
+
+/** The end of the log for a --rules-file run: one parseable line per band, then each concert it would publish. */
+function rulesFileTail(reports: ArtistReport[], rows: Record<string, unknown>[], dry: boolean): string[] {
+  const out = [`==== MISSING BANDS: ${dry ? "WOULD PUBLISH (dry run)" : "PUBLISHED"} (band, concerts, accepted, waiting for write-up, sent to Claude, channel, search) ====`];
+  const good = (r: Record<string, unknown>) => r.verdict === "ACCEPTED" || r.verdict === "WAITING_FOR_WRITE_UP";
+  for (const r of [...reports].sort((a, b) => b.accepted - a.accepted || a.name.localeCompare(b.name))) {
+    const concerts = dry ? rows.filter((x) => x.artist === r.name && x.verdict === "ACCEPTED").length : r.created.length;
+    out.push(`MISSING_BAND_RESULT\t${r.name}\t${concerts}\t${r.accepted}\t${r.waitingForWriteUp}\t${r.sentToClaude}\t${r.channel ? (r.channelReadable ? "channel" : "channel-unreadable") : "no-channel"}\t${r.search}`);
+  }
+  out.push("==== MISSING BANDS: CONCERTS (band, verdict, minutes, views, venue, url, title) ====");
+  for (const r of rows.filter(good)) {
+    out.push(`MISSING_BAND_CONCERT\t${r.artist}\t${r.verdict}\t${r.minutes ?? ""}\t${r.views ?? ""}\t${r.venue ?? ""}\t${r.url}\t${String(r.title).replace(/\t/g, " ")}`);
+  }
+  return out;
+}
 
 function laneMarkdown(summary: Record<string, unknown> & { created: string[] }, reports: ArtistReport[]): string {
   const cell = (s: string) => s.replace(/\|/g, "/");

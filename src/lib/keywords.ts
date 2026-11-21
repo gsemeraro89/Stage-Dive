@@ -389,7 +389,7 @@ export const INTENT_WEIGHT: Record<Intent, number> = {
 
 // ---- Strict matching of names ----
 
-const STOP = new Set(["the", "a", "an", "and", "of", "in", "at", "on", "de", "la", "le", "el", "los", "les", "der", "die", "das"]);
+export const STOP = new Set(["the", "a", "an", "and", "of", "in", "at", "on", "de", "la", "le", "el", "los", "les", "der", "die", "das"]);
 /** Common words that are also band names: matched only when the phrase came from that band's own seed. */
 const COMMON_WORDS = new Set([
   "live", "yes", "tool", "kiss", "queen", "ghost", "garbage", "air", "muse", "blur", "rush", "heart", "boston", "europe", "america", "chicago",
@@ -552,7 +552,7 @@ export interface KwIndex {
   known: Set<string>;
 }
 
-const GENERIC_WORDS =
+export const GENERIC_WORDS =
   "full concert concerts live show shows set sets setlist set list rock music video videos hd 4k 1080p 1080 720p pro shot official complete entire whole best greatest top all time of the a an in at on from with and to for by legendary iconic famous epic biggest most watched viewed performance performances gig gigs festival festivals tour tours stream streaming online watch youtube free dvd film films movie album bootleg reunion last first final farewell new old classic band bands year years lineup line up 70s 80s 90s 60s 50s 2000s 2010s 2020s decade era vintage remastered multicam unplugged acoustic session sessions in concert hq high quality version versions song songs".split(
     " ",
   );

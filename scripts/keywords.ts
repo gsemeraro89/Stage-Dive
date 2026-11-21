@@ -3,6 +3,9 @@
 // "full concert", ranks what people type and maps each phrase to the page that should rank for it,
 // or to a gap. Read-only for the database. Writes reports/keywords-<date>.json and .md, and prints
 // the most important rows LAST in the log (the job's artifact is not readable by the agents).
+// Since 21 Nov 2026 it also ranks the bands people search for that are not on the site (src/lib/missing-bands.ts):
+// the top 300 end the log (MISSING_BAND<TAB>score<TAB>phrases<TAB>name) and the list is stored in the table
+// keyword_missing_bands, for the admin_ops missing-bands-check (scripts/missing-bands.ts). Its only database write.
 // Run with: npm run keywords -- [--full-bands 150] [--bands N] [--venues 120] [--songs 300]
 //   [--years 6] [--no-long-tail] [--minutes 150] [--delay 350] [--plan]
 // --plan only builds the seeds and prints how many requests and minutes the run would take.
@@ -27,6 +30,7 @@ import {
   type KwCatalogue,
   type SeedLimits,
 } from "../src/lib/keywords";
+import { bandKey, missingBands, missingBandsTail, type MissingBand } from "../src/lib/missing-bands";
 import { bestCatalogue, decadeIndex, filterOptions, listTours, songCatalogue, venueYearIndex } from "../src/lib/queries";
 import { bestIsStrong } from "../src/lib/best";
 
@@ -150,8 +154,27 @@ export async function keywordResearch(args: string[]): Promise<void> {
     const mine = results.filter((r) => r.engine === engine);
     if (mine.length && mine.every((r) => r.suggestions.length === 0)) console.log(`WARNING: ${engine} returned no suggestions at all (blocked or changed).`);
   }
-  // The most important rows last, so the end of the log is the result.
+  // Bands people search for that we do not have: stored for missing-bands-check (a failed write does not lose the run).
+  const skip = new Set(cat.bands.flatMap((b) => [b.name, b.aka ?? ""]).filter(Boolean).map(bandKey));
+  const missing = missingBands(rows, { top: 300, skip });
+  try {
+    await storeMissingBands(missing, new Date(summary.generatedAt));
+  } catch (error) {
+    console.log(`WARNING: missing bands not stored: ${(error as Error).message.slice(0, 200)}`);
+  }
+  // The most important rows last, so the end of the log is the result; the missing bands at the very end.
   for (const line of logTail(rows, summary, 300)) console.log(line);
+  for (const line of missingBandsTail(missing)) console.log(line);
+}
+
+/** Replace the stored list: new rank and score, what an earlier check found about a band is kept. */
+export async function storeMissingBands(list: MissingBand[], listedAt: Date): Promise<void> {
+  const db = getDb();
+  await db.keywordMissingBand.deleteMany({ where: { key: { notIn: list.map((b) => b.key) } } });
+  for (const b of list) {
+    const data = { name: b.name, score: b.score, phrases: b.phrases, rank: b.rank, examples: b.examples, listedAt };
+    await db.keywordMissingBand.upsert({ where: { key: b.key }, create: { key: b.key, ...data, mbGenres: [], ourGenres: [] }, update: data });
+  }
 }
 
 /** "bands=80,songs=100,minutes=60,long-tail=no" (the admin_ops form) -> command-line arguments. */

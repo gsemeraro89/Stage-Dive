@@ -12,11 +12,16 @@
 //   backfill-tours[:limit]          tours for listed concerts (src/lib/collector/tour-backfill.ts): re-reads title and
 //                                   description (videos.list, 1 unit per 50), regex first, Claude Haiku (Batch API) only
 //                                   when unsure; answers stored, never paid twice. Options: backfill-tours:limit=500,wait=30,no-batch
+//   missing-bands-check[:top=N]     bands people search for that are not on the site (scripts/missing-bands.ts): DRY RUN of
+//                                   the per-artist lane for the N best-ranked whose MusicBrainz genres are ours
+//   missing-bands-publish[:top=N]   the same for real, after the owner's OK (or missing-bands-publish:names=A|B)
+//                                   Both run after the one-off fixes, before keyword-research.
 import "dotenv/config";
 import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { recompute } from "../src/lib/similarity/job";
 import { keywordArgs, keywordResearch } from "./keywords";
+import { missingBandsOp } from "./missing-bands";
 import { HaikuLane } from "../src/lib/collector/haiku";
 import { backfillTours, tourBackfillArgs } from "../src/lib/collector/tour-backfill";
 import { YouTubeClient } from "../src/lib/collector/youtube";
@@ -25,7 +30,8 @@ async function main() {
   const all = (process.argv[2] ?? "").split(";").map((s) => s.trim()).filter(Boolean);
   if (!all.length) throw new Error("no operations given");
   const research = all.filter((op) => /^keyword-research(:|$)/.test(op));
-  const ops = all.filter((op) => !research.includes(op));
+  const missing = all.filter((op) => /^missing-bands-(check|publish)(:|$)/.test(op));
+  const ops = all.filter((op) => !research.includes(op) && !missing.includes(op));
   const db = getDb();
   const out: unknown[] = [];
   for (const op of ops) {
@@ -52,6 +58,8 @@ async function main() {
   // A merge changes who is similar to whom: recompute now rather than at the next collector run.
   if (ops.some((op) => op.startsWith("merge:") || op.startsWith("split:"))) out.push({ similarityPairs: (await recompute(db)).length });
   if (ops.length) console.log(JSON.stringify(out, null, 2));
+  // The missing bands' lane prints its result at the end of its output.
+  for (const op of missing) await missingBandsOp(db, op);
   // Keyword research last: the end of the job log is its result (the agents cannot read artifacts).
   // In the job, the time budget defaults to 120 minutes (collect.yml allows 180, and other jobs queue behind it).
   for (const op of research) {
