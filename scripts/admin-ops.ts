@@ -6,12 +6,18 @@
 //   reject-review:<id>,<id>         the owner said no to these videos in the review queue
 //   merge-venue:<from-slug>><into-slug>  two records for the same venue become one; the old address redirects
 //   normalize-countries             every country written as its full English name ("NL" -> "Netherlands")
+//   news[:dry]                      the news job now (src/lib/news): "news" writes and publishes within
+//                                   NEWS_BUDGET_USD; "news:dry" only reads the feeds and lists what would go
+//                                   to Claude (no Claude cost, nothing written)
+//   news-feeds                      check every press feed of data/news-feeds.json (which ones answer)
 //   keyword-research[:k=v,...]      keyword research (scripts/keywords.ts; read-only, no quota, no Claude):
 //                                   e.g. keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no
 //                                   Runs after the other operations, so its result ends the log.
 import "dotenv/config";
 import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
+import { checkFeeds } from "../src/lib/news/job";
+import { runNews } from "../src/lib/news/run";
 import { recompute } from "../src/lib/similarity/job";
 import { keywordArgs, keywordResearch } from "./keywords";
 
@@ -34,6 +40,8 @@ async function main() {
       out.push({ split: group, ...(await splitArtist(db, group, members.split(",").map((x) => x.trim()))) });
     } else if (op.startsWith("hide-concert:")) out.push({ hidden: await hideConcert(db, op.slice("hide-concert:".length).trim()) });
     else if (op === "tidy-review") out.push({ reviewItemsClosed: await closeStaleReviewItems(db) });
+    else if (op === "news" || op === "news:dry") out.push({ news: await runNews(db, { dryRun: op === "news:dry" }) });
+    else if (op === "news-feeds") out.push({ newsFeeds: await checkFeeds() });
     else throw new Error(`unknown operation: ${op}`);
   }
   // A merge changes who is similar to whom: recompute now rather than at the next collector run.
