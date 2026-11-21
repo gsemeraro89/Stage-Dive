@@ -45,6 +45,7 @@ Source: YouTube API Services Terms & Developer Policies (developers.google.com/y
 - No view threshold. Free filters before any AI; Claude Haiku via the Batch API with prompt caching; no cost cap per run (owner, 19 Nov 2026).
 - No home sessions or online livestream shows (owner, 19 Nov 2026); a livestream from a real stage is fine. Audio-only official concerts are fine.
 - Dry run with a per-band report, then the owner's OK, then a real run.
+- News (owner, 21 Nov 2026): only about the bands and festivals on the site (`src/lib/news`). Press RSS feeds (`data/news-feeds.json`), headlines and summaries only; a free strict matcher first; then Claude Haiku writes a short original article (source named and linked, never its pictures) and a second pass fact-checks it; passing articles go live, the rest wait in `/admin/news`. Budget `NEWS_BUDGET_USD` (default $5 a month). Runs after the collector (follows `dry_run`) or by `admin_ops` `news[:dry]`.
 - The setlist is a first-class object: every concert page shows it; clicking a song jumps to its time.
 
 ## SEO, AEO and AI search, always (owner rule, 19 Nov 2026)
