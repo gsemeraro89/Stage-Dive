@@ -2249,3 +2249,502 @@
   }
 }
 
+
+/* ================= News (21 Nov 2026) =================
+   Press clippings: each story is a piece of clean paper cut out and glued on, the headline in the
+   heavy hand, the date typed. The picture is the band's own (a YouTube frame of its concert here):
+   whole, on a black mount, never cropped or written on. No pink here: on news pages the header's
+   "News" label is the live thing. */
+
+/* ---------- The list (/news, More news, Latest news) ---------- */
+
+.pg .nw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 980px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nw-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-areas:
+    "link link"
+    "date date"
+    "lead lead";
+  padding: 16px 20px 16px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-rest);
+}
+
+.nw-item:nth-child(odd) {
+  rotate: -0.5deg;
+}
+
+.nw-item:nth-child(even) {
+  rotate: 0.5deg;
+}
+
+/* With a picture: the picture on the left, the words beside it. */
+.nw-item:has(.nw-item-picture) {
+  grid-template-areas:
+    "link link"
+    ". date"
+    ". lead";
+  column-gap: 22px;
+}
+
+.nw-item-link {
+  grid-area: link;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: start;
+  min-height: var(--touch);
+  color: var(--toner);
+  text-decoration: none;
+}
+
+.nw-item:has(.nw-item-picture) .nw-item-link {
+  grid-row: 1 / span 3;
+}
+
+.nw-item-picture {
+  grid-row: 1 / span 3;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: var(--toner);
+  border: var(--frame) solid var(--toner);
+}
+
+.nw-item-title {
+  grid-column: 1 / -1;
+  font-family: var(--font-strip);
+  font-size: clamp(19px, 1.8vw, 25px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.nw-item:has(.nw-item-picture) .nw-item-title {
+  grid-column: 2;
+}
+
+.nw-item-link:hover .nw-item-title {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+}
+
+.nw-item-link:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 6px;
+}
+
+.nw-item-date {
+  grid-area: date;
+  margin-top: 8px;
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  color: var(--label-grey);
+}
+
+.nw-item-lead {
+  grid-area: lead;
+  margin: 6px 0 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Without pictures or leads (More news, Latest news): plain typed rows, not sheets. */
+.nw-latest .nw-list,
+.nw-more .nw-list {
+  gap: 0;
+}
+
+.nw-latest .nw-item,
+.nw-more .nw-item {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "link"
+    "date"
+    "lead";
+  padding: 10px 0 8px;
+  background: none;
+  outline: 0;
+  box-shadow: none;
+  rotate: none;
+  border-bottom: 2px dashed var(--toner);
+}
+
+.nw-latest .nw-item-title,
+.nw-more .nw-item-title {
+  font-size: 17px;
+}
+
+.nw-latest .nw-item-date,
+.nw-more .nw-item-date {
+  margin-top: 2px;
+}
+
+.nw-latest .nw-item-lead {
+  font-size: 15px;
+}
+
+/* ---------- /news extras ---------- */
+
+.nw-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin: 10px var(--margin) 0;
+  font-size: 14px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.nw-pages a,
+.nw-feed a,
+.nw-all a,
+.nw-latest-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.nw-pages a {
+  padding: 0 14px;
+  background: var(--toner);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.nw-pages a:hover,
+.nw-feed a:hover,
+.nw-all a:hover,
+.nw-latest-more:hover {
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+}
+
+.nw-feed,
+.nw-all {
+  margin: 18px var(--margin) 0;
+  font-size: 14px;
+}
+
+.nw-feed a::after,
+.nw-all a::after,
+.nw-latest-more::after {
+  content: " >>";
+  white-space: pre;
+}
+
+.nw [data-od="empty"] p {
+  margin: 0 0 8px;
+}
+
+/* ---------- The article ---------- */
+
+.nw-article article {
+  max-width: 860px;
+  padding: 0 var(--margin);
+}
+
+.nw-head > .pg-crumbs {
+  margin: 0 calc(-1 * var(--margin));
+}
+
+/* The headline: pasted on as a clean strip, slightly crooked, the date typed under the lead. */
+.nw-title {
+  display: inline;
+  margin: 0;
+  padding: 6px 14px 2px;
+  background: var(--sheet);
+  color: var(--toner);
+  box-shadow: var(--shadow-sheet);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(28px, 3.6vw, 48px);
+  line-height: 1.38;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.nw-head {
+  padding-top: clamp(16px, 2vw, 26px);
+}
+
+.nw-head .nw-title {
+  rotate: -0.6deg;
+}
+
+.nw-head .nw-lead {
+  margin-top: clamp(22px, 2.6vw, 32px);
+}
+
+.nw-date {
+  margin: 12px 0 0;
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  color: var(--label-grey);
+}
+
+/* The picture: whole, in the 4 px frame on a black mount, a solid shadow, a slight tilt. */
+.nw-figure {
+  max-width: 720px;
+  margin: 26px 0 0;
+  border: var(--frame) solid var(--toner);
+  background: var(--toner);
+  box-shadow: var(--shadow-sheet);
+  rotate: 0.6deg;
+}
+
+.nw-picture {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.nw-body {
+  max-width: 68ch;
+  margin-top: 28px;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.nw-body p {
+  margin: 0 0 16px;
+}
+
+.nw-source {
+  margin: 4px 0 0;
+  padding-top: 10px;
+  border-top: 2px dashed var(--toner);
+  max-width: 68ch;
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.nw-source a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* "Now watch the whole set": the way into the catalogue, a black sheet that cannot be missed.
+   Each band (or festival) is a big white cut-out link, its concerts typed under it as play rows. */
+.nw-watch {
+  margin-top: clamp(30px, 3.6vw, 44px);
+  padding: 0 clamp(16px, 2.4vw, 28px) clamp(16px, 2vw, 24px);
+  background: var(--toner);
+  color: var(--paper);
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.4deg;
+}
+
+.nw-watch h2 {
+  display: inline-block;
+  margin: -14px 0 14px -6px;
+  padding: 8px 14px 5px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(19px, 1.9vw, 25px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1.2deg;
+}
+
+.nw-watch-group + .nw-watch-group {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 2px dashed var(--toner-soft);
+}
+
+.nw-watch-group > p {
+  margin: 0;
+}
+
+.nw-watch-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 4px 18px 0;
+  background: var(--sheet);
+  color: var(--toner);
+  box-shadow: 5px 5px 0 var(--toner-soft);
+  font-family: var(--font-strip);
+  font-size: clamp(17px, 1.6vw, 21px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.nw-watch-link::after {
+  content: ">>";
+  font-family: var(--font-type);
+  font-size: 0.85em;
+}
+
+.nw-watch-link:hover {
+  translate: -2px -2px;
+  box-shadow: 8px 8px 0 var(--toner-soft);
+}
+
+.nw-watch-link:focus-visible,
+.nw-watch ul a:focus-visible {
+  outline: 4px dashed var(--paper);
+  outline-offset: 4px;
+}
+
+.nw-watch ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.nw-watch ul a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch);
+  padding: 4px 0 0;
+  border-bottom: 1px dashed var(--toner-soft);
+  color: var(--paper);
+  font-size: 15.5px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+/* A cut play triangle in front of each concert. */
+.nw-watch ul a::before {
+  content: "";
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-top: -3px;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.nw-watch ul a:hover {
+  background: var(--sheet);
+  color: var(--toner);
+}
+
+.nw-more {
+  max-width: 860px;
+  margin: clamp(34px, 4vw, 54px) var(--margin) 0;
+  padding-top: 24px;
+  border-top: var(--cut);
+}
+
+.nw-more h2,
+.nw-latest h2 {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 7px 12px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1deg;
+}
+
+/* "Latest news" on band and festival pages. */
+.nw-latest {
+  margin-top: clamp(34px, 4vw, 54px);
+  padding-top: 24px;
+  border-top: var(--cut);
+}
+
+.pg > .nw-latest {
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+}
+
+.nw-latest-more {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .nw-item,
+  .nw-item:has(.nw-item-picture) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "link"
+      "date"
+      "lead";
+    padding: 12px 14px 14px;
+    rotate: none;
+  }
+
+  .nw-item:has(.nw-item-picture) .nw-item-link {
+    grid-row: auto;
+    row-gap: 12px;
+  }
+
+  .nw-item-picture {
+    grid-row: auto;
+  }
+
+  .nw-item:has(.nw-item-picture) .nw-item-title {
+    grid-column: 1;
+  }
+
+  .nw-item-lead {
+    font-size: 15px;
+  }
+
+  .nw-figure,
+  .nw-watch {
+    rotate: none;
+  }
+
+  .nw-title {
+    line-height: 1.42;
+  }
+}

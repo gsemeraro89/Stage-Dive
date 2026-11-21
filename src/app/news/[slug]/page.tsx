@@ -113,7 +113,7 @@ export default async function NewsArticlePage({ params }: Props) {
 
         {(bands.length > 0 || festival) && (
           <section aria-labelledby="news-watch" className="nw-watch" data-od="news-watch">
-            <h2 id="news-watch">Watch here</h2>
+            <h2 id="news-watch">Now watch the whole set</h2>
             {bands.map((b) => (
               <div key={b.slug} className="nw-watch-group" data-band={b.slug}>
                 <p>
