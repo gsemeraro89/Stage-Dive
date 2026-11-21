@@ -1,0 +1,21 @@
+{
+  "_note": "Press feeds the news job reads (owner, 21 Nov 2026: news only about the music we cover, our bands and our festivals). Public RSS/Atom feeds of the rock, metal, punk and indie press: we read the headline and the short summary only, and write our own article that names and links the source. name is shown as the source ('Source: Blabbermouth'). A feed that does not answer is reported in the run's log (feedErrors) and skipped; check them all with the admin op news-feeds. Set active to false to stop reading one. URLs written on 21 Nov 2026 from the publications' usual feed addresses; not yet confirmed from GitHub's runners.",
+  "feeds": [
+    { "name": "Blabbermouth", "url": "https://blabbermouth.net/feed", "active": true },
+    { "name": "Loudwire", "url": "https://loudwire.com/feed/", "active": true },
+    { "name": "Ultimate Classic Rock", "url": "https://ultimateclassicrock.com/feed/", "active": true },
+    { "name": "Louder", "url": "https://www.loudersound.com/feeds.xml", "active": true },
+    { "name": "Kerrang!", "url": "https://www.kerrang.com/feed.xml", "active": true },
+    { "name": "Metal Injection", "url": "https://metalinjection.net/feed", "active": true },
+    { "name": "MetalSucks", "url": "https://www.metalsucks.net/feed/", "active": true },
+    { "name": "Revolver", "url": "https://www.revolvermag.com/feed", "active": true },
+    { "name": "Consequence", "url": "https://consequence.net/feed/", "active": true },
+    { "name": "Stereogum", "url": "https://www.stereogum.com/feed/", "active": true },
+    { "name": "BrooklynVegan", "url": "https://www.brooklynvegan.com/feed/", "active": true },
+    { "name": "NME", "url": "https://www.nme.com/news/music/feed", "active": true },
+    { "name": "Pitchfork", "url": "https://pitchfork.com/rss/news/", "active": true },
+    { "name": "The Quietus", "url": "https://thequietus.com/feed/", "active": true },
+    { "name": "Alternative Press", "url": "https://www.altpress.com/feed/", "active": true },
+    { "name": "Louder Than War", "url": "https://louderthanwar.com/feed/", "active": true }
+  ]
+}

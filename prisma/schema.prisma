@@ -539,3 +539,56 @@ model BandPhotoCheck {
 
   @@map("band_photo_checks")
 }
+
+/// A news article (owner, 21 Nov 2026: news only about the music we cover: our bands and our festivals).
+/// Written by Claude Haiku in our own words from a press item's headline and summary (src/lib/news),
+/// fact-checked by a second pass, linked back to the source. No picture from the source is stored.
+model NewsArticle {
+  id           Int      @id @default(autoincrement())
+  slug         String   @unique
+  /// "press" (from a press item). Kept as text so other kinds can be added without a migration.
+  kind         String   @default("press")
+  /// What the article is about, so the same news is never written twice: the source URL.
+  key          String   @unique
+  /// "tour", "festival", "live-release", "reunion", "anniversary", "new-music", "line-up-change", "other".
+  topic        String   @default("other")
+  title        String
+  /// The answer-first opening sentence (also the meta description).
+  lead         String
+  /// Paragraphs separated by a blank line, plain text.
+  body         String
+  /// Our bands the article is about (their page slugs), most important first.
+  bandSlugs    String[] @default([]) @map("band_slugs")
+  /// Our festival (venue slug) the article is about, when it is about one.
+  venueSlug    String?  @map("venue_slug")
+  venueName    String?  @map("venue_name")
+  /// Artists named in the article, in order, spelled as in the source.
+  artists      String[] @default([])
+  sourceName   String?  @map("source_name")
+  sourceUrl    String?  @map("source_url")
+  /// PUBLISHED, REVIEW (waits for the owner in /admin/news) or REJECTED.
+  status       String   @default("PUBLISHED")
+  /// Why the article waits for the owner (fact check, banned word, sensitive subject).
+  checkNote    String?  @map("check_note")
+  costUsd      Float    @default(0) @map("cost_usd")
+  publishedAt  DateTime @default(now()) @map("published_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([status, publishedAt])
+  @@index([venueSlug, status])
+  @@map("news_articles")
+}
+
+/// Press items the news job has looked at, kept or not, so none is read or paid for twice.
+/// Holds the URL and our decision only; rows older than 60 days are dropped.
+model NewsSeen {
+  url       String   @id
+  /// "no-match", "not-news", "duplicate", "written", "review", "error".
+  decision  String
+  costUsd   Float    @default(0) @map("cost_usd")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("news_seen")
+}
