@@ -12,6 +12,7 @@ import { PAGE_ARTIST, songCatalogue } from "./queries";
 import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsStrong } from "./seo";
 import { bandSongsPath, songPath } from "./songs";
 import { bestIsStrong, bestPath, bestSlugsFor } from "./best";
+import { newsIsStrong } from "./news/seo";
 
 export interface SitemapEntry {
   path: string;
@@ -53,6 +54,14 @@ export interface SitemapSongBand {
   songs: { slug: string; versions: number; updatedAt: Date }[];
 }
 
+/** A published news article (src/lib/news): listed when it has enough words of our own. */
+export interface SitemapNews {
+  slug: string;
+  updatedAt: Date;
+  lead: string;
+  body: string;
+}
+
 /** The pages that are always listed (the index pages). */
 export const FIXED_PAGES: SitemapEntry[] = [
   { path: "/", priority: 1, changeFrequency: "daily" },
@@ -78,7 +87,8 @@ function tally(concerts: SitemapConcert[], keys: (c: SitemapConcert) => (string 
   return out;
 }
 
-export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], songBands: SitemapSongBand[] = []): SitemapEntry[] {
+export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], songBands: SitemapSongBand[] = [], news: SitemapNews[] = []): SitemapEntry[] {
+  const strongNews = news.filter(newsIsStrong);
   const byBand = tally(concerts, (c) => c.artistSlugs);
   const hubs = (keys: (c: SitemapConcert) => (string | null)[], path: (k: string) => string, priority: number, changeFrequency: SitemapEntry["changeFrequency"]) =>
     [...tally(concerts, keys)]
@@ -120,13 +130,18 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
         .filter((s) => songIsStrong(s.versions))
         .map((s): SitemapEntry => ({ path: songPath(b.slug, s.slug), lastModified: s.updatedAt, priority: 0.5, changeFrequency: "monthly" })),
     ),
+    // News (owner, 21 Nov 2026): the list and every article with enough words of our own.
+    ...(strongNews.length
+      ? [{ path: "/news", lastModified: strongNews.reduce<Date | undefined>((d, n) => later(d, n.updatedAt), undefined), priority: 0.8, changeFrequency: "daily" as const }]
+      : []),
+    ...strongNews.map((n): SitemapEntry => ({ path: `/news/${n.slug}`, lastModified: n.updatedAt, priority: 0.6, changeFrequency: "monthly" })),
   ];
 }
 
 /** Every page worth indexing, read from the database. */
 export async function sitemapEntries(): Promise<SitemapEntry[]> {
   const db = getDb();
-  const [concerts, bands, songBands] = await Promise.all([
+  const [concerts, bands, songBands, news] = await Promise.all([
     db.concert.findMany({
       where: VISIBLE,
       select: {
@@ -146,6 +161,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
     }),
     db.artist.findMany({ where: PAGE_ARTIST, select: { slug: true, updatedAt: true, bio: true } }),
     songCatalogue(),
+    db.newsArticle.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true, lead: true, body: true } }),
   ]);
   return buildSitemap(
     concerts.map((c) => ({
@@ -165,5 +181,6 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
     })),
     bands,
     songBands,
+    news,
   );
 }

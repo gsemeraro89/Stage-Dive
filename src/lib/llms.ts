@@ -48,6 +48,8 @@ export interface LlmsData {
   venueYears?: VenueYear[];
   /** The "best of" rankings (src/lib/best.ts); only strong ones are listed. */
   best?: { slug: string; title: string; count: number }[];
+  /** The newest published news articles (src/lib/news), newest first. */
+  news?: { slug: string; title: string; publishedAt: Date }[];
 }
 
 export function llmsTxt(data: LlmsData): string {
@@ -70,6 +72,9 @@ export function llmsTxt(data: LlmsData): string {
     `- [Find your next band](${abs("/map")}): bands similar to one you like`,
     ...(data.best?.some((b) => bestListIsStrong(b.count))
       ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
+      : []),
+    ...(data.news?.length
+      ? [`- [News](${abs("/news")}): short news about the bands and festivals on the site (tours, festival line-ups, live albums, reunions, anniversaries), written by ${SITE_NAME} from the music press, each naming and linking its source; RSS at ${abs("/news/feed.xml")}; a Markdown copy of an article is at its address with \`.md\` added`]
       : []),
     "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
@@ -190,6 +195,9 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
     ...bestSection(data.best ?? []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
+    ...(data.news?.length
+      ? ["## Latest news", "", ...data.news.map((n) => `- [${n.title}](${abs(`/news/${n.slug}`)}) (${n.publishedAt.toISOString().slice(0, 10)})`), ""]
+      : []),
     "## Most watched concerts",
     "",
     ...data.mostWatched.map(concertLine),

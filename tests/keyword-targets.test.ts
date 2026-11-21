@@ -141,7 +141,7 @@ describe("the live domain fullconcert.live", () => {
     expect(abs("/genres/metal")).toBe("https://fullconcert.live/genres/metal");
     expect(website().url).toBe("https://fullconcert.live/");
     const r = robotsRules();
-    expect(r.sitemap).toBe("https://fullconcert.live/sitemap.xml");
+    expect(r.sitemap).toEqual(["https://fullconcert.live/sitemap.xml", "https://fullconcert.live/news-sitemap.xml"]);
     expect(r.host).toBe("https://fullconcert.live/");
     const [body] = indexNowBodies("https://fullconcert.live", ["https://fullconcert.live/concerts/x", "https://stagedive-test.onrender.com/concerts/y"]);
     expect(body.host).toBe("fullconcert.live");
