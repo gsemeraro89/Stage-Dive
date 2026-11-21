@@ -42,7 +42,7 @@ const BLOCKERS: Record<string, RegExp> = {
 
 /** Words that make a short or everyday band name count when close by (same sentence, about 80 characters). */
 const MUSIC_WORDS =
-  /\b(band|bands|tour|tours|touring|tour dates|album|albums|LP|EP|live|concert|concerts|gig|gigs|show|shows|frontman|frontwoman|singer|vocalist|guitarist|drummer|bassist|keyboardist|reunion|reunite[sd]?|setlist|headlin\w*|festival|record|records|recorded|recording|single|song|songs|track|tracks|music video|vinyl|line-?up|stage|anniversary|perform\w*|rockers?|metal|punk|grunge|rock|indie|cover[sd]?|riff|debut|bill)\b/i;
+  /\b(band|bands|tour|tours|touring|tour dates|album|albums|LP|EP|live|concert|concerts|gig|gigs|show|shows|frontman|frontwoman|singer|vocalist|guitarist|drummer|bassist|keyboardist|reunion|reunite[sd]?|setlist|headlin\w*|festival|record|records|recorded|recording|single|song|songs|track|tracks|music video|vinyl|line-?up|stage|anniversary|perform\w*|rockers?|metal|punk|grunge|rock|indie|cover[sd]?|riff|debut|bill|dates|residency|arenas?|stadiums?|headliners?|support act|reissue[sd]?|box set)\b/i;
 
 /** Words that make a one-word festival name count. */
 const FESTIVAL_WORDS = /\b(festival|fest|line-?up|tickets?|edition|headlin\w*|stages?|bill|announce[sd]?|returns?|dates|perform\w*|open air)\b/i;

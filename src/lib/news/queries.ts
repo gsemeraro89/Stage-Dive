@@ -2,7 +2,8 @@
 // Pictures are our own (owner rule: no image is copied from the source): the band's picture on our site
 // (a frame of its concert), else the festival's, else none (the page then shares the site's card).
 import { getDb } from "../db";
-import { listArtists, listVenues, type Cover } from "../queries";
+import { OFFICIAL_FIRST } from "../filters";
+import { findConcertViews, listArtists, listVenues, type Cover } from "../queries";
 
 export const NEWS_PER_PAGE = 24;
 
@@ -90,10 +91,22 @@ export async function getNewsArticle(slug: string) {
   const more = related.length
     ? await getDb().newsArticle.findMany({ where: { ...PUBLISHED, id: { not: a.id }, OR: related }, orderBy: { publishedAt: "desc" }, take: 4, select: LIST_FIELDS })
     : [];
+  // A few of their concerts to watch here (news drives people into the catalogue): official first, most watched.
+  const concertsFor = (where: object) => findConcertViews({ where, orderBy: [OFFICIAL_FIRST, { viewCount: "desc" }, { id: "asc" }], take: 3 });
+  const [bandConcerts, festivalConcerts] = await Promise.all([
+    Promise.all(bands.map((b) => concertsFor({ credits: { some: { role: "MAIN", artist: { slug: b.slug } } } }))),
+    festival ? concertsFor({ venue: { slug: festival.slug } }) : Promise.resolve([]),
+  ]);
+  const short = (c: Awaited<ReturnType<typeof concertsFor>>[number]) => ({
+    slug: c.slug,
+    credits: c.credits,
+    venue: c.venue?.name ?? c.city ?? null,
+    year: c.performedYear,
+  });
   return {
     article: { ...a, paragraphs: paragraphs(a.body) },
-    bands,
-    festival,
+    bands: bands.map((b, i) => ({ ...b, watch: bandConcerts[i].map(short) })),
+    festival: festival ? { ...festival, watch: festivalConcerts.map(short) } : null,
     cover: pictureOf(a, p),
     more,
   };
