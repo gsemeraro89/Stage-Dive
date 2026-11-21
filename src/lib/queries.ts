@@ -16,6 +16,7 @@ import { bandSongs, setlistCount, setlistSongs, songLinker, type SongConcert } f
 import { MIN_SONG_VERSIONS, venueYearName } from "./seo";
 import { countryName } from "./places";
 import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years";
+import { liveAlbumViews } from "./live-albums";
 import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList } from "./best";
 
 /**
@@ -614,14 +615,17 @@ export async function getArtistPage(slug: string) {
   const db = getDb();
   const artist = await db.artist.findFirst({ where: { slug, ...PAGE_ARTIST } });
   if (!artist) return null;
-  const [rows, songs, ids] = await Promise.all([
+  const [rows, songs, ids, albumRows] = await Promise.all([
     findConcerts({
       where: { ...VISIBLE, credits: { some: { artistId: artist.id } } },
       orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
     }),
     bandConcertsWithSongs(artist.id),
     bandIds(artist),
+    db.artistLiveAlbum.findMany({ where: { artistId: artist.id }, select: { mbid: true, title: true, year: true } }),
   ]);
+  /** Live albums from MusicBrainz (src/lib/live-albums.ts), each tied to our concert when that is certain. */
+  const liveAlbums = liveAlbumViews(albumRows, rows.map((r) => ({ slug: r.slug, venue: r.venue, performedYear: r.performedYear })));
   /** Song titles of each of the band's setlists (answers: "most played live"). */
   const setlists = songs.map((s) => s.songs).filter((x): x is string[] => Boolean(x?.length));
   // Similar artists: from the similarity job; the profile's hand-written list only when the job has none yet.
@@ -629,7 +633,7 @@ export async function getArtistPage(slug: string) {
   if (computed.length) {
     const cards = (await artistCards(computed.slice(0, 16), [artist.id])).slice(0, 8);
     const similar = cards.map((c) => ({ slug: c.slug, name: c.name, concerts: c.concerts, cover: c.cover }));
-    return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: cards, setlists, ids };
+    return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: cards, setlists, ids, liveAlbums };
   }
   // Only names we actually have a page (and concerts) for.
   const similarRows = artist.similarNames.length
@@ -642,7 +646,7 @@ export async function getArtistPage(slug: string) {
     .map((name) => similarRows.find((a) => a.name === name))
     .filter((a) => a !== undefined)
     .map((a) => ({ slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
-  return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: [] as ArtistCard[], setlists, ids };
+  return { artist, concerts: rows.map(toConcertView), raw: rows, similar, similarCards: [] as ArtistCard[], setlists, ids, liveAlbums };
 }
 
 export async function getVenuePage(slug: string) {

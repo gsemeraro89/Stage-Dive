@@ -11,8 +11,9 @@ export interface MusicBrainzArtist {
   genres: string[];
 }
 
+/** Shared by every MusicBrainz call in the process (entity links and live albums run one after the other). */
 let lastCall = 0;
-async function politeFetch(url: string, fetchFn: typeof fetch, userAgent = USER_AGENT): Promise<Response> {
+export async function politeFetch(url: string, fetchFn: typeof fetch, userAgent = USER_AGENT): Promise<Response> {
   // MusicBrainz answers 503 when it is busy or we are too fast: wait and try again, up to 3 times.
   for (let attempt = 0; ; attempt++) {
     const wait = lastCall + 1100 - Date.now();

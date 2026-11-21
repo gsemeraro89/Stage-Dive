@@ -17,6 +17,7 @@ import { venueYearPath, type VenueYear, type VenueYearLink } from "./venue-years
 import { bestHeading, bestLead, bestPath, bestQuestions, rankedName, type BestList } from "./best";
 import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
+import type { LiveAlbumView } from "./live-albums";
 import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
@@ -283,8 +284,10 @@ export function bandMarkdown(
   band: { name: string; slug: string; bio: string | null; origin: string | null; bornYear: number | null; label: string | null; aka: string | null; sameAs?: string[] },
   concerts: (ConcertForMd & { viewCount: number })[],
   setlists: string[][] = [],
+  /** Live albums from MusicBrainz (src/lib/live-albums.ts). */
+  liveAlbums: LiveAlbumView[] = [],
 ): string {
-  const answers = bandAnswers(band, concerts, setlists);
+  const answers = bandAnswers(band, concerts, setlists, liveAlbums);
   const stats = bandStatLines(bandStatsFor(band.name, concerts, setlists));
   const songs = songTally(setlists);
   const facts: [string, string | null][] = [
@@ -319,6 +322,16 @@ export function bandMarkdown(
           "",
           ...songs.slice(0, BAND_MD_SONGS).map((s) => `- [${s.title}](${abs(songPath(band.slug, s.slug))}): ${plural(s.count, "setlist")}`),
           ...(songs.length > BAND_MD_SONGS ? ["", `Every song: ${abs(bandSongsPath(band.slug))}`] : []),
+          "",
+        ]
+      : []),
+    ...(liveAlbums.length
+      ? [
+          "## Live albums (from MusicBrainz)",
+          "",
+          ...liveAlbums.map(
+            (a) => `- [${a.title}](${a.url})${a.year ? `, ${a.year}` : ""}${a.concert ? `: the full concert is at ${abs(`/concerts/${a.concert.slug}`)}` : ""}`,
+          ),
           "",
         ]
       : []),

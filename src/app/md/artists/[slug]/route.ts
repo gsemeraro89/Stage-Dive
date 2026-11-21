@@ -14,8 +14,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const page = await getArtistPage(slug);
   if (!page) return new Response("Not found", { status: 404 });
-  const { artist, concerts, setlists, ids } = page;
-  return new Response(bandMarkdown({ ...artist, sameAs: bandSameAs({ ...ids, youtubeChannelId: null }) }, concerts, setlists), {
+  const { artist, concerts, setlists, ids, liveAlbums } = page;
+  return new Response(bandMarkdown({ ...artist, sameAs: bandSameAs({ ...ids, youtubeChannelId: null }) }, concerts, setlists, liveAlbums), {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
       Link: `<${abs(`/artists/${slug}`)}>; rel="canonical"`,
