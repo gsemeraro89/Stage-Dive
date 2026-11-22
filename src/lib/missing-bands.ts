@@ -3,17 +3,36 @@
 // merged), ranked by total keyword score. Then, for the check, whether MusicBrainz's genres for the band are in our
 // genre families (rock, trip hop, big beat, art pop) or not (pop, hip hop, country, jazz...). Pure, for tests; the
 // database and network sides are in scripts/missing-bands.ts and scripts/keywords.ts.
+// 22 Nov 2026: the first list was mostly everyday words ("Convert", "Shower", "Summer", "Upcoming", "One") and
+// chopped names ("Flames" for In Flames, "Fall" for Fall Out Boy, "Seconds" for 30 Seconds to Mars). Now: names
+// keep a leading "in"/"a"/number and inner "a"/"to"/"for"; a one-word name must lead its phrases ("heart live
+// full concert", "full concerts by mudvayne") in at least two of them, is never an everyday word nor a word of a
+// band we have; every name needs at least two phrases; non-music and event phrases are dropped.
 import { GENRES } from "./catalogue";
 import { genreSearchWords, normalizeForMatch } from "./keyword-targets";
 import { GAPS, GENERIC_WORDS, STOP, type KeywordRow } from "./keywords";
 
 /** Words of a search that are never part of a band's name: what people add around it, in English and a few other languages. */
-const EXTRA_WORDS =
-  "concierto conciertos concerto concerti konzert konzerte show shows vivo ao en directo direct completo completa complet completo integral integrale ganzes ganze komplett live2 lyrics lyric mp3 download torrent reaction react cover covers karaoke tribute documentary interview behind scenes making rehearsal soundcheck trailer teaser official audio music video videos clip clips playlist mix megamix medley greatest hits best songs song album albums vinyl dvd blu ray bluray stream streaming tickets ticket tour tours dates date setlist setlists news today tonight 2025 2026 youtube spotify tiktok instagram reddit wiki wikipedia net worth wife husband girlfriend boyfriend kids children height members member singer lead guitarist drummer bassist band rock live concert full hd 4k".split(
+const EXTRA_WORDS: string[] = (
+  "upcoming events event nearby weekend schedule playlist playlists recordings recording meaning length ever experience series times " +
+  "concierto conciertos concerto concerti konzert konzerte show shows vivo ao en directo direct completo completa complet completo integral integrale ganzes ganze komplett live2 lyrics lyric mp3 download torrent reaction react cover covers karaoke tribute documentary interview behind scenes making rehearsal soundcheck trailer teaser official audio music video videos clip clips playlist mix megamix medley greatest hits best songs song album albums vinyl dvd blu ray bluray stream streaming tickets ticket tour tours dates date setlist setlists news today tonight 2025 2026 youtube spotify tiktok instagram reddit wiki wikipedia net worth wife husband girlfriend boyfriend kids children height members member singer lead guitarist drummer bassist band rock live concert full hd 4k").split(
     " ",
   );
 /** Words that make a "name" an event or a place, not a band: such names are dropped. */
-const EVENT_WORDS = /\b(fest|festival|festivals|open air|openair|awards?|grammys?|tv|radio|arena|stadium|amphitheatre|amphitheater|cruise|tribute|orchestra|philharmonic)\b/;
+const EVENT_WORDS = /\b(fest|festival|festivals|open air|openair|awards?|grammys?|tv|radio|arena|stadium|amphitheatre|amphitheater|cruise|tribute|orchestra|philharmonic|pageant)\b/;
+/** Phrases that are about something else than music (bathroom fittings, TV, pageants, sport): dropped whole. */
+const NON_MUSIC =
+  /\b(shower|showers|enclosures?|cubicles?|bathroom|wall panels?|podcast|judge judy|pageant|microphones?|outfits?|ideas|convert|converter|recipe|meaning|theaters? nearby|theatres? nearby|near me|live aid|farm aid|live 8|live earth|band aid|miss (?:universe|world|grand|international|earth|usa|america|[a-z]+ (?:19|20)\d\d))\b/;
+/** Words that are never a band people search by that one word: function words, seasons, everyday nouns of these phrases. */
+const NEVER_ONE_WORD = new Set(
+  (
+    "this that these those my your our their his her its one two three it me we you they all any some every each no not " +
+    "summer winter spring fall autumn christmas halloween easter weekend tonight today tomorrow upcoming events event length " +
+    "convert garden shower lost baby jazz experience brothers sisters freaks king queen london paris france germany italy spain " +
+    "beach usa uk black white red pink blue green love ever outfit seconds minutes hours aid hell heaven home house world city " +
+    "country people man men woman women girl girls boy boys kids family friends night day days time times life music sound"
+  ).split(" "),
+);
 const FOREIGN_STOP = new Set(["do", "da", "dos", "das", "del", "di", "du", "des", "im", "am", "auf", "von", "y", "e", "et", "und", "con", "mit", "with", "vs", "versus", "feat", "ft", "featuring", "by", "for", "to", "from", "who", "what", "when", "where", "how", "why", "is", "was", "are", "did", "does", "near", "me"]);
 
 const GENRE_WORDS = new Set(GENRES.flatMap((g) => [...genreSearchWords(g), g]).flatMap((w) => normalizeForMatch(w).split(" ")).filter((w) => w !== "and"));
@@ -32,7 +51,7 @@ export function bandNameFromPhrase(phrase: string): string | null {
   while (i < words.length && ignorable(words[i])) i++;
   const run: string[] = [];
   // Small words inside a name ("queens of the stone age", "florence and the machine"); "at" or "in" ends it (a place follows).
-  const INNER = new Set(["the", "and", "of", "n"]);
+  const INNER = new Set(["the", "and", "of", "n", "a", "to", "for"]);
   let j = i;
   while (j < words.length && run.length < 6) {
     if (!ignorable(words[j])) {
@@ -47,9 +66,82 @@ export function bandNameFromPhrase(phrase: string): string | null {
   }
   if (!run.length) return null;
   if (i > 0 && words[i - 1] === "the") run.unshift("the");
+  // A name that opens the phrase keeps its first word even when that word alone means nothing:
+  // "in flames live", "a perfect circle live", "30 seconds to mars live", "311 live" (not a year).
+  else if (i === 1 && (words[0] === "in" || words[0] === "a" || /^\d{1,3}$/.test(words[0]))) run.unshift(words[0]);
   const name = run.join(" ");
   if (name.replace(/^the /, "").length < 2 || EVENT_WORDS.test(name)) return null;
+  // The name of an event: "jazz festival leverkusen", "freaks in a field festival", "hell fest" (a festival before any "at").
+  const rest = words.slice(j);
+  const at = rest.findIndex((w) => w === "at");
+  if (EVENT_WORDS.test((at < 0 ? rest : rest.slice(0, at)).join(" "))) return null;
+  if (NON_MUSIC.test(words.join(" "))) return null;
   return name;
+}
+
+/**
+ * Whether a phrase uses a one-word name the way people search a band: the name leads the phrase ("heart live full
+ * concert", "the fall live 1983", "youtube heart live") or follows "by"/"of"/"from"/"do"/"de" ("full concerts by
+ * mudvayne"). Not "best live performances ever", "full concert experience" or "concert outfit ideas". Pure.
+ */
+export function leadsPhrase(phrase: string, name: string): boolean {
+  const words = normalizeForMatch(phrase).split(" ").filter(Boolean);
+  const n = normalizeForMatch(name).replace(/^the /, "").split(" ");
+  const at = words.findIndex((_, k) => n.every((w, x) => words[k + x] === w));
+  if (at < 0) return false;
+  let k = at - 1;
+  if (k >= 0 && words[k] === "the") k--;
+  if (k < 0) return true;
+  if (["by", "of", "from", "do", "de", "von"].includes(words[k])) return true;
+  return k === 0 && ["youtube", "watch"].includes(words[0]);
+}
+
+/** The words of our bands' names, singular and plural: `parts` of names of two words or more ("flames" of In Flames,
+ * "fall" of Fall Out Boy, "seconds" of 30 Seconds to Mars), `forms` the other number of one-word names ("hive" for The Hives). */
+export interface OurWords {
+  parts: Set<string>;
+  forms: Set<string>;
+}
+
+const otherNumber = (w: string) => (w.endsWith("s") ? w.slice(0, -1) : `${w}s`);
+
+/** The words of our bands' names (OurWords). Pure. */
+export function wordsOfOurBands(names: string[]): OurWords {
+  const out: OurWords = { parts: new Set(), forms: new Set() };
+  for (const n of names) {
+    const all = normalizeForMatch(n).replace(/^the /, "").split(" ").filter(Boolean);
+    if (all.length === 1) {
+      out.forms.add(otherNumber(all[0]));
+      continue;
+    }
+    for (const w of all.filter((x) => !STOP.has(x) && !FOREIGN_STOP.has(x))) {
+      out.parts.add(w);
+      out.parts.add(otherNumber(w));
+    }
+  }
+  return out;
+}
+
+/** What "The ..." names that are not bands are: places and things ("the beach", "the garden"). */
+const THE_THINGS = new Set("beach garden park forum venue arena stadium hall club bar pub theatre theater festival show concert end best one".split(" "));
+
+/**
+ * Why a listed name is not a band people search for (null = it may be one): an everyday word ("Convert", "Summer"),
+ * a word of one of our bands' names ("Flames", "Red", "Seconds"), our band in the other number ("The Hive"), or a
+ * pageant. A name people write with "The" is a name ("The Fall", "The Dead"): only places and things ("The Beach")
+ * and other numbers of ours are dropped. Used on the ranking and again by the check. Pure.
+ */
+export function notABandReason(name: string, ours: OurWords): string | null {
+  const n = normalizeForMatch(name);
+  const core = n.replace(/^the /, "");
+  if (!core) return "empty";
+  if (/^miss /.test(core)) return "pageant";
+  if (core.includes(" ")) return null;
+  if (ours.forms.has(core)) return "part of one of our bands' names";
+  if (n.startsWith("the ")) return THE_THINGS.has(core) ? "everyday word" : null;
+  if (NEVER_ONE_WORD.has(core)) return "everyday word";
+  if (ours.parts.has(core)) return "part of one of our bands' names";
+  return null;
 }
 
 /** One key for the spellings of a name: "AC/DC" = "ac dc" = "acdc", "The Cure" = "cure". */
@@ -74,16 +166,26 @@ export interface MissingBand {
   examples: string[];
 }
 
+/** A name needs at least this many phrases (a one-word name: phrases it leads) to be listed. */
+export const MIN_PHRASES = 2;
+
 /**
  * The bands of the "band or event: not on the site" phrases, ranked by total score. Spellings merge by key; a longer
- * name that starts with a listed band's name ("pink floyd pulse") joins that band. `skip` (keys) leaves names out.
+ * name that starts with a listed band's name of two words or more ("pink floyd pulse") joins that band. `skip` (keys)
+ * leaves names out; `ourNames` (our bands' names) drops one-word names that are a word of one of them. A name needs
+ * MIN_PHRASES phrases; a one-word name needs MIN_PHRASES phrases that it leads (leadsPhrase).
  */
-export function missingBands(rows: KeywordRow[], opts: { top?: number; skip?: Set<string> } = {}): MissingBand[] {
+export function missingBands(rows: KeywordRow[], opts: { top?: number; skip?: Set<string>; ourNames?: string[] } = {}): MissingBand[] {
+  const ourWords = wordsOfOurBands(opts.ourNames ?? []);
+  // "bruce springsteen hyde park": one of ours with a place after it, not a missing band.
+  const ourStarts = (opts.ourNames ?? []).map((n) => `${normalizeForMatch(n).replace(/^the /, "")} `);
   const groups = new Map<string, { spellings: Map<string, number>; score: number; phrases: { phrase: string; score: number }[] }>();
   for (const r of rows) {
     if (r.gap !== GAPS.bandMissing) continue;
     const name = bandNameFromPhrase(r.phrase);
-    if (!name) continue;
+    if (!name || notABandReason(name, ourWords)) continue;
+    const plain = normalizeForMatch(name).replace(/^the /, "");
+    if (ourStarts.some((o) => plain.startsWith(o))) continue;
     const key = bandKey(name);
     if (!key || opts.skip?.has(key)) continue;
     const g = groups.get(key) ?? { spellings: new Map<string, number>(), score: 0, phrases: [] as { phrase: string; score: number }[] };
@@ -92,15 +194,23 @@ export function missingBands(rows: KeywordRow[], opts: { top?: number; skip?: Se
     g.phrases.push({ phrase: r.phrase, score: r.score });
     groups.set(key, g);
   }
-  // Longer names that start with a shorter listed name fold into it (an album, a city or a venue after the band).
+  // Longer names that start with a shorter listed name fold into it (an album, a city or a venue after the band:
+  // "eagles hell freezes over"). Everyday words were dropped above, so "black country new road" has no "black" to join.
   const byWords = [...groups.entries()].map(([key, g]) => ({ key, g, words: [...g.spellings.keys()][0].replace(/^the /, "").split(" ") }));
   byWords.sort((a, b) => a.words.length - b.words.length);
   for (const long of byWords) {
-    const into = byWords.find((s) => s !== long && s.words.length < long.words.length && groups.has(s.key) && s.words.every((w, i) => long.words[i] === w) && s.g.phrases.length >= 1);
+    const into = byWords.find((s) => s !== long && s.words.length < long.words.length && groups.has(s.key) && s.words.every((w, i) => long.words[i] === w));
     if (!into || !groups.has(long.key)) continue;
     into.g.score += long.g.score;
     into.g.phrases.push(...long.g.phrases);
     groups.delete(long.key);
+  }
+  // Seen as a band in several phrases: one-word names in phrases they lead.
+  for (const [key, g] of groups) {
+    const name = [...g.spellings.keys()][0];
+    const oneWord = !name.replace(/^the /, "").includes(" ");
+    const count = oneWord ? g.phrases.filter((p) => leadsPhrase(p.phrase, name)).length : g.phrases.length;
+    if (count < MIN_PHRASES) groups.delete(key);
   }
   const list = [...groups.entries()].map(([key, g]) => {
     const best = [...g.spellings.entries()].sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)[0][0];

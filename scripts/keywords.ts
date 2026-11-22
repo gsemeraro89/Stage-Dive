@@ -156,7 +156,7 @@ export async function keywordResearch(args: string[]): Promise<void> {
   }
   // Bands people search for that we do not have: stored for missing-bands-check (a failed write does not lose the run).
   const skip = new Set(cat.bands.flatMap((b) => [b.name, b.aka ?? ""]).filter(Boolean).map(bandKey));
-  const missing = missingBands(rows, { top: 300, skip });
+  const missing = missingBands(rows, { top: 300, skip, ourNames: cat.bands.flatMap((b) => [b.name, b.aka ?? ""]).filter(Boolean) });
   try {
     await storeMissingBands(missing, new Date(summary.generatedAt));
   } catch (error) {

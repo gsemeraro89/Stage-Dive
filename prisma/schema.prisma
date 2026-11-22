@@ -588,7 +588,8 @@ model KeywordMissingBand {
   /// Our genres the MusicBrainz genres map to (genre family filter).
   ourGenres String[]  @map("our_genres")
   /// Result of the check: OURS (rock families), OTHER (pop, hip hop, country, jazz...), NO_GENRES, NO_IDENTITY (no single
-  /// MusicBrainz artist of that name with rock-like genres), LISTED (already in data/artist-rules.json), EXCLUDED.
+  /// MusicBrainz artist of that name with rock-like genres), LISTED (already in data/artist-rules.json), EXCLUDED,
+  /// NOT_A_BAND (an everyday word or a word of one of our bands' names, src/lib/missing-bands.ts notABandReason).
   verdict   String?
   checkedAt DateTime? @map("checked_at")
 

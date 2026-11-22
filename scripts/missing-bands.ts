@@ -19,7 +19,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { PrismaClient } from "../src/generated/prisma/client";
 import { resolveArtistIdentity } from "../src/lib/collector/musicbrainz";
 import { findArtistRule, isExcludedArtist, type ArtistExclusion, type ArtistRule } from "../src/lib/collector/rules";
-import { genreFamily, missingBandsArgs } from "../src/lib/missing-bands";
+import { genreFamily, missingBandsArgs, notABandReason, wordsOfOurBands } from "../src/lib/missing-bands";
 
 const RULES_FILE = "reports/missing-bands-rules.json";
 
@@ -32,11 +32,19 @@ async function ownerLists() {
 /** MusicBrainz identity and genre family for the first `top` bands (or the named ones); stored in the table. */
 async function checkBands(db: PrismaClient, opts: { top: number; names: string[] }) {
   const lists = await ownerLists();
+  // Names the list made before 22 Nov 2026 may be everyday words or a word of one of our bands ("Flames", "Fall"):
+  // marked NOT_A_BAND without asking MusicBrainz (the next keyword research no longer lists them).
+  const ours = await db.artist.findMany({ select: { name: true, aka: true } });
+  const ourWords = wordsOfOurBands([...ours.map((a) => a.name), ...ours.map((a) => a.aka ?? "").filter(Boolean), ...lists.include.map((r) => r.name)]);
   const rows = await db.keywordMissingBand.findMany({ orderBy: { rank: "asc" }, ...(opts.names.length ? {} : { take: opts.top }) });
   const wanted = opts.names.length ? rows.filter((r) => opts.names.some((n) => n.toLowerCase() === r.name.toLowerCase())) : rows;
   for (const r of wanted) {
     let data: { verdict: string; mbid: string | null; mbGenres: string[]; ourGenres: string[] };
-    if (findArtistRule([r.name], lists.include)) data = { verdict: "LISTED", mbid: null, mbGenres: [], ourGenres: [] };
+    const notABand = notABandReason(r.name, ourWords);
+    if (notABand) {
+      console.log(`Not a band: ${r.name} (${notABand})`);
+      data = { verdict: "NOT_A_BAND", mbid: null, mbGenres: [], ourGenres: [] };
+    } else if (findArtistRule([r.name], lists.include)) data = { verdict: "LISTED", mbid: null, mbGenres: [], ourGenres: [] };
     else if (isExcludedArtist([r.name], lists.exclude)) data = { verdict: "EXCLUDED", mbid: null, mbGenres: [], ourGenres: [] };
     else {
       try {
