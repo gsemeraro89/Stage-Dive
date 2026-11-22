@@ -1,0 +1,34 @@
+# Database usage watch: prints this billing period's data transfer, compute and storage from the Neon API
+# (npm run db-usage, src/lib/db-usage.ts) and FAILS, so GitHub emails the owner, when compute or data
+# transfer passes its budget. Only talks to the Neon API, never to the database, so it does not share the
+# database-jobs queue and costs nothing on Neon.
+# Secret: NEON_API_KEY (without it the job prints a notice and passes). Variables (optional):
+# NEON_PROJECT_ID (default green-shape-12818603), NEON_COMPUTE_BUDGET_HOURS (default 60 CU-hours),
+# NEON_TRANSFER_BUDGET_GB (default 50 GB).
+name: Database usage
+
+on:
+  schedule:
+    - cron: "37 6 * * *" # every day at 06:37 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  usage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID || secrets.NEON_PROJECT_ID || 'green-shape-12818603' }}
+      NEON_COMPUTE_BUDGET_HOURS: ${{ vars.NEON_COMPUTE_BUDGET_HOURS }}
+      NEON_TRANSFER_BUDGET_GB: ${{ vars.NEON_TRANSFER_BUDGET_GB }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db-usage

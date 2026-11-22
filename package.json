@@ -31,7 +31,8 @@
     "entity-links": "tsx scripts/entity-links.ts",
     "indexnow": "tsx scripts/indexnow.ts",
     "keywords": "tsx scripts/keywords.ts",
-    "news": "tsx scripts/news.ts"
+    "news": "tsx scripts/news.ts",
+    "db-usage": "tsx scripts/db-usage.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

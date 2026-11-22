@@ -48,8 +48,9 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 |---|---|---|
 | `Collect concerts` (`collect.yml`) | by hand (daily schedule paused until step 6) | Reads festival and broadcaster archives first (Pinkpop Archive, Rock in Rio, Primavera Sound, ARTE Concert), then band channels; free filters, then Claude. By hand it defaults to a **dry run**. |
 | `Refresh YouTube data` (`refresh.yml`) | daily 03:43 UTC | 30-day rule. A video that is gone, private, not embeddable or region-blocked hides its concert (status REMOVED); it comes back if the video does. Also reads HD/SD for concerts that have none yet (the `/hd` page). Then thumbnail sizes for new concerts and IndexNow. |
-| `Back up database` (`backup.yml`) | Mondays | `pg_dump` kept as a private download for 30 days. |
+| `Back up database` (`backup.yml`) | daily 02:29 UTC | `pg_dump` kept as a private download for 30 days. |
 | `Artist profiles`, `Similar artists`, `Setlist coverage` | by hand / weekly | Bios (Wikimedia/MusicBrainz), similar bands (ListenBrainz), setlist report. |
+| `Database usage` (`db-usage.yml`) | daily 06:37 UTC | Prints the Neon bill's figures for this period (data transfer, compute, storage) and **fails** (GitHub emails you) above a budget: `NEON_COMPUTE_BUDGET_HOURS` (default 60 CU-hours), `NEON_TRANSFER_BUDGET_GB` (default 50 GB). Warns when the pace heads above. Needs the `NEON_API_KEY` secret; without it, it only prints a notice. |
 | `Band photos` (`band-photos.yml`) | monthly / by hand | Commons photos, then entity links (`npm run entity-links`: MusicBrainz, Wikidata, English Wikipedia for the band pages, then each band's live albums from MusicBrainz; also after new artists in `collect.yml`). |
 
 Rules (brief section 2): one band's full concert or festival show, 40+ minutes; official sources only (fan uploads only in the report); no view threshold; Haiku via the Batch API, no cost cap (owner, 19 Nov 2026); no home sessions or online livestream shows.
@@ -65,8 +66,8 @@ News (owner, 21 Nov 2026): after each collector run (`collect.yml`, follows `dry
 ## Secrets and settings
 
 GitHub → Settings → Secrets and variables → Actions:
-- Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
-- Variables: `NEWS_BUDGET_USD` (news, default `5` dollars a month), `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, `https://fullconcert.live`, once the live service is up: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
+- Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector), `NEON_API_KEY` (Neon console → Account settings → API keys; for the daily usage watch)
+- Variables: `NEWS_BUDGET_USD` (news, default `5` dollars a month), `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `NEON_PROJECT_ID` (`green-shape-12818603`; the usage watch falls back to it), `NEON_COMPUTE_BUDGET_HOURS` / `NEON_TRANSFER_BUDGET_GB` (usage watch budgets, optional), `LIVE_SITE_URL` (the live domain, `https://fullconcert.live`, once the live service is up: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
 
 ### Restore a backup
 
