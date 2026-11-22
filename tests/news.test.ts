@@ -344,6 +344,23 @@ describe("news job", () => {
     expect(articles).toEqual([]);
   });
 
+  it("skips items that are not news by their headline, for free (quiz, lists, interviews)", async () => {
+    const { db, seen } = fakeDb();
+    const writer = new FakeWriter();
+    const quizFeed = rss([
+      { title: "Muse quiz: How much do you know about the band?", url: "https://press.example/quiz" },
+      { title: "Muse announce European stadium tour for 2027", url: "https://press.example/muse-tour" },
+    ]);
+    const f = (async () => new Response(quizFeed)) as unknown as typeof fetch;
+    const dry = await runPressNews(db, { feeds: [FEEDS[0]], fetcher: f, writer, now: NOW, dryRun: true });
+    expect(dry.notNewsByTitle).toBe(1);
+    expect((dry as { wouldSend: string[] }).wouldSend).toEqual(["Muse | Press | Muse announce European stadium tour for 2027"]);
+    expect((dry as { skippedByTitle: string[] }).skippedByTitle).toEqual(["quiz | Press | Muse quiz: How much do you know about the band?"]);
+    await runPressNews(db, { feeds: [FEEDS[0]], fetcher: f, writer, now: NOW, budgetUsd: 5 });
+    expect(writer.calls.filter((c) => c.startsWith("write"))).toEqual(["write:Muse announce European stadium tour for 2027"]);
+    expect(seen.find((s) => s.url === "https://press.example/quiz")?.decision).toBe("not-news-title");
+  });
+
   it("stops when the month's budget is spent", async () => {
     const { db, articles } = fakeDb({ spent: 4.995 });
     const writer = new FakeWriter();

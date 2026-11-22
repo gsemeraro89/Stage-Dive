@@ -5,8 +5,9 @@
 import type { PrismaClient } from "../../generated/prisma/client";
 import { VISIBLE } from "../filters";
 import { slugify } from "../slug";
-import { FEEDS, readArticle, readFeed, type Feed, type FeedItem } from "./feeds";
+import { ALL_FEEDS, FEEDS, readArticle, readFeed, type Feed, type FeedItem } from "./feeds";
 import { hasMatch, newsMatcher, type NewsEntity, type NewsMatch } from "./match";
+import { notNewsReason } from "./not-news";
 import { NewsWriter, sourceProblems, sourceText, withoutUnsourcedYears, writtenProblems, type NewsPasses, type Written } from "./writer";
 
 /** Default monthly budget for news, in US dollars (owner, 21 Nov 2026: $5 a month; NEWS_BUDGET_USD changes it). */
@@ -107,6 +108,8 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
     seenBefore: 0,
     tooOld: 0,
     noMatch: 0,
+    /** About ours but not news by its headline (quiz, list, interview...): skipped for free, Claude not asked. */
+    notNewsByTitle: 0,
     sentToClaude: 0,
     notNews: 0,
     duplicate: 0,
@@ -132,6 +135,7 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
   const oldest = now.getTime() - MAX_AGE_DAYS * 86_400_000;
 
   const queue: { item: FeedItem & { source: string }; match: NewsMatch }[] = [];
+  const skippedByTitle: string[] = [];
   for (const item of items.values()) {
     if (seen.has(item.url)) {
       stats.seenBefore++;
@@ -147,6 +151,13 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
       if (!opts.dryRun) await db.newsSeen.create({ data: { url: item.url, decision: "no-match" } });
       continue;
     }
+    const notNews = notNewsReason(item.title);
+    if (notNews) {
+      stats.notNewsByTitle++;
+      skippedByTitle.push(`${notNews} | ${item.source} | ${item.title}`);
+      if (!opts.dryRun) await db.newsSeen.create({ data: { url: item.url, decision: "not-news-title" } });
+      continue;
+    }
     queue.push({ item, match });
   }
   // Newest first, so the budget goes to fresh news.
@@ -155,7 +166,7 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
 
   if (opts.dryRun || !queue.length) {
     stats.monthSpentUsd = spent;
-    return { ...stats, wouldSend: queue.map(label) };
+    return { ...stats, wouldSend: queue.map(label), ...(opts.dryRun ? { skippedByTitle } : {}) };
   }
   const writer = opts.writer ?? new NewsWriter();
   for (const q of queue.slice(0, opts.maxItems ?? MAX_PRESS_PER_RUN)) {
@@ -254,12 +265,12 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
   return stats;
 }
 
-/** Each feed's answer, for the admin op news-feeds (which feeds work from GitHub's runners). */
-export async function checkFeeds(feeds: Feed[] = FEEDS, fetcher: typeof fetch = fetch) {
+/** Each feed's answer, for the admin op news-feeds (which feeds work from GitHub's runners), switched off ones too. */
+export async function checkFeeds(feeds: Feed[] = ALL_FEEDS, fetcher: typeof fetch = fetch) {
   const out = [];
   for (const f of feeds) {
     const { items, error } = await readFeed(f, fetcher);
-    out.push({ name: f.name, url: f.url, ok: !error, items: items.length, ...(error ? { error } : { newest: items[0]?.title ?? null }) });
+    out.push({ name: f.name, url: f.url, active: f.active !== false, ok: !error, items: items.length, ...(error ? { error } : { newest: items[0]?.title ?? null }) });
   }
   return out;
 }

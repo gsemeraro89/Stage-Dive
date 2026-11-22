@@ -12,8 +12,10 @@ export interface Feed {
   active?: boolean;
 }
 
+/** Every feed of data/news-feeds.json, switched off ones too (the admin op news-feeds checks them all). */
+export const ALL_FEEDS: Feed[] = (feedFile.feeds as Feed[]).map(({ name, url, active }) => ({ name, url, active }));
 /** The feeds to read: data/news-feeds.json, active ones only. */
-export const FEEDS: Feed[] = (feedFile.feeds as Feed[]).filter((f) => f.active !== false);
+export const FEEDS: Feed[] = ALL_FEEDS.filter((f) => f.active !== false);
 
 export interface FeedItem {
   title: string;
