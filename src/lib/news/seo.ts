@@ -16,9 +16,16 @@ export const NEWS_INDEX_TITLE = "Rock News · Tours, Festival Line-ups and Live 
 export const NEWS_INDEX_DESCRIPTION =
   "Rock, metal, punk and indie news about the bands and festivals on STAGEDIVE: tours, festival line-ups, live albums, reunions and anniversaries, with the full concerts to watch.";
 
-/** "Pixies: European tour dates for 2027 · STAGEDIVE News" (used as an absolute title). */
+/** Longest page title search engines show in full, about. */
+export const NEWS_TITLE_MAX = 65;
+
+/**
+ * "Pixies European Tour 2027: Dates · STAGEDIVE News" (used as an absolute title). Only the suffix
+ * gives way when the whole is over 65 characters: " · STAGEDIVE", then nothing; the headline is never cut.
+ */
 export function newsSearchTitle(headline: string): string {
-  return `${headline} · ${SITE_NAME} News`;
+  for (const suffix of [` · ${SITE_NAME} News`, ` · ${SITE_NAME}`]) if (headline.length + suffix.length <= NEWS_TITLE_MAX) return `${headline}${suffix}`;
+  return headline;
 }
 
 /** The index page's answer-first lead, naming the bands and festivals in the newest stories. Pure. */

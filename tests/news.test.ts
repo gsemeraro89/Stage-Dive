@@ -18,7 +18,7 @@ import {
   NEWS_INDEX_TITLE,
   watchLine,
 } from "../src/lib/news/seo";
-import { NEWS_BANNED, sourceProblems, withoutUnsourcedYears, writtenProblems, type Checked, type NewsPasses, type Written } from "../src/lib/news/writer";
+import { NEWS_BANNED, searchShapedTitle, sourceProblems, withoutUnsourcedYears, writtenProblems, type Checked, type NewsPasses, type Written } from "../src/lib/news/writer";
 import { buildSitemap } from "../src/lib/sitemap";
 import { llmsFullTxt, llmsTxt } from "../src/lib/llms";
 import { BANNED, youtubeOnlyWithViews } from "./fixtures/concert-view";
@@ -408,6 +408,12 @@ const article = {
 describe("news SEO", () => {
   it("titles say the headline and the section the way people search", () => {
     expect(newsSearchTitle("Muse: European stadium tour in 2027")).toBe("Muse: European stadium tour in 2027 · STAGEDIVE News");
+    // Over 65 characters: only the suffix gives way, the headline is never cut.
+    const long = "Deep Purple Tour 2026 Postponed: All Remaining Dates Cancelled";
+    const mid = "Glastonbury 2027 Line-up: First Acts and Headliners"; // 51 characters
+    expect(newsSearchTitle(mid)).toBe(`${mid} · STAGEDIVE`);
+    expect(newsSearchTitle(long)).toBe(long);
+    expect(newsSearchTitle("Glastonbury 2027 Line-up: First Acts").length).toBeLessThanOrEqual(65);
     expect(NEWS_INDEX_TITLE).toContain("·");
     expect(newsIndexLead(["Muse", "Hellfest"])).toMatch(/^The latest news about the bands and festivals on STAGEDIVE/);
     expect(newsIndexLead([])).not.toContain("among");
@@ -496,5 +502,29 @@ describe("news SEO", () => {
     expect(full).toContain("## Latest news");
     expect(full).toContain("- [Muse: tour](https://stagedive.example/news/a) (2026-11-21)");
     expect(llmsTxt(data)).not.toMatch(BANNED);
+  });
+});
+
+describe("search-shaped headlines (owner, 22 Nov 2026)", () => {
+  it("keeps a headline that already leads with the band or festival", () => {
+    expect(searchShapedTitle("Deep Purple Tour 2026 Postponed: All Remaining Dates Cancelled", ["Deep Purple"])).toBe(
+      "Deep Purple Tour 2026 Postponed: All Remaining Dates Cancelled",
+    );
+    expect(searchShapedTitle("Glastonbury 2027 Line-up: First Acts Announced", ["Glastonbury Festival"])).toBe("Glastonbury 2027 Line-up: First Acts Announced");
+    expect(searchShapedTitle("Offspring New Live Album: Just the Punk Stuff", ["The Offspring"])).toBe("Offspring New Live Album: Just the Punk Stuff");
+    expect(searchShapedTitle("AC/DC Tour Dates: Europe", ["AC/DC"])).toBe("AC/DC Tour Dates: Europe");
+  });
+  it("puts the band first when the headline left it out, and tidies it", () => {
+    expect(searchShapedTitle("tour dates for 2027.", ["Pixies"])).toBe("Pixies: Tour dates for 2027");
+    expect(searchShapedTitle("  “New Live Album:  just the punk stuff” ", ["The Offspring"])).toBe("The Offspring: New Live Album: Just the punk stuff");
+    // A name used later in the headline stays where it is.
+    expect(searchShapedTitle("New Album From Muse: Dates", ["Muse"])).toBe("New Album From Muse: Dates");
+    // A name inside another word does not count.
+    expect(searchShapedTitle("Museum Shows Announced", ["Muse"])).toBe("Muse: Museum Shows Announced");
+    expect(searchShapedTitle("Hellfest 2027 Line-up: first headliners", [])).toBe("Hellfest 2027 Line-up: First headliners");
+  });
+  it("is asked of the model in the prompt", async () => {
+    const { WrittenSchema } = await import("../src/lib/news/writer");
+    expect(WrittenSchema.shape.title.description).toMatch(/band or festival first/);
   });
 });

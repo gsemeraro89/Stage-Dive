@@ -5,10 +5,11 @@
 import type { PrismaClient } from "../../generated/prisma/client";
 import { VISIBLE } from "../filters";
 import { slugify } from "../slug";
+import { RESERVED_NEWS_SLUGS } from "./hubs";
 import { ALL_FEEDS, FEEDS, readArticle, readFeed, type Feed, type FeedItem } from "./feeds";
 import { hasMatch, newsMatcher, type NewsEntity, type NewsMatch } from "./match";
 import { notNewsReason } from "./not-news";
-import { NewsWriter, sourceProblems, sourceText, withoutUnsourcedYears, writtenProblems, type NewsPasses, type Written } from "./writer";
+import { NewsWriter, searchShapedTitle, sourceProblems, sourceText, withoutUnsourcedYears, writtenProblems, type NewsPasses, type Written } from "./writer";
 
 /** Default monthly budget for news, in US dollars (owner, 21 Nov 2026: $5 a month; NEWS_BUDGET_USD changes it). */
 export const DEFAULT_NEWS_BUDGET_USD = 5;
@@ -41,6 +42,8 @@ async function uniqueSlug(db: PrismaClient, title: string): Promise<string> {
   const root = baseSlug(title);
   for (let n = 1; ; n++) {
     const slug = n === 1 ? root : `${root}-${n}`;
+    // The topic pages and the list's own addresses (/news/tours, /news/page) are never an article's.
+    if (RESERVED_NEWS_SLUGS.has(slug)) continue;
     if (!(await db.newsArticle.findUnique({ where: { slug }, select: { id: true } }))) return slug;
   }
 }
@@ -222,6 +225,8 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
       const source = sourceText(press);
       // A year the source does not give is taken out of the headline (the model likes to add one).
       answer.title = withoutUnsourcedYears(answer.title, source);
+      // Search-shaped (owner, 22 Nov 2026): the band or festival in the headline, leading when it was left out.
+      answer.title = searchShapedTitle(answer.title, [...story.bands.map((b) => b.name), ...(story.festival ? [story.festival.name] : [])]);
       const { answer: check, usd: checkUsd } = await writer.check(press, answer);
       cost += checkUsd;
       const problems = reviewReasons(answer, source, check);
