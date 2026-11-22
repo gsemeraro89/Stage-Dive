@@ -219,6 +219,20 @@ jobs:
         env:
           LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
         run: npm run indexnow
+      # One-off news or published bands (admin_ops "news", "missing-bands-publish"): their new pages (articles,
+      # news topic pages, band news pages, concerts) are announced too; the step above skips admin_ops runs.
+      - name: Announce pages from one-off news or band publishing (IndexNow; skipped until the live site is open)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.admin_ops && !(inputs.dry_run) }}
+        continue-on-error: true
+        env:
+          ADMIN_OPS: ${{ inputs.admin_ops }}
+          LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
+        run: |
+          if printf '%s' "$ADMIN_OPS" | tr ';' '\n' | sed 's/^ *//;s/ *$//' | grep -Eq '^(news|missing-bands-publish(:.*)?)$'; then
+            npm run indexnow
+          else
+            echo "No publishing operation: nothing to announce."
+          fi
       - name: Keep the report (deleted after 30 days, YouTube storage rule)
         if: always()
         uses: actions/upload-artifact@v4
