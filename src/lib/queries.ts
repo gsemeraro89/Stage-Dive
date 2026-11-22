@@ -27,24 +27,53 @@ import { BEST_SIZE, bestHeading, bestIsStrong, bestLists, shownIn, type BestList
  */
 export const PAGE_ARTIST = { credits: { some: { role: "MAIN" as const, concert: VISIBLE } } };
 
-const concertInclude = {
+/**
+ * Only the columns a concert card or list row shows (22 Nov 2026: the database bills every byte it sends).
+ * Related rows are cut to the few fields used (a full band row carries its bio and lists, a channel its
+ * crawl data), and our write-up and the setlist, the two big columns, are read by the concert page only.
+ */
+const concertSelect = {
+  id: true,
+  youtubeId: true,
+  slug: true,
+  title: true,
+  durationSeconds: true,
+  viewCount: true,
+  publishedAt: true,
+  city: true,
+  country: true,
+  performedYear: true,
+  performedOn: true,
+  setlistSource: true,
+  thumbnailUrl: true,
+  sourceKind: true,
+  creditName: true,
+  curated: true,
+  venueId: true,
   credits: {
-    include: { artist: { include: { _count: { select: { credits: { where: { role: "MAIN" as const, concert: VISIBLE } } } } } } },
+    select: {
+      artistId: true,
+      role: true,
+      creditNote: true,
+      artist: {
+        select: { slug: true, name: true, _count: { select: { credits: { where: { role: "MAIN" as const, concert: VISIBLE } } } } },
+      },
+    },
     orderBy: { position: "asc" as const },
   },
-  venue: true,
-  venueKind: true,
-  tour: true,
-  channel: true,
-  genres: { include: { genre: true }, orderBy: { genre: { sortOrder: "asc" as const } } },
-};
+  venue: { select: { slug: true, name: true } },
+  venueKind: { select: { slug: true, name: true } },
+  tour: { select: { slug: true, name: true } },
+  channel: { select: { name: true, isOfficial: true } },
+  genres: { select: { genreId: true, genre: { select: { slug: true, name: true } } }, orderBy: { genre: { sortOrder: "asc" as const } } },
+} as const;
 
 async function findConcerts(args: { where: object; orderBy?: object | object[]; take?: number }) {
-  // The setlist is only read by the concert page (getConcertPage), never for lists.
+  // The setlist and the write-up are only read by the concert page (getConcertPage), never for lists.
   // Official concerts always come first, bootlegs after them (owner, 20 Nov 2026), whatever the order asked.
   const order = Array.isArray(args.orderBy) ? args.orderBy : args.orderBy ? [args.orderBy] : [];
   const orderBy = order.some((o) => "sourceKind" in o) ? order : [OFFICIAL_FIRST, ...order];
-  return getDb().concert.findMany({ ...args, orderBy, include: concertInclude, omit: { setlist: true } });
+  return getDb().concert.findMany({ ...args, orderBy, select: concertSelect });
 }
 type ConcertRow = Awaited<ReturnType<typeof findConcerts>>[number];
 
@@ -71,6 +100,7 @@ export interface ConcertView {
   viewCount: number;
   publishedAt: Date;
   channel: { name: string; isOfficial: boolean };
+  /** Our write-up: filled on the concert page only (getConcertPage); null in lists, which never show it. */
   writeUp: string | null;
   thumbnail: ThumbnailSources;
   /** A setlist is stored (the setlist itself is only read by the concert page). */
@@ -108,7 +138,7 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     viewCount: concert.viewCount,
     publishedAt: concert.publishedAt,
     channel: { name: concert.channel.name, isOfficial: concert.channel.isOfficial },
-    writeUp: concert.writeUp,
+    writeUp: null,
     thumbnail: thumbnailSources(concert.youtubeId, concert.thumbnailUrl),
     // The setlist and its source are written together (src/lib/setlist/lookup.ts setlistFields).
     hasSetlist: concert.setlistSource !== null,
@@ -227,41 +257,66 @@ async function filterOptionsUncached() {
 
 // ---- Single pages ----
 
-/** The light fields "Up next" needs to rank concerts: no titles, thumbnails or names. */
+/** The light fields "Up next" and the artist cards need to rank concerts: no titles, names or text. */
 const candidateSelect = {
   id: true,
+  youtubeId: true,
+  thumbnailUrl: true,
   publishedAt: true,
   viewCount: true,
+  sourceKind: true,
   credits: { select: { artistId: true } },
   genres: { select: { genreId: true } },
 } as const;
 
 type LightCandidate = { id: number; artistIds: number[]; genreIds: number[]; publishedAt: Date; viewCount: number };
 
+/** One visible concert in the shared index: what ranking and artist cards need, nothing to show. */
+export interface IndexedConcert extends LightCandidate {
+  youtubeId: string;
+  thumbnailUrl: string | null;
+  bootleg: boolean;
+}
+
+/**
+ * Every visible concert's light fields, read once and shared by every concert page, the play queue and the
+ * artist cards for a few minutes (src/lib/memo.ts). 22 Nov 2026: each of those used to read its own slice
+ * (every concert of a shared genre, every concert of 12 similar bands with full rows) on each rebuild, which
+ * is what used up the database's data transfer when crawlers walked the concert pages. A few hundred kB
+ * in memory for the whole catalogue.
+ */
+async function concertIndexUncached(): Promise<IndexedConcert[]> {
+  const rows = await getDb().concert.findMany({ where: VISIBLE, select: candidateSelect });
+  return rows.map((r) => ({
+    id: r.id,
+    youtubeId: r.youtubeId,
+    thumbnailUrl: r.thumbnailUrl,
+    artistIds: r.credits.map((c) => c.artistId),
+    genreIds: r.genres.map((g) => g.genreId),
+    publishedAt: r.publishedAt,
+    viewCount: r.viewCount,
+    bootleg: r.sourceKind === "FAN_PRO_SHOT",
+  }));
+}
+
+/** Cached for a few minutes (src/lib/memo.ts). */
+export const concertIndex = cached("concertIndex", concertIndexUncached);
+
 /**
  * What can follow a concert: only concerts by its artists or by similar artists, or concerts sharing one of its
- * genres, and only their light fields (17 Nov 2026: loading the whole catalogue on every click made
- * concert pages slow once it passed a thousand concerts). Same ranking as before (buildQueue).
+ * genres (17 Nov 2026), from the shared index. Same ranking as before (buildQueue).
  */
-async function queueCandidates(current: { id: number; artistIds: number[]; genreIds: number[] }, similar: number[]) {
-  const artistIds = [...new Set([...current.artistIds, ...similar])];
-  const or: object[] = [];
-  if (artistIds.length) or.push({ credits: { some: { artistId: { in: artistIds } } } });
-  if (current.genreIds.length) or.push({ genres: { some: { genreId: { in: current.genreIds } } } });
-  if (!or.length) return [];
-  const rows = await getDb().concert.findMany({
-    where: { AND: [VISIBLE, { id: { not: current.id } }, { OR: or }] },
-    select: candidateSelect,
-  });
-  return rows.map(
-    (r): LightCandidate => ({
-      id: r.id,
-      artistIds: r.credits.map((c) => c.artistId),
-      genreIds: r.genres.map((g) => g.genreId),
-      publishedAt: r.publishedAt,
-      viewCount: r.viewCount,
-    }),
-  );
+export function queuePool(
+  index: IndexedConcert[],
+  current: { id: number; artistIds: number[]; genreIds: number[] },
+  similar: number[],
+): LightCandidate[] {
+  const artistIds = new Set([...current.artistIds, ...similar]);
+  const genreIds = new Set(current.genreIds);
+  if (!artistIds.size && !genreIds.size) return [];
+  return index
+    .filter((c) => c.id !== current.id && (c.artistIds.some((id) => artistIds.has(id)) || c.genreIds.some((id) => genreIds.has(id))))
+    .map(({ id, artistIds, genreIds, publishedAt, viewCount }) => ({ id, artistIds, genreIds, publishedAt, viewCount }));
 }
 
 /** Full rows for the chosen concerts, in the given order. */
@@ -277,8 +332,8 @@ export async function getConcertPage(slug: string) {
   if (!row) return null;
   const current = toCandidate(row);
   const artistIds = new Set(current.artistIds);
-  const similar = await similarArtistIds(current.artistIds);
-  const pool = await queueCandidates(current, similar);
+  const [similar, index] = await Promise.all([similarArtistIds(current.artistIds), concertIndex()]);
+  const pool = queuePool(index, current, similar);
   const self: LightCandidate = { id: current.id, artistIds: current.artistIds, genreIds: current.genreIds, publishedAt: current.publishedAt, viewCount: current.viewCount };
   const queueIds = buildQueue(self, [self, ...pool], undefined, similar);
   const relatedIds = relatedByGenre(self, [self, ...pool], 6, similar);
@@ -290,13 +345,13 @@ export async function getConcertPage(slug: string) {
   const pick = (list: LightCandidate[]) => officialFirst(list.map((c) => views.get(c.id)).filter((v): v is ConcertView => Boolean(v)));
   // Only the concert page carries the setlist (lists stay light). Artists we have a page for
   // (with at least one visible concert) become links.
-  const stored = await getDb().concert.findUnique({ where: { id: row.id }, select: { setlist: true } });
+  const stored = await getDb().concert.findUnique({ where: { id: row.id }, select: { setlist: true, writeUp: true } });
   const raw = readSetlist(stored?.setlist, row.setlistSource);
   const slugs = artistSlugsIn(raw);
   const known = slugs.length
     ? await getDb().artist.findMany({ where: { slug: { in: slugs }, credits: { some: { concert: VISIBLE } } }, select: { slug: true } })
     : [];
-  const concert = toConcertView(row);
+  const concert: ConcertView = { ...toConcertView(row), writeUp: stored?.writeUp ?? null };
   const setlist = linkArtists(raw, new Set(known.map((a) => a.slug))) as SetlistView | null;
   // Concert notes (src/lib/concert-notes.ts): the headline band's other concerts and the decade.
   const band = concert.artists.find((a) => a.role === "MAIN" && a.hasPage) ?? null;
@@ -498,8 +553,8 @@ export async function getQueue(youtubeId: string): Promise<ConcertView[] | null>
     publishedAt: row.publishedAt,
     viewCount: row.viewCount,
   };
-  const similar = await similarArtistIds(self.artistIds);
-  const pool = await queueCandidates(self, similar);
+  const [similar, index] = await Promise.all([similarArtistIds(self.artistIds), concertIndex()]);
+  const pool = queuePool(index, self, similar);
   return officialFirst(await concertViewsInOrder(buildQueue(self, [self, ...pool], undefined, similar).map((c) => c.id)));
 }
 
@@ -540,27 +595,40 @@ export interface ArtistCard {
  */
 export async function artistCards(ids: number[], excludeArtistIds: number[] = []): Promise<ArtistCard[]> {
   if (!ids.length) return [];
-  const [artists, rows] = await Promise.all([
-    getDb().artist.findMany({ where: { id: { in: ids }, ...PAGE_ARTIST } }),
-    findConcerts({ where: { ...VISIBLE, credits: { some: { artistId: { in: ids } } } } }),
+  // Light fields from the shared index to choose; full rows only for the two concerts each card shows.
+  const [artists, index, genres] = await Promise.all([
+    getDb().artist.findMany({
+      where: { id: { in: ids }, ...PAGE_ARTIST },
+      select: { id: true, slug: true, name: true, origin: true, bornYear: true, style: true, imageUrl: true, coverYoutubeId: true, coverUseAvatar: true },
+    }),
+    concertIndex(),
+    genreTable(),
   ]);
-  const cards: ArtistCard[] = [];
+  const genreById = new Map(genres.map((g) => [g.id, g]));
+  const picks: { artist: (typeof artists)[number]; own: IndexedConcert[]; latest: IndexedConcert; mostWatched: IndexedConcert }[] = [];
   for (const id of ids) {
     const artist = artists.find((a) => a.id === id);
-    const own = rows.filter(
-      (r) => r.credits.some((c) => c.artistId === id) && !r.credits.some((c) => excludeArtistIds.includes(c.artistId)),
-    );
+    const own = index.filter((r) => r.artistIds.includes(id) && !r.artistIds.some((a) => excludeArtistIds.includes(a)));
     if (!artist || !own.length) continue;
     // An official concert is the one suggested whenever the artist has one (bootlegs come after).
-    const bootlegLast = (a: (typeof own)[number], b: (typeof own)[number]) => Number(a.sourceKind === "FAN_PRO_SHOT") - Number(b.sourceKind === "FAN_PRO_SHOT");
-    const latest = [...own].sort((a, b) => bootlegLast(a, b) || b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)[0];
+    const bootlegLast = (a: IndexedConcert, b: IndexedConcert) => Number(a.bootleg) - Number(b.bootleg);
+    const newestFirst = [...own].sort((a, b) => bootlegLast(a, b) || b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id);
     const mostWatched = [...own].sort((a, b) => bootlegLast(a, b) || b.viewCount - a.viewCount || a.id - b.id)[0];
+    picks.push({ artist, own: newestFirst, latest: newestFirst[0], mostWatched });
+  }
+  const views = new Map((await concertViewsInOrder(picks.flatMap((p) => [p.latest.id, p.mostWatched.id]))).map((v) => [v.id, v]));
+  const cards: ArtistCard[] = [];
+  for (const { artist, own, latest, mostWatched } of picks) {
+    const latestView = views.get(latest.id);
+    const mostWatchedView = views.get(mostWatched.id);
+    // Gone from the site since the index was read (a few minutes at most): no card rather than a dead one.
+    if (!latestView || !mostWatchedView) continue;
     const genreCount = new Map<string, { slug: string; name: string; n: number; order: number }>();
     for (const r of own)
-      for (const g of r.genres) {
-        const e = genreCount.get(g.genre.slug) ?? { slug: g.genre.slug, name: g.genre.name, n: 0, order: g.genre.sortOrder };
+      for (const g of r.genreIds.map((id) => genreById.get(id)).filter((g) => g !== undefined)) {
+        const e = genreCount.get(g.slug) ?? { slug: g.slug, name: g.name, n: 0, order: g.sortOrder };
         e.n++;
-        genreCount.set(g.genre.slug, e);
+        genreCount.set(g.slug, e);
       }
     cards.push({
       slug: artist.slug,
@@ -570,13 +638,16 @@ export async function artistCards(ids: number[], excludeArtistIds: number[] = []
       style: artist.style,
       genres: [...genreCount.values()].sort((a, b) => b.n - a.n || a.order - b.order).map(({ slug, name }) => ({ slug, name })),
       concerts: own.length,
-      cover: artistCover(artist, [...own].sort((a, b) => bootlegLast(a, b) || b.publishedAt.getTime() - a.publishedAt.getTime() || a.id - b.id)),
-      mostWatched: toConcertView(mostWatched),
-      latest: toConcertView(latest),
+      cover: artistCover(artist, own),
+      mostWatched: mostWatchedView,
+      latest: latestView,
     });
   }
   return cards;
 }
+
+/** Every genre (a few dozen rows), for the artist cards. Cached for a few minutes (src/lib/memo.ts). */
+const genreTable = cached("genreTable", () => getDb().genre.findMany({ select: { id: true, slug: true, name: true, sortOrder: true } }));
 
 /** "You might also like" for whatever is playing: similar artists with a concert to play next. */
 export async function recommendationsFor(youtubeId: string, limit = 4): Promise<ArtistCard[] | null> {
@@ -997,6 +1068,8 @@ export async function getMap(slug: string, genreSlugs: string[] = []): Promise<{
   };
 }
 
+const SONG_CATALOGUE_TTL_MS = 3_600_000;
+
 /** Cached for a few minutes (src/lib/memo.ts). */
 export const latestConcerts = cached("latestConcerts", latestConcertsUncached);
 
@@ -1036,8 +1109,11 @@ export const listTours = cached("listTours", listToursUncached);
 /** Cached for a few minutes (src/lib/memo.ts): one entry per band, shared by all its song pages. */
 export const bandSongData = cached("bandSongData", bandSongDataUncached);
 
-/** Cached for a few minutes (src/lib/memo.ts). */
-export const songCatalogue = cached("songCatalogue", songCatalogueUncached);
+/**
+ * Cached for an hour (src/lib/memo.ts): it reads every setlist (the biggest column), and only the sitemap and
+ * llms-full.txt use it, both rebuilt at most hourly. Off when PAGE_CACHE_SECONDS=0.
+ */
+export const songCatalogue = cached("songCatalogue", songCatalogueUncached, SONG_CATALOGUE_TTL_MS);
 
 /** Visible-concert lists for other modules (e.g. src/lib/home.ts): any where/order, as page-ready views. */
 export async function findConcertViews(args: { where: object; orderBy?: object | object[]; take?: number }): Promise<ConcertView[]> {
