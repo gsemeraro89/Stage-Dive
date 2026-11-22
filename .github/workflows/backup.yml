@@ -1,11 +1,11 @@
-# Weekly database backup, kept as a private download of this repository for 30 days (YouTube storage rule).
+# Daily database backup (owner, 22 Nov 2026, after the Neon free-plan block), kept as a private download of this repository for 30 days (YouTube storage rule).
 # The database is a Neon Postgres 18 project: pg_dump must be the same major version or newer.
 # To move or recover it, restore the latest backup into the new database (see README, "Restore a backup").
 name: Back up database
 
 on:
   schedule:
-    - cron: "29 2 * * 1" # Mondays at 02:29 UTC
+    - cron: "29 2 * * *" # every day at 02:29 UTC
   workflow_dispatch:
 
 jobs:
