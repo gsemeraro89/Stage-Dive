@@ -18,7 +18,8 @@ import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, Staple, StripHeading, Tape } 
 import { bootlegNote, FAN_SECTION_TITLE, splitBootlegs, startHere } from "@/lib/bootlegs";
 import { decadeOf } from "@/lib/catalogue";
 import { formatDuration } from "@/lib/format";
-import { bandNews } from "@/lib/news/queries";
+import { bandNewsPath } from "@/lib/news/hubs";
+import { bandNewsBlock, bandNewsQuestions } from "@/lib/news/queries";
 import { bandPhotoFor } from "@/lib/photos/view";
 import { toTrack } from "@/lib/player-types";
 import { avatarSources, getArtistPage, type ConcertView } from "@/lib/queries";
@@ -79,12 +80,14 @@ const FIRST_GIGS = 10;
 const NOISE_TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 
 export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
-  const [page, photo, news] = await Promise.all([load(slug), loadPhoto(slug), bandNews(slug)]);
+  const [page, photo, news] = await Promise.all([load(slug), loadPhoto(slug), bandNewsBlock(slug)]);
   if (!page) notFound();
   const { artist, concerts, similar, setlists, ids, liveAlbums } = page;
   // AEO: the answer-first lead under the name, and the questions in a closed FAQ at the bottom (owner
   // choice); FAQPage structured data carries exactly the questions shown.
   const answers = bandAnswers(artist, concerts, setlists, liveAlbums);
+  // "Is <band> touring?" from our newest tour article of the last six months, only when there is one.
+  const questions = [...answers.questions, ...bandNewsQuestions(artist.name, news)];
   // Live statistics and songs played live, from the band's own setlists (src/lib/band-stats.ts, src/lib/songs.ts).
   const stats = bandStatsFor(artist.name, concerts, setlists);
   const statLines = bandStatLines(stats).map((l) => ({
@@ -144,7 +147,7 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
             ["Bands", "/artists"],
             [artist.name, `/artists/${artist.slug}`],
           ]),
-          answers.questions.length ? faqPage(answers.questions) : null,
+          questions.length ? faqPage(questions) : null,
         ]}
       />
       <Crumbs trail={[{ label: "Bands", href: "/artists" }, { label: artist.name.replace(/^the /i, "").charAt(0).toUpperCase() }, { label: artist.name }]} />
@@ -445,18 +448,30 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
           )}
 
           {/* News about the band (src/lib/news), unstyled: nothing when there is none. */}
-          <LatestNews items={news} about={artist.name} />
+          {/* "All <band> news" leads to the band's news page (/artists/<slug>/news). */}
+          <LatestNews items={news.latest} about={artist.name} moreHref={bandNewsPath(artist.slug)} moreLabel={`All ${artist.name} news (${news.total})`} />
 
-          {answers.questions.length > 0 && (
+          {questions.length > 0 && (
             // Closed by default (owner choice); native <details>, so the answers are in the page for
             // search engines and assistants and work without JavaScript.
             <details className="pg-faq" data-od="faq">
               <summary>Questions about {artist.name}</summary>
               <dl>
-                {answers.questions.map((q) => (
+                {questions.map((q) => (
                   <div key={q.question}>
                     <dt>{q.question}</dt>
-                    <dd>{q.answer}</dd>
+                    <dd>
+                      {q.answer}
+                      {q.link && (
+                        // Unstyled for now (designer): the news article the answer comes from.
+                        <>
+                          {" "}
+                          <Link href={q.link.href} data-od="faq-news-link">
+                            {q.link.text}
+                          </Link>
+                        </>
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>

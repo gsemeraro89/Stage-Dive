@@ -8,7 +8,8 @@ import { Faq } from "@/components/gig/Faq";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { cutName, gigs, kindWord } from "@/components/gig/words";
 import { LatestNews } from "@/components/news/LatestNews";
-import { venueNews } from "@/lib/news/queries";
+import { newsHubPath } from "@/lib/news/hubs";
+import { venueNewsBlock, venueNewsQuestions } from "@/lib/news/queries";
 import { getVenuePage, venueAliasTarget } from "@/lib/queries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { venueAnswers } from "@/lib/answers";
@@ -57,9 +58,11 @@ export default async function VenuePage({ params }: Props) {
     notFound();
   }
   const { venue, concerts } = page;
-  const news = await venueNews(venue.slug);
+  const news = await venueNewsBlock(venue.slug);
   const kind = kindWord(concerts.find((s) => s.venueKind)?.venueKind) ?? "Place";
   const answers = venueAnswers(venue, concerts);
+  // "What is the <festival> 2027 line-up?" from our newest line-up article of the last year, only when there is one.
+  const questions = [...answers.questions, ...venueNewsQuestions(venue.name, news)];
   const path = `/venues/${venue.slug}`;
   // "By year": each edition with two concerts or more has its own page ("Pinkpop 1995").
   const years = venueYearLinks(venue.slug, concerts);
@@ -88,7 +91,7 @@ export default async function VenuePage({ params }: Props) {
             [venue.name, path],
           ]),
           concerts.length ? itemList(`Full concerts at ${venue.name}`, concerts.map((c) => ({ path: `/concerts/${c.slug}`, name: c.credits }))) : null,
-          answers.questions.length ? faqPage(answers.questions) : null,
+          questions.length ? faqPage(questions) : null,
         ]}
       />
       <PageHead
@@ -117,8 +120,8 @@ export default async function VenuePage({ params }: Props) {
         </Collection>
       )}
       {/* News about the festival (src/lib/news), unstyled: nothing when there is none. */}
-      <LatestNews items={news} about={venue.name} />
-      <Faq title={`Questions about ${venue.name}`} questions={answers.questions} />
+      <LatestNews items={news.latest} about={venue.name} moreHref={newsHubPath("festivals")} moreLabel="More festival news" />
+      <Faq title={`Questions about ${venue.name}`} questions={questions} />
     </main>
   );
 }
