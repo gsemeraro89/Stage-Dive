@@ -7,7 +7,7 @@
 // the top 300 end the log (MISSING_BAND<TAB>score<TAB>phrases<TAB>name) and the list is stored in the table
 // keyword_missing_bands, for the admin_ops missing-bands-check (scripts/missing-bands.ts). Its only database write.
 // Run with: npm run keywords -- [--full-bands 150] [--bands N] [--venues 120] [--songs 300]
-//   [--years 6] [--no-long-tail] [--minutes 150] [--delay 350] [--plan]
+//   [--years 6] [--news-bands 50] [--news-festivals 30] [--no-long-tail] [--minutes 150] [--delay 350] [--plan]
 // --plan only builds the seeds and prints how many requests and minutes the run would take.
 // On GitHub: collect.yml, input admin_ops = "keyword-research" (options, e.g.
 // "keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no"; the default time budget there is 120 minutes).
@@ -112,6 +112,8 @@ export async function keywordResearch(args: string[]): Promise<void> {
     songs: num("songs") ?? DEFAULT_LIMITS.songs,
     yearsPerFestival: num("years") ?? DEFAULT_LIMITS.yearsPerFestival,
     longTail: !flag("no-long-tail"),
+    newsBands: num("news-bands") ?? DEFAULT_LIMITS.newsBands,
+    newsFestivals: num("news-festivals") ?? DEFAULT_LIMITS.newsFestivals,
   };
   const minutes = num("minutes") ?? 150;
   const delayMs = num("delay") ?? 350;

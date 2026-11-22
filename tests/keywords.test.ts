@@ -21,6 +21,10 @@ import {
   isNoise,
   logTail,
   matchPage,
+  NEWS_BAND_PATTERNS,
+  newsRows,
+  newsSeeds,
+  newsYear,
   NameIndex,
   nameVariants,
   placeShortName,
@@ -140,12 +144,14 @@ describe("intent", () => {
     expect(intentOf("full concert 4k")).toBe("quality");
     expect(intentOf("metallica pro shot")).toBe("quality");
     expect(intentOf("metallica last concert")).toBe("band-fact");
-    expect(intentOf("metallica reunion")).toBe("band-fact");
+    expect(intentOf("metallica reunion")).toBe("news");
+    expect(intentOf("metallica reunion concert full")).toBe("band-fact");
     expect(intentOf("metallica bootleg")).toBe("bootleg");
     expect(intentOf("metallica live album")).toBe("live-album");
     expect(intentOf("pinkpop tickets")).toBe("tickets");
-    expect(intentOf("metallica tour 2031", { year: 2026 })).toBe("tickets");
-    expect(intentOf("metallica tour 2026", { year: 2026 })).toBe("tickets");
+    expect(intentOf("metallica tour 2031", { year: 2026 })).toBe("news");
+    expect(intentOf("metallica tour 2026", { year: 2026 })).toBe("news");
+    expect(intentOf("metallica tour 2027 tickets", { year: 2026 })).toBe("tickets");
     expect(intentOf("metallica tour 1993", { year: 2026 })).toBe("tour");
     expect(intentOf("enter sandman live", { song: true })).toBe("song-live");
     expect(intentOf("full concert")).toBe("watch");
@@ -213,7 +219,7 @@ describe("pages and gaps", () => {
     expect(page("metallica live 1985")).toMatchObject({ page: "/artists/metallica", gap: GAPS.concertMissing });
     expect(page("metallica last concert")).toMatchObject({ page: "/artists/metallica", gap: GAPS.bandFaq });
     expect(page("pinkpop 1995 lineup")).toMatchObject({ page: "/venues/pinkpop", gap: GAPS.venueYearMissing });
-    expect(page("pinkpop 2027 lineup")).toMatchObject({ page: null, gap: GAPS.lineupFuture });
+    expect(page("pinkpop 2027 lineup")).toMatchObject({ pageType: "news", page: "/venues/pinkpop", gap: GAPS.news });
     expect(page("full concert 4k")).toMatchObject({ page: "/concerts", gap: GAPS.qualityFilter });
     expect(page("live full concert hd")).toMatchObject({ gap: GAPS.qualityFilter });
     expect(page("best live metal concerts")).toMatchObject({ page: "/genres/metal", gap: GAPS.bestWeak });
@@ -292,7 +298,7 @@ describe("engines (recorded answers)", () => {
     expect(row("metallica live 1991")).toMatchObject({ page: "/concerts/metallica-moscow-1991", engines: ["bing", "google"] });
     expect(row("pinkpop 1995 metallica full concert")).toMatchObject({ page: "/artists/metallica", gap: GAPS.concertMissing });
     expect(row("full concert pink floyd")).toMatchObject({ page: null, gap: GAPS.bandMissing });
-    expect(row("metallica tour 2031")).toMatchObject({ intent: "tickets", gap: GAPS.tickets });
+    expect(row("metallica tour 2031")).toMatchObject({ intent: "news", page: "/artists/metallica/news", gap: GAPS.news });
     expect(row("full metal concert")).toMatchObject({ page: "/genres/metal" });
     expect(noise).toEqual(expect.arrayContaining(["full concert guitar tabs", "full metal jacket", "full metal alchemist", "metallica net worth"]));
     expect(rows.some((r) => noise.includes(r.phrase))).toBe(false);
@@ -334,5 +340,69 @@ describe("scoring", () => {
   });
   it("report headings use none of the banned words", () => {
     expect(Object.values(GAPS).join(" ")).not.toMatch(BANNED);
+  });
+});
+
+describe("news searches (owner, 22 Nov 2026)", () => {
+  it("asks the news questions for the top bands and festivals, with the news year", () => {
+    const seeds = newsSeeds(cat, { newsBands: 2, newsFestivals: 1, newsYear: 2027 });
+    const q = seeds.map((s) => s.query);
+    expect(seeds.every((s) => s.kind === "news")).toBe(true);
+    for (const t of ["rock news", "metal news", "punk news", "indie news", "rock news today", "rock tours 2027", "festival lineups 2027", "rock concerts 2027"]) expect(q, t).toContain(t);
+    for (const t of ["metallica news", "metallica tour 2027", "metallica tour dates", "is metallica touring", "metallica new album", "metallica new album 2027", "metallica live album", "metallica reunion"]) expect(q, t).toContain(t);
+    // Top bands by concerts only: Metallica (3), then one of the one-concert bands; never more than asked.
+    expect(q.filter((x) => x.endsWith(" news") && !["rock news", "metal news", "punk news", "indie news"].includes(x))).toHaveLength(2);
+    expect(q).toContain("pinkpop 2027 lineup");
+    expect(q).toContain("pinkpop 2027");
+    expect(q).not.toContain("glastonbury 2027 lineup");
+    expect(q).not.toContain("tushino airfield 2027");
+    expect(seeds).toHaveLength(8 + 2 * NEWS_BAND_PATTERNS.length + 2);
+  });
+  it("are part of the full seed list, asked once, with configurable limits", () => {
+    const seeds = buildSeeds(cat, { newsBands: 1, newsFestivals: 2, newsYear: 2027 });
+    const q = seeds.map((s) => s.query);
+    expect(q).toContain("is metallica touring");
+    expect(q).toContain("glastonbury 2027 lineup");
+    expect(q).not.toContain("is the cure touring");
+    expect(new Set(q).size).toBe(q.length);
+    expect(buildSeeds(cat, { newsBands: 0, newsFestivals: 0, newsYear: 2027 }).filter((s) => s.kind === "news").map((s) => s.query)).toContain("rock news");
+  });
+  it("is next year from October on", () => {
+    expect(newsYear(new Date("2026-11-22T00:00:00Z"))).toBe(2027);
+    expect(newsYear(new Date("2026-10-01T00:00:00Z"))).toBe(2027);
+    expect(newsYear(new Date("2026-09-30T00:00:00Z"))).toBe(2026);
+  });
+  it("reads news intent and maps it to the news page that answers it", () => {
+    for (const p of ["metallica news", "is metallica touring", "metallica tour dates", "metallica new album", "metallica new album 2027", "rock news today", "rock tours 2027", "festival lineups 2027", "rock concerts 2027", "glastonbury 2027 lineup"])
+      expect(intentOf(p, { year: 2026 }), p).toBe("news");
+    expect(isNoise(stripNames("metallica news", ["Metallica"]))).toBe(false);
+    expect(page("metallica news")).toMatchObject({ pageType: "news", page: "/artists/metallica/news", gap: GAPS.news });
+    expect(page("is metallica touring")).toMatchObject({ page: "/artists/metallica/news" });
+    expect(page("rock tours 2027")).toMatchObject({ page: "/news/tours", gap: GAPS.news });
+    expect(page("festival lineups 2027")).toMatchObject({ page: "/news/festivals" });
+    expect(page("rock news")).toMatchObject({ page: "/news" });
+    expect(page("rock concerts 2027")).toMatchObject({ page: "/news" });
+    // Old shows stay watching searches.
+    expect(page("metallica tour 1993")).toMatchObject({ pageType: "concert", page: "/concerts/metallica-pinkpop-1993" });
+  });
+  it("are their own block in the report and at the end of the log", () => {
+    const results: SuggestResult[] = [
+      { seed: { query: "metallica news", kind: "news", subject: "Metallica" }, engine: "google", suggestions: ["metallica news", "metallica news today", "metallica live album"] },
+      { seed: { query: "metallica", kind: "band", subject: "Metallica" }, engine: "bing", suggestions: ["metallica full concert", "metallica tour 2027"] },
+    ];
+    const { rows } = rankKeywords(results, cat, { year: 2026 });
+    const news = newsRows(rows).map((r) => r.phrase);
+    expect(news).toEqual(expect.arrayContaining(["metallica news", "metallica news today", "metallica tour 2027", "metallica live album"]));
+    expect(news).not.toContain("metallica full concert");
+    const summary = { generatedAt: "2026-11-22T10:00:00Z", seeds: 2, seedsAsked: 2, requests: 2, emptyAnswers: 0, phrases: rows.length, noise: 0, stoppedEarly: false };
+    const md = reportMarkdown(rows, summary);
+    expect(md).toContain("## News searches (4 phrases)");
+    expect(md).toContain(`### ${GAPS.news}`);
+    expect(md).toMatch(/\| metallica news \| news \| \/artists\/metallica\/news \|/);
+    const tail = logTail(rows, summary);
+    expect(tail).toContain("==== NEWS SEARCHES (4) ====");
+    expect(tail.some((l) => l.startsWith("NEWS\t") && l.endsWith("\tis metallica touring"))).toBe(false);
+    expect(tail.some((l) => l.startsWith("NEWS\t") && l.endsWith("\tmetallica news"))).toBe(true);
+    expect(JSON.parse(tail[tail.length - 1])).toMatchObject({ news: 4 });
   });
 });

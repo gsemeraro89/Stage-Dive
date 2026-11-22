@@ -12,6 +12,8 @@
 //   news-feeds                      check every press feed of data/news-feeds.json (which ones answer)
 //   keyword-research[:k=v,...]      keyword research (scripts/keywords.ts; read-only, no quota, no Claude):
 //                                   e.g. keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no
+//                                   News searches (tours, line-ups, new albums) for the top news-bands=50 bands and
+//                                   news-festivals=30 festivals, reported in their own "news" block.
 //                                   Runs after the other operations, so its result ends the log.
 //   backfill-tours[:limit]          tours for listed concerts (src/lib/collector/tour-backfill.ts): re-reads title and
 //                                   description (videos.list, 1 unit per 50), regex first, Claude Haiku (Batch API) only

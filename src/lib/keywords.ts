@@ -10,6 +10,7 @@
 // namesakes, films), print the most important rows last in the job log.
 // Pure functions here, tested in tests/keywords.test.ts; the network part is scripts/keywords.ts.
 import { genreSearchWords, HEAD_TARGETS, normalizeForMatch } from "./keyword-targets";
+import { bandNewsPath, newsHubForPhrase } from "./news/hubs";
 
 // ---- The catalogue the seeds and the page matching are built from ----
 
@@ -62,7 +63,7 @@ export interface KwCatalogue {
 
 // ---- Seeds ----
 
-export type SeedKind = "head" | "expand" | "band" | "festival" | "venue" | "venue-year" | "genre" | "decade" | "tour" | "song";
+export type SeedKind = "head" | "expand" | "band" | "festival" | "venue" | "venue-year" | "genre" | "decade" | "tour" | "song" | "news";
 
 export interface Seed {
   query: string;
@@ -105,6 +106,22 @@ export const VENUE_MODIFIERS = ["", " concert", " live", " full concert"];
 /** Genre seeds, "{g}" is the genre as people write it ("metal", "trip hop"). */
 export const GENRE_PATTERNS = ["full {g} concert", "{g} full concert", "{g} live concert", "best {g} live", "{g} concerts", "best live {g} concerts", "{g} concert full", "{g} live full concert"];
 export const DECADE_PATTERNS = ["{d} rock concert", "{d} rock concert full", "{d} rock concerts", "best {d} concerts", "{d} live concert", "{d} concert full", "{d} rock live"];
+
+/**
+ * News searches (owner, 22 Nov 2026: the news section should be found for them). "{y}" is the year news
+ * searches are about (newsYear), "{b}" a band, "{f}" a festival as people type it.
+ */
+export const NEWS_HEAD_PATTERNS = ["rock news", "metal news", "punk news", "indie news", "rock news today", "rock tours {y}", "festival lineups {y}", "rock concerts {y}"];
+export const NEWS_BAND_PATTERNS = ["{b} news", "{b} tour {y}", "{b} tour dates", "is {b} touring", "{b} new album", "{b} new album {y}", "{b} live album", "{b} reunion"];
+export const NEWS_FESTIVAL_PATTERNS = ["{f} {y} lineup", "{f} {y}"];
+
+/**
+ * The year news searches are about: next year from October on (people look up next year's tours and
+ * line-ups), this year before. Pure.
+ */
+export function newsYear(now = new Date()): number {
+  return now.getUTCFullYear() + (now.getUTCMonth() >= 9 ? 1 : 0);
+}
 
 /** The head terms of the niche (owner: every phrase around "full concert", plus the rock head terms). */
 export const HEAD_TERMS = [
@@ -220,9 +237,37 @@ export interface SeedLimits {
   yearsPerFestival?: number;
   /** Letter and digit expansion of the head terms (default true). */
   longTail?: boolean;
+  /** Bands asked with the news questions ("metallica tour 2027"), most concerts first. */
+  newsBands?: number;
+  /** Festivals asked with the news questions ("glastonbury 2027 lineup"), most concerts first. */
+  newsFestivals?: number;
+  /** The year the news questions ask about (default newsYear()). */
+  newsYear?: number;
 }
 
-export const DEFAULT_LIMITS: Required<SeedLimits> = { fullBands: 150, bands: 100_000, venues: 120, songs: 300, yearsPerFestival: 6, longTail: true };
+export const DEFAULT_LIMITS: Required<Omit<SeedLimits, "newsYear">> = {
+  fullBands: 150,
+  bands: 100_000,
+  venues: 120,
+  songs: 300,
+  yearsPerFestival: 6,
+  longTail: true,
+  newsBands: 50,
+  newsFestivals: 30,
+};
+
+/** The news seeds: the news head terms, then the top bands, then the top festivals. Pure. */
+export function newsSeeds(cat: Pick<KwCatalogue, "bands" | "venues">, limits: Pick<SeedLimits, "newsBands" | "newsFestivals" | "newsYear"> = {}): Seed[] {
+  const y = String(limits.newsYear ?? newsYear());
+  const out: Seed[] = [];
+  const add = (query: string, subject: string) => out.push({ query: lower(query), kind: "news", subject });
+  for (const p of NEWS_HEAD_PATTERNS) add(p.replace("{y}", y), p.replace(" {y}", ""));
+  for (const b of byCount(cat.bands, limits.newsBands ?? DEFAULT_LIMITS.newsBands, (x) => x.concerts))
+    for (const p of NEWS_BAND_PATTERNS) add(p.replace("{b}", b.name).replace("{y}", y), b.name);
+  for (const f of byCount(cat.venues.filter((v) => v.festival), limits.newsFestivals ?? DEFAULT_LIMITS.newsFestivals, (x) => x.concerts))
+    for (const p of NEWS_FESTIVAL_PATTERNS) add(p.replace("{f}", typedName(f.name)).replace("{y}", y), f.name);
+  return out;
+}
 
 /** A festival's name as people type it in a seed. */
 const typedName = (name: string) => {
@@ -270,6 +315,8 @@ export function buildSeeds(cat: KwCatalogue, limits: SeedLimits = {}): Seed[] {
     for (const f of [...new Set(b.festivals)].slice(0, 3)) add(`${b.name} at ${typedName(f)}`, "band", b.name);
     for (const v of [...new Set(b.venues)].slice(0, 2)) add(`${b.name} live at ${v}`, "band", b.name);
   }
+  // News searches (owner, 22 Nov 2026), right after the top bands: reported as their own block.
+  out.push(...newsSeeds(cat, lim));
   for (const t of cat.tours.filter((x) => x.count > 0)) {
     if (t.band) add(`${t.band} ${t.name}`, "tour", t.band);
     for (const m of [" full concert", " live", " setlist"]) add(`${t.name}${m}`, "tour", t.band ?? t.name);
@@ -310,7 +357,7 @@ const NOISE = new RegExp(
     "for sale", "price", "prices", "cost", "cheap", "resale", "buy", "ebay", "amazon",
     "download", "mp3", "torrent", "flac", "zip", "rar", "spotify", "apple music", "soundcloud",
     "ai", "meme", "memes", "lego", "fortnite", "minecraft", "roblox", "game", "games", "costume", "outfit", "dress",
-    "net worth", "wife", "husband", "girlfriend", "boyfriend", "age", "height", "died", "death", "dead", "funeral", "arrested", "accident", "news",
+    "net worth", "wife", "husband", "girlfriend", "boyfriend", "age", "height", "died", "death", "dead", "funeral", "arrested", "accident",
     "documentary", "trailer", "wallpaper", "drawing", "tattoo", "logo", "font", "quiz", "crossword",
     "(?<!concert )movies?", "(?<!concert )films?", "netflix", "imdb", "cast",
   ].join("|")
@@ -341,10 +388,26 @@ export type Intent =
   | "bootleg"
   | "live-album"
   | "tickets"
+  | "news"
   | "info"
   | "other";
 
 const has = (p: string, re: RegExp) => re.test(p);
+
+/** Words that make a search a news search, whatever the year. */
+const NEWS_WORDS =
+  /\bnews\b|\btouring\b|\btour dates?\b|\bline ?up announce\w*|\bnew (album|albums|single|song|songs|music|record|ep|live album)\b|\bannounce[sd]?\b|\bannouncement\b|\bupcoming\b|\bcancel+ed\b|\bpostponed\b|\bbreak ?up\b|\bsplit up\b|\breunite[sd]?\b|\breunion tour\b/;
+
+/**
+ * A news search: news words ("metallica news", "is muse touring", "pixies new album", "tour dates"), a
+ * reunion that is not a concert to watch ("oasis reunion"), or a tour, line-up, album or concerts of this
+ * year or later ("glastonbury 2027 lineup", "rock tours 2027"). Pure.
+ */
+function isNewsSearch(p: string, years: number[], thisYear: number): boolean {
+  if (NEWS_WORDS.test(p)) return true;
+  if (/\breunion\b/.test(p) && !/\b(concert|concerts|full|live|show|gig|video|dvd)\b/.test(p)) return true;
+  return years.some((y) => y >= thisYear) && /\b(tour|tours|line ?ups?|album|albums|concerts?|festivals?|reunion)\b/.test(p);
+}
 
 /** What someone typing the phrase wants. Pure. `year` is this year (future dates are ticket searches). */
 export function intentOf(phrase: string, opts: { song?: boolean; year?: number } = {}): Intent {
@@ -353,7 +416,9 @@ export function intentOf(phrase: string, opts: { song?: boolean; year?: number }
   const years = [...p.matchAll(/\b(19[5-9]\d|20[0-4]\d)\b/g)].map((m) => Number(m[1]));
   // The brand and the domain: "fullconcert.live", "full concert live" on its own, "stagedive".
   if (has(p, /^(full ?concert ?live( com| site| website)?|fullconcert( live)?( com)?|stage ?dive( concerts?| site| website)?)$/) || has(p, /\bfullconcert(live)?\b|\bstagedive\b/)) return "brand";
-  if (has(p, /\btickets?\b|\bpresale\b|\bnear me\b|\btour dates?\b|\bdates\b|\bschedule\b|\bvenue map\b|\bseating\b|\bparking\b|\bline up announcement\b/)) return "tickets";
+  if (has(p, /\btickets?\b|\bpresale\b|\bnear me\b|\bvenue map\b|\bseating\b|\bparking\b/)) return "tickets";
+  if (isNewsSearch(p, years, thisYear)) return "news";
+  if (has(p, /\bdates\b|\bschedule\b/)) return "tickets";
   if (has(p, /\bline ?up\b|\bwho played\b|\bbands playing\b|\bperformers\b/)) return "lineup";
   if (years.some((y) => y > thisYear) || (has(p, /\btour\b/) && years.some((y) => y >= thisYear))) return "tickets";
   if (has(p, /\b(last|final|first|farewell|reunion|comeback)\b/)) return "band-fact";
@@ -382,6 +447,7 @@ export const INTENT_WEIGHT: Record<Intent, number> = {
   tour: 2,
   bootleg: 2,
   "live-album": 1,
+  news: 1.5,
   info: 1,
   other: 0.5,
   tickets: 0.3,
@@ -500,6 +566,7 @@ export type PageType =
   | "genre"
   | "tour"
   | "best"
+  | "news"
   | "none";
 
 /** The page type that would serve a phrase we cannot serve yet. */
@@ -521,6 +588,7 @@ export const GAPS = {
   lineupFuture: "festival line-up (future edition, not served)",
   tickets: "not served: tickets, dates",
   generic: "generic phrase: home or a list page",
+  news: "news: tour, line-up, album and reunion news (/news hubs, band news, band and festival FAQ)",
 } as const;
 export type Gap = (typeof GAPS)[keyof typeof GAPS];
 
@@ -628,6 +696,12 @@ export function matchPage(phrase: string, intent: Intent, idx: KwIndex, subjects
 
   if (intent === "tickets") return m("none", null, GAPS.tickets);
   if (intent === "brand") return m("home", "/");
+  // News searches: always reported in the news block, with the news page that should answer them.
+  if (intent === "news") {
+    if (band) return m("news", bandNewsPath(band.slug), GAPS.news);
+    if (venue) return m("news", `/venues/${venue.slug}`, GAPS.news);
+    return m("news", newsHubForPhrase(p), GAPS.news);
+  }
 
   if (band) {
     const bandPage = `/artists/${band.slug}`;
@@ -849,6 +923,14 @@ export function headTargetCheck(rows: KeywordRow[]): { phrase: string; page: str
   });
 }
 
+/**
+ * The news block of the report (owner, 22 Nov 2026): every news search (intent "news") and every phrase
+ * a news seed brought back, best first, with the news page that should answer it. Pure.
+ */
+export function newsRows(rows: KeywordRow[]): KeywordRow[] {
+  return rows.filter((r) => r.intent === "news" || r.seedKind === "news");
+}
+
 const cell = (s: string | number | null) => String(s ?? "").replace(/\|/g, "/");
 
 /** The whole list as Markdown: summary, mandatory targets, gaps by page type, every phrase. */
@@ -871,6 +953,17 @@ export function reportMarkdown(rows: KeywordRow[], summary: KeywordSummary): str
   for (const g of gapSummary(rows, 25)) {
     lines.push(`### ${g.gap} (${g.phrases} phrases, score ${g.score})`, "", ...g.top.map((r) => `- ${r.phrase} · ${r.score}${r.page ? ` · ${r.page}` : ""}`), "");
   }
+  const news = newsRows(rows);
+  lines.push(
+    `## News searches (${news.length} phrases)`,
+    "",
+    "Tours, line-ups, new albums, reunions: what the news section, its topic pages, band news pages and the band and festival FAQ answers should rank for.",
+    "",
+    "| score | phrase | intent | page |",
+    "|---|---|---|---|",
+    ...news.slice(0, 200).map((r) => `| ${r.score} | ${cell(r.phrase)} | ${r.intent} | ${cell(r.page ?? "GAP")} |`),
+    "",
+  );
   lines.push("## Every phrase", "", "| score | phrase | seeds | engines | intent | page | gap |", "|---|---|---|---|---|---|---|");
   for (const r of rows) lines.push(`| ${r.score} | ${cell(r.phrase)} | ${r.seeds} | ${r.engines.join("+")} | ${r.intent} | ${cell(r.page ?? "GAP")} | ${cell(r.gap)} |`);
   return `${lines.join("\n")}\n`;
@@ -890,8 +983,11 @@ export function logTail(rows: KeywordRow[], summary: KeywordSummary, top = 300):
     out.push(`GAP\t${g.phrases} phrases\tscore ${g.score}\t${g.gap}`);
     for (const r of g.top) out.push(`  \t${r.score}\t${r.phrase}`);
   }
+  const news = newsRows(rows);
+  out.push(`==== NEWS SEARCHES (${news.length}) ====`);
+  for (const r of news.slice(0, 100)) out.push(`NEWS\t${r.score}\t${r.intent}\t${r.page ?? "GAP"}\t${r.phrase}`);
   out.push("==== COUNTS ====");
-  out.push(JSON.stringify({ ...summary, byIntent: countBy(rows, (r) => r.intent), byPageType: countBy(rows, (r) => r.pageType), gaps: rows.filter((r) => r.gap).length }));
+  out.push(JSON.stringify({ ...summary, byIntent: countBy(rows, (r) => r.intent), byPageType: countBy(rows, (r) => r.pageType), gaps: rows.filter((r) => r.gap).length, news: news.length }));
   return out;
 }
 
