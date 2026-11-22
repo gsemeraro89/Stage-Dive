@@ -1,7 +1,15 @@
 // The photocopied band photo (PNG). Licensed photos only (src/lib/photos); YouTube images never come here.
 import { getDb } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// Built on its first request, then served ready-made and rebuilt in the background at most every 6 hours
+// (22 Nov 2026: read from the database on every request, the /artists page alone sent about 1.4 MB of
+// photos from the database per new visitor). Photos change at most once a month (band-photos job); a new
+// photo also gets a new ?v= address (bandPhotoFor), and browsers keep the old one a day at most.
+export const revalidate = 21600;
+/** No photo is built ahead: each one is built on its first request, then kept. */
+export function generateStaticParams() {
+  return [];
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
