@@ -56,3 +56,14 @@ describe("sitemap", () => {
     expect(entries.find((e) => e.path === "/artists/metallica")!.lastModified).toEqual(day("2026-11-10"));
   });
 });
+
+describe("write-ups read by the sitemap (data transfer, 22 Nov 2026)", () => {
+  it("only concerts without a setlist and not hand-picked need their write-up to be judged", async () => {
+    const { WRITE_UP_DECIDES } = await import("../src/lib/sitemap");
+    const { concertIsStrong } = await import("../src/lib/seo");
+    expect(WRITE_UP_DECIDES).toEqual({ setlistSource: null, curated: false });
+    const long = "x".repeat(1000);
+    for (const [hasSetlist, curated] of [[true, false], [false, true], [true, true]])
+      expect(concertIsStrong({ hasSetlist, curated, writeUp: null })).toBe(concertIsStrong({ hasSetlist, curated, writeUp: long }));
+  });
+});

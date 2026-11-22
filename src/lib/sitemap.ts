@@ -146,18 +146,21 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
   ];
 }
 
+/** Concerts whose write-up decides whether they are strong: no setlist and not hand-picked (concertIsStrong). */
+export const WRITE_UP_DECIDES = { setlistSource: null, curated: false } as const;
+
 /** Every page worth indexing, read from the database. */
 export async function sitemapEntries(): Promise<SitemapEntry[]> {
   const db = getDb();
-  const [concerts, bands, songBands, news] = await Promise.all([
+  const [concerts, writeUps, bands, songBands, news] = await Promise.all([
     db.concert.findMany({
       where: VISIBLE,
       select: {
+        id: true,
         slug: true,
         updatedAt: true,
         setlistSource: true,
         curated: true,
-        writeUp: true,
         performedYear: true,
         sourceKind: true,
         definition: true,
@@ -168,10 +171,14 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
         genres: { select: { genre: { select: { slug: true } } } },
       },
     }),
+    // The write-up only decides for concerts with no setlist and no hand-pick (concertIsStrong): only theirs
+    // is read (22 Nov 2026: every write-up on each rebuild was a large share of the sitemap's data transfer).
+    db.concert.findMany({ where: { ...VISIBLE, ...WRITE_UP_DECIDES }, select: { id: true, writeUp: true } }),
     db.artist.findMany({ where: PAGE_ARTIST, select: { slug: true, updatedAt: true, bio: true } }),
     songCatalogue(),
     db.newsArticle.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true, lead: true, body: true } }),
   ]);
+  const writeUpOf = new Map(writeUps.map((w) => [w.id, w.writeUp]));
   return buildSitemap(
     concerts.map((c) => ({
       slug: c.slug,
@@ -179,7 +186,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       // The setlist and its source are written together (src/lib/setlist/lookup.ts).
       hasSetlist: c.setlistSource !== null,
       curated: c.curated,
-      writeUp: c.writeUp,
+      writeUp: writeUpOf.get(c.id) ?? null,
       performedYear: c.performedYear,
       venueSlug: c.venue?.slug ?? null,
       venueKindSlug: c.venueKind?.slug ?? null,

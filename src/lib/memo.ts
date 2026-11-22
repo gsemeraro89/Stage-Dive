@@ -42,14 +42,15 @@ export function recall<T>(key: string, now = Date.now()): Promise<T> | undefined
 }
 
 /**
- * Wrap an async function so its result is reused for TTL per set of arguments. A call that fails is
- * not kept. Concurrent calls share one database round trip.
+ * Wrap an async function so its result is reused for TTL per set of arguments (or `ttlMs`, for data only
+ * used by pages rebuilt less often, e.g. hourly). A call that fails is not kept. Concurrent calls share
+ * one database round trip.
  */
-export function cached<A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>): (...args: A) => Promise<R> {
+export function cached<A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>, ttlMs = TTL_MS): (...args: A) => Promise<R> {
   return (...args: A) => {
     if (!enabled()) return fn(...args);
     const key = `${name}:${JSON.stringify(args)}`;
-    return recall<R>(key) ?? remember(key, fn(...args));
+    return recall<R>(key) ?? remember(key, fn(...args), Date.now(), ttlMs);
   };
 }
 
