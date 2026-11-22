@@ -49,8 +49,21 @@ const setlistClaudeMax = Number(process.env.SETLIST_CLAUDE_MAX ?? 50);
 let setlistQuotaLeft = true;
 
 try {
+  // Only the fields this job uses (22 Nov 2026: every setlist and write-up was read each night for nothing).
   const concerts = await db.concert.findMany({
-    include: { channel: true, credits: { where: { role: "MAIN" }, include: { artist: true } } },
+    select: {
+      id: true,
+      slug: true,
+      youtubeId: true,
+      status: true,
+      sourceKind: true,
+      officialTwinId: true,
+      ytRefreshedAt: true,
+      setlistCheckedAt: true,
+      setlistSource: true,
+      channel: { select: { id: true, youtubeChannelId: true } },
+      credits: { where: { role: "MAIN" }, select: { artist: { select: { name: true, aka: true } } } },
+    },
   });
   // Due for the 30-day refresh, never checked for a setlist (e.g. the collector ran out of quota), or
   // removed earlier (checked every night, so a video that comes back is shown again quickly).
@@ -123,7 +136,8 @@ try {
         });
         await db.concert.update({ where: { id: concert.id }, data: setlistFields(found, now) });
         if (found.tracks) stats.withSetlist++;
-        else if (concert.setlist) stats.setlistsRemoved++;
+        // The setlist and its source are written together (src/lib/setlist/lookup.ts setlistFields).
+        else if (concert.setlistSource !== null) stats.setlistsRemoved++;
       } catch (error) {
         if (!(error instanceof QuotaBudgetExceeded)) throw error;
         setlistQuotaLeft = false;
