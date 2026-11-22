@@ -7,6 +7,8 @@ import { Collection, pileData } from "@/components/gig/Collection";
 import { Faq } from "@/components/gig/Faq";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
 import { cutName, gigs, kindWord } from "@/components/gig/words";
+import { LatestNews } from "@/components/news/LatestNews";
+import { venueNews } from "@/lib/news/queries";
 import { getVenuePage, venueAliasTarget } from "@/lib/queries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { venueAnswers } from "@/lib/answers";
@@ -55,6 +57,7 @@ export default async function VenuePage({ params }: Props) {
     notFound();
   }
   const { venue, concerts } = page;
+  const news = await venueNews(venue.slug);
   const kind = kindWord(concerts.find((s) => s.venueKind)?.venueKind) ?? "Place";
   const answers = venueAnswers(venue, concerts);
   const path = `/venues/${venue.slug}`;
@@ -113,6 +116,8 @@ export default async function VenuePage({ params }: Props) {
           {byYear}
         </Collection>
       )}
+      {/* News about the festival (src/lib/news), unstyled: nothing when there is none. */}
+      <LatestNews items={news} about={venue.name} />
       <Faq title={`Questions about ${venue.name}`} questions={answers.questions} />
     </main>
   );

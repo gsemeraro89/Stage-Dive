@@ -21,7 +21,8 @@ const NAV: readonly { href: string; label: string; tilt: number; pick?: boolean 
   { href: "/decades", label: "Decades", tilt: -1 },
   { href: "/genres", label: "Genres", tilt: 1.5 },
   { href: "/tours", label: "Tours", tilt: -1 },
-  { href: "/map", label: "Next band?", tilt: 2, pick: true },
+  { href: "/news", label: "News", tilt: 1.5 },
+  { href: "/map", label: "Next band?", tilt: -2, pick: true },
 ];
 
 const DECADES_ID = "zn-head-decades";

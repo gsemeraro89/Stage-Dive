@@ -39,6 +39,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/lib/setlist/` | Setlists from the video description, chapters or comments |
 | `src/lib/collector/` | Collector rules, YouTube client, Claude classifier (Haiku lane), MusicBrainz |
 | `src/lib/seo.ts`, `structured-data.ts`, `answers.ts`, `concert-notes.ts`, `llms.ts`, `sitemap.ts`, `robots.ts`, `indexnow.ts` | Search and AI assistants (CLAUDE.md "SEO, AEO and AI search"): what is indexed, titles, schema.org, answer-first leads, FAQ, concert notes, `/llms.txt`, `.md` copies, sitemap, IndexNow |
+| `src/lib/news/`, `scripts/news.ts`, `data/news-feeds.json` | News: press feeds, matcher (our bands and festivals only), Claude Haiku writer + fact check, pages `/news`, `/news/[slug]`, `/news/feed.xml`, `/news-sitemap.xml`, admin queue `/admin/news` |
 | `tests/` | Automated tests (Vitest); `tests/fixtures/seed-concerts.json` is test data only |
 
 ## Collector and jobs (GitHub Actions, free)
@@ -59,11 +60,13 @@ Scheduled runs publish only when the repository **variable** `COLLECTOR_PUBLISH`
 
 Bootlegs (owner, 20 Nov 2026): professionally filmed, complete shows shared by fan channels, for the bands of `data/artist-rules.json`, one per concert; an official version always wins (the bootleg hides itself, and comes back if the official one goes). `Collect concerts` with `bootleg_publish` on: `dry_run` on = report only, off = stored. Fan channels and playlists read in full: `data/fan-channels.json`. Rules and display: `src/lib/collector/bootleg.ts`, `bootleg-publish.ts`, `src/lib/bootlegs.ts`. Ads on bootleg pages stay off until `ADS_ON_BOOTLEGS=true` (after AdSense approval); any ad slot must call `adsAllowed()` in `src/lib/ads.ts`.
 
+News (owner, 21 Nov 2026): after each collector run (`collect.yml`, follows `dry_run`) the news job reads the press feeds in `data/news-feeds.json`, keeps only items naming one of our bands or festivals (free, strict matcher; short names like "Muse" or "Tool" need their capitals and a music word nearby), and has Claude Haiku write a short article in our own words with the source named and linked, then fact-check it. Articles that pass go live; the rest wait in `/admin/news`. Budget: repository variable `NEWS_BUDGET_USD` (default $5 a month). By hand: `Collect concerts` with `admin_ops` = `news:dry` (lists what would be written, no cost), then `news`; `news-feeds` checks which feeds answer. `NEWS_ENABLED=false` skips the step. `news.yml` runs it alone (daily schedule off; how to switch it on is at the top of the file).
+
 ## Secrets and settings
 
 GitHub → Settings → Secrets and variables → Actions:
 - Secrets: `DATABASE_URL` (Neon production branch), `YOUTUBE_API_KEY`, `ANTHROPIC_API_KEY` (needed from step 6, the collector)
-- Variables: `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, `https://fullconcert.live`, once the live service is up: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
+- Variables: `NEWS_BUDGET_USD` (news, default `5` dollars a month), `COLLECTOR_PUBLISH` (`false` until the owner OKs a real run), `YOUTUBE_UNIT_BUDGET` (`8000`), `LIVE_SITE_URL` (the live domain, `https://fullconcert.live`, once the live service is up: IndexNow announces new pages there; nothing is sent while its robots.txt is closed)
 
 ### Restore a backup
 

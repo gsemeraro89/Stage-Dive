@@ -1,0 +1,61 @@
+# News on its own (owner, 21 Nov 2026): read the press feeds (data/news-feeds.json), keep the items about our
+# bands and festivals, and have Claude Haiku write and fact-check short articles in our own words, within
+# NEWS_BUDGET_USD a month (repository variable; default 5). Articles that pass go live; the rest wait in /admin/news.
+# The collector (collect.yml) already runs the news job after each collector run; this workflow is for a manual
+# run ("Run workflow"; dry run first) and, if the owner wants news every day even without a collector run,
+# a daily schedule. The schedule is OFF. To switch it on, add under "on:":
+#   schedule:
+#     - cron: "23 13 * * *"   # every day at 13:23 UTC
+# A scheduled run publishes only when the repository variable NEWS_PUBLISH is "true"; otherwise it is a dry run.
+# Secrets: DATABASE_URL, ANTHROPIC_API_KEY.
+name: News
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: read the feeds and list the items that would become news (no Claude cost, nothing written)"
+        type: boolean
+        default: true
+      max:
+        description: "Most press items sent to Claude in this run (default 25)"
+        default: ""
+
+concurrency:
+  group: database-jobs
+  cancel-in-progress: false
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      NEWS_BUDGET_USD: ${{ vars.NEWS_BUDGET_USD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - name: News
+        run: |
+          MAX=""
+          if [ -n "${{ inputs.max }}" ]; then MAX="--max ${{ inputs.max }}"; fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            npm run news -- --dry-run $MAX
+          elif [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.NEWS_PUBLISH }}" != "true" ]; then
+            npm run news -- --dry-run
+          else
+            npm run news -- $MAX
+          fi
+      - name: Announce new pages to search engines (IndexNow; skipped until the live site is open)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        continue-on-error: true
+        env:
+          LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
+        run: npm run indexnow

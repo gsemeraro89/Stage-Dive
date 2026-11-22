@@ -35,7 +35,8 @@ export function robotsRules(): MetadataRoute.Robots {
       { userAgent: "*", allow: "/", disallow: CLOSED_PATHS },
       { userAgent: AI_CRAWLERS, allow: "/", disallow: CLOSED_PATHS },
     ],
-    sitemap: abs("/sitemap.xml"),
+    // The Google News sitemap (src/app/news-sitemap.xml): articles of the last 48 hours.
+    sitemap: [abs("/sitemap.xml"), abs("/news-sitemap.xml")],
     host: abs("/"),
   };
 }

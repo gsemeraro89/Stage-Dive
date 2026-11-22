@@ -12,6 +12,10 @@
 # Classifier (owner, 20 Nov 2026): Claude Haiku via the half-price Batch API, Opus only for unsure answers.
 # Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
 # No view threshold (brief section 2). Archives are read first (data/channels.json).
+# News (owner, 21 Nov 2026): after the collector, the news job reads the press feeds (data/news-feeds.json) and
+# writes articles about our bands and festivals with Claude Haiku, within NEWS_BUDGET_USD a month (repository
+# variable; default 5). It follows dry_run (on = list what would go to Claude, nothing written). NEWS_ENABLED=false
+# turns it off. Manual run of the news alone: admin_ops "news:dry" first, then "news".
 name: Collect concerts
 
 on:
@@ -70,7 +74,7 @@ on:
         description: "Decide again on just these YouTube IDs (comma-separated), e.g. after approving their artists; reuses stored answers"
         default: ""
       admin_ops:
-        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;merge-venue:from-slug>into-slug;normalize-countries;tidy-review; keyword-research (Google/Bing suggestions, read-only, up to 2 h; options keyword-research:full-bands=80,songs=100,minutes=60). No YouTube quota, no Claude cost. Also backfill-tours[:limit] (tours of listed concerts; 1 unit per 50, Haiku only when unsure), missing-bands-check[:top=N] (dry run of the lane for bands people search for that are not on the site; 100 units per band searched) and missing-bands-publish[:top=N] or missing-bands-publish:names=A|B (after the owner's OK)"
+        description: "Only run one-off fixes, e.g. merge:from-slug>into-slug;merge-venue:from-slug>into-slug;normalize-countries;tidy-review; news:dry (list the press items that would become news, no cost) or news (write and publish news now); news-feeds (check the press feeds); keyword-research (Google/Bing suggestions, read-only, up to 2 h; options keyword-research:full-bands=80,songs=100,minutes=60). No YouTube quota, no Claude cost. Also backfill-tours[:limit] (tours of listed concerts; 1 unit per 50, Haiku only when unsure), missing-bands-check[:top=N] (dry run of the lane for bands people search for that are not on the site; 100 units per band searched) and missing-bands-publish[:top=N] or missing-bands-publish:names=A|B (after the owner's OK)"
         default: ""
       artist_search:
         description: "Per-artist lane only: every official full concert of the bands marked allConcerts in data/artist-rules.json (respects dry_run)"
@@ -196,6 +200,19 @@ jobs:
       - name: Similar artists (recompute with the new sets)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         run: npm run similarity -- --no-fetch
+      - name: News (press items about our bands and festivals; Claude Haiku within NEWS_BUDGET_USD a month, default $5)
+        if: ${{ vars.NEWS_ENABLED != 'false' && !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test || inputs.bootleg_check || inputs.bootleg_publish || (inputs.admin_ops))) }}
+        continue-on-error: true
+        env:
+          NEWS_BUDGET_USD: ${{ vars.NEWS_BUDGET_USD }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            npm run news -- --dry-run
+          elif [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.COLLECTOR_PUBLISH }}" != "true" ]; then
+            npm run news -- --dry-run
+          else
+            npm run news
+          fi
       - name: Announce new pages to search engines (IndexNow; skipped until the live site is open)
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
         continue-on-error: true

@@ -38,6 +38,9 @@ export default async function AdminPage() {
   return (
     <main data-od="admin">
       <h1>Admin</h1>
+      <p>
+        <Link href="/admin/news">News</Link>: articles waiting for you, and published news.
+      </p>
 
       <section aria-labelledby="catalogue">
         <h2 id="catalogue">Catalogue</h2>

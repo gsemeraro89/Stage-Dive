@@ -52,6 +52,8 @@ export interface LlmsData {
   best?: { slug: string; title: string; count: number }[];
   /** Official concerts in HD (src/lib/hd.ts); the page is listed from ten. */
   hd?: number;
+  /** The newest published news articles (src/lib/news), newest first. */
+  news?: { slug: string; title: string; publishedAt: Date }[];
 }
 
 export function llmsTxt(data: LlmsData): string {
@@ -76,6 +78,9 @@ export function llmsTxt(data: LlmsData): string {
       ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
       : []),
     ...(hdIsStrong(data.hd ?? 0) ? [`- [Full concerts in HD](${abs(HD_PATH)}): the ${data.hd} official concerts in high definition, most watched first`] : []),
+    ...(data.news?.length
+      ? [`- [News](${abs("/news")}): short news about the bands and festivals on the site (tours, festival line-ups, live albums, reunions, anniversaries), written by ${SITE_NAME} from the music press, each naming and linking its source; RSS at ${abs("/news/feed.xml")}; a Markdown copy of an article is at its address with \`.md\` added`]
+      : []),
     "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
     "",
@@ -196,6 +201,9 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
     ...(hdIsStrong(data.hd ?? 0) ? ["## Full concerts in HD", "", `- [${HD_HEADING}](${abs(HD_PATH)}): ${count(data.hd!)} in high definition, most watched first`, ""] : []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
+    ...(data.news?.length
+      ? ["## Latest news", "", ...data.news.map((n) => `- [${n.title}](${abs(`/news/${n.slug}`)}) (${n.publishedAt.toISOString().slice(0, 10)})`), ""]
+      : []),
     "## Most watched concerts",
     "",
     ...data.mostWatched.map(concertLine),

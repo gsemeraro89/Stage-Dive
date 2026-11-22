@@ -22,7 +22,7 @@ describe("robots.txt", () => {
     const rules = r.rules as { userAgent: string | string[]; allow: string; disallow: string[] }[];
     expect(rules[0]).toEqual({ userAgent: "*", allow: "/", disallow: ["/admin", "/api/"] });
     expect(rules[1].userAgent).toEqual(AI_CRAWLERS);
-    expect(r.sitemap).toBe("https://stagedive.example/sitemap.xml");
+    expect(r.sitemap).toEqual(["https://stagedive.example/sitemap.xml", "https://stagedive.example/news-sitemap.xml"]);
   });
   it("names the main assistants' crawlers", () => {
     for (const bot of ["GPTBot", "OAI-SearchBot", "ClaudeBot", "Claude-SearchBot", "PerplexityBot", "Google-Extended", "Applebot-Extended", "CCBot", "bingbot"]) {

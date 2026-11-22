@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
       // Songs played live (src/lib/songs.ts): a band's songs and one song.
       { source: "/songs/:band([a-z0-9-]+)\\.md", destination: "/md/songs/:band" },
       { source: "/songs/:band([a-z0-9-]+)/:song([a-z0-9-]+)\\.md", destination: "/md/songs/:band/:song" },
+      // News articles (src/lib/news/seo.ts).
+      { source: "/news/:slug([a-z0-9-]+)\\.md", destination: "/md/news/:slug" },
     ];
   },
 };

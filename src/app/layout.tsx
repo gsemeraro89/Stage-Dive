@@ -65,6 +65,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/hd" data-od="footer-hd">
               IN HD &gt;&gt;
             </Link>
+            <Link href="/news" data-od="footer-news">
+              NEWS &gt;&gt;
+            </Link>
             {/* Required by the YouTube API Services terms: how the site uses them, and Google's privacy policy. */}
             <Link href="/privacy" data-od="footer-privacy">
               Privacy
