@@ -39,7 +39,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/lib/setlist/` | Setlists from the video description, chapters or comments |
 | `src/lib/collector/` | Collector rules, YouTube client, Claude classifier (Haiku lane), MusicBrainz |
 | `src/lib/seo.ts`, `structured-data.ts`, `answers.ts`, `concert-notes.ts`, `llms.ts`, `sitemap.ts`, `robots.ts`, `indexnow.ts` | Search and AI assistants (CLAUDE.md "SEO, AEO and AI search"): what is indexed, titles, schema.org, answer-first leads, FAQ, concert notes, `/llms.txt`, `.md` copies, sitemap, IndexNow |
-| `src/lib/news/`, `scripts/news.ts`, `data/news-feeds.json` | News: press feeds, matcher (our bands and festivals only), Claude Haiku writer + fact check, pages `/news`, `/news/[slug]`, `/news/feed.xml`, `/news-sitemap.xml`, admin queue `/admin/news` |
+| `src/lib/news/`, `scripts/news.ts`, `data/news-feeds.json` | News: press feeds, matcher (our bands and festivals only), Claude Haiku writer + fact check, pages `/news`, `/news/[slug]`, topic pages `/news/tours`, `/news/festivals`, `/news/live-albums`, `/news/new-music`, `/news/reunions` (indexed from 3 articles), band news `/artists/[slug]/news` (indexed from 2), `/news/feed.xml`, `/news-sitemap.xml`, admin queue `/admin/news` |
 | `tests/` | Automated tests (Vitest); `tests/fixtures/seed-concerts.json` is test data only |
 
 ## Collector and jobs (GitHub Actions, free)
