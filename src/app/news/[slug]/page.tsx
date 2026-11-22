@@ -2,7 +2,7 @@
 // linked, NewsArticle structured data, and links into the catalogue: the band and festival pages and a
 // few of their concerts ("Watch <band>'s full concerts"). Structure only; the look is the designer's.
 // Hooks: data-od="news-article", "news-title", "page-lead", "news-date", "news-picture", "news-body",
-// "news-source", "news-watch", "news-more".
+// "news-source", "news-watch", "news-hub-link" (its topic page, e.g. /news/tours), "news-more".
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +10,7 @@ import { cache } from "react";
 import { Crumbs } from "@/components/gig/PageHead";
 import { NewsList, newsDate } from "@/components/news/NewsList";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { hubForTopic, newsHubPath } from "@/lib/news/hubs";
 import { getNewsArticle } from "@/lib/news/queries";
 import { newsArticleJsonLd, newsIsStrong, newsSearchTitle, watchLine } from "@/lib/news/seo";
 import { clip, robotsFor, shareImages } from "@/lib/seo";
@@ -51,6 +52,8 @@ export default async function NewsArticlePage({ params }: Props) {
   if (!page) notFound();
   const { article: a, bands, festival, cover, more } = page;
   const path = `/news/${a.slug}`;
+  // The topic page the article belongs to (/news/tours...), in the breadcrumbs and as a link.
+  const hub = hubForTopic(a.topic);
   return (
     <main data-od="news-article" className="pg nw-article">
       <JsonLd
@@ -59,13 +62,14 @@ export default async function NewsArticlePage({ params }: Props) {
           breadcrumbs([
             ["Home", "/"],
             ["News", "/news"],
+            ...(hub ? [[hub.label, newsHubPath(hub.slug)] as [string, string]] : []),
             [a.title, path],
           ]),
         ]}
       />
       <article>
         <header className="nw-head">
-          <Crumbs trail={[{ label: "News", href: "/news" }, { label: a.title }]} />
+          <Crumbs trail={[{ label: "News", href: "/news" }, ...(hub ? [{ label: hub.label, href: newsHubPath(hub.slug) }] : []), { label: a.title }]} />
           <h1 className="nw-title" data-od="news-title">
             {a.title}
           </h1>
@@ -161,6 +165,14 @@ export default async function NewsArticlePage({ params }: Props) {
         </section>
       )}
       <p className="nw-all">
+        {hub && (
+          // Unstyled for now (designer): the article's topic page.
+          <>
+            <Link href={newsHubPath(hub.slug)} data-od="news-hub-link">
+              {hub.more}
+            </Link>{" "}
+          </>
+        )}
         <Link href="/news">All news</Link>
       </p>
     </main>

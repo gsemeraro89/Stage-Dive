@@ -137,7 +137,7 @@ function namesLine(names: string[]): string {
   const unique = [...new Set(names.filter(Boolean))];
   if (!unique.length) return "";
   const shown = unique.slice(0, 5);
-  return unique.length > shown.length ? `${shown.join(", ")} and ${plural(unique.length - shown.length, "more")}` : listWords(shown);
+  return unique.length > shown.length ? `${shown.join(", ")} and ${unique.length - shown.length} more` : listWords(shown);
 }
 
 /**
@@ -155,7 +155,7 @@ export function newsHubForPhrase(p: string): string {
   if (/\btour|\btouring\b/.test(p)) return newsHubPath("tours");
   if (/\bline ?ups?\b|\bfestivals?\b/.test(p)) return newsHubPath("festivals");
   if (/\blive (album|albums|record|release)\b|\bconcert film\b/.test(p)) return newsHubPath("live-albums");
-  if (/\bnew (album|albums|single|song|songs|music|record|ep)\b/.test(p)) return newsHubPath("new-music");
+  if (/\bnew ((rock|metal|punk|indie) )?(album|albums|single|singles|song|songs|music|record|ep)\b/.test(p)) return newsHubPath("new-music");
   if (/\breunion|\breunite/.test(p)) return newsHubPath("reunions");
   return "/news";
 }

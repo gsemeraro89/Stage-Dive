@@ -1,16 +1,19 @@
 // The news list (owner, 21 Nov 2026): short original articles about the bands and festivals on the site,
 // from the rock press in our own words (src/lib/news), newest first. Page 1 is /news, later pages
 // /news/page/<n> (served ready-made; no query string). Structure only; the look is the designer's.
-// Hooks: data-od="news-index", "page-lead", "news-list", "news-item", "pagination", "news-feed-link".
+// Hooks: data-od="news-index", "page-lead", "news-hubs" (the topic pages: tours, festivals...), "news-list",
+// "news-item", "pagination", "news-feed-link".
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/gig/PageHead";
 import { NewsList } from "@/components/news/NewsList";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { listNews } from "@/lib/news/queries";
+import { NEWS_HUBS } from "@/lib/news/hubs";
+import { listNews, newsHubCounts } from "@/lib/news/queries";
 import { NEWS_INDEX_DESCRIPTION, NEWS_INDEX_TITLE, newsIndexLead } from "@/lib/news/seo";
 import { robotsFor, SHARE_FALLBACK_IMAGE, shareImages } from "@/lib/seo";
 import { breadcrumbs, itemList } from "@/lib/structured-data";
+import { NewsHubLinks } from "./news-hub";
 
 export const newsPagePath = (page: number) => (page > 1 ? `/news/page/${page}` : "/news");
 
@@ -28,7 +31,8 @@ export async function newsIndexMetadata(page: number): Promise<Metadata> {
 }
 
 export async function NewsIndex({ page: wanted }: { page: number }) {
-  const { articles, page, pages } = await listNews({ page: wanted });
+  const [{ articles, page, pages }, counts] = await Promise.all([listNews({ page: wanted }), newsHubCounts()]);
+  const hubs = NEWS_HUBS.filter((h) => (counts.get(h.slug) ?? 0) > 0);
   const names = [...new Set(articles.flatMap((a) => (a.cover ? [a.cover.of] : a.venueName ? [a.venueName] : [])))];
   return (
     <main data-od="news-index" className="pg nw">
@@ -44,6 +48,8 @@ export async function NewsIndex({ page: wanted }: { page: number }) {
           {newsIndexLead(names)}
         </p>
       </PageHead>
+      {/* The news by topic (/news/tours, /news/festivals...), each built from the articles. Unstyled for now (designer). */}
+      <NewsHubLinks hubs={hubs} counts={counts} label="News by topic" />
       {articles.length === 0 ? (
         <section className="pg-section" data-od="empty">
           <p>No news yet.</p>

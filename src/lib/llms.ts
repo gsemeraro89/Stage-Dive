@@ -19,6 +19,7 @@ import { placeLine, SITE_NAME } from "./site";
 import { plural } from "./text";
 import type { LiveAlbumView } from "./live-albums";
 import { HD_HEADING, HD_PATH, hdIsStrong, hdLead, hdQuestions } from "./hd";
+import { bandNewsPath, NEWS_HUBS, newsHubIsStrong, newsHubPath } from "./news/hubs";
 import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
@@ -54,6 +55,13 @@ export interface LlmsData {
   hd?: number;
   /** The newest published news articles (src/lib/news), newest first. */
   news?: { slug: string; title: string; publishedAt: Date }[];
+  /** Published articles per news topic page (hub slug -> count); strong ones are listed. */
+  newsHubs?: Map<string, number>;
+}
+
+/** The news topic pages worth listing (src/lib/news/hubs.ts: three articles or more). */
+function strongHubs(counts: Map<string, number> | undefined) {
+  return NEWS_HUBS.filter((h) => newsHubIsStrong(counts?.get(h.slug) ?? 0)).map((h) => ({ hub: h, count: counts!.get(h.slug)! }));
 }
 
 export function llmsTxt(data: LlmsData): string {
@@ -79,7 +87,11 @@ export function llmsTxt(data: LlmsData): string {
       : []),
     ...(hdIsStrong(data.hd ?? 0) ? [`- [Full concerts in HD](${abs(HD_PATH)}): the ${data.hd} official concerts in high definition, most watched first`] : []),
     ...(data.news?.length
-      ? [`- [News](${abs("/news")}): short news about the bands and festivals on the site (tours, festival line-ups, live albums, reunions, anniversaries), written by ${SITE_NAME} from the music press, each naming and linking its source; RSS at ${abs("/news/feed.xml")}; a Markdown copy of an article is at its address with \`.md\` added`]
+      ? [
+          `- [News](${abs("/news")}): short news about the bands and festivals on the site (tours, festival line-ups, live albums, reunions, anniversaries), written by ${SITE_NAME} from the music press, each naming and linking its source; RSS at ${abs("/news/feed.xml")}; a Markdown copy of an article is at its address with \`.md\` added`,
+          ...strongHubs(data.newsHubs).map(({ hub, count }) => `- [News: ${hub.label.toLowerCase()}](${abs(newsHubPath(hub.slug))}): ${plural(count, "story", "stories")}, newest first (Markdown copy at ${abs(`${newsHubPath(hub.slug)}.md`)})`),
+          "- Band news: each band with news has its news stories at `/artists/<band>/news`; the band's Markdown copy lists the latest and answers whether the band is touring when a recent tour story says so",
+        ]
       : []),
     "- Festival and venue years: every festival or venue with two or more concerts played there in one year has its own page at `/venues/<place>/<year>`, e.g. every concert from one edition of a festival",
     "- Songs played live: each band with setlists has a list of the songs it plays live at `/songs/<band>`, and every song a page with every live version at `/songs/<band>/<song>` (each version starts the concert at the song)",
@@ -201,6 +213,9 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
     ...(hdIsStrong(data.hd ?? 0) ? ["## Full concerts in HD", "", `- [${HD_HEADING}](${abs(HD_PATH)}): ${count(data.hd!)} in high definition, most watched first`, ""] : []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
+    ...(strongHubs(data.newsHubs).length
+      ? ["## News by topic", "", ...strongHubs(data.newsHubs).map(({ hub, count }) => `- [${hub.label}](${abs(newsHubPath(hub.slug))}): ${plural(count, "story", "stories")}`), ""]
+      : []),
     ...(data.news?.length
       ? ["## Latest news", "", ...data.news.map((n) => `- [${n.title}](${abs(`/news/${n.slug}`)}) (${n.publishedAt.toISOString().slice(0, 10)})`), ""]
       : []),
@@ -215,9 +230,18 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
   ].join("\n");
 }
 
-/** Questions and answers as Markdown (src/lib/answers.ts). */
+/** Questions and answers as Markdown (src/lib/answers.ts); an answer from a news article links to it. */
 function qaMarkdown(questions: QA[]): string[] {
-  return questions.length ? ["## Questions and answers", "", ...questions.flatMap((q) => [`### ${q.question}`, "", q.answer, ""])] : [];
+  return questions.length
+    ? ["## Questions and answers", "", ...questions.flatMap((q) => [`### ${q.question}`, "", q.link ? `${q.answer} Read: [${q.link.text}](${abs(q.link.href)})` : q.answer, ""])]
+    : [];
+}
+
+/** A band's news for its Markdown copy: the latest articles, how many, and the answers built from them. */
+export interface BandNewsForMd {
+  latest: { slug: string; title: string; publishedAt: Date }[];
+  total: number;
+  questions: QA[];
 }
 
 /** A concert note with its links as Markdown links. */
@@ -299,6 +323,8 @@ export function bandMarkdown(
   setlists: string[][] = [],
   /** Live albums from MusicBrainz (src/lib/live-albums.ts). */
   liveAlbums: LiveAlbumView[] = [],
+  /** The band's news (src/lib/news): latest articles and the touring answer. */
+  news: BandNewsForMd = { latest: [], total: 0, questions: [] },
 ): string {
   const answers = bandAnswers(band, concerts, setlists, liveAlbums);
   const stats = bandStatLines(bandStatsFor(band.name, concerts, setlists));
@@ -348,7 +374,16 @@ export function bandMarkdown(
           "",
         ]
       : []),
-    ...qaMarkdown(answers.questions),
+    ...(news.latest.length
+      ? [
+          "## News",
+          "",
+          ...news.latest.map((n) => `- [${n.title}](${abs(`/news/${n.slug}`)}) (${n.publishedAt.toISOString().slice(0, 10)})`),
+          ...(news.total > news.latest.length ? ["", `Every ${band.name} news story (${news.total}): ${abs(bandNewsPath(band.slug))}`] : []),
+          "",
+        ]
+      : []),
+    ...qaMarkdown([...answers.questions, ...news.questions]),
     `Source: ${SITE_NAME}, ${abs(`/artists/${band.slug}`)}`,
     "",
   ].join("\n");

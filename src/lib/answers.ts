@@ -16,10 +16,13 @@ import { setlistSongs, songCount, type Song, type TypicalPosition } from "./song
 import { listWords, plural, quoted, spokenDuration, spokenTotal, topCounts, whenWords } from "./text";
 import { BOOTLEG_EXPLAINED, type BootlegMark } from "./bootlegs";
 import { LIVE_ALBUMS_IN_ANSWER, sortAlbums, type LiveAlbumView } from "./live-albums";
+import { newsDay } from "./news/hubs";
 
 export interface QA {
   question: string;
   answer: string;
+  /** Where the answer comes from on our site (a news article), shown as a link after it. */
+  link?: { href: string; text: string };
 }
 
 export interface Answers {
@@ -572,4 +575,59 @@ export function venueYearAnswers(
     answer: `${concerts.length}, ${totalTime(concerts)} of music${setlistCount ? `, ${setlistCount === concerts.length ? "all" : setlistCount} with the setlist` : ""}.`,
   });
   return { lead, questions };
+}
+
+// ---- Answers from our news (owner, 22 Nov 2026) ----
+// Only from an article we published, saying what it says, with its date and a link; no article, no answer.
+
+/** How recent a tour article must be to answer "Is <band> touring?". */
+export const TOURING_NEWS_MONTHS = 6;
+/** How recent a festival (line-up) article must be to answer "What is the <festival> line-up?". */
+export const LINEUP_NEWS_MONTHS = 12;
+
+/** The date `months` months before `now`. Pure. */
+export function monthsBefore(now: Date, months: number): Date {
+  const d = new Date(now);
+  d.setUTCMonth(d.getUTCMonth() - months);
+  return d;
+}
+
+interface NewsForAnswer {
+  slug: string;
+  title: string;
+  lead: string;
+  publishedAt: Date;
+}
+
+const sentence = (s: string) => (/[.?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`);
+
+/** "Is Metallica touring?", from the band's newest tour article of the last six months. Pure. */
+export function touringQuestion(name: string, article: NewsForAnswer | null, now = new Date()): QA | null {
+  if (!article || article.publishedAt < monthsBefore(now, TOURING_NEWS_MONTHS) || article.publishedAt > now) return null;
+  return {
+    question: `Is ${name} touring?`,
+    answer: `The latest tour news about ${name} on ${SITE_NAME}, from ${newsDay(article.publishedAt)}: ${sentence(article.lead)}`,
+    link: { href: `/news/${article.slug}`, text: article.title },
+  };
+}
+
+/** Acts named in a line-up answer, at most. */
+export const LINEUP_ACTS_SHOWN = 12;
+
+/**
+ * "What is the Glastonbury 2027 line-up?" (the year only when the headline gives it), from the festival's
+ * newest line-up article of the last twelve months, with the acts the source names. Pure.
+ */
+export function lineupQuestion(name: string, article: (NewsForAnswer & { artists: string[] }) | null, now = new Date()): QA | null {
+  if (!article || article.publishedAt < monthsBefore(now, LINEUP_NEWS_MONTHS) || article.publishedAt > now) return null;
+  const year = article.title.match(/\b(20\d{2})\b/)?.[1];
+  const acts = [...new Set(article.artists.map((a) => a.trim()).filter(Boolean))];
+  const shown = acts.slice(0, LINEUP_ACTS_SHOWN);
+  return {
+    question: year ? `What is the ${name} ${year} line-up?` : `What is the latest ${name} line-up news?`,
+    answer:
+      `The latest line-up news about ${name} on ${SITE_NAME}, from ${newsDay(article.publishedAt)}: ${sentence(article.lead)}` +
+      (shown.length ? ` Acts named: ${listWords(acts.length > shown.length ? [...shown, `${acts.length - shown.length} more`] : shown)}.` : ""),
+    link: { href: `/news/${article.slug}`, text: article.title },
+  };
 }
