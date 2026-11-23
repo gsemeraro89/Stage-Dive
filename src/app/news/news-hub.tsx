@@ -33,7 +33,7 @@ export async function newsHubMetadata(slug: string): Promise<Metadata> {
     alternates: { canonical: path, types: { "text/markdown": `${path}.md`, "application/rss+xml": "/news/feed.xml" } },
     robots: robotsFor(newsHubIsStrong(total)),
     // The newest story's own picture (a frame of its band's concert here), else the site's card.
-    openGraph: { title, description, url: path, images: shareImages(articles.find((a) => a.cover)?.cover?.thumbnail.src) },
+    openGraph: { title, description, url: path, images: shareImages(articles.find((a) => a.cover)?.cover?.src) },
   };
 }
 

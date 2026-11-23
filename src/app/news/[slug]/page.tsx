@@ -3,6 +3,9 @@
 // few of their concerts ("Watch <band>'s full concerts"). Structure only; the look is the designer's.
 // Hooks: data-od="news-article", "news-title", "page-lead", "news-date", "news-picture", "news-body",
 // "news-source", "news-watch", "news-hub-link" (its topic page, e.g. /news/tours), "news-more".
+// Visual news (owner, 23 Nov 2026; unstyled for now, designer): "news-topic" (the topic stamp, data-topic),
+// "news-figure" (data-kind = band-photo | festival-photo | band-concert | festival-concert) and
+// "news-picture-credit" (a Commons photo's author, licence and link, required next to the photo).
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -41,8 +44,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: clip(a.lead),
       publishedTime: a.publishedAt.toISOString(),
       modifiedTime: a.updatedAt.toISOString(),
-      // Our own picture of the band or festival, else the site's card (never the source's picture).
-      images: shareImages(cover?.thumbnail.src),
+      // The story's own picture (src/lib/news/covers.ts), else the site's card (never the source's picture).
+      images: shareImages(cover?.src),
     },
   };
 }
@@ -50,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NewsArticlePage({ params }: Props) {
   const page = await load((await params).slug);
   if (!page) notFound();
-  const { article: a, bands, festival, cover, more } = page;
+  const { article: a, bands, festival, cover, topicLabel, more } = page;
   const path = `/news/${a.slug}`;
   // The topic page the article belongs to (/news/tours...), in the breadcrumbs and as a link.
   const hub = hubForTopic(a.topic);
@@ -58,7 +61,7 @@ export default async function NewsArticlePage({ params }: Props) {
     <main data-od="news-article" className="pg nw-article">
       <JsonLd
         data={[
-          newsArticleJsonLd(a, { image: cover?.thumbnail.src, bands, festival }),
+          newsArticleJsonLd(a, { image: cover?.src, bands, festival }),
           breadcrumbs([
             ["Home", "/"],
             ["News", "/news"],
@@ -70,6 +73,10 @@ export default async function NewsArticlePage({ params }: Props) {
       <article>
         <header className="nw-head">
           <Crumbs trail={[{ label: "News", href: "/news" }, ...(hub ? [{ label: hub.label, href: newsHubPath(hub.slug) }] : []), { label: a.title }]} />
+          {/* The topic stamp ("Tour", "Live album"...). Unstyled for now (designer). */}
+          <p className="nw-topic" data-od="news-topic" data-topic={a.topic}>
+            {topicLabel}
+          </p>
           <h1 className="nw-title" data-od="news-title">
             {a.title}
           </h1>
@@ -83,19 +90,28 @@ export default async function NewsArticlePage({ params }: Props) {
         </header>
 
         {cover && (
-          <figure className="nw-figure">
-            {/* Our own picture: a frame of the band's (or festival's) concert here. Never the source's. */}
+          <figure className="nw-figure" data-od="news-figure" data-kind={cover.kind}>
+            {/* Our own picture: the band's or festival's free photo, else a frame of their concert here. Never the source's. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={cover.thumbnail.src}
-              srcSet={cover.thumbnail.srcSet}
-              sizes="(min-width: 1001px) 60vw, 100vw"
-              width={cover.thumbnail.width}
-              height={cover.thumbnail.height}
+              src={cover.src}
+              srcSet={cover.srcSet}
+              sizes={cover.srcSet ? "(min-width: 1001px) 60vw, 100vw" : undefined}
+              width={cover.width}
+              height={cover.height}
               alt={cover.of}
               className="nw-picture"
               data-od="news-picture"
             />
+            {cover.credit && (
+              // CC licences: author, licence and a link next to the photo. Unstyled for now (designer).
+              <figcaption className="nw-credit" data-od="news-picture-credit">
+                <a href={cover.credit.sourcePage} rel="noopener" target="_blank">
+                  {cover.credit.line}
+                  <span className="od-sr"> (opens in a new tab)</span>
+                </a>
+              </figcaption>
+            )}
           </figure>
         )}
 

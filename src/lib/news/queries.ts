@@ -1,12 +1,15 @@
 // Reading news for the pages: the news list, one article, a band's or a festival's latest news.
-// Pictures are our own (owner rule: no image is copied from the source): the band's picture on our site
-// (a frame of its concert), else the festival's, else none (the page then shares the site's card).
+// Pictures are our own (owner rule: no image is copied from the source): every story's picture is chosen in
+// src/lib/news/covers.ts (the band's or the festival's free photo with its credit, else a concert of theirs
+// here), from one batched read kept in memory.
 import { LINEUP_NEWS_MONTHS, TOURING_NEWS_MONTHS, lineupQuestion, monthsBefore, touringQuestion } from "../answers";
 import { getDb } from "../db";
 import { OFFICIAL_FIRST } from "../filters";
 import { cached } from "../memo";
-import { findConcertViews, listArtists, listVenues, type Cover } from "../queries";
+import { findConcertViews, listArtists, listVenues } from "../queries";
+import { chooseNewsCover, newsCoverSources, type CoverArticle, type NewsCover, type NewsCoverSources } from "./covers";
 import { bandNewsLead, hubCounts, hubYear, newsHub, newsHubLead } from "./hubs";
+import { topicLabel } from "./topics";
 
 export const NEWS_PER_PAGE = 24;
 
@@ -19,6 +22,9 @@ const LIST_FIELDS = {
   bandSlugs: true,
   venueSlug: true,
   venueName: true,
+  subject: true,
+  subjectKind: true,
+  artists: true,
   publishedAt: true,
   updatedAt: true,
   sourceName: true,
@@ -26,8 +32,8 @@ const LIST_FIELDS = {
 
 export const PUBLISHED = { status: "PUBLISHED" } as const;
 
-/** An article's picture, and what it shows (for the alt text). */
-export type NewsPicture = Cover & { of: string };
+/** An article's picture, what it shows (the alt text) and, for a Commons photo, its credit. */
+export type NewsPicture = NewsCover;
 
 /** Our bands and festivals with a page, by slug (cached lists, src/lib/memo.ts). */
 async function pages() {
@@ -40,17 +46,20 @@ async function pages() {
 
 type Pages = Awaited<ReturnType<typeof pages>>;
 
-/** The picture of an article: its first band's, else its festival's. Pure given the lists. */
-function pictureOf(a: { bandSlugs: string[]; venueSlug: string | null }, p: Pages): NewsPicture | null {
-  for (const slug of a.bandSlugs) {
-    const b = p.bands.get(slug);
-    if (b?.cover) return { ...b.cover, of: b.name };
-  }
-  const f = a.venueSlug ? p.festivals.get(a.venueSlug) : undefined;
-  return f?.cover ? { ...f.cover, of: f.name } : null;
+/** A listed article with its picture and its topic stamp ("Tour", "Live album"...). Pure given the sources. */
+function withPicture<T extends CoverArticle>(a: T, s: NewsCoverSources) {
+  return { ...a, cover: chooseNewsCover(a, s), topicLabel: topicLabel(a.topic) };
 }
 
-/** Published articles, newest first; optionally one band's or one festival's only. */
+/**
+ * The lead story of a list (owner, 23 Nov 2026: a more visual news page): the newest story with a picture.
+ * Its id, or null when no story has one. Pure.
+ */
+export function leadStoryId(articles: { id: number; cover: NewsCover | null }[]): number | null {
+  return articles.find((a) => a.cover)?.id ?? null;
+}
+
+/** Published articles, newest first; optionally one band's or one festival's only. Each with `cover`, `topicLabel` and `isLead` (the list's lead story). */
 export async function listNews(opts: { page?: number; take?: number; bandSlug?: string; venueSlug?: string; topics?: string[] } = {}) {
   const page = Math.max(1, opts.page ?? 1);
   const take = opts.take ?? NEWS_PER_PAGE;
@@ -60,12 +69,14 @@ export async function listNews(opts: { page?: number; take?: number; bandSlug?: 
     ...(opts.venueSlug ? { venueSlug: opts.venueSlug } : {}),
     ...(opts.topics ? { topic: { in: opts.topics } } : {}),
   };
-  const [rows, total, p] = await Promise.all([
+  const [rows, total, sources] = await Promise.all([
     getDb().newsArticle.findMany({ where, orderBy: [{ publishedAt: "desc" }, { id: "desc" }], skip: (page - 1) * take, take, select: LIST_FIELDS }),
     getDb().newsArticle.count({ where }),
-    pages(),
+    newsCoverSources(),
   ]);
-  return { articles: rows.map((r) => ({ ...r, cover: pictureOf(r, p) })), total, page, pages: Math.max(1, Math.ceil(total / take)) };
+  const pictured = rows.map((r) => withPicture(r, sources));
+  const lead = leadStoryId(pictured);
+  return { articles: pictured.map((a) => ({ ...a, isLead: a.id === lead })), total, page, pages: Math.max(1, Math.ceil(total / take)), leadId: lead };
 }
 
 export type NewsListItem = Awaited<ReturnType<typeof listNews>>["articles"][number];
@@ -194,9 +205,13 @@ export async function getNewsArticle(slug: string) {
   const f = a.venueSlug ? p.festivals.get(a.venueSlug) : undefined;
   const festival = f ? { slug: f.slug, name: f.name, concerts: f.concerts } : null;
   const related = [...(a.bandSlugs.length ? [{ bandSlugs: { hasSome: a.bandSlugs } }] : []), ...(a.venueSlug ? [{ venueSlug: a.venueSlug }] : [])];
-  const more = related.length
-    ? await getDb().newsArticle.findMany({ where: { ...PUBLISHED, id: { not: a.id }, OR: related }, orderBy: { publishedAt: "desc" }, take: 4, select: LIST_FIELDS })
-    : [];
+  const [moreRows, sources] = await Promise.all([
+    related.length
+      ? getDb().newsArticle.findMany({ where: { ...PUBLISHED, id: { not: a.id }, OR: related }, orderBy: { publishedAt: "desc" }, take: 4, select: LIST_FIELDS })
+      : Promise.resolve([]),
+    newsCoverSources(),
+  ]);
+  const more = moreRows.map((r) => withPicture(r, sources));
   // A few of their concerts to watch here (news drives people into the catalogue): official first, most watched.
   const concertsFor = (where: object) => findConcertViews({ where, orderBy: [OFFICIAL_FIRST, { viewCount: "desc" }, { id: "asc" }], take: 3 });
   const [bandConcerts, festivalConcerts] = await Promise.all([
@@ -213,7 +228,8 @@ export async function getNewsArticle(slug: string) {
     article: { ...a, paragraphs: paragraphs(a.body) },
     bands: bands.map((b, i) => ({ ...b, watch: bandConcerts[i].map(short) })),
     festival: festival ? { ...festival, watch: festivalConcerts.map(short) } : null,
-    cover: pictureOf(a, p),
+    cover: chooseNewsCover(a, sources),
+    topicLabel: topicLabel(a.topic),
     more,
   };
 }

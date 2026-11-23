@@ -2,7 +2,9 @@
 // from the rock press in our own words (src/lib/news), newest first. Page 1 is /news, later pages
 // /news/page/<n> (served ready-made; no query string). Structure only; the look is the designer's.
 // Hooks: data-od="news-index", "page-lead", "news-hubs" (the topic pages: tours, festivals...), "news-list",
-// "news-item", "pagination", "news-feed-link".
+// "news-item", "pagination", "news-feed-link". Visual news (owner, 23 Nov 2026; unstyled for now, designer): the newest
+// story with a picture carries data-lead="true" (its picture loads first); each item has "news-item-picture",
+// "news-topic" and, for a Commons photo, "news-item-credit" (src/components/news/NewsList.tsx).
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/gig/PageHead";
@@ -18,7 +20,7 @@ import { NewsHubLinks } from "./news-hub";
 export const newsPagePath = (page: number) => (page > 1 ? `/news/page/${page}` : "/news");
 
 export async function newsIndexMetadata(page: number): Promise<Metadata> {
-  const { total, pages } = await listNews({ page });
+  const { total, pages, articles } = await listNews({ page });
   if (page > pages) return {};
   return {
     title: page > 1 ? `Rock News · Page ${page}` : NEWS_INDEX_TITLE,
@@ -26,7 +28,7 @@ export async function newsIndexMetadata(page: number): Promise<Metadata> {
     alternates: { canonical: newsPagePath(page), types: { "application/rss+xml": "/news/feed.xml" } },
     // Later pages are lists of links: followed, not indexed. An empty list is not indexed either.
     robots: robotsFor(page === 1 && total > 0),
-    openGraph: { title: NEWS_INDEX_TITLE, description: NEWS_INDEX_DESCRIPTION, url: newsPagePath(page), images: shareImages(SHARE_FALLBACK_IMAGE) },
+    openGraph: { title: NEWS_INDEX_TITLE, description: NEWS_INDEX_DESCRIPTION, url: newsPagePath(page), images: shareImages(articles.find((x) => x.isLead)?.cover?.src ?? SHARE_FALLBACK_IMAGE) },
   };
 }
 
