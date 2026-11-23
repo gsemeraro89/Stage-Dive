@@ -10,6 +10,10 @@
 //                                   NEWS_BUDGET_USD; "news:dry" only reads the feeds and lists what would go
 //                                   to Claude (no Claude cost, nothing written)
 //   news-feeds                      check every press feed of data/news-feeds.json (which ones answer)
+//   news-subjects[:all]             give every news article its subject (the band or festival it is mainly about,
+//                                   for its picture; src/lib/news/subject.ts): articles without one, or all of them
+//   festival-photos[:force]         free festival photos for news pictures (Wikidata/Commons, photocopied, with credit;
+//                                   src/lib/news/festival-photos.ts): festivals not looked at in 30 days, or all (force)
 //   keyword-research[:k=v,...]      keyword research (scripts/keywords.ts; read-only, no quota, no Claude):
 //                                   e.g. keyword-research:full-bands=80,songs=100,minutes=60,long-tail=no
 //                                   News searches (tours, line-ups, new albums) for the top news-bands=50 bands and
@@ -26,7 +30,9 @@ import "dotenv/config";
 import { closeStaleReviewItems, hideConcert, mergeArtists, mergeVenues, normalizeCountries, rejectReviewVideos, splitArtist } from "../src/lib/admin/merge";
 import { getDb } from "../src/lib/db";
 import { checkFeeds } from "../src/lib/news/job";
+import { refreshFestivalPhotos } from "../src/lib/news/festival-photos";
 import { runNews } from "../src/lib/news/run";
+import { backfillNewsSubjects } from "../src/lib/news/subject";
 import { recompute } from "../src/lib/similarity/job";
 import { keywordArgs, keywordResearch } from "./keywords";
 import { missingBandsOp } from "./missing-bands";
@@ -63,6 +69,9 @@ async function main() {
     }
     else if (op === "news" || op === "news:dry") out.push({ news: await runNews(db, { dryRun: op === "news:dry" }) });
     else if (op === "news-feeds") out.push({ newsFeeds: await checkFeeds() });
+    else if (op === "news-subjects" || op === "news-subjects:all") out.push({ newsSubjects: await backfillNewsSubjects(db, { all: op.endsWith(":all") }) });
+    else if (op === "festival-photos" || op === "festival-photos:force")
+      out.push({ festivalPhotos: await refreshFestivalPhotos(db, undefined, { force: op.endsWith(":force"), limit: op.endsWith(":force") ? 500 : undefined }) });
     else throw new Error(`unknown operation: ${op}`);
   }
   // A merge changes who is similar to whom: recompute now rather than at the next collector run.

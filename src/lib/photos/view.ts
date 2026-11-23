@@ -9,6 +9,8 @@ export interface BandPhotoView {
   height: number;
   /** "Photo: Jane Doe / CC BY-SA 4.0, via Wikimedia Commons (photocopied by STAGEDIVE, ...)" */
   credit: string;
+  /** The photographer, as Commons names them. */
+  author: string;
   /** The Commons page of the original (link the credit here). */
   sourcePage: string;
   license: string;
@@ -24,6 +26,7 @@ export function toBandPhotoView(
     width: p.width,
     height: p.height,
     credit: creditLine(p),
+    author: p.author,
     sourcePage: p.sourcePage,
     license: p.license,
     licenseUrl: p.licenseUrl,
