@@ -48,7 +48,7 @@ export async function NewsIndex({ page: wanted }: { page: number }) {
           {newsIndexLead(names)}
         </p>
       </PageHead>
-      {/* The news by topic (/news/tours, /news/festivals...), each built from the articles. Unstyled for now (designer). */}
+      {/* The news by topic (/news/tours, /news/festivals...), each built from the articles. */}
       <NewsHubLinks hubs={hubs} counts={counts} label="News by topic" />
       {articles.length === 0 ? (
         <section className="pg-section" data-od="empty">

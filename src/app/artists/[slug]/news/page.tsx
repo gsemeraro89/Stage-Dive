@@ -3,7 +3,7 @@
 // articles we hold only; links back to the band's full concerts. Indexed from two articles
 // (bandNewsIsStrong); with one it is noindex,follow and out of the sitemap; with none it does not exist.
 // Served ready-made, rebuilt at most every 10 minutes.
-// Unstyled for now (designer). Hooks: data-od="band-news", "page-lead", "band-news-touring", "news-list",
+// Look: src/styles/pages.css "News by topic and by band". Hooks: data-od="band-news", "page-lead", "band-news-touring", "news-list",
 // "news-item", "band-news-watch".
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -68,8 +68,8 @@ export default async function BandNewsPage({ params }: Props) {
         </p>
       </PageHead>
       {touring && (
-        // Unstyled for now (designer): the touring answer, only when a tour story of the last six months exists.
-        <section aria-labelledby="band-news-touring" className="pg-section" data-od="band-news-touring">
+        // The touring answer, only when a tour story of the last six months exists.
+        <section aria-labelledby="band-news-touring" className="nw-touring" data-od="band-news-touring">
           <h2 id="band-news-touring">{touring.question}</h2>
           <p>
             {touring.answer}{" "}
@@ -81,7 +81,10 @@ export default async function BandNewsPage({ params }: Props) {
         <NewsList items={articles} label={`${band.name} news`} />
       </section>
       <p className="nw-all" data-od="band-news-watch">
-        <Link href={`/artists/${band.slug}`}>{watchLine(band.name, band.concerts)}</Link> · <Link href="/news">All news</Link>
+        <Link href={`/artists/${band.slug}`} className="nw-all-watch">
+          {watchLine(band.name, band.concerts)}
+        </Link>{" "}
+        <Link href="/news">All news</Link>
       </p>
     </main>
   );

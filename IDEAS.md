@@ -96,3 +96,30 @@ Not built: for the owner to approve, after keyword research (a keywords script l
 3. **Festival year** (`/venues/pinkpop/1996`): the line-up we hold for one edition, in running order when known. For "pinkpop 1996 line up".
 4. **Genre by decade** (`/genres/grunge/1990s`): the crossings with enough concerts. "90s grunge concerts".
 5. **Songs**: built (owner OK, 19 Nov 2026) as `/songs/<band>/<song>` and `/songs/<band>` (song titles collide across bands, so songs live under their band). See README.
+
+---
+
+## 2026-11-23 · after the news topic pages and band news pages (designer)
+
+Not built: for the owner to approve.
+
+### 1. The topic labels as rubber stamps on each clipping
+**Idea.** Every story in the news list gets a small black stamp in its corner with its pile: TOURS, FESTIVALS, LIVE ALBUMS, NEW MUSIC, REUNIONS. Pressing it opens the pile.
+
+**Why it fits.** A fanzine sorts its clippings by hand and stamps them; the reader learns the piles exist without reading the row of labels at the top. Black only, so the pink stays the header's.
+
+**Effort.** Small. The topic is already on every article; one link per row and a few lines of CSS.
+
+### 2. Tour dates as a torn ticket strip
+**Idea.** When a tour story names dates and cities ("Rose Bowl, June 5, 6, 10, 12"), show them under the "Is <band> touring?" answer as a strip of ticket stubs, perforated, one per date.
+
+**Why it fits.** It turns the one sentence into something a fan can read at a glance, in the paper language of the site. Only from facts in the article, so nothing is invented.
+
+**Effort.** Medium. The dates would have to be pulled out of the article as data by the news writer (main agent), then a small design pass.
+
+### 3. "This week in the pit" at the top of /news
+**Idea.** Once there are enough stories, the newest one of the week is glued larger at the top of /news, with its picture big and one handwritten line.
+
+**Why it fits.** A zine has a front-page story. Today all eight clippings weigh the same; a lead story gives the page a cover.
+
+**Effort.** Small. Design only: the first item of page 1, when it has a picture.

@@ -166,7 +166,7 @@ export default async function NewsArticlePage({ params }: Props) {
       )}
       <p className="nw-all">
         {hub && (
-          // Unstyled for now (designer): the article's topic page.
+          // The article's topic page.
           <>
             <Link href={newsHubPath(hub.slug)} data-od="news-hub-link">
               {hub.more}

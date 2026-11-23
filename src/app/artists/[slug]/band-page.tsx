@@ -463,7 +463,7 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                     <dd>
                       {q.answer}
                       {q.link && (
-                        // Unstyled for now (designer): the news article the answer comes from.
+                        // The news article the answer comes from.
                         <>
                           {" "}
                           <Link href={q.link.href} data-od="faq-news-link">

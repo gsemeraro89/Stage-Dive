@@ -2846,6 +2846,336 @@
   font-size: 14px;
 }
 
+/* ---------- News by topic and by band (22 Nov 2026) ----------
+   Same clippings, sorted into piles. No pink, no tape: the header's "News" label stays the live thing. */
+
+/* The piles (/news, the topic pages): a row of cut labels, dead straight because you press them twice.
+   The count is typed in a small black square, the way the FAQ's "+" is. */
+.nw-hubs {
+  margin: clamp(18px, 2vw, 26px) var(--margin) 0;
+}
+
+.nw-hub .nw-hubs {
+  margin-top: clamp(30px, 3.6vw, 46px);
+  padding-top: 24px;
+  border-top: var(--cut);
+}
+
+/* On the topic pages the row says what it is, in the small black label "More news" already uses. */
+.nw-hub .nw-hubs::before {
+  content: "More news";
+  display: table;
+  margin: 0 0 14px;
+  padding: 7px 12px 4px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1deg;
+}
+
+.nw-hubs ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nw-hubs li {
+  position: relative;
+  display: flex;
+}
+
+.nw-hubs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 4px 52px 0 14px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-rest);
+  font-family: var(--font-strip);
+  font-size: 16px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.nw-hubs li > span {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 2px 5px 0;
+  translate: 0 -50%;
+  background: var(--toner);
+  color: var(--paper);
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.nw-hubs a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.nw-hubs li:has(a:hover) > span {
+  background: var(--paper);
+  color: var(--toner);
+}
+
+.nw-hubs a:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 4px;
+}
+
+/* "Watch them live" (topic pages): the article's black "Now watch the whole set" sheet, one row per
+   band or festival: a cut play triangle, the name, its concerts typed at the end of the line. */
+.nw-hub-watch {
+  max-width: 980px;
+  margin-top: clamp(34px, 4vw, 50px);
+  padding: 0 clamp(16px, 2.4vw, 28px) clamp(14px, 1.8vw, 20px);
+  background: var(--toner);
+  color: var(--paper);
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.4deg;
+}
+
+.pg > .nw-hub-watch {
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+}
+
+.nw-hub-watch h2 {
+  display: inline-block;
+  margin: -14px 0 8px -6px;
+  padding: 8px 14px 5px;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(19px, 1.9vw, 25px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1.2deg;
+}
+
+.nw-hub-watch ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(20px, 3vw, 44px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nw-hub-watch li {
+  position: relative;
+  display: flex;
+  border-bottom: 1px dashed var(--toner-soft);
+}
+
+.nw-hub-watch li:only-child {
+  grid-column: 1 / -1;
+}
+
+.nw-hub-watch li a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch);
+  padding: 4px 132px 0 0;
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-size: 16px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.nw-hub-watch li a::before {
+  content: "";
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-top: -3px;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.nw-hub-watch li > span {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  translate: 0 -50%;
+  padding-top: 3px;
+  font-size: 13px;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.nw-hub-watch li a:hover {
+  background: var(--sheet);
+  color: var(--toner);
+}
+
+.nw-hub-watch li:has(a:hover) > span {
+  color: var(--toner);
+}
+
+.nw-hub-watch li a:focus-visible {
+  outline: 4px dashed var(--paper);
+  outline-offset: 2px;
+}
+
+/* "Is <band> touring?" (band news page): the answer typed on a clean sheet, the question a black
+   label stuck over its top edge. */
+.nw-touring {
+  max-width: 760px;
+  margin-top: clamp(30px, 3.4vw, 44px);
+  padding: 0 clamp(16px, 2.2vw, 24px) 14px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-rest);
+  rotate: 0.4deg;
+}
+
+.pg > .nw-touring {
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+}
+
+.nw-touring h2 {
+  display: inline-block;
+  margin: -14px 0 10px -6px;
+  padding: 8px 14px 5px;
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-weight: 400;
+  font-size: clamp(18px, 1.8vw, 23px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  rotate: -1.2deg;
+}
+
+.nw-touring p {
+  max-width: 68ch;
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+/* The story an answer comes from (here and in the closed questions on band and festival pages):
+   on its own line, typed small, a finger tall. */
+.nw-touring a,
+.pg-faq dd [data-od="faq-news-link"] {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 15px 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.nw-touring a::after,
+.pg-faq dd [data-od="faq-news-link"]::after {
+  content: " >>";
+  white-space: pre;
+}
+
+.nw-touring a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.nw-touring a:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 2px;
+}
+
+/* The foot of the news pages: links side by side, a finger apart. The way to the band's concerts is
+   the black label, the one to press. */
+.nw-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 26px;
+}
+
+.nw-all a.nw-all-watch {
+  padding: 10px 16px 6px;
+  background: var(--toner);
+  color: var(--paper);
+  box-shadow: var(--shadow-rest);
+  font-family: var(--font-strip);
+  font-size: 16px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.nw-band .nw-all {
+  margin-top: clamp(28px, 3.2vw, 40px);
+}
+
+@media (max-width: 760px) {
+  .nw-hubs ul {
+    gap: 10px 10px;
+  }
+
+  .nw-hubs a {
+    padding-left: 12px;
+    padding-right: 46px;
+    font-size: 15px;
+  }
+
+  .nw-hubs li > span {
+    right: 10px;
+  }
+
+  .nw-hub-watch ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nw-hub-watch li a {
+    padding-right: 122px;
+    font-size: 15px;
+  }
+
+  .nw-hub-watch,
+  .nw-touring {
+    rotate: none;
+  }
+}
+
 @media (max-width: 760px) {
   .nw-item,
   .nw-item:has(.nw-item-picture) {

@@ -3,7 +3,7 @@
 // an answer-first lead from the articles we hold, the articles newest first, and links to the bands' and
 // festivals' concert pages. Indexed from three articles (newsHubIsStrong); thinner ones are noindex,follow
 // and stay out of the sitemap. Served ready-made, rebuilt at most every 10 minutes.
-// Unstyled for now (designer). Hooks: data-od="news-hub", "page-lead", "news-list", "news-item",
+// Look: src/styles/pages.css "News by topic and by band". Hooks: data-od="news-hub", "page-lead", "news-list", "news-item",
 // "news-hub-watch", "news-hubs", "news-all-link".
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -71,8 +71,8 @@ export async function NewsHubPage({ slug }: { slug: string }) {
         </section>
       )}
       {(bands.length > 0 || festivals.length > 0) && (
-        // Unstyled for now (designer): the bands and festivals in this news, each to its full concerts here.
-        <section aria-labelledby="news-hub-watch" className="pg-section nw-hub-watch" data-od="news-hub-watch">
+        // The bands and festivals in this news, each to its full concerts here.
+        <section aria-labelledby="news-hub-watch" className="nw-hub-watch" data-od="news-hub-watch">
           <h2 id="news-hub-watch">Watch them live</h2>
           <ul>
             {bands.map((b) => (
@@ -98,7 +98,7 @@ export async function NewsHubPage({ slug }: { slug: string }) {
   );
 }
 
-/** Links to the news topic pages that have articles (the news list, the topic pages). Unstyled for now (designer). */
+/** Links to the news topic pages that have articles (the news list, the topic pages). */
 export function NewsHubLinks({ hubs, counts, label }: { hubs: typeof NEWS_HUBS; counts: Map<string, number>; label: string }) {
   if (!hubs.length) return null;
   return (
