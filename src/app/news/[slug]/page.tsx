@@ -73,6 +73,32 @@ export default async function NewsArticlePage({ params }: Props) {
       <article>
         <header className="nw-head">
           <Crumbs trail={[{ label: "News", href: "/news" }, ...(hub ? [{ label: hub.label, href: newsHubPath(hub.slug) }] : []), { label: a.title }]} />
+          {/* Design (23 Nov 2026): the story opens with its picture, the credit small under it. */}
+          {cover && (
+            <figure className="nw-figure" data-od="news-figure" data-kind={cover.kind}>
+              {/* Our own picture: the band's or festival's free photo, else a frame of their concert here. Never the source's. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={cover.src}
+                srcSet={cover.srcSet}
+                sizes={cover.srcSet ? "(min-width: 1001px) 60vw, 100vw" : undefined}
+                width={cover.width}
+                height={cover.height}
+                alt={cover.of}
+                className="nw-picture"
+                data-od="news-picture"
+              />
+              {cover.credit && (
+                // CC licences: author, licence and a link next to the photo. Unstyled for now (designer).
+                <figcaption className="nw-credit" data-od="news-picture-credit">
+                  <a href={cover.credit.sourcePage} rel="noopener" target="_blank">
+                    {cover.credit.line}
+                    <span className="od-sr"> (opens in a new tab)</span>
+                  </a>
+                </figcaption>
+              )}
+            </figure>
+          )}
           {/* The topic stamp ("Tour", "Live album"...). Unstyled for now (designer). */}
           <p className="nw-topic" data-od="news-topic" data-topic={a.topic}>
             {topicLabel}
@@ -88,32 +114,6 @@ export default async function NewsArticlePage({ params }: Props) {
             <time dateTime={a.publishedAt.toISOString()}>{newsDate(a.publishedAt)}</time>
           </p>
         </header>
-
-        {cover && (
-          <figure className="nw-figure" data-od="news-figure" data-kind={cover.kind}>
-            {/* Our own picture: the band's or festival's free photo, else a frame of their concert here. Never the source's. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={cover.src}
-              srcSet={cover.srcSet}
-              sizes={cover.srcSet ? "(min-width: 1001px) 60vw, 100vw" : undefined}
-              width={cover.width}
-              height={cover.height}
-              alt={cover.of}
-              className="nw-picture"
-              data-od="news-picture"
-            />
-            {cover.credit && (
-              // CC licences: author, licence and a link next to the photo. Unstyled for now (designer).
-              <figcaption className="nw-credit" data-od="news-picture-credit">
-                <a href={cover.credit.sourcePage} rel="noopener" target="_blank">
-                  {cover.credit.line}
-                  <span className="od-sr"> (opens in a new tab)</span>
-                </a>
-              </figcaption>
-            )}
-          </figure>
-        )}
 
         <div className="nw-body" data-od="news-body">
           {a.paragraphs.map((p, i) => (
@@ -177,7 +177,7 @@ export default async function NewsArticlePage({ params }: Props) {
       {more.length > 0 && (
         <section aria-labelledby="news-more" className="nw-more" data-od="news-more">
           <h2 id="news-more">More news</h2>
-          <NewsList items={more} label="More news" pictures={false} leads={false} />
+          <NewsList items={more} label="More news" leads={false} front={false} once={cover ? [cover.src] : []} />
         </section>
       )}
       <p className="nw-all">

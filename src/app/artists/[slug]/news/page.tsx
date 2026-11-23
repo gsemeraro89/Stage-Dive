@@ -78,7 +78,8 @@ export default async function BandNewsPage({ params }: Props) {
         </section>
       )}
       <section className="pg-section">
-        <NewsList items={articles} label={`${band.name} news`} />
+        {/* One band, one photo: glued on once (the front page story), the rest typed. */}
+        <NewsList items={articles} label={`${band.name} news`} once={[]} />
       </section>
       <p className="nw-all" data-od="band-news-watch">
         <Link href={`/artists/${band.slug}`} className="nw-all-watch">

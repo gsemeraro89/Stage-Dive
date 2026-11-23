@@ -9,7 +9,8 @@ export function LatestNews({ items, about, moreHref = "/news", moreLabel = "All 
   return (
     <section aria-labelledby="latest-news" data-od="latest-news" className="nw-latest">
       <h2 id="latest-news">Latest news</h2>
-      <NewsList items={items} label={`Latest news about ${about}`} pictures={false} />
+      {/* A compact row of picture clippings: no front page story, each picture once, headlines only. */}
+      <NewsList items={items} label={`Latest news about ${about}`} leads={false} front={false} once={[]} />
       <Link href={moreHref} className="nw-latest-more">
         {moreLabel}
       </Link>

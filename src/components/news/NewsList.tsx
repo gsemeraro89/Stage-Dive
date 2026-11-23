@@ -15,22 +15,54 @@ export function newsDate(d: Date): string {
 export type NewsListEntry = Pick<NewsListItem, "id" | "slug" | "title" | "lead" | "publishedAt"> &
   Partial<Pick<NewsListItem, "cover" | "topic" | "topicLabel" | "isLead">>;
 
-export function NewsList({ items, label, pictures = true, leads = true }: { items: NewsListEntry[]; label: string; pictures?: boolean; leads?: boolean }) {
+/**
+ * Design (23 Nov 2026):
+ * - `front`: the list has a front page, so its lead story (the newest with a picture) is glued on first, large.
+ *   Off in the small blocks ("Latest news", "More news").
+ * - `once`: every picture is glued on once. Pass the pictures already on the page (or an empty list): a story
+ *   whose picture was already used becomes a typed clipping. For lists about one band, where every story would
+ *   carry the same photo.
+ * - A story's lead sentence is typed on the front page story and on clippings without a picture; a pictured
+ *   clipping is picture, stamp, headline and date.
+ */
+export function NewsList({
+  items,
+  label,
+  pictures = true,
+  leads = true,
+  front = true,
+  once,
+}: {
+  items: NewsListEntry[];
+  label: string;
+  pictures?: boolean;
+  leads?: boolean;
+  front?: boolean;
+  once?: string[];
+}) {
+  const lead = front ? items.find((a) => a.isLead) : undefined;
+  const ordered = lead ? [lead, ...items.filter((a) => a !== lead)] : items;
+  const used = once ? new Set(once) : null;
+  const rows = ordered.map((a) => {
+    const pictured = Boolean(pictures && a.cover && !used?.has(a.cover.src));
+    if (pictured && a.cover) used?.add(a.cover.src);
+    return { a, pictured, isLead: a === lead };
+  });
   return (
     <ul className="nw-list" data-od="news-list" aria-label={label}>
-      {items.map((a) => (
-        <li key={a.id} className="nw-item" data-od="news-item" data-lead={a.isLead ? "true" : undefined}>
+      {rows.map(({ a, pictured, isLead }) => (
+        <li key={a.id} className="nw-item" data-od="news-item" data-lead={isLead ? "true" : undefined} data-pictured={pictured ? "true" : undefined}>
           <Link href={`/news/${a.slug}`} className="nw-item-link">
-            {pictures && a.cover && (
+            {pictured && a.cover && (
               // Our own picture of the band or festival (its free photo, else a frame of its concert here), never the
               // source's. Unstyled for now (designer). A Commons photo's credit is shown on the article page.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={a.cover.src}
                 srcSet={a.cover.srcSet}
-                sizes={a.isLead ? "(min-width: 1001px) 60vw, 100vw" : "(min-width: 1001px) 30vw, 100vw"}
+                sizes={isLead ? "(min-width: 1001px) 60vw, 100vw" : "(min-width: 1001px) 30vw, 100vw"}
                 alt={a.cover.of}
-                loading={a.isLead ? "eager" : "lazy"}
+                loading={isLead ? "eager" : "lazy"}
                 className="nw-item-picture"
                 data-od="news-item-picture"
                 data-kind={a.cover.kind}
@@ -40,11 +72,12 @@ export function NewsList({ items, label, pictures = true, leads = true }: { item
             )}
             <span className="nw-item-title">{a.title}</span>
           </Link>
-          {pictures && a.cover?.credit && (
+          {pictured && a.cover?.credit && (
             // A Commons photo is credited wherever it is shown (CC licences): author, licence, link. Unstyled for now (designer).
             <small className="nw-item-credit" data-od="news-item-credit">
               <a href={a.cover.credit.sourcePage} rel="noopener" target="_blank">
                 {a.cover.credit.line}
+                <span className="od-sr"> (opens in a new tab)</span>
               </a>
             </small>
           )}
@@ -57,7 +90,7 @@ export function NewsList({ items, label, pictures = true, leads = true }: { item
           <time className="nw-item-date" dateTime={a.publishedAt.toISOString()}>
             {newsDate(a.publishedAt)}
           </time>
-          {leads && <p className="nw-item-lead">{a.lead}</p>}
+          {leads && (isLead || !pictured) && <p className="nw-item-lead">{a.lead}</p>}
         </li>
       ))}
     </ul>

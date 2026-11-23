@@ -104,6 +104,8 @@ Not built: for the owner to approve, after keyword research (a keywords script l
 Not built: for the owner to approve.
 
 ### 1. The topic labels as rubber stamps on each clipping
+**Status.** Built on 23 Nov 2026 with the news pictures (the stamp is a label for now; pressing it does not open the pile yet).
+
 **Idea.** Every story in the news list gets a small black stamp in its corner with its pile: TOURS, FESTIVALS, LIVE ALBUMS, NEW MUSIC, REUNIONS. Pressing it opens the pile.
 
 **Why it fits.** A fanzine sorts its clippings by hand and stamps them; the reader learns the piles exist without reading the row of labels at the top. Black only, so the pink stays the header's.
@@ -118,8 +120,37 @@ Not built: for the owner to approve.
 **Effort.** Medium. The dates would have to be pulled out of the article as data by the news writer (main agent), then a small design pass.
 
 ### 3. "This week in the pit" at the top of /news
+**Status.** Built on 23 Nov 2026 as the front page story (without the handwritten line).
+
 **Idea.** Once there are enough stories, the newest one of the week is glued larger at the top of /news, with its picture big and one handwritten line.
 
 **Why it fits.** A zine has a front-page story. Today all eight clippings weigh the same; a lead story gives the page a cover.
 
 **Effort.** Small. Design only: the first item of page 1, when it has a picture.
+
+---
+
+## 2026-11-23 · after the news pictures (designer)
+
+Not built: for the owner to approve.
+
+### 1. Press the stamp, open the pile
+**Idea.** The topic stamp on every clipping (TOUR, LIVE ALBUM, NEW MUSIC...) becomes a link to its pile (/news/tours...). It gets a finger-sized press area and tips a little further when pressed, like a stamp coming down.
+
+**Why it fits.** The stamp already says which pile a story is in; pressing it is the obvious next move, and it sends readers (and search engines) deeper into the news without another menu.
+
+**Effort.** Small. One link in the list (main agent: which topics have a page) and a few lines of CSS.
+
+### 2. One handwritten line on the front page story
+**Idea.** The front page story gets a short Permanent Marker note next to its picture, picked from a short list by topic: "pack earplugs" for a tour, "turn it up" for a live album, "they said never" for a reunion.
+
+**Why it fits.** The brand keeps the marker for one handwritten line per view, and the news pages have none yet. It is the fan's voice next to the facts.
+
+**Effort.** Small. A list of lines per topic (the owner signs off on the wording), one element, a few lines of CSS.
+
+### 3. A different picture for each of a band's stories
+**Idea.** When a band has several stories, each one takes a different frame: the band's photo for the newest, then its most watched concerts in turn, so a band's news page is a contact sheet instead of one photo and typed clippings.
+
+**Why it fits.** A zine never prints the same photo twice on a spread. Today a repeated photo is shown once and the other stories go typed, which is honest but less visual.
+
+**Effort.** Medium. The picture chooser (main agent) would hand out the band's concerts in turn; no design change needed.

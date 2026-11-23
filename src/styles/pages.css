@@ -2386,93 +2386,159 @@
   }
 }
 
-/* ================= News (21 Nov 2026) =================
-   Press clippings: each story is a piece of clean paper cut out and glued on, the headline in the
-   heavy hand, the date typed. The picture is the band's own (a YouTube frame of its concert here):
-   whole, on a black mount, never cropped or written on. No pink here: on news pages the header's
-   "News" label is the live thing. */
+/* ================= News (21 Nov 2026, pictures 23 Nov 2026) =================
+   Press clippings. Each story is a piece of clean paper cut out and glued on: its pile rubber-stamped
+   over the top corner, the date typed beside it, the picture in a black frame, the headline in the
+   heavy hand. The newest story with a picture is the front page: glued on first and large, its picture
+   hanging off the sheet, held by the page's one piece of tape.
+   Pictures: our photocopied band and festival photos are cropped hard to the box; a frame of a concert
+   is shown whole, exactly as it is served, on a black mount. Nothing is ever written on a picture: the
+   stamp sits on the paper above it. No pink here: the header's "News" label is the live thing. */
 
-/* ---------- The list (/news, More news, Latest news) ---------- */
+/* ---------- The list (/news, the topic pages, a band's news, More news, Latest news) ---------- */
 
 .pg .nw-list {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 40px 30px;
+  max-width: 1320px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* One clipping. Rows: stamp + date, picture and headline (one link), the lead, the photo credit. */
 .nw-item {
   position: relative;
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
+    "topic date"
     "link link"
-    "date date"
-    "lead lead";
-  padding: 16px 20px 16px;
+    "lead lead"
+    "credit credit";
+  align-items: center;
+  padding: 0 14px 16px;
   background: var(--sheet);
   outline: var(--keyline) solid var(--toner);
   outline-offset: calc(-1 * var(--keyline));
   box-shadow: var(--shadow-rest);
 }
 
-.nw-item:nth-child(odd) {
-  rotate: -0.5deg;
+.nw-item:nth-child(3n + 1) {
+  rotate: -0.7deg;
 }
 
-.nw-item:nth-child(even) {
+.nw-item:nth-child(3n + 2) {
   rotate: 0.5deg;
 }
 
-/* With a picture: the picture on the left, the words beside it. */
-.nw-item:has(.nw-item-picture) {
-  grid-template-areas:
-    "link link"
-    ". date"
-    ". lead";
-  column-gap: 22px;
+.nw-item:nth-child(3n) {
+  rotate: -0.3deg;
+}
+
+@media (hover: hover) {
+  .nw-item:has(.nw-item-link:hover) {
+    translate: -2px -3px;
+    box-shadow: var(--shadow-sheet);
+  }
+}
+
+/* The pile, rubber-stamped over the top corner of the paper: black ink, a double line, crooked. */
+.nw-item-topic,
+.nw-topic {
+  justify-self: start;
+  padding: 5px 9px 2px;
+  background: var(--sheet);
+  border: 3px solid var(--toner);
+  outline: 1.5px solid var(--toner);
+  outline-offset: 2px;
+  color: var(--toner);
+  font-family: var(--font-strip);
+  font-size: 13px;
+  line-height: 1.15;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  rotate: -3deg;
+}
+
+.nw-item-topic {
+  grid-area: topic;
+  margin: -9px 0 10px -4px;
+}
+
+[data-od="news-topic"][data-topic="festival"],
+[data-od="news-topic"][data-topic="new-music"],
+[data-od="news-topic"][data-topic="anniversary"] {
+  rotate: 2deg;
+}
+
+[data-od="news-topic"][data-topic="live-release"],
+[data-od="news-topic"][data-topic="line-up-change"] {
+  rotate: -1.5deg;
+}
+
+[data-od="news-topic"][data-topic="reunion"],
+[data-od="news-topic"][data-topic="other"] {
+  rotate: 3deg;
+}
+
+.nw-item-date {
+  grid-area: date;
+  justify-self: end;
+  padding: 12px 0 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.2;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-align: right;
+  color: var(--label-grey);
 }
 
 .nw-item-link {
   grid-area: link;
+  align-self: start;
   display: grid;
-  grid-template-columns: subgrid;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   min-height: var(--touch);
   color: var(--toner);
   text-decoration: none;
 }
 
-.nw-item:has(.nw-item-picture) .nw-item-link {
-  grid-row: 1 / span 3;
-}
-
+/* The picture, in the 4 px black frame. A photocopied photo fills the box, cropped hard. */
 .nw-item-picture {
-  grid-row: 1 / span 3;
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: contain;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
   background: var(--toner);
   border: var(--frame) solid var(--toner);
 }
 
+/* A frame of a concert (or a channel's square picture): whole and untouched, on the black mount. */
+.nw-item-picture[data-kind$="concert"] {
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
 .nw-item-title {
-  grid-column: 1 / -1;
   font-family: var(--font-strip);
-  font-size: clamp(19px, 1.8vw, 25px);
-  line-height: 1.15;
+  font-size: clamp(17px, 1.45vw, 21px);
+  line-height: 1.16;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
-.nw-item:has(.nw-item-picture) .nw-item-title {
-  grid-column: 2;
+/* A clipping without a picture: the words are the picture. Bigger headline, the lead typed under it. */
+.nw-item:not([data-pictured]) .nw-item-title {
+  padding-top: 4px;
+  font-size: clamp(20px, 1.8vw, 26px);
+  line-height: 1.12;
 }
 
 .nw-item-link:hover .nw-item-title {
@@ -2483,58 +2549,269 @@
 
 .nw-item-link:focus-visible {
   outline: 4px dashed var(--toner);
-  outline-offset: 6px;
-}
-
-.nw-item-date {
-  grid-area: date;
-  margin-top: 8px;
-  font-size: 13px;
-  letter-spacing: var(--track-data);
-  text-transform: uppercase;
-  color: var(--label-grey);
+  outline-offset: 5px;
 }
 
 .nw-item-lead {
   grid-area: lead;
-  margin: 6px 0 0;
-  font-size: 16px;
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 2px dashed var(--toner);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+/* The photo's credit (author, licence, link): typed small under the story, a finger tall. */
+.nw-item-credit {
+  grid-area: credit;
+  margin: 8px 0 -10px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--label-grey);
+}
+
+.nw-item-credit a,
+.nw-credit a {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.nw-item-credit a:hover,
+.nw-credit a:hover {
+  color: var(--toner);
+  text-decoration-thickness: 2px;
+}
+
+.nw-item-credit a:focus-visible,
+.nw-credit a:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: 2px;
+}
+
+/* ---------- The front page story ----------
+   Across the whole page: the picture large on the left, hanging off the top corner of the sheet with
+   its own shadow; stamp, date, a big headline and the lead on the right. */
+.nw-item[data-lead] {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-areas:
+    "pic topic date"
+    "pic title title"
+    "pic lead lead"
+    "pic . ."
+    "credit . .";
+  column-gap: clamp(20px, 2.4vw, 34px);
+  align-items: start;
+  margin: 18px 0 10px;
+  padding: 0 clamp(18px, 2vw, 28px) 20px 0;
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.4deg;
+}
+
+.nw-item[data-lead] .nw-item-link {
+  grid-area: 1 / 1 / 5 / -1;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  gap: 0 clamp(20px, 2.4vw, 34px);
+}
+
+.nw-item[data-lead] .nw-item-picture {
+  grid-area: 1 / 1 / -1 / 2;
+  width: calc(100% + 6px);
+  max-width: none;
+  margin: -20px 0 0 -6px;
+  aspect-ratio: 3 / 2;
+  box-shadow: var(--shadow-sheet);
+  rotate: -1.2deg;
+}
+
+.nw-item[data-lead] .nw-item-picture[data-kind$="concert"] {
+  aspect-ratio: 16 / 9;
+}
+
+.nw-item[data-lead] .nw-item-title {
+  grid-area: 2 / 2 / 3 / -1;
+  font-size: clamp(26px, 3vw, 44px);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+
+.nw-item[data-lead] .nw-item-topic {
+  position: relative;
+  z-index: 1;
+  margin: 18px 0 16px;
+  font-size: 15px;
+}
+
+.nw-item[data-lead] .nw-item-date {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  padding: 12px 0 0 12px;
+  font-size: 13.5px;
+}
+
+.nw-item[data-lead] .nw-item-lead {
+  margin-top: 16px;
+  padding-top: 14px;
+  font-size: var(--text-body);
   line-height: 1.55;
 }
 
-/* Without pictures or leads (More news, Latest news): plain typed rows, not sheets. */
-.nw-latest .nw-list,
-.nw-more .nw-list {
-  gap: 0;
+.nw-item[data-lead] .nw-item-credit {
+  margin: 14px 0 -14px 14px;
+}
+
+/* The page's one piece of tape: over the top edge of the sheet, on the paper beside the picture
+   (never on the picture). Decoration, no words. */
+.nw-item[data-lead]::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: -16px;
+  right: 9%;
+  width: 124px;
+  height: 30px;
+  background: var(--tape);
+  border-left: 2px dashed var(--tape-edge);
+  border-right: 2px dashed var(--tape-edge);
+  rotate: 3deg;
+  pointer-events: none;
+}
+
+/* ---------- The small blocks: "Latest news" (band and festival pages), "More news" (a story's foot) ----------
+   A compact row of clippings, headlines only. No front page, no tape. */
+.pg .nw-latest .nw-list,
+.pg .nw-more .nw-list {
+  gap: 30px 24px;
+  max-width: 1080px;
+  margin-top: 22px;
+}
+
+.pg .nw-more .nw-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1320px;
 }
 
 .nw-latest .nw-item,
 .nw-more .nw-item {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "link"
-    "date"
-    "lead";
-  padding: 10px 0 8px;
-  background: none;
-  outline: 0;
-  box-shadow: none;
-  rotate: none;
-  border-bottom: 2px dashed var(--toner);
+  padding: 0 12px 14px;
 }
 
 .nw-latest .nw-item-title,
-.nw-more .nw-item-title {
+.nw-more .nw-item-title,
+.nw-latest .nw-item:not([data-pictured]) .nw-item-title,
+.nw-more .nw-item:not([data-pictured]) .nw-item-title {
   font-size: 17px;
+  line-height: 1.18;
 }
 
-.nw-latest .nw-item-date,
-.nw-more .nw-item-date {
-  margin-top: 2px;
+.nw-latest .nw-item:not([data-pictured]) .nw-item-title,
+.nw-more .nw-item:not([data-pictured]) .nw-item-title {
+  font-size: 19px;
 }
 
-.nw-latest .nw-item-lead {
-  font-size: 15px;
+@media (max-width: 1180px) {
+  .pg .nw-list,
+  .pg .nw-more .nw-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pg .nw-latest .nw-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The front page on a narrow page: picture on top, the words under it. */
+@media (max-width: 900px) {
+  .pg .nw-latest .nw-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nw-item[data-lead] {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "pic pic"
+      "topic date"
+      "title title"
+      "lead lead"
+      "credit credit";
+    column-gap: 0;
+    padding: 0 16px 18px;
+  }
+
+  .nw-item[data-lead] .nw-item-link {
+    grid-area: 1 / 1 / 4 / -1;
+  }
+
+  .nw-item[data-lead] .nw-item-picture {
+    grid-area: 1 / 1 / 2 / -1;
+    width: calc(100% + 20px);
+    margin: -14px -10px 0;
+  }
+
+  .nw-item[data-lead] .nw-item-title {
+    grid-area: 3 / 1 / 4 / -1;
+    font-size: clamp(24px, 5.4vw, 38px);
+  }
+
+  .nw-item[data-lead] .nw-item-topic {
+    margin: 26px 0 12px -4px;
+  }
+
+  .nw-item[data-lead] .nw-item-date {
+    padding-top: 18px;
+  }
+
+  .nw-item[data-lead] .nw-item-credit {
+    margin: 10px 0 -12px;
+  }
+
+  .nw-item[data-lead]::before {
+    display: none;
+  }
+}
+
+/* A phone: one clipping per row, straight (tilt never costs width). */
+@media (max-width: 640px) {
+  .pg .nw-list,
+  .pg .nw-latest .nw-list,
+  .pg .nw-more .nw-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+
+  .nw-item:nth-child(n) {
+    rotate: none;
+  }
+
+  .nw-item[data-lead] {
+    margin-top: 22px;
+  }
+
+  .nw-item[data-lead] .nw-item-picture {
+    rotate: -0.8deg;
+  }
+
+  .nw-item-title,
+  .nw-item:not([data-pictured]) .nw-item-title {
+    font-size: 19px;
+  }
+
+  .nw-item:not([data-pictured]) .nw-item-title {
+    font-size: 21px;
+  }
+
+  .nw-item[data-lead] .nw-item-title {
+    font-size: clamp(24px, 7.2vw, 30px);
+  }
 }
 
 /* ---------- /news extras ---------- */
@@ -2601,7 +2878,7 @@
 /* ---------- The article ---------- */
 
 .nw-article article {
-  max-width: 860px;
+  max-width: 1020px;
   padding: 0 var(--margin);
 }
 
@@ -2649,14 +2926,12 @@
   color: var(--label-grey);
 }
 
-/* The picture: whole, in the 4 px frame on a black mount, a solid shadow, a slight tilt. */
+/* The story opens with its picture: large, in the 4 px black frame, a solid shadow, a slight tilt. A photocopied photo is cropped to the box; a frame of a concert is
+   shown whole on the black mount. The photo's credit is typed small under it, on the paper. */
 .nw-figure {
-  max-width: 720px;
-  margin: 26px 0 0;
-  border: var(--frame) solid var(--toner);
-  background: var(--toner);
-  box-shadow: var(--shadow-sheet);
-  rotate: 0.6deg;
+  position: relative;
+  max-width: 940px;
+  margin: clamp(22px, 2.6vw, 34px) 0 0;
 }
 
 .nw-picture {
@@ -2664,7 +2939,30 @@
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--toner);
+  border: var(--frame) solid var(--toner);
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.6deg;
+}
+
+.nw-figure[data-kind$="concert"] .nw-picture {
   object-fit: contain;
+}
+
+.nw-credit {
+  margin: 12px 0 0;
+  max-width: 68ch;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--label-grey);
+}
+
+/* The pile, stamped between the picture and the headline. */
+.nw-topic {
+  display: table;
+  margin: clamp(24px, 2.4vw, 32px) 0 14px 2px;
+  font-size: 15px;
 }
 
 .nw-body {
@@ -2700,6 +2998,7 @@
 /* "Now watch the whole set": the way into the catalogue, a black sheet that cannot be missed.
    Each band (or festival) is a big white cut-out link, its concerts typed under it as play rows. */
 .nw-watch {
+  max-width: 860px;
   margin-top: clamp(30px, 3.6vw, 44px);
   padding: 0 clamp(16px, 2.4vw, 28px) clamp(16px, 2vw, 24px);
   background: var(--toner);
@@ -2807,7 +3106,6 @@
 }
 
 .nw-more {
-  max-width: 860px;
   margin: clamp(34px, 4vw, 54px) var(--margin) 0;
   padding-top: 24px;
   border-top: var(--cut);
@@ -3177,35 +3475,7 @@
 }
 
 @media (max-width: 760px) {
-  .nw-item,
-  .nw-item:has(.nw-item-picture) {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "link"
-      "date"
-      "lead";
-    padding: 12px 14px 14px;
-    rotate: none;
-  }
-
-  .nw-item:has(.nw-item-picture) .nw-item-link {
-    grid-row: auto;
-    row-gap: 12px;
-  }
-
-  .nw-item-picture {
-    grid-row: auto;
-  }
-
-  .nw-item:has(.nw-item-picture) .nw-item-title {
-    grid-column: 1;
-  }
-
-  .nw-item-lead {
-    font-size: 15px;
-  }
-
-  .nw-figure,
+  .nw-picture,
   .nw-watch {
     rotate: none;
   }
