@@ -9,6 +9,7 @@ import { RESERVED_NEWS_SLUGS } from "./hubs";
 import { ALL_FEEDS, FEEDS, readArticle, readFeed, type Feed, type FeedItem } from "./feeds";
 import { hasMatch, newsMatcher, type NewsEntity, type NewsMatch } from "./match";
 import { notNewsReason } from "./not-news";
+import { subjectColumns } from "./subject";
 import { NewsWriter, searchShapedTitle, sourceProblems, sourceText, withoutUnsourcedYears, writtenProblems, type NewsPasses, type Written } from "./writer";
 
 /** Default monthly budget for news, in US dollars (owner, 21 Nov 2026: $5 a month; NEWS_BUDGET_USD changes it). */
@@ -244,6 +245,8 @@ export async function runPressNews(db: PrismaClient, opts: PressRunOptions = {})
           bandSlugs: story.bands.map((b) => b.slug),
           venueSlug: story.festival?.slug ?? null,
           venueName: story.festival?.name ?? null,
+          // What the story is mainly about, for its picture (src/lib/news/subject.ts).
+          ...subjectColumns({ topic: answer.topic, bandSlugs: story.bands.map((b) => b.slug), venueSlug: story.festival?.slug ?? null }),
           artists: answer.artists.slice(0, 20),
           sourceName: item.source,
           sourceUrl: item.url,

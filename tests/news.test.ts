@@ -326,7 +326,7 @@ describe("news job", () => {
     expect(r.review).toEqual(["Hellfest 2027: Metallica to headline"]);
     expect(r.costUsd).toBeCloseTo(0.006);
     const muse = articles.find((a) => a.title === "Muse: European stadium tour in 2027")!;
-    expect(muse).toMatchObject({ status: "PUBLISHED", bandSlugs: ["muse"], venueSlug: null, sourceName: "Press", sourceUrl: "https://press.example/muse-tour", slug: "muse-european-stadium-tour-in-2027", topic: "tour" });
+    expect(muse).toMatchObject({ status: "PUBLISHED", bandSlugs: ["muse"], venueSlug: null, sourceName: "Press", sourceUrl: "https://press.example/muse-tour", slug: "muse-european-stadium-tour-in-2027", topic: "tour", subject: "muse", subjectKind: "band" });
     const sad = articles.find((a) => a.status === "REVIEW")!;
     expect(sad).toMatchObject({ bandSlugs: ["metallica"], venueSlug: "hellfest", venueName: "Hellfest" });
     expect(sad.checkNote).toMatch(/sensitive/);

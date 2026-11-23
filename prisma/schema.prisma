@@ -189,6 +189,8 @@ model Venue {
   concerts  Concert[]
   /// Old addresses of venues merged into this one: they redirect here (308).
   aliases   VenueAlias[]
+  /// A free photo of the festival for news pictures (src/lib/news/festival-photos.ts).
+  photo     FestivalPhoto?
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
@@ -558,6 +560,33 @@ model BandPhoto {
   @@map("band_photos")
 }
 
+/// A festival's photo for news pictures (owner, 23 Nov 2026, ported from OpenDecks): the Wikidata item's
+/// "image" (P18) on Wikimedia Commons, when its licence allows a changed copy, photocopied like the band
+/// photos and stored with its credit (author, licence, link). Never a press or festival-owned photo. One
+/// row per festival looked at, found or not (`skipped` says why not); looked at again after 30 days.
+model FestivalPhoto {
+  venueId     Int      @id @map("venue_id")
+  venue       Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  /// The Wikidata item of the festival, when one was found.
+  qid         String?
+  /// The photocopied image (two-colour PNG); null when there is no usable photo.
+  image       Bytes?
+  width       Int?
+  height      Int?
+  /// The Commons file ("File:...") and its page, where author and licence are shown.
+  sourceTitle String?  @map("source_title")
+  sourcePage  String?  @map("source_page")
+  author      String?
+  license     String?
+  licenseUrl  String?  @map("license_url")
+  /// Why there is no photo ("not on Wikidata", "only a logo", "licence does not allow changes (...)").
+  skipped     String?
+  checkedAt   DateTime @default(now()) @map("checked_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("festival_photos")
+}
+
 /// Bands looked up for a photo, found or not, so a band without a usable photo is not asked about
 /// every run (looked at again after 90 days).
 model BandPhotoCheck {
@@ -621,6 +650,10 @@ model NewsArticle {
   venueName    String?  @map("venue_name")
   /// Artists named in the article, in order, spelled as in the source.
   artists      String[] @default([])
+  /// What the story is mainly about, for its picture (owner, 23 Nov 2026): a band slug or a venue slug,
+  /// as `subjectKind` says ("band" | "venue"). Set by the news job; admin op news-subjects fills old rows.
+  subject      String?
+  subjectKind  String?  @map("subject_kind")
   sourceName   String?  @map("source_name")
   sourceUrl    String?  @map("source_url")
   /// PUBLISHED, REVIEW (waits for the owner in /admin/news) or REJECTED.
