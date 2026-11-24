@@ -1,7 +1,7 @@
 // All database reads for the pages. Every query only returns concerts that may be shown and embedded.
 import { getDb } from "./db";
 import { buildOrderBy, buildWhere, OFFICIAL_FIRST, OFFICIAL_ONLY, VISIBLE, type ConcertFilters } from "./filters";
-import { officialFirst, type BootlegMark } from "./bootlegs";
+import { displayChannelName, officialFirst, type BootlegMark } from "./bootlegs";
 import { formatCredits } from "./format";
 import { thumbnailSources, type ThumbnailSources } from "./thumbnails";
 import { cached } from "./memo";
@@ -143,7 +143,8 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     // The setlist and its source are written together (src/lib/setlist/lookup.ts setlistFields).
     hasSetlist: concert.setlistSource !== null,
     curated: concert.curated,
-    bootleg: concert.sourceKind === "FAN_PRO_SHOT" ? { from: concert.creditName || concert.channel.name } : null,
+    // The fan channel's name without emoji or decorative symbols (src/lib/bootlegs.ts displayChannelName).
+    bootleg: concert.sourceKind === "FAN_PRO_SHOT" ? { from: displayChannelName(concert.creditName || concert.channel.name) } : null,
   };
 }
 
@@ -218,7 +219,7 @@ async function listToursUncached() {
     include: { artist: { select: { slug: true, name: true } }, _count: { select: { concerts: { where: VISIBLE } } } },
     orderBy: { name: "asc" },
   });
-  return tours.map((t) => ({ slug: t.slug, name: t.name, artist: t.artist, count: t._count.concerts }));
+  return tours.map((t) => ({ id: t.id, slug: t.slug, name: t.name, artist: t.artist, count: t._count.concerts }));
 }
 
 export async function getTourPage(slug: string) {
@@ -920,7 +921,7 @@ async function listArtistsUncached() {
     orderBy: { name: "asc" },
     include: { _count: { select: { credits: { where: { concert: VISIBLE } } } }, credits: newestCredit },
   });
-  return rows.map((a) => ({ slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
+  return rows.map((a) => ({ id: a.id, slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
 }
 
 /**
