@@ -1627,3 +1627,158 @@ button.zn-cutout {
   outline: 3px dashed var(--toner);
   outline-offset: -3px;
 }
+
+/* ---------- 12. The cookie bar (src/components/ui/ConsentBanner.tsx) ----------
+   A strip of clean sheet glued along the foot of the screen. Dead straight: it holds buttons.
+   It never sits on the player: it stands on the player bar (--consent-bottom, set by the component)
+   and one step under it in the stack (the bar is 40, the video 41). data-place="flow": it lies in
+   the page instead, above the top strip (mini-player up, or a video in the page it could cross). */
+
+.zn-consent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--consent-bottom, 0px);
+  z-index: 39;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 22px;
+  padding: 12px var(--margin) 16px;
+  background: var(--sheet);
+  color: var(--toner);
+  border-top: var(--frame) solid var(--toner);
+  font-family: var(--font-type);
+}
+
+.zn-consent[data-place="flow"] {
+  position: relative;
+  bottom: auto;
+  z-index: auto;
+  border-top: 0;
+  border-bottom: var(--frame) solid var(--toner);
+}
+
+.zn-consent:focus-visible {
+  outline: 4px dashed var(--toner);
+  outline-offset: -8px;
+}
+
+.zn-consent p {
+  margin: 0;
+}
+
+/* "Cookies": a small black strip that bites over the bar's top edge. */
+.zn-consent-kicker {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  align-self: start;
+  margin-top: -26px;
+}
+
+.zn-consent-kicker .zn-strip {
+  --tilt: -2deg;
+  font-size: 17px;
+}
+
+.zn-consent[data-place="flow"] .zn-consent-kicker {
+  align-self: center;
+  margin-top: 0;
+}
+
+.zn-consent-text {
+  max-width: 64ch;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.zn-consent-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Room for the buttons' solid shadows. */
+  padding-right: 6px;
+}
+
+/* Accept and Decline are one button, twice: same size, same weight, same colour. */
+.zn-consent-actions .zn-btn {
+  min-width: 132px;
+}
+
+.zn-consent-link,
+.zn-cookie-settings {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--toner);
+  font: inherit;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.zn-consent-link {
+  margin-left: 8px;
+  font-size: 15.5px;
+}
+
+.zn-consent-link:hover,
+.zn-cookie-settings:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.zn-consent-link:focus-visible,
+.zn-cookie-settings:focus-visible {
+  outline: 3px dashed var(--toner);
+  outline-offset: 3px;
+}
+
+/* The end of the page stays readable behind the bar. */
+.zn-foot {
+  padding-bottom: calc(18px + var(--consent-space, 0px));
+}
+
+@media (max-width: 900px) {
+  .zn-consent {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 10px;
+    padding: 0 var(--margin) 16px;
+  }
+
+  .zn-consent-kicker {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-top: -14px;
+  }
+
+  .zn-consent[data-place="flow"] {
+    padding-top: 12px;
+  }
+
+  .zn-consent-text {
+    font-size: 15.5px;
+  }
+
+  .zn-consent-actions {
+    gap: 12px;
+  }
+
+  .zn-consent-actions .zn-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .zn-consent-link {
+    margin-left: 4px;
+  }
+}

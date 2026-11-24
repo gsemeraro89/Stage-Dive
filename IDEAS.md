@@ -154,3 +154,26 @@ Not built: for the owner to approve.
 **Why it fits.** A zine never prints the same photo twice on a spread. Today a repeated photo is shown once and the other stories go typed, which is honest but less visual.
 
 **Effort.** Medium. The picture chooser (main agent) would hand out the band's concerts in turn; no design change needed.
+
+## 24 Nov 2026 · after the cookie bar
+
+### 1. A rubber stamp when you choose
+**Idea.** Pressing Accept or Decline stamps "COUNTED" or "NOT COUNTED" on the bar (black ink, crooked, 320 ms, one bounce) before the bar is lifted off.
+
+**Why it fits.** Things get stamped and lifted, never faded. Today the bar just disappears; a stamp tells the visitor the choice was taken, in the zine's hand.
+
+**Effort.** Small. One element and a few lines of CSS; with reduced motion the bar simply goes.
+
+### 2. The choice typed in the footer
+**Idea.** Next to "Cookie settings" the footer types the current choice: "COOKIES: OFF" or "COOKIES: ON".
+
+**Why it fits.** On the fan's side: you see what you chose without opening anything. It reads like the typed data lines everywhere else.
+
+**Effort.** Small. The choice is already known in the browser; one typed label.
+
+### 3. The cookie bar on the kit page
+**Idea.** Show the bar and its states (first visit, "Now: accepted", on a phone, lying in the page) on `/kit`, like every other component.
+
+**Why it fits.** The kit is where the owner checks the whole system on one page; the bar only shows where analytics is on, so today it is hard to look at.
+
+**Effort.** Small. A static copy of the markup on the kit page, no logic.

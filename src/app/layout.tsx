@@ -3,7 +3,7 @@ import { Archivo_Black, Permanent_Marker, Special_Elite } from "next/font/google
 import Link from "next/link";
 import { Analytics } from "@/components/analytics/Analytics";
 import { GoogleTag } from "@/components/analytics/GoogleTag";
-import { ConsentBanner, CookieSettingsButton } from "@/components/consent/ConsentBanner";
+import { ConsentBanner, CookieSettingsButton } from "@/components/ui/ConsentBanner";
 import { PlayerDock } from "@/components/player/PlayerDock";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { SiteHeader } from "@/components/zine/SiteHeader";
@@ -53,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* The player wraps every page and is never unmounted, so music survives navigation. */}
         <PlayerProvider>
-          {/* Cookie banner, first in the page so the keyboard reaches it first. Unstyled for now (designer). */}
+          {/* Cookie bar, first in the page so the keyboard reaches it first. It never sits on the player. */}
           <ConsentBanner />
           {/* The top strip (board 04). Phones get the short version (board 07). */}
           <p className="zn-band zn-issue" data-od="issue-strip">
@@ -81,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/privacy" data-od="footer-privacy">
               Privacy
             </Link>
-            {/* Brings the cookie banner back. Unstyled for now (designer). */}
+            {/* Brings the cookie bar back. */}
             <CookieSettingsButton />
           </footer>
           <PlayerDock />

@@ -1,6 +1,6 @@
 // Cookie consent (GDPR, ported from OpenDecks 24 Nov 2026). The visitor's choice is kept in their
 // browser; GA4 is told through Google Consent Mode. The banner and the footer "Cookie settings"
-// button (src/components/consent/ConsentBanner.tsx, styled by the designer) use useConsentBanner(),
+// button (src/components/ui/ConsentBanner.tsx) use useConsentBanner(),
 // or the smaller pieces: useConsent(), setConsent() and openConsentSettings().
 "use client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
