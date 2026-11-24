@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Permanent_Marker, Special_Elite } from "next/font/google";
 import Link from "next/link";
+import { Analytics } from "@/components/analytics/Analytics";
+import { GoogleTag } from "@/components/analytics/GoogleTag";
+import { ConsentBanner, CookieSettingsButton } from "@/components/consent/ConsentBanner";
 import { PlayerDock } from "@/components/player/PlayerDock";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { SiteHeader } from "@/components/zine/SiteHeader";
@@ -43,9 +46,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const decades = await decadeIndex();
   return (
     <html lang="en" className={`${archivoBlack.variable} ${specialElite.variable} ${permanentMarker.variable}`}>
+      {/* Google Analytics 4 with Consent Mode, only where NEXT_PUBLIC_GA_ID is set (src/lib/analytics.ts). */}
+      <head>
+        <GoogleTag />
+      </head>
       <body>
         {/* The player wraps every page and is never unmounted, so music survives navigation. */}
         <PlayerProvider>
+          {/* Cookie banner, first in the page so the keyboard reaches it first. Unstyled for now (designer). */}
+          <ConsentBanner />
           {/* The top strip (board 04). Phones get the short version (board 07). */}
           <p className="zn-band zn-issue" data-od="issue-strip">
             ISSUE {issueLabel(new Date())} /// THE WHOLE SET <span className="zn-issue-long">/// {ISSUE_STRIP_SOURCES} </span>
@@ -72,8 +81,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/privacy" data-od="footer-privacy">
               Privacy
             </Link>
+            {/* Brings the cookie banner back. Unstyled for now (designer). */}
+            <CookieSettingsButton />
           </footer>
           <PlayerDock />
+          <Analytics />
         </PlayerProvider>
       </body>
     </html>
