@@ -55,15 +55,33 @@ export const FAN_SECTION_TITLE = "From the fans";
 /** A concert's bootleg mark: the fan channel it comes from, or null for an official concert. */
 export type BootlegMark = { from: string } | null;
 
+/**
+ * A fan channel's name as the site shows it: emoji and decorative symbols out ("⚡Marco's HIGH VOLTAGE Music
+ * Channel⚡" -> "Marco's HIGH VOLTAGE Music Channel"), fancy Unicode letters back to plain ones ("𝓒𝓪𝓷" ->
+ * "Can", "ᴴᴰ" -> "HD"), spaces tidied. Letters in any script, accents, digits and ordinary punctuation stay.
+ * The stored name (creditName) is untouched; this is for display only (pages, Markdown copies, llms files,
+ * answers). Falls back to the trimmed name when nothing would be left.
+ */
+export function displayChannelName(name: string): string {
+  const cleaned = name
+    .replace(/[\p{Extended_Pictographic}\p{So}\p{Co}\p{Regional_Indicator}\p{Emoji_Modifier}\u200D\u20E3\uFE00-\uFE0F]/gu, " ")
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim()
+    // Separators left dangling by a removed symbol ("★ - Name -", "| Name").
+    .replace(/^[\s\-|~*·•_:]+|[\s\-|~*·•_:]+$/g, "");
+  return cleaned || name.trim();
+}
+
 /** "From Better Than Nothing Videos" (never "uploaded by"). */
 export function bootlegCredit(from: string): string {
-  return `From ${from}`;
+  return `From ${displayChannelName(from)}`;
 }
 
 /** The credit line of any concert: "Official concert from Pinkpop Archive", "From <channel>" for a bootleg or another channel. */
 export function sourceCredit(c: { channel: { name: string; isOfficial: boolean }; bootleg?: BootlegMark }): string {
   if (c.bootleg) return bootlegCredit(c.bootleg.from);
-  return c.channel.isOfficial ? `Official concert from ${c.channel.name}` : `From ${c.channel.name}`;
+  return c.channel.isOfficial ? `Official concert from ${c.channel.name}` : `From ${displayChannelName(c.channel.name)}`;
 }
 
 /** The same list with the official concerts first and the bootlegs after them, each part in its own order. */

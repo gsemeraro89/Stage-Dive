@@ -8,6 +8,7 @@ import {
   BOOTLEG_EXPLAINED,
   BOOTLEG_LABEL,
   bootlegCredit,
+  displayChannelName,
   bootlegNote,
   FAN_SECTION_TITLE,
   FOOTER_LINE,
@@ -49,6 +50,24 @@ describe("label and credit wording", () => {
     expect(BOOTLEG_LABEL).toBe("Bootleg");
     expect(bootlegCredit("Better Than Nothing Videos")).toBe("From Better Than Nothing Videos");
     expect(sourceCredit(nirvana)).toBe("From Better Than Nothing Videos");
+  });
+  it("shows a fan channel's name without emoji or decorative symbols", () => {
+    expect(displayChannelName("⚡Marco's HIGH VOLTAGE  Music Channel⚡")).toBe("Marco's HIGH VOLTAGE Music Channel");
+    expect(displayChannelName("🎞️2160P🎞️ by Magnetic Images")).toBe("2160P by Magnetic Images");
+    expect(displayChannelName("skyly ☁️ virtual vault")).toBe("skyly virtual vault");
+    expect(displayChannelName("🇧🇷 Rock BR 🎸")).toBe("Rock BR");
+    expect(displayChannelName("★ - Name -")).toBe("Name");
+    // Fancy Unicode letters back to plain ones; spaces tidied.
+    expect(displayChannelName("𝓒𝓪𝓷𝓸𝓯𝓫𝓾𝓽𝓽𝓮𝓻𝓯𝓵𝓲𝓮𝓼")).toBe("Canofbutterflies");
+    expect(displayChannelName("Megadeth _ Live ᴴᴰ")).toBe("Megadeth _ Live HD");
+    expect(displayChannelName("  Foo Fighters DB  ")).toBe("Foo Fighters DB");
+    // Letters in any script, accents and ordinary punctuation stay.
+    for (const n of ["Lucas Magalhães", "Paweł Błaszak", "музичні збочення", "[PIAS]", "@CONCERT TOURS", "AC/DC - Remasters", "R.E.M. Video Vault"])
+      expect(displayChannelName(n)).toBe(n);
+    // Nothing left: the name as it is.
+    expect(displayChannelName("🎸🎸")).toBe("🎸🎸");
+    expect(bootlegCredit("⚡Marco's HIGH VOLTAGE  Music Channel⚡")).toBe("From Marco's HIGH VOLTAGE Music Channel");
+    expect(sourceCredit({ channel: { name: "🔥 Some Channel 🔥", isOfficial: false }, bootleg: null })).toBe("From Some Channel");
   });
   it("an official concert keeps 'Official concert from <channel>'", () => {
     expect(sourceCredit(official)).toBe("Official concert from Metallica");

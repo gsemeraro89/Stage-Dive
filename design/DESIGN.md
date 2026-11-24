@@ -250,7 +250,7 @@ Every page is built from the kit. Where things live:
 
 | Page | Markup | Styles |
 | --- | --- | --- |
-| Homepage (board 04) | `src/app/_home/HomePage.tsx` | `src/styles/home.css` (`hm-`) |
+| Homepage (board 04): "the issue" | `src/app/_home/HomePage.tsx`, pieces in `parts.tsx`, `NextBand.tsx` | `src/styles/home.css` (`hm-`, `hx-`, `ha-`) |
 | Concert page (board 05) | `src/app/concerts/[slug]/page.tsx` | `src/styles/pages.css` (`cp-`) |
 | Band page (board 06) | `src/app/artists/[slug]/page.tsx` | `pages.css` (`bp-`) |
 | Bands, Fields + Rooms, Decades, Genres, Tours, Every gig, and their piles | `src/app/*/page.tsx` | `pages.css` (`pg-`) |
@@ -261,6 +261,18 @@ Shared pieces that know about gigs live in `src/components/gig/`: `PageHead` (tr
 Rules the pages add:
 
 - **The concert page's player** sits in a 4 px black frame with a solid shadow, dead straight, never taped. Under the video the frame grows a black mount; the band's strips bite into the mount, never the video. The "On now" stamp sits on the frame's top edge, outside the video.
+- **The homepage is this week's issue** (owner's choice, 24 Nov 2026). Top to bottom:
+  1. **The cover.** The H1 on two cut strips, the answer-first sentence typed beside it, "find a gig:" big. Under a cut line, the gig of the week: its picture large (the band's photocopied photo, or the YouTube picture whole when that photo is already on the legends wall), the band's name on strips, the page's one pink thing ("Play it loud"), and beside it the setlist on a stapled sheet where every timed song is a button. **A setlist longer than 14 songs scrolls inside its sheet** (the sheet stays about 520 px tall; the marker line says how many songs are in there). Under the picture, "In this issue": the figures as a typed contents list, each line a link.
+  2. **The legends.** Twelve bands on a twelve-column wall: the more gigs, the bigger the picture (2 large, 4 medium, 6 small). Phones: the first two full width, the rest two-up.
+  3. **The charts.** Three typed sheets (all time, a decade, festival shows), top five each; only number one has a picture, and the picture is a play button.
+  4. **Fresh off the copier.** The newest gig large, the rest around it, and a black block with the size of the pile.
+  5. **Rock news**, the clippings from `/news`.
+  6. **Where it happened**, the page's black band: three places as pictures, then the atlas typed in two columns.
+  7. **Off the shelves**: In HD, From the fans, Live albums. One picture each, then typed lines.
+  8. **The back pages: four ways in, as pictures** (owner, 24 Nov 2026: "too text heavy" as a typed index). "Pick a decade", "Pick a noise", "Follow a tour", "Chase a song". Each is a small cut heading with its typed "ALL … >>" link and a row of picture tiles (`ha-tile`): the picture in its black frame, the label cut on a strip biting into it, the count typed beside the label. A decade's label is the big thing ("90s"). A tour or a song types its band under the picture, nothing else. **The label is the link and it reaches over the whole picture**; a licensed photo's credit under it stays its own link. Desktop: seven decades across, genres four across in two rows, tours (three across) and songs (four across) share the last spread. Tablet (761–1100): four across, tours three. **Phones: each way is one row you swipe**, the next picture always peeking in from the right; the page itself never scrolls sideways.
+  9. **Find your next band**, the crossroads.
+- **A band's photo is glued on the homepage once.** The cover gives way to the legends wall; a way-in tile whose band is already on the page takes a picture of a gig instead (`pictureBand` / `fallback` from `homepageData()`); the news list is told which photos are taken. A wall that holds licensed photos carries short credits ("Photo: author / licence", linked to the original) and one line under the wall saying they were photocopied and are shared under the same licences.
+- **Homepage speed.** Only the cover picture is loaded eagerly, with high priority; every other picture is lazy. Every picture has its box before it loads (YouTube pictures by width and height, photos by their cut ratio), so nothing jumps. An empty section is left out whole.
 - **One pink thing per page.** On a page that has its label pink in the header (Bands, Decades, Genres…), nothing else is pink at rest: data strips are black, play labels are black and turn pink only for the gig that is playing. On the concert page (no pink label in the header) the date strip is pink, as on the board.
 - **A list of YouTube pictures** carries one visible "Pictures: YouTube" line under it.
 - **A setlist without times** is a plain typed list, not buttons. A setlist read from a viewer's comment says so.

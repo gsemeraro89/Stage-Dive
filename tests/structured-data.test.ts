@@ -7,6 +7,9 @@ import {
   concertEventJsonLd,
   concertJsonLd,
   faqPage,
+  homeBandsList,
+  homePlacesList,
+  homeRankingLists,
   isoDuration,
   itemList,
   jsonLd,
@@ -135,5 +138,32 @@ describe("structured data", () => {
     const out = jsonLd({ name: "</script><b>" });
     expect(out).not.toContain("<");
     expect(JSON.parse(out)).toEqual({ name: "</script><b>" });
+  });
+});
+
+describe("homepage lists", () => {
+  it("lists the bands and places shown, ranked, and nothing for an empty section", () => {
+    const bands = homeBandsList([
+      { href: "/artists/metallica", name: "Metallica" },
+      { href: "/artists/pixies", name: "Pixies" },
+    ]) as { itemListOrder: string; numberOfItems: number; itemListElement: { position: number; url: string; name: string }[] };
+    expect(bands.itemListOrder).toBe("https://schema.org/ItemListOrderDescending");
+    expect(bands.numberOfItems).toBe(2);
+    expect(bands.itemListElement[1]).toMatchObject({ position: 2, url: "https://stagedive.example/artists/pixies", name: "Pixies" });
+    expect(homePlacesList([{ href: "/venues/pinkpop", name: "Pinkpop" }])).toMatchObject({ "@type": "ItemList", name: "Festivals and venues with the most full concerts" });
+    expect(homeBandsList([])).toBeNull();
+    expect(homePlacesList([])).toBeNull();
+  });
+  it("lists each ranking's top concerts under the ranking's name", () => {
+    const [list] = homeRankingLists([
+      { heading: "Most Watched Rock Concerts", concerts: [concertView()] },
+      { heading: "Empty", concerts: [] },
+    ]) as { name: string; itemListElement: { url: string; name: string }[] }[];
+    expect(list.name).toBe("Most Watched Rock Concerts");
+    expect(list.itemListElement[0]).toMatchObject({
+      url: "https://stagedive.example/concerts/metallica-l-c-walker-arena-1991",
+      name: "Metallica at L.C. Walker Arena 1991",
+    });
+    expect(homeRankingLists([{ heading: "Empty", concerts: [] }])).toEqual([]);
   });
 });

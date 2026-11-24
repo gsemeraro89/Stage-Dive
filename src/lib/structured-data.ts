@@ -4,10 +4,11 @@
 //   where, when), linked to each other, + BreadcrumbList.
 // - Band pages: MusicGroup (sameAs MusicBrainz / Wikidata / the band's channel when we hold them) +
 //   BreadcrumbList + FAQPage for the questions shown on the page.
-// - Lists: ItemList. Home: WebSite (with its search) + Organization.
+// - Lists: ItemList. Home: WebSite (with its search) + Organization, + ItemLists for its bands, places and rankings.
 // Only facts that are visible on the page or held in the database; nothing is invented.
 // Tested in tests/structured-data.test.ts.
 import { concertAnswers } from "./answers";
+import { rankedName } from "./best";
 import type { ConcertView } from "./queries";
 import { abs, SHARE_FALLBACK_IMAGE, SITE_ALTERNATE_NAMES } from "./seo";
 import { startAtPath, START_PARAM } from "./player/start-time";
@@ -378,4 +379,27 @@ export function organization(sameAs: string[] = []): Json {
 /** JSON for a <script type="application/ld+json"> tag, safe against "</script>" in titles. */
 export function jsonLd(data: Json | Json[]): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+// ---- Homepage lists (src/lib/home.ts homepageData) ----
+// ItemLists for the sections the homepage shows, each only when the section is on the page (pass the
+// same data the page renders). Ranked: the bands and places by concerts, the rankings by views.
+
+/** "Bands with the most full concerts": ItemList of band pages; null when the section is empty. */
+export function homeBandsList(bands: { href: string; name: string }[]): Json | null {
+  return bands.length ? itemList("Bands with the most full concerts", bands.map((b) => ({ path: b.href, name: b.name })), true) : null;
+}
+
+/** "Festivals and venues with the most full concerts": ItemList of place pages; null when empty. */
+export function homePlacesList(places: { href: string; name: string }[]): Json | null {
+  return places.length ? itemList("Festivals and venues with the most full concerts", places.map((p) => ({ path: p.href, name: p.name })), true) : null;
+}
+
+/** One ItemList per "best of" ranking shown (its top concerts, most watched first), named after the ranking. */
+export function homeRankingLists(
+  rankings: { heading: string; concerts: { slug: string; credits: string; venue: { name: string } | null; city: string | null; performedYear: number | null; viewCount: number }[] }[],
+): Json[] {
+  return rankings
+    .filter((r) => r.concerts.length)
+    .map((r) => itemList(r.heading, r.concerts.map((c) => ({ path: `/concerts/${c.slug}`, name: rankedName(c) })), true));
 }

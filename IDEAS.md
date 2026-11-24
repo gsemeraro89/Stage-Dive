@@ -177,3 +177,70 @@ Not built: for the owner to approve.
 **Why it fits.** The kit is where the owner checks the whole system on one page; the bar only shows where analytics is on, so today it is hard to look at.
 
 **Effort.** Small. A static copy of the markup on the kit page, no logic.
+
+---
+
+## 2026-11-24 · after the two homepage directions (A "the issue", B "the wall")
+
+### 1. The owner picks the cover
+**Idea.** The gig of the week turns through the bands A to Z, so this week the cover of a site with Metallica, Radiohead and Pearl Jam on it is a band most visitors have never heard of. Let the cover be chosen: `data/home-picks.json` already takes a pinned gig; add a short list of "cover-worthy" gigs (a famous band, a setlist with times, a good photo) that the weekly turn draws from, and keep A to Z for the days nobody picked.
+
+**Why it fits.** A zine's cover is the one page somebody decides on. It is also the first picture a new visitor and a search preview see.
+
+**Effort.** Small. A list in the picks file and one rule in the weekly pick (engineering); no new design.
+
+### 2. One song, every night it was played
+**Idea.** "By song" on the homepage is eight Metallica songs, because Metallica has the most gigs. Show one song per band instead (each band's most played), and give the line a play label: press it and the player jumps straight into that song in the most watched gig that has it.
+
+**Why it fits.** It shows off what nobody else has: the setlists are clickable. One press on the homepage and you are inside the song.
+
+**Effort.** Small for the list (one rule in `topSongs`), medium for the play label (needs the song's time in the chosen gig).
+
+### 3. The reel remembers where you stood
+**Idea.** In direction B the places are a reel you walk along. Add two cut-paper arrows at its ends (the "next" icon from the kit, on its 48 px label) that move the reel by one poster, and remember the position when you come back from a place's page.
+
+**Why it fits.** A wall of posters is something you walk along; on a desktop without a trackpad the arrows are the legs. Nothing fades or slides by itself.
+
+**Effort.** Small. A few lines of script on a list that already works without it.
+
+### 4. A map of the fields
+**Idea.** OpenDecks has an atlas. Ours could be a photocopied outline map of Europe with a staple where each of the top festivals is, the number of gigs written beside it in marker; a staple opens the festival's page.
+
+**Why it fits.** "Where it happened" becomes a real where. A hand-marked map is pure zine.
+
+**Effort.** Medium to large. Needs coordinates for the places (engineering) and one drawn map (design).
+
+### 5. "On this day"
+**Idea.** A small sticker in the hero: "24 November 1991: Nirvana played Paradiso. It is here." when a gig in the pile was played on today's date.
+
+**Why it fits.** A reason to come back every day, built only from dates we store.
+
+**Effort.** Small. One query by day and month; one sticker from the kit.
+
+---
+
+## 2026-11-24 · after "the issue" became the homepage (picture-led back pages)
+
+Done from the list above: 1 (the cover turns through famous gigs) and the first half of 2 (one song per band). Idea 3 went with direction B.
+
+### 1. A song tile that plays the song
+**Idea.** "Chase a song" tiles open the song's page. Give each a play label on its picture's mount: press it and the player jumps straight into that song in the most watched gig that has it.
+
+**Why it fits.** One press on the homepage and you are inside "Paranoid Android". Nobody else can do that; it is the setlist idea made loud.
+
+**Effort.** Medium. Needs the song's time in the chosen gig from `homepageData()` (engineering); the label is already in the kit.
+
+### 2. The shelves as crates
+**Idea.** "Off the shelves" is now the most typed part of the page (three lists of six lines). Turn each shelf into a crate you flick through: one swipe row of gig pictures per shelf, the bootleg stamp on the mount, the typed list gone.
+
+**Why it fits.** Same cure the back pages just got. A crate of tapes is something you dig in, not read.
+
+**Effort.** Small to medium. Design only: the data is already there.
+
+### 3. Different pictures for every tile
+**Idea.** Two tiles can show the same gig (the most watched gig of the 2010s is also the most watched alternative gig). Let the page ask for the second or third most watched gig when the first is already up.
+
+**Why it fits.** On a photocopied page, the same picture twice looks like a mistake, not a choice.
+
+**Effort.** Small. `fallback` becomes a short list in `homepageData()` (engineering); the page already keeps track of what is glued on.
+

@@ -81,6 +81,7 @@ export function PhotoFrame(props: PhotoFrameProps) {
           width={youtube ? (props.width ?? 1280) : undefined}
           height={youtube ? (props.height ?? 720) : undefined}
           loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
           decoding="async"
         />
         {/* The light bar never crosses a YouTube picture: it runs in the scanner slot under it. */}

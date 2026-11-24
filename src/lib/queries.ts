@@ -1,7 +1,7 @@
 // All database reads for the pages. Every query only returns concerts that may be shown and embedded.
 import { getDb } from "./db";
 import { buildOrderBy, buildWhere, OFFICIAL_FIRST, OFFICIAL_ONLY, VISIBLE, type ConcertFilters } from "./filters";
-import { officialFirst, type BootlegMark } from "./bootlegs";
+import { displayChannelName, officialFirst, type BootlegMark } from "./bootlegs";
 import { formatCredits } from "./format";
 import { thumbnailSources, type ThumbnailSources } from "./thumbnails";
 import { cached } from "./memo";
@@ -143,7 +143,8 @@ export function toConcertView(concert: ConcertRow): ConcertView {
     // The setlist and its source are written together (src/lib/setlist/lookup.ts setlistFields).
     hasSetlist: concert.setlistSource !== null,
     curated: concert.curated,
-    bootleg: concert.sourceKind === "FAN_PRO_SHOT" ? { from: concert.creditName || concert.channel.name } : null,
+    // The fan channel's name without emoji or decorative symbols (src/lib/bootlegs.ts displayChannelName).
+    bootleg: concert.sourceKind === "FAN_PRO_SHOT" ? { from: displayChannelName(concert.creditName || concert.channel.name) } : null,
   };
 }
 
@@ -218,7 +219,7 @@ async function listToursUncached() {
     include: { artist: { select: { slug: true, name: true } }, _count: { select: { concerts: { where: VISIBLE } } } },
     orderBy: { name: "asc" },
   });
-  return tours.map((t) => ({ slug: t.slug, name: t.name, artist: t.artist, count: t._count.concerts }));
+  return tours.map((t) => ({ id: t.id, slug: t.slug, name: t.name, artist: t.artist, count: t._count.concerts }));
 }
 
 export async function getTourPage(slug: string) {
@@ -835,16 +836,24 @@ async function bestCatalogueUncached(): Promise<BestList[]> {
 export async function getBestPage(slug: string) {
   const list = (await bestCatalogue()).find((l) => l.slug === slug);
   if (!list) return null;
-  const scope =
-    list.kind === "decade"
-      ? { performedYear: { gte: parseDecade(list.key!)!, lte: parseDecade(list.key!)! + 9 } }
-      : list.kind === "genre"
-        ? { genres: { some: { genre: { slug: list.key! } } } }
-        : list.kind === "place"
-          ? { venueKind: { slug: list.key! } }
-          : {};
-  const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
-  return { list, concerts: rows.map(toConcertView) };
+  return { list, concerts: await bestConcerts(list, BEST_SIZE) };
+}
+
+/** The database filter for what a ranking covers (on top of the visible, official concerts). */
+export function bestScope(list: Pick<BestList, "kind" | "key">): object {
+  return list.kind === "decade"
+    ? { performedYear: { gte: parseDecade(list.key!)!, lte: parseDecade(list.key!)! + 9 } }
+    : list.kind === "genre"
+      ? { genres: { some: { genre: { slug: list.key! } } } }
+      : list.kind === "place"
+        ? { venueKind: { slug: list.key! } }
+        : {};
+}
+
+/** A ranking's first `take` concerts, most watched first: official concerts only (bootlegs stay out of "best of"). */
+export async function bestConcerts(list: Pick<BestList, "kind" | "key">, take: number): Promise<ConcertView[]> {
+  const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, bestScope(list)] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take });
+  return rows.map(toConcertView);
 }
 
 // ---- Full concerts in HD (src/lib/hd.ts) ----
@@ -912,7 +921,7 @@ async function listArtistsUncached() {
     orderBy: { name: "asc" },
     include: { _count: { select: { credits: { where: { concert: VISIBLE } } } }, credits: newestCredit },
   });
-  return rows.map((a) => ({ slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
+  return rows.map((a) => ({ id: a.id, slug: a.slug, name: a.name, concerts: a._count.credits, cover: artistCover(a, a.credits.map((c) => c.concert)) }));
 }
 
 /**
