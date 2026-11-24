@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { homeLead } from "../src/lib/answers";
 import { bestLists } from "../src/lib/best";
-import { foldPlaces, frontPage, pickRankings, topSongs } from "../src/lib/home";
+import { COVER_BANDS, coverPool, foldPlaces, frontPage, hasTimedSongs, pickForWeek, pickRankings, tilePicture, tileWinners, topSongs } from "../src/lib/home";
 import { BANNED, youtubeOnlyWithViews } from "./fixtures/concert-view";
 
 const totals = { concerts: 165, official: 160, bootlegs: 5, bands: 80, withSetlist: 60, festivals: 12, venues: 30 };
@@ -25,6 +25,11 @@ describe("homepage lead sentence", () => {
       "STAGEDIVE has 1 full rock concert you can play here, the whole show by 1 band at 1 festival; every one with a setlist: click a song to jump to it.",
     );
     expect(homeLead({ ...totals, concerts: 0, official: 0, bootlegs: 0 })).toBe("");
+  });
+  it("writes big numbers with thousands separators", () => {
+    expect(homeLead({ concerts: 2213, official: 1712, bootlegs: 501, bands: 1298, withSetlist: 1930, festivals: 249, venues: 1340 })).toBe(
+      "STAGEDIVE has 2,213 full rock concerts you can play here, the whole show (1,712 official, 501 bootlegs) by 1,298 bands at 249 festivals and 1,340 venues; 1,930 with a setlist: click a song to jump to it.",
+    );
   });
   it("follows the copy rules", () => {
     const lead = homeLead(totals);
@@ -81,19 +86,95 @@ describe("homepage helpers", () => {
     expect(pickRankings([], new Date())).toEqual([]);
   });
 
-  it("lists the most played songs, only those with a page worth showing", () => {
+  it("lists the most played songs, one per band (its most played), only those with a page worth showing", () => {
     const songs = topSongs(
       [
-        { slug: "metallica", name: "Metallica", songs: [{ slug: "one", title: "One", versions: 4 }, { slug: "fade-to-black", title: "Fade to Black", versions: 1 }] },
-        { slug: "pixies", name: "Pixies", songs: [{ slug: "debaser", title: "Debaser", versions: 6 }, { slug: "hey", title: "Hey", versions: 4 }] },
+        { slug: "metallica", name: "Metallica", songs: [{ slug: "one", title: "One", versions: 9 }, { slug: "fade-to-black", title: "Fade to Black", versions: 8 }] },
+        { slug: "pixies", name: "Pixies", songs: [{ slug: "hey", title: "Hey", versions: 4 }, { slug: "debaser", title: "Debaser", versions: 6 }] },
+        { slug: "low", name: "Low", songs: [{ slug: "words", title: "Words", versions: 1 }] },
+        { slug: "suede", name: "Suede", songs: [{ slug: "trash", title: "Trash", versions: 3 }, { slug: "animal-nitrate", title: "Animal Nitrate", versions: 3 }] },
       ],
       3,
     );
     expect(songs).toEqual([
+      { title: "One", href: "/songs/metallica/one", band: { slug: "metallica", name: "Metallica" }, versions: 9 },
       { title: "Debaser", href: "/songs/pixies/debaser", band: { slug: "pixies", name: "Pixies" }, versions: 6 },
-      { title: "One", href: "/songs/metallica/one", band: { slug: "metallica", name: "Metallica" }, versions: 4 },
-      { title: "Hey", href: "/songs/pixies/hey", band: { slug: "pixies", name: "Pixies" }, versions: 4 },
+      { title: "Animal Nitrate", href: "/songs/suede/animal-nitrate", band: { slug: "suede", name: "Suede" }, versions: 3 },
     ]);
+  });
+
+  it("builds the cover pool from the bands with the most official concerts, their most watched gig with song times", () => {
+    const bands = Array.from({ length: 25 }, (_, i) => ({ artistId: i + 1, name: `Band ${String.fromCharCode(65 + i)}`, official: 30 - i, hasPhoto: i % 2 === 0 }));
+    const best = new Map(bands.map((b) => [b.artistId, 100 + b.artistId]));
+    // The top 20 bands; 10 of them have a photo: only those, in order of official concerts.
+    const pool = coverPool(bands, best);
+    expect(pool).toEqual([101, 103, 105, 107, 109, 111, 113, 115, 117, 119]);
+    expect(pool.every((id) => id - 100 <= COVER_BANDS)).toBe(true);
+    // A band with no concert with song times is left out.
+    best.delete(1);
+    expect(coverPool(bands, best)[0]).toBe(103);
+    // Fewer than eight with a photo: every band.
+    const few = bands.map((b) => ({ ...b, hasPhoto: b.artistId <= 3 }));
+    expect(coverPool(few, best)).toHaveLength(COVER_BANDS - 1);
+    // Ties on official concerts: name A to Z; one entry per concert.
+    expect(
+      coverPool(
+        [
+          { artistId: 1, name: "Zeta", official: 5, hasPhoto: false },
+          { artistId: 2, name: "Alpha", official: 5, hasPhoto: false },
+          { artistId: 3, name: "Beta", official: 5, hasPhoto: false },
+        ],
+        new Map([
+          [1, 7],
+          [2, 8],
+          [3, 8],
+        ]),
+      ),
+    ).toEqual([8, 7]);
+    expect(coverPool([], new Map())).toEqual([]);
+  });
+
+  it("changes the cover every Monday and keeps it all week", () => {
+    const pool = [11, 12, 13];
+    expect(pickForWeek(pool, new Date("2026-11-23T00:00:00Z"))).toBe(12); // Monday
+    expect(pickForWeek(pool, new Date("2026-11-29T23:59:59Z"))).toBe(12); // Sunday
+    expect(pickForWeek(pool, new Date("2026-11-30T00:00:00Z"))).toBe(13);
+    expect(pickForWeek(pool, new Date("2026-12-07T08:00:00Z"))).toBe(11);
+  });
+
+  it("counts a setlist as clickable only with song times", () => {
+    expect(hasTimedSongs([{ title: "One", time: 0 }, { title: "Two", time: null }])).toBe(true);
+    expect(hasTimedSongs([{ title: "One" }, { title: "Two" }])).toBe(false);
+    expect(hasTimedSongs(null)).toBe(false);
+  });
+
+  it("finds each tile's top band and most watched concert", () => {
+    const w = tileWinners([
+      { id: 1, viewCount: 500, mainArtistIds: [10], keys: ["decade:1990s", "genre:1"] },
+      { id: 2, viewCount: 900, mainArtistIds: [20], keys: ["decade:1990s"] },
+      { id: 3, viewCount: 100, mainArtistIds: [10], keys: ["decade:1990s", "tour:4"] },
+      { id: 4, viewCount: 100, mainArtistIds: [], keys: ["tour:4"] },
+    ]);
+    expect(w.get("decade:1990s")).toEqual({ artistId: 10, concertId: 2 });
+    expect(w.get("genre:1")).toEqual({ artistId: 10, concertId: 1 });
+    expect(w.get("tour:4")).toEqual({ artistId: 10, concertId: 3 });
+    expect(w.has("decade:1980s")).toBe(false);
+    // A tie on concerts: more views in all.
+    expect(
+      tileWinners([
+        { id: 1, viewCount: 5, mainArtistIds: [1], keys: ["k"] },
+        { id: 2, viewCount: 9, mainArtistIds: [2], keys: ["k"] },
+      ]).get("k"),
+    ).toEqual({ artistId: 2, concertId: 2 });
+  });
+
+  it("gives a tile its band's photo with the band named, else the concert picture", () => {
+    const photo = { src: "/photos/bands/suede?v=1", width: 800, height: 600, credit: "Photo: X", author: "X", sourcePage: "https://commons.wikimedia.org/x", license: "CC BY 4.0", licenseUrl: null };
+    const concert = { kind: "concert" as const, cover: { youtubeId: "abc", thumbnail: { src: "t", srcSet: "", width: 480, height: 360 }, portrait: false } };
+    const photos = new Map([["suede", photo]]);
+    expect(tilePicture("suede", photos, concert)).toEqual({ picture: { kind: "band-photo", photo }, pictureBand: "suede", fallback: concert });
+    expect(tilePicture("pixies", photos, concert)).toEqual({ picture: concert, pictureBand: null, fallback: concert });
+    expect(tilePicture(null, photos, null)).toEqual({ picture: null, pictureBand: null, fallback: null });
   });
 
   it("puts the news list's lead story on the front page, else the newest", () => {
@@ -154,6 +235,9 @@ describe.skipIf(!url)("homepage sections (database)", () => {
     expect(d.waysIn.decades.map((x) => x.label)).toEqual(["1980s", "1990s", "2010s", "2020s"]);
     expect(d.waysIn.decades[0]).toMatchObject({ href: "/decades/1980s", line: "post-punk + hardcore" });
     expect(d.waysIn.genres[0].count).toBeGreaterThanOrEqual(d.waysIn.genres.at(-1)!.count);
+    // Picture tiles: no band photos in the seed, so a concert picture each, and no band named for it.
+    for (const t of [...d.waysIn.decades, ...d.waysIn.genres]) expect(t).toMatchObject({ picture: { kind: "concert" }, pictureBand: null });
+    expect(new Set(d.waysIn.songs.map((s) => s.band.slug)).size).toBe(d.waysIn.songs.length);
     expect(d.nextBand.noise.length).toBeGreaterThan(0);
   });
 

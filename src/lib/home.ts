@@ -18,6 +18,7 @@ import { bandPhotosFor, type BandPhotoView } from "./photos/view";
 import {
   bestCatalogue,
   bestConcerts,
+  concertIndex,
   decadeIndex,
   defaultMapArtist,
   findConcertViews,
@@ -145,11 +146,92 @@ export interface HomeData {
 
 const mainSlug = (c: ConcertView) => c.artists.find((a) => a.role === "MAIN")?.slug ?? c.artists[0]?.slug;
 
+// ---------- The gig of the week (the homepage cover) ----------
+
+/** How many bands the cover rotates over: the ones with the most official concerts on the site ("the legends"). */
+export const COVER_BANDS = 20;
+/** When at least this many of those bands have a band photo, the cover rotates over those only. */
+export const COVER_MIN_WITH_PHOTO = 8;
+/** How many of a band's most watched official concerts with a setlist are checked for song times. */
+const COVER_TRIES = 3;
+
+/**
+ * The cover's pool, in the order it rotates (owner, 24 Nov 2026: the cover should be a big gig, not the next
+ * band A to Z). The rule, all from data:
+ * 1. the COVER_BANDS bands with the most visible official concerts (ties: name A to Z);
+ * 2. for each, its most watched official concert whose setlist has song times (songs you can click to jump to);
+ *    a band with no such concert is left out;
+ * 3. when at least COVER_MIN_WITH_PHOTO of them have a band photo, only those (the cover wants a photo);
+ * 4. one entry per concert, in band order (most official concerts first).
+ * The page shows pool[week % pool.length] (pickForWeek): the week starts on Monday (UTC, ISO weeks), so the
+ * cover changes every Monday and stays the same all week. An owner pin (data/home-picks.json) always wins. Pure.
+ */
+export function coverPool(
+  bands: { artistId: number; name: string; official: number; hasPhoto: boolean }[],
+  best: Map<number, number>,
+): number[] {
+  const legends = [...bands]
+    .sort((a, b) => b.official - a.official || a.name.localeCompare(b.name) || a.artistId - b.artistId)
+    .slice(0, COVER_BANDS)
+    .filter((b) => best.has(b.artistId));
+  const withPhoto = legends.filter((b) => b.hasPhoto);
+  const pool = withPhoto.length >= COVER_MIN_WITH_PHOTO ? withPhoto : legends;
+  return [...new Set(pool.map((b) => best.get(b.artistId)!))];
+}
+
+/** True when a stored setlist has at least one song with a start time (a song you can click to jump to). Pure. */
+export function hasTimedSongs(setlist: unknown): boolean {
+  return Boolean(readSetlist(setlist, null)?.tracks.some((t) => t.time !== null));
+}
+
+/** The cover pool from the database (coverPool): four small reads, no full concert rows. */
+async function coverCandidates(): Promise<number[]> {
+  const db = getDb();
+  const OFFICIAL_VISIBLE = { ...VISIBLE, ...OFFICIAL_ONLY };
+  const counts = await db.concertArtist.groupBy({ by: ["artistId"], where: { role: "MAIN", concert: OFFICIAL_VISIBLE }, _count: { _all: true } });
+  if (!counts.length) return [];
+  // Every band tied with the last of the top COVER_BANDS, so the name tie-break is exact.
+  const sorted = counts.map((c) => c._count._all).sort((a, b) => b - a);
+  const floor = sorted[Math.min(COVER_BANDS, sorted.length) - 1];
+  const ids = counts.filter((c) => c._count._all >= floor).map((c) => c.artistId);
+  const [artists, candidates] = await Promise.all([
+    db.artist.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, photo: { select: { id: true } } } }),
+    db.concert.findMany({
+      where: { ...OFFICIAL_VISIBLE, setlistSource: { not: null }, credits: { some: { role: "MAIN", artistId: { in: ids } } } },
+      orderBy: [{ viewCount: "desc" }, { id: "asc" }],
+      select: { id: true, credits: { where: { role: "MAIN" }, select: { artistId: true } } },
+    }),
+  ]);
+  const tries = new Map<number, number[]>();
+  for (const c of candidates)
+    for (const { artistId } of c.credits) {
+      const list = tries.get(artistId) ?? [];
+      if (list.length < COVER_TRIES) tries.set(artistId, [...list, c.id]);
+    }
+  const setlists = await db.concert.findMany({ where: { id: { in: [...new Set([...tries.values()].flat())] } }, select: { id: true, setlist: true } });
+  const timed = new Set(setlists.filter((c) => hasTimedSongs(c.setlist)).map((c) => c.id));
+  const best = new Map<number, number>();
+  for (const [artistId, list] of tries) {
+    const id = list.find((x) => timed.has(x));
+    if (id !== undefined) best.set(artistId, id);
+  }
+  const count = new Map(counts.map((c) => [c.artistId, c._count._all]));
+  return coverPool(
+    artists.map((a) => ({ artistId: a.id, name: a.name, official: count.get(a.id) ?? 0, hasPhoto: Boolean(a.photo) })),
+    best,
+  );
+}
+
 async function gigOfTheWeek(now: Date, picks: HomePicks) {
   let concert: ConcertView | null = null;
   if (picks.gigOfTheWeek) [concert = null] = await findConcertViews({ where: { youtubeId: picks.gigOfTheWeek }, take: 1 });
   if (!concert) {
-    // Weekly rotation over the bands, A–Z; each band's best gig: one with a setlist first, then the longest.
+    const id = pickForWeek(await coverCandidates(), now);
+    if (id !== null) [concert = null] = await findConcertViews({ where: { id }, take: 1 });
+  }
+  if (!concert) {
+    // A small catalogue with no cover pool yet: weekly rotation over the bands, A–Z; each band's best gig: one
+    // with a setlist first, then the longest.
     const bands = await getDb().artist.findMany({
       where: { credits: { some: { role: "MAIN", concert: VISIBLE } } },
       orderBy: [{ name: "asc" }, { id: "asc" }],
@@ -205,12 +287,12 @@ async function mostPlayed(now: Date, take: number): Promise<{ list: { concert: C
 
 async function noise() {
   const genres = await getDb().genre.findMany({
-    select: { slug: true, name: true, _count: { select: { concerts: { where: { concert: VISIBLE } } } } },
+    select: { id: true, slug: true, name: true, _count: { select: { concerts: { where: { concert: VISIBLE } } } } },
   });
   const byName = new Map(genres.map((g) => [g.name, g]));
   return NOISE_ORDER.flatMap((name) => {
     const g = byName.get(name);
-    return g ? [{ slug: g.slug, name: g.name, count: g._count.concerts }] : [];
+    return g ? [{ id: g.id, slug: g.slug, name: g.name, count: g._count.concerts }] : [];
   });
 }
 
@@ -246,7 +328,7 @@ async function homeDataUncached(now: Date = new Date()): Promise<HomeData> {
     mostPlayed: played.list,
     mostPlayedBy: played.by,
     nightThat,
-    noise: genres,
+    noise: genres.map(({ id: _id, ...g }) => g),
     photos: Object.fromEntries(photos),
   };
 }
@@ -297,6 +379,19 @@ export type HomePicture =
   | { kind: "band-photo"; photo: BandPhotoView }
   | { kind: "festival-photo"; photo: FestivalPhotoView }
   | { kind: "concert"; cover: Cover };
+
+/**
+ * The picture of a "way in" tile (decade, genre, tour, song). `picture` is the photo of the tile's band (a
+ * decade's or genre's band with the most official concerts in it, a tour's band, a song's band) when it has
+ * one, else the most watched official concert in it (a song: its band's picture). To show a band photo only
+ * once per page, the page checks `pictureBand` (the band whose photo `picture` is, null for a concert picture)
+ * and uses `fallback` (a concert picture, never a band photo) when that photo is already on the page.
+ */
+export interface HomeTile {
+  picture: HomePicture | null;
+  pictureBand: string | null;
+  fallback: HomePicture | null;
+}
 
 export interface HomeBand {
   slug: string;
@@ -377,11 +472,13 @@ export interface HomepageData {
     /** Concerts released as a live album (MusicBrainz), most watched first. */
     liveAlbums: { href: null; count: number; albums: HomeLiveAlbum[] };
   };
+  /** Picture tiles: each way in carries a picture (HomeTile). */
   waysIn: {
-    decades: { label: string; href: string; count: number; line: string | null }[];
-    genres: { slug: string; name: string; href: string; count: number }[];
-    tours: { slug: string; name: string; href: string; band: { slug: string; name: string } | null; count: number }[];
-    songs: { title: string; href: string; band: { slug: string; name: string }; versions: number }[];
+    decades: ({ label: string; href: string; count: number; line: string | null } & HomeTile)[];
+    genres: ({ slug: string; name: string; href: string; count: number } & HomeTile)[];
+    tours: ({ slug: string; name: string; href: string; band: { slug: string; name: string } | null; count: number } & HomeTile)[];
+    /** One song per band (its most played), most versions first. */
+    songs: ({ title: string; href: string; band: { slug: string; name: string }; versions: number } & HomeTile)[];
   };
   /** "Find your next band": today's band and its wall (null when it cannot be read), and the genre order. */
   nextBand: { wall: { centre: ArtistCard; artists: MapArtist[] } | null; noise: { slug: string; name: string; count: number }[] };
@@ -434,15 +531,63 @@ export function pickRankings(lists: BestList[], now: Date, take = 3): BestList[]
   return [...new Set([...wanted, ...rest])].slice(0, take);
 }
 
-/** The most played songs on the site (versions with a setlist), from the song catalogue; only songs with a page worth showing. Pure. */
+/**
+ * The most played songs on the site (versions with a setlist), one per band so one big band does not fill the
+ * list: each band's most played song (ties: title A to Z), then the bands' songs by versions. Only songs with a
+ * page worth showing. Pure.
+ */
 export function topSongs(
   catalogue: { slug: string; name: string; songs: { slug: string; title: string; versions: number }[] }[],
   take: number,
-): HomepageData["waysIn"]["songs"] {
+): { title: string; href: string; band: { slug: string; name: string }; versions: number }[] {
   return catalogue
-    .flatMap((b) => b.songs.filter((s) => s.versions >= MIN_SONG_VERSIONS).map((s) => ({ title: s.title, href: songPath(b.slug, s.slug), band: { slug: b.slug, name: b.name }, versions: s.versions })))
+    .flatMap((b) => {
+      const [top] = b.songs.filter((s) => s.versions >= MIN_SONG_VERSIONS).sort((x, y) => y.versions - x.versions || x.title.localeCompare(y.title));
+      return top ? [{ title: top.title, href: songPath(b.slug, top.slug), band: { slug: b.slug, name: b.name }, versions: top.versions }] : [];
+    })
     .sort((a, b) => b.versions - a.versions || a.band.name.localeCompare(b.band.name) || a.title.localeCompare(b.title))
     .slice(0, take);
+}
+
+/** One official concert as the tile pictures need it: what it is filed under (keys) and its main bands. */
+export interface TileConcert {
+  id: number;
+  viewCount: number;
+  mainArtistIds: number[];
+  /** "decade:1990s", "genre:<id>", "tour:<id>" */
+  keys: string[];
+}
+
+/**
+ * For each key, the band with the most official concerts under it (ties: more views in all, then the lower
+ * id) and the most watched official concert under it (ties: the lower id). Pure.
+ */
+export function tileWinners(concerts: TileConcert[]): Map<string, { artistId: number | null; concertId: number }> {
+  const groups = new Map<string, { bands: Map<number, { n: number; views: number }>; top: TileConcert }>();
+  for (const c of concerts)
+    for (const key of c.keys) {
+      const g = groups.get(key) ?? { bands: new Map(), top: c };
+      if (c.viewCount > g.top.viewCount || (c.viewCount === g.top.viewCount && c.id < g.top.id)) g.top = c;
+      for (const a of c.mainArtistIds) {
+        const b = g.bands.get(a) ?? { n: 0, views: 0 };
+        g.bands.set(a, { n: b.n + 1, views: b.views + c.viewCount });
+      }
+      groups.set(key, g);
+    }
+  const out = new Map<string, { artistId: number | null; concertId: number }>();
+  for (const [key, g] of groups) {
+    const [band] = [...g.bands.entries()].sort(([ia, a], [ib, b]) => b.n - a.n || b.views - a.views || ia - ib);
+    out.set(key, { artistId: band ? band[0] : null, concertId: g.top.id });
+  }
+  return out;
+}
+
+/** A tile's picture from its band's photo, else the concert picture. Pure. */
+export function tilePicture(bandSlug: string | null, photos: Map<string, BandPhotoView>, concert: HomePicture | null): HomeTile {
+  const photo = bandSlug ? photos.get(bandSlug) : undefined;
+  return photo
+    ? { picture: { kind: "band-photo", photo }, pictureBand: bandSlug, fallback: concert }
+    : { picture: concert, pictureBand: null, fallback: concert };
 }
 
 /** Front-page story and the next ones from a news list: the list's lead (newest with a picture), else the newest. Pure. */
@@ -562,9 +707,20 @@ async function liveAlbumShelf(take: number): Promise<{ count: number; albums: Ho
   };
 }
 
+/**
+ * What the way-in tiles need beyond the shared concert index: each visible official concert's year, tour and
+ * main bands (small numbers only, no text).
+ */
+async function tileIndex() {
+  return getDb().concert.findMany({
+    where: { ...VISIBLE, ...OFFICIAL_ONLY },
+    select: { id: true, performedYear: true, tourId: true, credits: { where: { role: "MAIN" }, select: { artistId: true } } },
+  });
+}
+
 async function homepageDataUncached(now: Date = new Date()): Promise<HomepageData> {
   const picks = readHomePicks();
-  const [gig, totals, artists, folded, sources, fresh, catalogue, hdTotal, hd, fans, liveAlbums, news, decades, genres, tours, songs, wall] = await Promise.all([
+  const [gig, totals, artists, folded, sources, fresh, catalogue, hdTotal, hd, fans, liveAlbums, news, decades, genres, tours, songs, wall, index, tileRows] = await Promise.all([
     gigOfTheWeek(now, picks),
     siteTotals(),
     listArtists(),
@@ -585,7 +741,51 @@ async function homepageDataUncached(now: Date = new Date()): Promise<HomepageDat
     defaultMapArtist(now)
       .then((slug) => (slug ? getMap(slug) : null))
       .catch(() => null),
+    concertIndex(),
+    tileIndex(),
   ]);
+
+  // The way-in tiles: for each decade, genre and tour, its top band and its most watched official concert.
+  const indexed = new Map(index.map((c) => [c.id, c]));
+  const winners = tileWinners(
+    tileRows.flatMap((r) => {
+      const c = indexed.get(r.id);
+      if (!c) return [];
+      const keys = [
+        ...(r.performedYear !== null ? [`decade:${decadeOf(Math.floor(r.performedYear / 10) * 10)}`] : []),
+        ...c.genreIds.map((g) => `genre:${g}`),
+        ...(r.tourId !== null ? [`tour:${r.tourId}`] : []),
+      ];
+      return [{ id: r.id, viewCount: c.viewCount, mainArtistIds: r.credits.map((x) => x.artistId), keys }];
+    }),
+  );
+  const slugById = new Map(artists.map((a) => [a.id, a.slug]));
+  const bandBySlug = new Map(artists.map((a) => [a.slug, a]));
+  const concertPicture = (id: number | undefined): HomePicture | null => {
+    const c = id === undefined ? undefined : indexed.get(id);
+    return c ? { kind: "concert", cover: { youtubeId: c.youtubeId, thumbnail: thumbnailSources(c.youtubeId, c.thumbnailUrl), portrait: false } } : null;
+  };
+  /** A band's own picture as on the band list (a concert thumbnail, or its channel avatar). */
+  const bandPicture = (slug: string | null): HomePicture | null => {
+    const cover = slug ? bandBySlug.get(slug)?.cover : null;
+    return cover ? { kind: "concert", cover } : null;
+  };
+  const tileOf = (key: string) => {
+    const w = winners.get(key);
+    return { band: w?.artistId != null ? (slugById.get(w.artistId) ?? null) : null, concert: concertPicture(w?.concertId) };
+  };
+  const genreTiles = genres
+    .filter((g) => g.count > 0)
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, WAYS_IN.genres);
+  const tourTiles = [...tours].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, WAYS_IN.tours);
+  const songTiles = topSongs(songs, WAYS_IN.songs);
+  const tileBands = [
+    ...decades.map((d) => tileOf(`decade:${d.label}`).band),
+    ...genreTiles.map((g) => tileOf(`genre:${g.id}`).band),
+    ...tourTiles.map((t) => t.artist?.slug ?? null),
+    ...songTiles.map((s) => s.band.slug),
+  ].filter((x): x is string => Boolean(x));
 
   const rankings = pickRankings(catalogue, now);
   const rankedConcerts = await Promise.all(rankings.map((l) => bestConcerts(l, RANKING_TOP)));
@@ -593,7 +793,7 @@ async function homepageDataUncached(now: Date = new Date()): Promise<HomepageDat
   const legendRows = [...artists].sort((a, b) => b.concerts - a.concerts || a.name.localeCompare(b.name)).slice(0, LEGENDS_SIZE);
   const gigSlug = gig ? mainSlug(gig.concert) : undefined;
   const [photos, places] = await Promise.all([
-    bandPhotosFor([...legendRows.map((a) => a.slug), ...(gigSlug ? [gigSlug] : [])]),
+    bandPhotosFor([...legendRows.map((a) => a.slug), ...(gigSlug ? [gigSlug] : []), ...tileBands]),
     topPlaces(folded, sources.festivalPhotos, PLACES_SIZE),
   ]);
 
@@ -632,19 +832,24 @@ async function homepageDataUncached(now: Date = new Date()): Promise<HomepageDat
       liveAlbums: { href: null, ...liveAlbums },
     },
     waysIn: {
-      decades: decades.map((d) => ({ label: d.label, href: `/decades/${d.label}`, count: d.count, line: DECADE_LINES[d.label] ?? null })),
-      genres: genres
-        .filter((g) => g.count > 0)
-        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-        .slice(0, WAYS_IN.genres)
-        .map((g) => ({ ...g, href: `/genres/${g.slug}` })),
-      tours: [...tours]
-        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-        .slice(0, WAYS_IN.tours)
-        .map((t) => ({ slug: t.slug, name: t.name, href: `/tours/${t.slug}`, band: t.artist ?? null, count: t.count })),
-      songs: topSongs(songs, WAYS_IN.songs),
+      decades: decades.map((d) => {
+        const t = tileOf(`decade:${d.label}`);
+        return { label: d.label, href: `/decades/${d.label}`, count: d.count, line: DECADE_LINES[d.label] ?? null, ...tilePicture(t.band, photos, t.concert) };
+      }),
+      genres: genreTiles.map((g) => {
+        const t = tileOf(`genre:${g.id}`);
+        return { slug: g.slug, name: g.name, count: g.count, href: `/genres/${g.slug}`, ...tilePicture(t.band, photos, t.concert) };
+      }),
+      // A tour with no official concert (bootlegs only): its band's own picture, as on the band list.
+      tours: tourTiles.map((x) => {
+        const t = tileOf(`tour:${x.id}`);
+        const band = x.artist?.slug ?? null;
+        return { slug: x.slug, name: x.name, href: `/tours/${x.slug}`, band: x.artist ?? null, count: x.count, ...tilePicture(band, photos, t.concert ?? bandPicture(band)) };
+      }),
+      // A song's picture: its band's photo, else the band's own picture.
+      songs: songTiles.map((x) => ({ ...x, ...tilePicture(x.band.slug, photos, bandPicture(x.band.slug)) })),
     },
-    nextBand: { wall, noise: genres },
+    nextBand: { wall, noise: genres.map(({ id: _id, ...g }) => g) },
   };
 }
 

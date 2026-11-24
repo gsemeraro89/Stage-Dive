@@ -651,12 +651,15 @@ export interface HomeTotals {
  */
 export function homeLead(t: HomeTotals): string {
   if (!t.concerts) return "";
+  // Numbers with thousands separators ("2,213"), as the figures everywhere else on the site (en-GB).
+  const num = (n: number) => n.toLocaleString("en-GB");
+  const many = (n: number, one: string) => `${num(n)} ${n === 1 ? one : `${one}s`}`;
   const what = t.bootlegs
-    ? `${plural(t.concerts, "full rock concert")} you can play here, the whole show (${t.official} official, ${plural(t.bootlegs, "bootleg")})`
-    : `${plural(t.concerts, "full rock concert")} you can play here, the whole show`;
-  const where = [t.festivals ? plural(t.festivals, "festival") : null, t.venues ? plural(t.venues, "venue") : null].filter(Boolean) as string[];
-  const by = t.bands ? ` by ${plural(t.bands, "band")}` : "";
+    ? `${many(t.concerts, "full rock concert")} you can play here, the whole show (${num(t.official)} official, ${many(t.bootlegs, "bootleg")})`
+    : `${many(t.concerts, "full rock concert")} you can play here, the whole show`;
+  const where = [t.festivals ? many(t.festivals, "festival") : null, t.venues ? many(t.venues, "venue") : null].filter(Boolean) as string[];
+  const by = t.bands ? ` by ${many(t.bands, "band")}` : "";
   const at = where.length ? ` at ${listWords(where)}` : "";
-  const setlists = t.withSetlist ? `; ${t.withSetlist === t.concerts ? "every one" : t.withSetlist} with a setlist: click a song to jump to it` : "";
+  const setlists = t.withSetlist ? `; ${t.withSetlist === t.concerts ? "every one" : num(t.withSetlist)} with a setlist: click a song to jump to it` : "";
   return `${SITE_NAME} has ${what}${by}${at}${setlists}.`;
 }
