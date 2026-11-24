@@ -682,3 +682,19 @@ model NewsSeen {
   @@index([createdAt])
   @@map("news_seen")
 }
+
+/// AI and search crawler visits, one row per day and bot (owner, 24 Nov 2026). Counted in memory by
+/// src/proxy.ts and written in batches at most once every 5 minutes (src/lib/crawler-hits.ts).
+model CrawlerHit {
+  day      DateTime @db.Date
+  /// Canonical bot name, e.g. "GPTBot", "ClaudeBot", "PerplexityBot", "Googlebot".
+  bot      String
+  hits     Int      @default(0)
+  /// Hits by page type: {"concert": 12, "artist": 4, "md": 3, ...} (pageKindOf in src/lib/crawlers.ts).
+  kinds    Json     @default("{}")
+  lastPath String?  @map("last_path")
+  lastAt   DateTime @default(now()) @map("last_at")
+
+  @@id([day, bot])
+  @@map("crawler_hits")
+}

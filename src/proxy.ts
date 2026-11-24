@@ -3,7 +3,10 @@
 // - "/artists/<slug>?sort=length" is rewritten to /artists/<slug>/sorted/length (the address stays).
 // - Password protection for the admin pages (HTTP Basic auth). Any user name, password = ADMIN_PASSWORD.
 //   Without ADMIN_PASSWORD set, the admin pages do not exist (404).
-import { NextResponse, type NextRequest } from "next/server";
+// - AI and search crawlers are counted (src/lib/crawler-hits.ts): in memory, written at most every 5 minutes.
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { countCrawlerHit } from "@/lib/crawler-hits";
+import { crawlerOf } from "@/lib/crawlers";
 
 function safeEqual(a: string, b: string): boolean {
   // Compare in constant time so the password cannot be guessed from response times.
@@ -19,8 +22,15 @@ const LIST_PARAMS = ["q", "genre", "artist", "venue", "venueKind", "source", "so
 /** Band page orders other than the default (src/app/artists/[slug]/band-page.tsx). */
 const BAND_SORTS = ["length", "watched"];
 
-export function proxy(request: NextRequest) {
+export function proxy(request: NextRequest, event?: NextFetchEvent) {
   const url = request.nextUrl;
+  // Which pages AI and search crawlers read (owner, 24 Nov 2026). Counted in memory; a due write runs
+  // after the response (waitUntil), never delaying it.
+  const bot = crawlerOf(request.headers.get("user-agent"));
+  if (bot) {
+    const write = countCrawlerHit(bot, url.pathname);
+    if (write) event?.waitUntil(write);
+  }
   if (url.pathname === "/") {
     if (!LIST_PARAMS.some((k) => url.searchParams.has(k))) return NextResponse.next();
     const to = url.clone();
@@ -55,4 +65,6 @@ export function proxy(request: NextRequest) {
   });
 }
 
-export const config = { matcher: ["/", "/artists/:slug", "/admin", "/admin/:path*"] };
+// Every page and file a crawler may read (robots.txt, sitemaps, llms.txt, .md copies, feeds), not Next's
+// own assets, the API, icons or the brand book's static files.
+export const config = { matcher: ["/((?!_next/|api/|favicon|icon|apple-icon|brandbook/|share-card).*)"] };
