@@ -244,3 +244,30 @@ Done from the list above: 1 (the cover turns through famous gigs) and the first 
 
 **Effort.** Small. `fallback` becomes a short list in `homepageData()` (engineering); the page already keeps track of what is glued on.
 
+
+---
+
+## 2026-11-24 · after the shelves became crates
+
+Done from the list above: 2 (the shelves as crates; owner: "go ahead with the shelves as pictures too").
+
+### 1. The album's sleeve note on the crate
+**Idea.** A live album tile only says "THE ALBUM: title (year)". Add one marker line per crate front: "you can buy this one. or watch it here." and link the album's title to its MusicBrainz page (we already hold the link).
+
+**Why it fits.** It says out loud what makes this shelf special: these nights were pressed on a record.
+
+**Effort.** Small. Design only: the link is already in `homepageData()`.
+
+### 2. HD as a stamp, everywhere
+**Idea.** A small rubber stamp "HD" (same family as the Bootleg stamp, black ink, under the picture, never on it) on any gig filmed in HD: in the crates, in "Fresh off the copier" and in the lists.
+
+**Why it fits.** The zine already speaks in stamps. One more tells you which gig to put on the big screen.
+
+**Effort.** Small to medium. Needs an `hd` flag on the concert view (engineering); the stamp is a kit piece.
+
+### 3. A fourth crate: "Longest nights"
+**Idea.** One more crate of the longest gigs in the pile ("3 hours 12. bring water."), most minutes first.
+
+**Why it fits.** "The whole set" is the promise; the longest sets are the proof, and the lengths are funny on their own.
+
+**Effort.** Small. One more shelf from `homepageData()` (engineering); the crate takes it as it is. Four crates would sit two by two on a desktop.

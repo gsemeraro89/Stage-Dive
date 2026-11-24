@@ -1245,11 +1245,12 @@ a.ha-contents-row:hover {
   color: var(--toner-soft);
 }
 
-/* The shelves: three columns, one picture each, then typed lines. */
+/* The shelves: three crates side by side. In each, the front gig large and the rest behind it two
+   across (five show; the sixth waits for the phone's swipe row). */
 .ha-shelves {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 36px 40px;
+  gap: 40px 44px;
   align-items: start;
 }
 
@@ -1258,16 +1259,43 @@ a.ha-contents-row:hover {
   justify-content: space-between;
   align-items: center;
   gap: 4px 14px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
-.ha-shelf .hx-row[data-pic] {
-  flex-wrap: wrap;
+.ha-crate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px 20px;
+  align-items: start;
 }
 
-.ha-shelf .hx-row[data-pic] .hx-row-pic {
-  width: 100%;
-  border-width: var(--frame);
+.ha-crate > :first-child {
+  grid-column: 1 / -1;
+}
+
+.ha-crate > :not(:first-child) {
+  --bite: 16px;
+}
+
+.ha-crate > :not(:first-child) .zn-photo-strips,
+.ha-crate > :not(:first-child) .hx-gig-data,
+.ha-crate > :not(:first-child) > .hx-boot {
+  margin-left: 8px;
+}
+
+.ha-crate > :not(:first-child) .hm-card-name {
+  font-size: var(--text-name-small);
+}
+
+.ha-crate > :not(:first-child) .hx-gig-data,
+.ha-crate > :not(:first-child) .hx-boot-from {
+  font-size: 13.5px;
+}
+
+@media (min-width: 761px) {
+  .ha-crate > :nth-child(n + 6) {
+    display: none;
+  }
 }
 
 .ha-chart .hx-row[data-pic] {
@@ -1459,6 +1487,29 @@ a.ha-contents-row:hover {
     scroll-snap-align: start;
   }
 
+  /* A crate is the same swipe row: every gig the same size, all six in it. */
+  .ha-shelf-head {
+    margin-bottom: 6px;
+  }
+
+  .ha-crate {
+    display: flex;
+    gap: 16px;
+    margin: 0 calc(-1 * var(--margin));
+    padding: 10px var(--margin) 14px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-left: var(--margin);
+    scrollbar-width: thin;
+    scrollbar-color: var(--toner) transparent;
+  }
+
+  .ha-crate > .hx-gig {
+    flex: 0 0 min(64vw, 260px);
+    scroll-snap-align: start;
+  }
+
   .ha-tile[data-big] {
     flex-basis: min(46vw, 190px);
   }
@@ -1607,6 +1658,10 @@ a.ha-contents-row:hover {
   .ha-charts,
   .ha-shelves {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ha-shelves {
+    gap: 26px;
   }
 
   .ha-chart {

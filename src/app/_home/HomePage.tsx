@@ -5,15 +5,16 @@
 // Data: homepageData(). Styles: src/styles/home.css (hm-, hx-, ha-). An empty section is left out.
 import Link from "next/link";
 import { YouTubePicture } from "@/components/gig/GigPicture";
-import { bandName, cutName, playedOn } from "@/components/gig/words";
+import { bandName, cutName, placeYear, playedOn } from "@/components/gig/words";
 import { NewsList } from "@/components/news/NewsList";
 import { PlayButton } from "@/components/player/PlayButton";
 import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, StripHeading } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { homepageData, type HomePicture, type HomeTile } from "@/lib/home";
 import { toTrack } from "@/lib/player-types";
+import type { ConcertView } from "@/lib/queries";
 import { NextBand } from "./NextBand";
-import { ChartRow, FindAGig, Gig, Head, HomeJsonLd, heroPhotoOf, n, Pic, PhotoNote, placeTown, SetlistSheet, shelvesOf, tilt, usedPhotos } from "./parts";
+import { ChartRow, FindAGig, Gig, Head, HomeJsonLd, heroPhotoOf, n, Pic, PhotoNote, placeTown, SetlistSheet, shelvesOf, tilt, usedPhotos, viewsLine } from "./parts";
 
 const LEGEND_TILTS = [-1.2, 1, -0.8, 1.2, -1, 0.7];
 const WAY_TILTS = [-1, 0.8, -0.6, 1.1, -0.9, 0.6];
@@ -288,34 +289,25 @@ export default async function HomePage() {
           <Head id="ha-shelves" title="Off the shelves" />
           <div className="ha-shelves">
             {shelves.hd && (
-              <section className="ha-shelf" aria-labelledby="ha-shelf-hd" data-od="shelf-hd">
-                <ShelfHead id="ha-shelf-hd" title="In HD" count={`${n(shelves.hd.count)} gigs`} href={shelves.hd.href} />
-                <ol className="hx-rows">
-                  {shelves.hd.concerts.map((c, k) => (
-                    <ChartRow key={c.id} concert={c} picture={k === 0} />
-                  ))}
-                </ol>
-              </section>
+              <Crate id="ha-shelf-hd" kind="hd" title="In HD" count={`${n(shelves.hd.count)} gigs`} href={shelves.hd.href}>
+                {shelves.hd.concerts.map((c, k) => (
+                  <Gig key={c.id} concert={c} index={k} sizes={crateSizes(k)} data={k === 0 ? crateLead(c) : undefined} />
+                ))}
+              </Crate>
             )}
             {shelves.fans && (
-              <section className="ha-shelf" aria-labelledby="ha-shelf-fans" data-od="shelf-fans">
-                <ShelfHead id="ha-shelf-fans" title="From the fans" count={`${n(shelves.fans.count)} bootlegs`} href={shelves.fans.href} />
-                <ol className="hx-rows">
-                  {shelves.fans.concerts.map((c, k) => (
-                    <ChartRow key={c.id} concert={c} picture={k === 0} />
-                  ))}
-                </ol>
-              </section>
+              <Crate id="ha-shelf-fans" kind="fans" title="From the fans" count={`${n(shelves.fans.count)} bootlegs`} href={shelves.fans.href}>
+                {shelves.fans.concerts.map((c, k) => (
+                  <Gig key={c.id} concert={c} index={k + 1} sizes={crateSizes(k)} data={k === 0 ? crateLead(c) : undefined} />
+                ))}
+              </Crate>
             )}
             {shelves.liveAlbums && (
-              <section className="ha-shelf" aria-labelledby="ha-shelf-albums" data-od="shelf-live-albums">
-                <ShelfHead id="ha-shelf-albums" title="Live albums" count={`${n(shelves.liveAlbums.count)} you can watch`} href={null} />
-                <ol className="hx-rows">
-                  {shelves.liveAlbums.albums.map((a, k) => (
-                    <ChartRow key={a.concert.id} concert={a.concert} picture={k === 0} note={`THE ALBUM: ${a.title}${a.year ? ` (${a.year})` : ""}`} />
-                  ))}
-                </ol>
-              </section>
+              <Crate id="ha-shelf-albums" kind="live-albums" title="Live albums" count={`${n(shelves.liveAlbums.count)} you can watch`} href={null}>
+                {shelves.liveAlbums.albums.map((a, k) => (
+                  <Gig key={a.concert.id} concert={a.concert} index={k + 2} sizes={crateSizes(k)} data={`THE ALBUM: ${a.title}${a.year ? ` (${a.year})` : ""}`} />
+                ))}
+              </Crate>
             )}
           </div>
         </section>
@@ -379,20 +371,32 @@ export default async function HomePage() {
   );
 }
 
-function ShelfHead({ id, title, count, href }: { id: string; title: string; count: string; href: string | null }) {
+// How wide a crate's pictures are drawn: the one at the front, then the ones behind it.
+const crateSizes = (k: number) => (k === 0 ? "(min-width: 1101px) 30vw, (min-width: 761px) 46vw, 64vw" : "(min-width: 1101px) 14vw, (min-width: 761px) 22vw, 64vw");
+/** The front of a crate says how many watched it. */
+const crateLead = (c: ConcertView) => [placeYear(c), viewsLine(c)].filter(Boolean).join(" /// ");
+
+/**
+ * A shelf as a crate of gigs: a small cut heading with its typed link, then pictures. The first is the
+ * front of the crate (large), the rest sit behind it two across; on a phone the crate is one row you swipe.
+ */
+function Crate({ id, kind, title, count, href, children }: { id: string; kind: string; title: string; count: string; href: string | null; children: React.ReactNode }) {
   return (
-    <div className="ha-shelf-head">
-      <PaperStrip as="h3" size="name" tone="black" tilt={-1.5}>
-        <span id={id}>{title}</span>
-      </PaperStrip>
-      {href ? (
-        <Link href={href} className="hm-more">
-          {count} &gt;&gt;
-        </Link>
-      ) : (
-        <span className="zn-data">{count}</span>
-      )}
-    </div>
+    <section className="ha-shelf" aria-labelledby={id} data-od={`shelf-${kind}`}>
+      <div className="ha-shelf-head">
+        <PaperStrip as="h3" size="name" tone="black" tilt={-1.5}>
+          <span id={id}>{title}</span>
+        </PaperStrip>
+        {href ? (
+          <Link href={href} className="hm-more">
+            {count} &gt;&gt;
+          </Link>
+        ) : (
+          <span className="zn-data">{count}</span>
+        )}
+      </div>
+      <ul className="ha-crate">{children}</ul>
+    </section>
   );
 }
 
