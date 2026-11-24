@@ -835,16 +835,24 @@ async function bestCatalogueUncached(): Promise<BestList[]> {
 export async function getBestPage(slug: string) {
   const list = (await bestCatalogue()).find((l) => l.slug === slug);
   if (!list) return null;
-  const scope =
-    list.kind === "decade"
-      ? { performedYear: { gte: parseDecade(list.key!)!, lte: parseDecade(list.key!)! + 9 } }
-      : list.kind === "genre"
-        ? { genres: { some: { genre: { slug: list.key! } } } }
-        : list.kind === "place"
-          ? { venueKind: { slug: list.key! } }
-          : {};
-  const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, scope] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take: BEST_SIZE });
-  return { list, concerts: rows.map(toConcertView) };
+  return { list, concerts: await bestConcerts(list, BEST_SIZE) };
+}
+
+/** The database filter for what a ranking covers (on top of the visible, official concerts). */
+export function bestScope(list: Pick<BestList, "kind" | "key">): object {
+  return list.kind === "decade"
+    ? { performedYear: { gte: parseDecade(list.key!)!, lte: parseDecade(list.key!)! + 9 } }
+    : list.kind === "genre"
+      ? { genres: { some: { genre: { slug: list.key! } } } }
+      : list.kind === "place"
+        ? { venueKind: { slug: list.key! } }
+        : {};
+}
+
+/** A ranking's first `take` concerts, most watched first: official concerts only (bootlegs stay out of "best of"). */
+export async function bestConcerts(list: Pick<BestList, "kind" | "key">, take: number): Promise<ConcertView[]> {
+  const rows = await findConcerts({ where: { AND: [VISIBLE, OFFICIAL_ONLY, bestScope(list)] }, orderBy: [{ viewCount: "desc" }, { id: "asc" }], take });
+  return rows.map(toConcertView);
 }
 
 // ---- Full concerts in HD (src/lib/hd.ts) ----

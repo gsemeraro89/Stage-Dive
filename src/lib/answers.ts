@@ -631,3 +631,32 @@ export function lineupQuestion(name: string, article: (NewsForAnswer & { artists
     link: { href: `/news/${article.slug}`, text: article.title },
   };
 }
+
+// ---- Homepage ----
+
+/** What the homepage lead is built from (src/lib/home.ts SiteTotals). */
+export interface HomeTotals {
+  concerts: number;
+  official: number;
+  bootlegs: number;
+  bands: number;
+  withSetlist: number;
+  festivals: number;
+  venues: number;
+}
+
+/**
+ * The answer-first lead sentence from the totals: only facts we hold, no clause for a zero. Copy rules:
+ * never "free", "archive", "upload", "full-length"; no "YouTube" (no view count here). Empty without concerts.
+ */
+export function homeLead(t: HomeTotals): string {
+  if (!t.concerts) return "";
+  const what = t.bootlegs
+    ? `${plural(t.concerts, "full rock concert")} you can play here, the whole show (${t.official} official, ${plural(t.bootlegs, "bootleg")})`
+    : `${plural(t.concerts, "full rock concert")} you can play here, the whole show`;
+  const where = [t.festivals ? plural(t.festivals, "festival") : null, t.venues ? plural(t.venues, "venue") : null].filter(Boolean) as string[];
+  const by = t.bands ? ` by ${plural(t.bands, "band")}` : "";
+  const at = where.length ? ` at ${listWords(where)}` : "";
+  const setlists = t.withSetlist ? `; ${t.withSetlist === t.concerts ? "every one" : t.withSetlist} with a setlist: click a song to jump to it` : "";
+  return `${SITE_NAME} has ${what}${by}${at}${setlists}.`;
+}
