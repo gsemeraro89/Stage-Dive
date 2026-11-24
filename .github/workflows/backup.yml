@@ -24,8 +24,17 @@ jobs:
           docker run --rm -e DATABASE_URL postgres:18 \
             sh -c 'pg_dump --no-owner --no-privileges --format=custom "$DATABASE_URL"' > stagedive.dump
           test -s stagedive.dump
+      - name: Plain SQL copy
+        # The same backup as plain SQL (gzip), readable by older Postgres tools too (psql of any version):
+        # used to load the data into a local database for checks and screenshots.
+        run: |
+          docker run --rm -v "$PWD:/w" postgres:18 pg_restore --no-owner --no-privileges -f /w/stagedive.sql /w/stagedive.dump
+          gzip -9 stagedive.sql
+          test -s stagedive.sql.gz
       - uses: actions/upload-artifact@v4
         with:
           name: stagedive-db-${{ github.run_id }}
-          path: stagedive.dump
+          path: |
+            stagedive.dump
+            stagedive.sql.gz
           retention-days: 30
