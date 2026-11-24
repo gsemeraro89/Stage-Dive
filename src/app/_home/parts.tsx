@@ -1,6 +1,5 @@
-// Pieces the two homepage directions share (owner, 24 Nov 2026: "the best of the site").
-// Direction A is src/app/_home/HomeA.tsx ("the issue"), direction B is HomeB.tsx ("the wall").
-// Data: homepageData() in src/lib/home.ts. Styles: src/styles/home2.css (hx- shared, ha- and hb-).
+// Pieces of the homepage (src/app/_home/HomePage.tsx, "the issue").
+// Data: homepageData() in src/lib/home.ts. Styles: src/styles/home.css (hx-).
 //
 // Pictures (design/DESIGN.md section 6): a YouTube picture is shown whole and untouched, with at most a
 // play control on it. A band or festival photo (licensed, already photocopied) may be cropped and always
@@ -188,26 +187,35 @@ export function ChartRow({ concert, rank, picture, note }: { concert: ConcertVie
   );
 }
 
+/** Songs that fit on the cover's setlist sheet before it starts to scroll. */
+const SETLIST_FITS = 14;
+
 /** The gig of the week's setlist on a stapled sheet: every timed song is a button. */
 export function SetlistSheet({ concert, setlist, title = "Setlist", tiltBy = 1, className }: { concert: ConcertView; setlist: SetlistView | null; title?: string; tiltBy?: number; className?: string }) {
   const track = toTrack(concert);
   const timed = (setlist?.tracks ?? []).flatMap((t) => (t.time === null ? [] : [{ title: t.title, seconds: t.time }]));
   const songs = setlist?.tracks.length ?? 0;
+  // A long night (Springsteen plays 30): the sheet stays one screen tall and the list scrolls inside it.
+  const long = songs > SETLIST_FITS;
   return (
     <Sheet as="aside" label={title} title={title} meta={songs ? `${songs} ${songs === 1 ? "song" : "songs"}` : undefined} level={3} tilt={tiltBy} fixings={<Staple at="top-right" />} className={`hm-setlist ${className ?? ""}`}>
       {timed.length > 0 ? (
         <>
-          <PlayableSetlist track={track} songs={timed} />
-          <p className="zn-marker hm-setlist-hint">click any song = jump straight to it</p>
+          <div className="hm-setlist-roll" data-long={long || undefined}>
+            <PlayableSetlist track={track} songs={timed} />
+          </div>
+          <p className="zn-marker hm-setlist-hint">{long ? `click any song = jump to it. all ${songs} are in there, scroll the sheet` : "click any song = jump straight to it"}</p>
         </>
       ) : setlist ? (
-        <ol className="zn-setlist hm-setlist-plain">
-          {setlist.tracks.map((t, i) => (
-            <li key={`${i}-${t.title}`}>
-              <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span> {t.title}
-            </li>
-          ))}
-        </ol>
+        <div className="hm-setlist-roll" data-long={long || undefined} tabIndex={long ? 0 : undefined} role={long ? "group" : undefined} aria-label={long ? `Setlist, ${songs} songs` : undefined}>
+          <ol className="zn-setlist hm-setlist-plain">
+            {setlist.tracks.map((t, i) => (
+              <li key={`${i}-${t.title}`}>
+                <span aria-hidden="true">{String(i + 1).padStart(2, "0")}.</span> {t.title}
+              </li>
+            ))}
+          </ol>
+        </div>
       ) : (
         <p className="hm-setlist-empty">Still being typed up. Two fingers, one typewriter. The gig plays start to finish without it.</p>
       )}

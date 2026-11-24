@@ -216,3 +216,31 @@ Not built: for the owner to approve.
 **Why it fits.** A reason to come back every day, built only from dates we store.
 
 **Effort.** Small. One query by day and month; one sticker from the kit.
+
+---
+
+## 2026-11-24 · after "the issue" became the homepage (picture-led back pages)
+
+Done from the list above: 1 (the cover turns through famous gigs) and the first half of 2 (one song per band). Idea 3 went with direction B.
+
+### 1. A song tile that plays the song
+**Idea.** "Chase a song" tiles open the song's page. Give each a play label on its picture's mount: press it and the player jumps straight into that song in the most watched gig that has it.
+
+**Why it fits.** One press on the homepage and you are inside "Paranoid Android". Nobody else can do that; it is the setlist idea made loud.
+
+**Effort.** Medium. Needs the song's time in the chosen gig from `homepageData()` (engineering); the label is already in the kit.
+
+### 2. The shelves as crates
+**Idea.** "Off the shelves" is now the most typed part of the page (three lists of six lines). Turn each shelf into a crate you flick through: one swipe row of gig pictures per shelf, the bootleg stamp on the mount, the typed list gone.
+
+**Why it fits.** Same cure the back pages just got. A crate of tapes is something you dig in, not read.
+
+**Effort.** Small to medium. Design only: the data is already there.
+
+### 3. Different pictures for every tile
+**Idea.** Two tiles can show the same gig (the most watched gig of the 2010s is also the most watched alternative gig). Let the page ask for the second or third most watched gig when the first is already up.
+
+**Why it fits.** On a photocopied page, the same picture twice looks like a mistake, not a choice.
+
+**Effort.** Small. `fallback` becomes a short list in `homepageData()` (engineering); the page already keeps track of what is glued on.
+
