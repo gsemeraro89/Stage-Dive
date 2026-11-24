@@ -160,6 +160,43 @@ const everyday = (name: string) => {
 
 const UPPER_START = /^\p{Lu}/u;
 
+/** Words that start a longer name ("El Michels Affair", "De La Soul", "Van Halen", "Lil Wayne"): a one-word band right after one is part of that name. */
+const NAME_PARTICLE = /^(el|la|le|los|las|les|il|der|de|del|della|du|dos|van|von|mc|mac|st|saint|dr|mr|mrs|ms|lil|sir|dj)$/i;
+
+/** The capitalised word just before and just after a name found at `index` (empty when none). */
+function neighbours(text: string, index: number, length: number): { prev: string; next: string } {
+  const before = text.slice(Math.max(0, index - 60), index);
+  const after = text.slice(index + length, index + length + 60);
+  const next = after.match(/^\s+([\p{L}][\p{L}-]*)/u)?.[1] ?? "";
+  // A word that ends a sentence or a clause is not part of the name ("...Residency. Metallica will").
+  const prev = /[.!?:;,)"”]\s*$/.test(before) ? "" : (before.match(/([\p{L}][\p{L}-]*)\s+$/u)?.[1] ?? "");
+  return { prev: UPPER_START.test(prev) ? prev : "", next: UPPER_START.test(next) ? next : "" };
+}
+
+/**
+ * Whether the name found at `index` is part of a longer name: right after a name particle ("El", "Van", "Lil"), or,
+ * where capitals mean names (the summary, or a headline not in Title Case), next to another capitalised word that
+ * does not start the sentence and is not a joining word ("Leon Michels", "Michels Affair").
+ */
+function insideLongerName(text: string, titleEnd: number, index: number, length: number): boolean {
+  const { prev, next } = neighbours(text, index, length);
+  if (prev && NAME_PARTICLE.test(prev)) return true;
+  const capitalsMeanNames = index > titleEnd || !titleCase(text.slice(0, titleEnd));
+  if (!capitalsMeanNames) return false;
+  const before = text.slice(Math.max(0, index - 60), index);
+  const sentenceStart = /(^|[.!?:;"“]\s*)([\p{L}][\p{L}.-]*)\s+$/u.test(before);
+  if (prev && !sentenceStart && !/^(and|with|by|of|featuring|feat|ft|as|for|from|to|at|in|on)$/i.test(prev)) return true;
+  if (next && !BAND_AFTER.test(next)) return true;
+  return false;
+}
+
+/** Whether a band word sits right next to the name ("Michels drummer", "rockers Michels"). */
+function nextToBandWord(text: string, index: number, length: number): boolean {
+  const next = text.slice(index + length, index + length + 60).match(/^\s+([\p{L}][\p{L}-]*)/u)?.[1] ?? "";
+  const prev = text.slice(Math.max(0, index - 60), index).match(/([\p{L}][\p{L}.-]*)\s+$/u)?.[1] ?? "";
+  return BAND_AFTER.test(next) || BAND_BEFORE.test(prev);
+}
+
 /** Whether most words of a headline start with a capital (Title Case: capitals say nothing about names). */
 const titleCase = (title: string) => {
   const words = title.split(/\s+/).filter((w) => /^\p{L}/u.test(w));
@@ -184,6 +221,7 @@ function usedAsBand(text: string, titleEnd: number, index: number, length: numbe
   }
   const next = after.match(/^\s+([\p{L}][\p{L}-]*)/u)?.[1] ?? "";
   const prev = before.match(/([\p{L}][\p{L}.-]*)\s+$/u)?.[1] ?? "";
+  if (UPPER_START.test(prev) && NAME_PARTICLE.test(prev)) return false;
   if (BAND_AFTER.test(next) || BAND_BEFORE.test(prev)) return true;
   if (!near(text, index, length, context)) return false;
   const possessive = /^'s\b/.test(after);
@@ -267,7 +305,13 @@ export function newsMatcher(entities: NewsEntity[]): Matcher {
           continue;
         }
         if (r.block && r.block.test(text)) continue;
-        for (const m of text.matchAll(r.re)) {
+        const matches = [...text.matchAll(r.re)];
+        // A distinctive one-word name seen inside a longer name ("El Michels Affair", "Leon Michels") is not the band
+        // anywhere in the item, unless a band word shows it is ("Michels drummer").
+        if (r.strict && !everyday(r.e.name) && matches.some((m) => insideLongerName(text, titleEnd, m.index, m[0].length))) {
+          if (!matches.some((m) => nextToBandWord(text, m.index, m[0].length))) continue;
+        }
+        for (const m of matches) {
           const end = m.index + m[0].length;
           if (!free(m.index, end)) continue;
           const ok = r.strict ? usedAsBand(text, titleEnd, m.index, m[0].length, r.context!, everyday(r.e.name)) : !r.context || near(text, m.index, m[0].length, r.context);

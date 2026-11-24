@@ -172,3 +172,25 @@ describe("headline filter: not news, Claude not asked", () => {
     "Why Metallica Has to Rehearse Overnight for Sphere Residency",
   ])("news: %s", (title) => expect(notNewsReason(title)).toBeNull());
 });
+
+describe("matcher: a one-word band inside a longer name is not the band (23 Nov 2026: El Michels Affair is not Michels)", () => {
+  const m = newsMatcher([band("Michels"), band("Metallica"), band("Santana")]);
+  const n = (title: string, summary = "") => m.find({ title, summary }).bands.map((e) => e.name);
+  it("drops the name after a name particle, in the headline too", () => {
+    expect(n("El Michels Affair Lavender Buds Cover With Clairo: New 7 Inch")).toEqual([]);
+    expect(n("El Michels Affair & Clairo Cover MF DOOM's \"Lavender Buds\"", "El Michels Affair and Clairo share a new 7-inch single.")).toEqual([]);
+  });
+  it("drops it in the whole item once the summary shows the longer name", () => {
+    expect(
+      n(
+        "Michels And Clairo Share New Single",
+        "Producer Leon Michels, who records as El Michels Affair, shares a new single with Clairo. Michels' version follows the album.",
+      ),
+    ).toEqual([]);
+  });
+  it("keeps the band when a band word says so, and keeps ordinary headlines", () => {
+    expect(n("Michels drummer leaves the band after 20 years")).toEqual(["Michels"]);
+    expect(n("Why Metallica Has to Rehearse Overnight for Sphere Residency", "Metallica will play the Sphere in Las Vegas.")).toEqual(["Metallica"]);
+    expect(n("Santana 2027 Tour Adds North American Dates", "Carlos Santana and his band add dates.")).toEqual(["Santana"]);
+  });
+});
