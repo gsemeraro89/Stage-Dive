@@ -134,9 +134,24 @@ export function PlayerDock() {
               {...handle}
             >
               <GripIcon />
-              <span className="od-mini-label meta">now playing</span>
+              <span className="od-mini-label meta">{resumed ? "left off here" : "now playing"}</span>
               <span className="od-mini-credits meta">{current.credits}</span>
             </button>
+            {resumed && (
+              // Brought back paused: the one press that continues, on the strip, never on the video.
+              <button
+                type="button"
+                className="od-mini-play"
+                data-od="mini-play"
+                aria-label="Play from where you left off"
+                onClick={() => {
+                  toggle();
+                  expandRef.current?.focus();
+                }}
+              >
+                <PlayIcon />
+              </button>
+            )}
             <button ref={expandRef} type="button" data-od="mini-expand" aria-label="Expand player" onClick={() => switchTo(false)}>
               <ExpandIcon />
             </button>
@@ -196,7 +211,15 @@ export function PlayerDock() {
                 </button>
               )}
               <div className="od-dock-label meta" data-od="dock-label">
-                now playing
+                {resumed ? (
+                  // Two wordings of one line; CSS shows one (phones have room for the short one only).
+                  <>
+                    <span className="od-dock-left-long">pick up where you left off</span>
+                    <span className="od-dock-left-short">left off here</span>
+                  </>
+                ) : (
+                  "now playing"
+                )}
               </div>
             </div>
             <Link href={`/concerts/${current.slug}`} className="od-dock-title title" data-od="dock-title">
@@ -243,7 +266,7 @@ export function PlayerDock() {
               <PreviousIcon />
               <span className="od-sr">Previous</span>
             </button>
-            <button type="button" className="od-dock-toggle" aria-label={playing ? "Pause" : "Play"} onClick={toggle}>
+            <button type="button" className="od-dock-toggle" aria-label={playing ? "Pause" : resumed ? "Play from where you left off" : "Play"} onClick={toggle}>
               {playing ? <PauseIcon /> : <PlayIcon />}
               <span className="od-sr">{playing ? "Pause" : "Play"}</span>
             </button>

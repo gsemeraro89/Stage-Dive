@@ -24,6 +24,15 @@ export function PlayGlyph(props: GlyphProps) {
   );
 }
 
+/** "Open the gig": an arrow, for a picture that opens the concert's page instead of playing it. */
+export function OpenGlyph(props: GlyphProps) {
+  return (
+    <Glyph {...props}>
+      <polygon points="16,6 43,4 44,32 35,23 13,45 4,36 26,14" />
+    </Glyph>
+  );
+}
+
 export function PauseGlyph(props: GlyphProps) {
   return (
     <Glyph {...props}>
@@ -86,6 +95,7 @@ export function ShareGlyph(props: GlyphProps) {
 
 export const GLYPHS = {
   play: PlayGlyph,
+  open: OpenGlyph,
   pause: PauseGlyph,
   next: NextGlyph,
   previous: PreviousGlyph,

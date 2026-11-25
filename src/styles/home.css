@@ -62,7 +62,14 @@
   color: var(--paper);
 }
 
-/* The play control on a picture: the kit's 48px label. */
+/* The control on a picture: the kit's 48px label. It is a link (the arrow: it opens the gig's
+   page), so no underline and no link colour. Pink while that gig is the one playing. */
+.hm-playicon,
+.hm-playicon:hover {
+  color: var(--toner);
+  text-decoration: none;
+}
+
 .hm-playicon[data-current] {
   background: var(--pink);
   outline-width: var(--frame);
@@ -905,6 +912,13 @@
   cursor: pointer;
 }
 
+/* A link to the gig's page, like the name beside it (pointing at one underlines the other). */
+.hx-row-pic:hover,
+.hx-row-pic:focus-visible {
+  box-shadow: var(--shadow-rest);
+  translate: -2px -2px;
+}
+
 .hx-row-pic img {
   display: block;
   width: 100%;
@@ -933,7 +947,9 @@
   overflow-wrap: break-word;
 }
 
-.hx-row-link:hover .hx-row-name {
+.hx-row-link:hover .hx-row-name,
+.hx-row:has(.hx-row-pic:hover) .hx-row-name,
+.hx-row:has(.hx-row-pic:focus-visible) .hx-row-name {
   text-decoration: underline;
   text-decoration-thickness: 3px;
   text-underline-offset: 3px;

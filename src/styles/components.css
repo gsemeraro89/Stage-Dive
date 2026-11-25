@@ -6,7 +6,7 @@
   padding: var(--section-gap) var(--pad-x) 0;
 }
 
-/* ---------- Thumbnail (always a play button) ---------- */
+/* ---------- Thumbnail (a link to the concert's page; the label under it says so) ---------- */
 
 .od-thumb {
   position: relative;
@@ -15,6 +15,7 @@
   padding: 0;
   background: var(--hover-row);
   text-align: left;
+  text-decoration: none;
 }
 
 .od-thumb img {
@@ -28,11 +29,12 @@
 }
 
 /* Solid label under the image, never on it (a YouTube picture carries no words): the duration
-   (with a play triangle only where the click plays here: the artist line). Turns pink on hover
-   and while playing. */
+   and, typed, what the click does ("Open >>": the picture opens the gig's page, it does not play).
+   Turns pink on hover and while playing. */
 .od-dur {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 5px 9px;
   background: var(--ground);
@@ -51,7 +53,7 @@
   font-weight: 500;
 }
 
-.od-thumb[data-current] .od-dur svg {
+.od-thumb[data-current] .od-dur-open {
   display: none;
 }
 

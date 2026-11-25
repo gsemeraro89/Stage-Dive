@@ -936,6 +936,96 @@ button.zn-cutout {
   border-color: var(--paper);
 }
 
+/* Brought back after a page load (data-resumed): paused at the second the visitor had reached.
+   The marker label says "pick up where you left off" and the play button is lifted off the bar
+   on a paper shadow, stamped down once. All of it on the bar, nothing on the video. */
+[data-od="dock"][data-resumed] [data-od="dock-controls"] button.od-dock-toggle {
+  box-shadow: 4px 4px 0 var(--paper);
+  translate: -4px -4px;
+}
+
+[data-od="dock"][data-resumed] [data-od="dock-controls"] button.od-dock-toggle:hover {
+  box-shadow: 4px 4px 0 var(--pink);
+}
+
+[data-od="dock"][data-resumed] [data-od="dock-controls"] button.od-dock-toggle:active {
+  box-shadow: none;
+  translate: 2px 2px;
+}
+
+/* The label has a long and a short wording; phones get the short one. */
+[data-od="dock"] .od-dock-left-short {
+  display: none;
+}
+
+/* Phones (360 to 479px) have no room for the label beside "Mini player", so while the bar waits
+   the short line goes under that button and the title gives up its second line for it: the bar
+   keeps its height, so the video does not move when play is pressed. Under 360px the bar has no
+   such line and the lifted play button says it alone. */
+@media (min-width: 360px) and (max-width: 479px) {
+  [data-od="dock"][data-resumed]:not([data-in-page]) [data-od="dock-head"] {
+    flex-wrap: wrap;
+    row-gap: 0;
+    align-content: flex-start;
+    height: 67px;
+    margin-bottom: 2px;
+  }
+
+  [data-od="dock"][data-resumed]:not([data-in-page]) [data-od="dock-label"] {
+    display: block;
+    flex: none;
+    /* Its own line: never beside the button, where the close button stands. */
+    margin: 2px calc(100% - 7em) 0 var(--deck-gap);
+    white-space: nowrap;
+  }
+
+  [data-od="dock"][data-resumed]:not([data-in-page]) [data-od="dock-title"] {
+    -webkit-line-clamp: 1;
+  }
+
+  [data-od="dock"] .od-dock-left-long {
+    display: none;
+  }
+
+  [data-od="dock"] .od-dock-left-short {
+    display: inline;
+  }
+}
+
+/* The mini-player has no controls, so while it waits it gets the one press on its strip. */
+[data-od="dock"] .od-mini-strip button.od-mini-play {
+  background: var(--pink);
+  color: var(--toner);
+  border-left-color: var(--pink);
+}
+
+[data-od="dock"] .od-mini-strip button.od-mini-play:hover {
+  background: var(--paper);
+  color: var(--toner);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-od="dock"][data-resumed] [data-od="dock-controls"] button.od-dock-toggle,
+  [data-od="dock"][data-resumed] .od-mini-play {
+    animation: zn-pickup 320ms cubic-bezier(0.2, 1.4, 0.4, 1) 500ms 1 backwards;
+  }
+
+  @keyframes zn-pickup {
+    0% {
+      scale: 2.4;
+    }
+    60% {
+      scale: 0.9;
+    }
+    80% {
+      scale: 1.06;
+    }
+    100% {
+      scale: 1;
+    }
+  }
+}
+
 [data-od="dock"] [data-od="dock-min"] {
   border-width: 0 var(--keyline) var(--keyline) 0;
   border-color: var(--toner-track);

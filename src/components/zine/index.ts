@@ -9,6 +9,7 @@ export {
   IconButton,
   PressButton,
   GLYPHS,
+  OpenGlyph,
   PlayGlyph,
   PauseGlyph,
   NextGlyph,

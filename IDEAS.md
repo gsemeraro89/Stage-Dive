@@ -296,3 +296,26 @@ Nothing here is built. Owner approval first.
 **Why it fits.** At 380 px the window covers almost a third of the screen. The square leaves half the width for the page and still respects the 200x200 minimum.
 
 **Effort.** Small. CSS for the window width and height; `MiniRoom` measures it by itself.
+
+## 25 Nov 2026: after "a picture opens, a play button plays"
+
+### 1. "Play it instead" on the gig page while another gig is on
+**Idea.** When a visitor opens a gig's page while another gig is playing, the page's big play button reads "Play this instead" and a typed line under it names what is on ("on now: Metallica, Slane 2019").
+
+**Why it fits.** The picture no longer switches the music, so the page should say out loud what one press will do. Short, on the fan's side, and the pink stays on one thing.
+
+**Effort.** Small. Wording and one typed line in the player slot; the state (`current`) is already there.
+
+### 2. The bar remembers the song, not only the second
+**Idea.** After a reload the marker line says where the visitor was in the set: "left off at: Enter Sandman" when the setlist has times, else the plain line.
+
+**Why it fits.** The setlist is a first-class object, and a song name is a better reason to press play than "0:47:12".
+
+**Effort.** Small to medium. Engineering passes the song at the saved second to the bar; design is one line.
+
+### 3. A dog-eared corner on pictures already seen
+**Idea.** A gig the visitor has opened before gets a folded paper corner on its frame (on the black frame, never on the picture) in lists and crates.
+
+**Why it fits.** Zines get dog-eared. It tells a returning fan what is new to them without a "watched" badge, and nothing touches the YouTube picture.
+
+**Effort.** Medium. A list of opened gigs kept in the browser (engineering, no account), one small cut-paper corner in the kit.

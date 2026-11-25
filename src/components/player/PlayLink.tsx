@@ -29,6 +29,8 @@ export function PlayLink({
       data-current={isCurrent || undefined}
       data-status={isCurrent ? status : undefined}
       aria-label={`Open ${track.title}`}
+      // The mouse's hint that this opens the page and does not play (design/DESIGN.md section 9).
+      title="Open the gig"
     >
       {children}
     </Link>

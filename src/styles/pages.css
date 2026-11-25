@@ -153,7 +153,10 @@
   border-bottom: var(--cut);
 }
 
-/* The YouTube picture, whole (its own 16:9 file), as a play button. Nothing is drawn on it. */
+/* The YouTube picture, whole (its own 16:9 file). It is a link: it opens the gig's page and the
+   gig that is playing goes on. Nothing is drawn on it, so the hint is beside it: pointing at the
+   picture (or tabbing to it) underlines the name, because the two are the same link. The black
+   label with the triangle is the only thing in the row that plays. */
 .pg-row-pic {
   flex: none;
   display: block;
@@ -170,7 +173,8 @@
   aspect-ratio: 16 / 9;
 }
 
-.pg-row-pic:hover {
+.pg-row-pic:hover,
+.pg-row-pic:focus-visible {
   box-shadow: var(--shadow-rest);
   translate: -2px -2px;
 }
@@ -216,7 +220,9 @@
   text-transform: uppercase;
 }
 
-.pg-row-text:hover .pg-row-name {
+.pg-row-text:hover .pg-row-name,
+.pg-row:has(.pg-row-pic:hover) .pg-row-name,
+.pg-row:has(.pg-row-pic:focus-visible) .pg-row-name {
   text-decoration: underline;
   text-decoration-thickness: 3px;
   text-underline-offset: 3px;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlayButton } from "@/components/player/PlayButton";
+import { PlayLink } from "@/components/player/PlayLink";
 import { formatDuration } from "@/lib/format";
 import { toTrack, type RecommendedArtist, type Track } from "@/lib/player-types";
 import type { ArtistCard } from "@/lib/queries";
@@ -48,8 +49,9 @@ export function lineFromSuggestion(artist: RecommendedArtist): ArtistLineData {
 
 /**
  * Artist line (DESIGN.md section 8): one suggested artist as a row on the page ground.
- * Picture, name and facts, the most watched concert (its thumbnail plays it) and the latest concert,
- * each with "Play next". It never says why the artist is suggested.
+ * Picture, name and facts, the most watched concert (its thumbnail opens the concert's page, and the
+ * label under it says so; the concert that is playing goes on) and the latest concert with its typed
+ * "Play" link, each with "Play next". It never says why the artist is suggested.
  * The layout follows the width of the place it is put in (page, deck sheet, map rail).
  */
 export function ArtistLine({
@@ -111,7 +113,7 @@ export function ArtistLine({
       </div>
 
       <div className="od-aline-top" data-od="most-watched">
-        <PlayButton track={mostWatched.track} className="od-thumb">
+        <PlayLink track={mostWatched.track} className="od-thumb">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={mostWatched.thumbnail.src}
@@ -121,11 +123,14 @@ export function ArtistLine({
             loading="lazy"
             decoding="async"
           />
+          {/* Under the picture, never on it: how long, and what the click does. */}
           <span className="od-dur meta" data-od="duration">
-            <PlayIcon size={9} />
-            {formatDuration(mostWatched.track.durationSeconds)}
+            <span>{formatDuration(mostWatched.track.durationSeconds)}</span>
+            <span className="od-dur-open" aria-hidden="true">
+              Open &gt;&gt;
+            </span>
           </span>
-        </PlayButton>
+        </PlayLink>
         <div className="od-aline-settext">
           <p className="meta od-muted">{artist.concerts === 1 ? "The concert" : oneConcert ? "Most watched · Latest" : "Most watched"}</p>
           <p className="od-aline-settitle title">
