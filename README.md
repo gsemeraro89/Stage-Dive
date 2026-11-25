@@ -32,7 +32,7 @@ Tests: `npm test` (database tests run only when `TEST_DATABASE_URL` is set). Typ
 | `src/lib/seed/check.ts`, `scripts/seed-check.ts` | Seed check against YouTube (public, embeddable, 40+ min, not blocked in ES/IT/GB/US/DE, official uploader) |
 | `src/lib/seed/`, `scripts/seed.ts` | Seed import (`npm run db:seed`) |
 | `src/lib/queries.ts` | Every database read used by the pages (only public, embeddable, published concerts) |
-| `src/components/player/` | The single persistent YouTube player: provider, concert-page slot, docked bar |
+| `src/components/player/` | The single persistent YouTube player: provider, concert-page slot, docked bar; brought back paused after a full page load (`src/lib/player/resume.ts`) |
 | `src/app/` | Pages: `/`, `/concerts/[slug]`, `/artists`, `/venues`, `/venues/[slug]/[year]` (festival years), `/genres`, `/decades`, `/tours`, `/best`, `/best/[slug]` (most watched rankings), `/hd` (full concerts in HD), `/songs/[band]`, `/songs/[band]/[song]`, `/map`, `/admin` |
 | `src/lib/venue-years.ts`, `best.ts`, `hd.ts`, `entity-links.ts`, `live-albums.ts` | Festival and venue years ("Pinkpop 1995"), "best of" rankings by views, concerts in HD, band links to MusicBrainz / Wikidata / Wikipedia, bands' live albums (MusicBrainz) |
 | `src/lib/songs.ts`, `song-title.ts`, `band-stats.ts` | Songs played live (a page per song, every live version, worked out from the setlists) and the band's live statistics |

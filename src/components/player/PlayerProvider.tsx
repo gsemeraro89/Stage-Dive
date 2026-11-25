@@ -11,6 +11,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fixedAnchor } from "@/lib/player/anchor";
 import { framePlacement } from "@/lib/player/placement";
+import { browserStore, clearResume, readResume, RESUME_SAVE_EVERY_MS, serializeResume, writeResume } from "@/lib/player/resume";
 import { DOCK_PLAYER, type RecommendedArtist, type Track } from "@/lib/player-types";
 
 export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "error";
@@ -27,6 +28,13 @@ interface PlayerState {
   duration: number;
   /** True when the player is shown inside the page rather than in the bottom bar. */
   inPage: boolean;
+  /**
+   * True while the concert brought back after a page load (src/lib/player/resume.ts) waits, paused at
+   * the second the visitor had reached, for its first press of play.
+   */
+  resumed: boolean;
+  /** The visitor collapsed the bar into the mini-player (kept across page loads). */
+  minimised: boolean;
 }
 
 interface PlayerActions {
@@ -44,6 +52,7 @@ interface PlayerActions {
   registerSlot: (youtubeId: string, element: HTMLElement | null) => void;
   /** The bottom bar offers the place where the docked video sits. */
   registerDock: (element: HTMLElement | null) => void;
+  setMinimised: (minimised: boolean) => void;
 }
 
 const PlayerContext = createContext<(PlayerState & PlayerActions) | null>(null);
@@ -57,6 +66,7 @@ export function usePlayer() {
 // Minimal typing of the parts of the YouTube IFrame API used here.
 interface YTPlayer {
   loadVideoById(id: string, startSeconds?: number): void;
+  cueVideoById(id: string, startSeconds?: number): void;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   playVideo(): void;
   pauseVideo(): void;
@@ -121,6 +131,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [slot, setSlot] = useState<{ youtubeId: string; element: HTMLElement } | null>(null);
   const [dock, setDock] = useState<HTMLElement | null>(null);
+  const [resumed, setResumed] = useState(false);
+  const [minimised, setMinimised] = useState(false);
 
   const frameRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -133,19 +145,33 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const advanceRef = useRef<() => void>(() => {});
   /** Where the concert being started should begin (a setlist time), 0 for the start. */
   const startAtRef = useRef(0);
+  /** False only for a concert brought back after a page load: it is cued, paused, never started by itself. */
+  const autoplayRef = useRef(true);
+  /** The second a brought-back concert waits at, until its first press of play; null otherwise. */
+  const resumeAtRef = useRef<number | null>(null);
+  /** The current concert has reported "playing" at least once (before that, its second is startAtRef). */
+  const playedRef = useRef(false);
+  const minimisedRef = useRef(false);
+  minimisedRef.current = minimised;
 
-  const start = useCallback((track: Track, at = 0) => {
+  const start = useCallback((track: Track, at = 0, options: { paused?: boolean; queue?: Track[] } = {}) => {
+    const paused = Boolean(options.paused);
     startAtRef.current = at;
+    autoplayRef.current = !paused;
+    resumeAtRef.current = paused ? at : null;
+    playedRef.current = false;
+    setResumed(paused);
     currentRef.current = track;
     setCurrent(track);
-    setTime(0);
+    setTime(paused ? at : 0);
     setDuration(track.durationSeconds);
-    setStatus("loading");
+    setStatus(paused ? "paused" : "loading");
 
     // Fetch what plays next. Ignore the answer if the visitor has already moved on.
-    setQueue([]);
-    queueRef.current = [];
-    fetch(`/api/queue/${track.youtubeId}`)
+    setQueue(options.queue ?? []);
+    queueRef.current = options.queue ?? [];
+    if (!options.queue)
+      fetch(`/api/queue/${track.youtubeId}`)
       .then((res) => (res.ok ? res.json() : { queue: [] }))
       .then((data: { queue: Track[] }) => {
         if (currentRef.current?.youtubeId !== track.youtubeId) return;
@@ -163,7 +189,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {});
 
     if (playerRef.current) {
-      playerRef.current.loadVideoById(track.youtubeId, at);
+      if (paused) playerRef.current.cueVideoById(track.youtubeId, at);
+      else playerRef.current.loadVideoById(track.youtubeId, at);
       return;
     }
     if (creatingRef.current) return; // being created; it will load currentRef when ready
@@ -177,14 +204,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           width: "100%",
           height: "100%",
           videoId: first.youtubeId,
-          playerVars: { autoplay: 1, playsinline: 1, rel: 0, origin: window.location.origin, start: Math.floor(startAtRef.current) },
+          // A brought-back concert is only cued (autoplay 0): it waits, paused, for the visitor's press of play.
+          playerVars: { autoplay: autoplayRef.current ? 1 : 0, playsinline: 1, rel: 0, origin: window.location.origin, start: Math.floor(startAtRef.current) },
           events: {
             onReady: () => {
               playerRef.current = player;
               // The visitor may have picked another concert while the player was loading.
               const wanted = currentRef.current;
-              if (wanted && wanted.youtubeId !== first.youtubeId) player.loadVideoById(wanted.youtubeId, startAtRef.current);
-              else {
+              if (wanted && wanted.youtubeId !== first.youtubeId) {
+                if (autoplayRef.current) player.loadVideoById(wanted.youtubeId, startAtRef.current);
+                else player.cueVideoById(wanted.youtubeId, startAtRef.current);
+              } else if (autoplayRef.current) {
                 // A setlist time clicked while the player was loading: start there.
                 if (startAtRef.current) player.seekTo(startAtRef.current, true);
                 player.playVideo();
@@ -192,8 +222,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             },
             onStateChange: ({ data }) => {
               if (!currentRef.current) return; // closed by the visitor
-              if (data === YT_STATE.PLAYING) setStatus("playing");
-              else if (data === YT_STATE.PAUSED) setStatus("paused");
+              if (data === YT_STATE.PLAYING) {
+                // A brought-back concert is playing again: from now on it is like any other.
+                resumeAtRef.current = null;
+                autoplayRef.current = true;
+                playedRef.current = true;
+                setResumed(false);
+                setStatus("playing");
+              } else if (resumeAtRef.current !== null) {
+                // Cued and waiting for play: it stays "paused" (toggle shows "loading" once pressed).
+              } else if (data === YT_STATE.PAUSED) setStatus("paused");
               else if (data === YT_STATE.BUFFERING) setStatus("loading");
               else if (data === YT_STATE.ENDED) advanceRef.current();
             },
@@ -220,7 +258,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     (track: Track) => {
       const playing = currentRef.current;
       if (playing?.youtubeId === track.youtubeId) {
-        playerRef.current?.playVideo();
+        if (playerRef.current) playerRef.current.playVideo();
+        else autoplayRef.current = true; // still being created (a brought-back concert): it plays when ready
         return;
       }
       if (playing) remember(playing);
@@ -239,6 +278,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           player.playVideo();
         } else {
           startAtRef.current = seconds; // still being created: it starts there
+          autoplayRef.current = true;
         }
         return;
       }
@@ -294,11 +334,30 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setStatus("idle");
     setTime(0);
     setDuration(0);
+    resumeAtRef.current = null;
+    setResumed(false);
+    // Closed on purpose: nothing comes back on the next page load.
+    clearResume(browserStore());
   }, []);
 
   const toggle = useCallback(() => {
     const player = playerRef.current;
-    if (!player) return;
+    const waiting = resumeAtRef.current;
+    if (!player) {
+      // A brought-back concert whose player is still being created: it plays as soon as it is ready.
+      if (waiting !== null && currentRef.current) {
+        autoplayRef.current = true;
+        setStatus("loading");
+      }
+      return;
+    }
+    if (waiting !== null) {
+      // First press after a page load: continue from the second the visitor had reached.
+      setStatus("loading");
+      player.seekTo(waiting, true);
+      player.playVideo();
+      return;
+    }
     if (player.getPlayerState() === YT_STATE.PLAYING) player.pauseVideo();
     else player.playVideo();
   }, []);
@@ -312,13 +371,72 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (!current) return;
     const timer = window.setInterval(() => {
       const player = playerRef.current;
-      if (!player) return;
+      // A brought-back concert keeps showing its second until it plays (a cued video reports 0).
+      if (!player || resumeAtRef.current !== null) return;
       setTime(player.getCurrentTime() || 0);
       const d = player.getDuration();
       if (d) setDuration(d);
     }, 1000);
     return () => window.clearInterval(timer);
   }, [current]);
+
+  // Remember what is playing, so a full page load (reload, closed tab, the first click after a site
+  // update) can bring it back paused at the same second (src/lib/player/resume.ts). Saved when the
+  // concert, its state or the mini-player change, every 10 seconds while it plays, and on leaving the page.
+  const save = useCallback(() => {
+    const track = currentRef.current;
+    if (!track) return;
+    const player = playerRef.current;
+    const at = resumeAtRef.current ?? (player && playedRef.current ? player.getCurrentTime() || 0 : startAtRef.current);
+    writeResume(
+      browserStore(),
+      serializeResume({ track, at, queue: queueRef.current, history: historyRef.current, mini: minimisedRef.current, now: Date.now() }),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!current) return;
+    save();
+    const onHide = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("pagehide", save);
+    document.addEventListener("visibilitychange", onHide);
+    const timer = status === "playing" ? window.setInterval(save, RESUME_SAVE_EVERY_MS) : 0;
+    return () => {
+      window.removeEventListener("pagehide", save);
+      document.removeEventListener("visibilitychange", onHide);
+      window.clearInterval(timer);
+    };
+  }, [current, status, queue, minimised, save]);
+
+  // On a page load: bring back what was playing, paused. Only a concert that is still on the site
+  // (the queue answers 404 for one that is gone, and the record is then deleted), and never over a
+  // concert the page has already started (a setlist link, ?t=).
+  useEffect(() => {
+    const store = browserStore();
+    const record = readResume(store, Date.now());
+    if (!record) return;
+    let cancelled = false;
+    fetch(`/api/queue/${record.track.youtubeId}`)
+      .then(async (res) => {
+        if (res.status === 404) {
+          clearResume(store);
+          return;
+        }
+        if (!res.ok || cancelled || currentRef.current) return;
+        const data = (await res.json()) as { queue: Track[] };
+        if (cancelled || currentRef.current) return;
+        historyRef.current = record.history;
+        setHistory(record.history);
+        setMinimised(record.mini);
+        start(record.track, record.at, { paused: true, queue: record.queue.length ? record.queue : data.queue });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [start]);
 
   const registerSlot = useCallback((youtubeId: string, element: HTMLElement | null) => {
     setSlot((prev) => {
@@ -403,6 +521,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       time,
       duration,
       inPage,
+      resumed,
+      minimised,
+      setMinimised,
       play,
       playFrom,
       playNext,
@@ -413,7 +534,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       registerSlot,
       registerDock,
     }),
-    [current, queue, suggestions, history.length, status, time, duration, inPage, play, playFrom, playNext, toggle, next, previous, close, registerSlot, registerDock],
+    [current, queue, suggestions, history.length, status, time, duration, inPage, resumed, minimised, play, playFrom, playNext, toggle, next, previous, close, registerSlot, registerDock],
   );
 
   return (
