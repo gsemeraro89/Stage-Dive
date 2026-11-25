@@ -271,3 +271,28 @@ Done from the list above: 2 (the shelves as crates; owner: "go ahead with the sh
 **Why it fits.** "The whole set" is the promise; the longest sets are the proof, and the lengths are funny on their own.
 
 **Effort.** Small. One more shelf from `homepageData()` (engineering); the crate takes it as it is. Four crates would sit two by two on a desktop.
+
+## 25 Nov 2026 · after the mini-player room fix
+
+Nothing here is built. Owner approval first.
+
+### 1. The room under the page says something
+**Idea.** The empty strip the page now keeps for the mini-player gets one handwritten line on the left, away from the window ("still playing. keep digging."), in Permanent Marker.
+
+**Why it fits.** It is the page's one handwritten line where there is otherwise blank paper, and it tells the fan the gig goes with them.
+
+**Effort.** Small. One line in the spacer, design only. Never under or on the video.
+
+### 2. The mini-player snaps to a corner
+**Idea.** When the window is put down it slaps into the nearest corner (16 px from the edges) instead of staying wherever it was dropped.
+
+**Why it fits.** Things get slapped down in this zine, and a window in a corner covers the least page: fewer links to scroll out from under it.
+
+**Effort.** Small to medium. Placement lives in `useMiniPlayer` (engineering); the slap is a kit motion, off with reduced motion.
+
+### 3. A smaller window on phones
+**Idea.** On a phone the mini-player takes the 200 px square video the bar already uses there, instead of the 356 px one that fills the width.
+
+**Why it fits.** At 380 px the window covers almost a third of the screen. The square leaves half the width for the page and still respects the 200x200 minimum.
+
+**Effort.** Small. CSS for the window width and height; `MiniRoom` measures it by itself.
