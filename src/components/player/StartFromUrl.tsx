@@ -10,13 +10,14 @@ import { usePlayer } from "./PlayerProvider";
  * each song of the setlist): starts the concert at that second. Read in the browser, so the page
  * itself stays served ready-made. YouTube rule 5: it starts only once more than half of the player
  * area (`[data-od="player-area"]`) is on screen, and never takes over a concert that is already playing.
+ * A concert only brought back paused after a page load (`resumed`) is not "playing": the link wins.
  * Renders nothing.
  */
 export function StartFromUrl({ track }: { track: Track }) {
-  const { current, playFrom } = usePlayer();
+  const { current, resumed, playFrom } = usePlayer();
   const done = useRef(false);
   const busy = useRef(Boolean(current));
-  busy.current = Boolean(current) && current?.youtubeId !== track.youtubeId;
+  busy.current = Boolean(current) && !resumed && current?.youtubeId !== track.youtubeId;
 
   useEffect(() => {
     if (done.current) return;

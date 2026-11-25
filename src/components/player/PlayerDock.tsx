@@ -26,8 +26,24 @@ import { useMiniPlayer } from "./useMiniPlayer";
  * Sizes and layout are in src/styles/deck.css.
  */
 export function PlayerDock() {
-  const { current, queue, suggestions, hasPrevious, status, time, duration, inPage, toggle, next, previous, close, registerDock } =
-    usePlayer();
+  const {
+    current,
+    queue,
+    suggestions,
+    hasPrevious,
+    status,
+    time,
+    duration,
+    inPage,
+    resumed,
+    minimised,
+    setMinimised,
+    toggle,
+    next,
+    previous,
+    close,
+    registerDock,
+  } = usePlayer();
   const path = usePathname();
   const [open, setOpen] = useState(false);
   // Only ever true while the video is in the page: the docked video must never sit in a hidden bar.
@@ -36,7 +52,7 @@ export function PlayerDock() {
   const moreRef = useRef<HTMLButtonElement>(null);
   const hasMore = suggestions.length > 0;
   // No mini-player while the video is inside the concert page: there the bar is already slim.
-  const { mini, setMinimised, windowRef, handle } = useMiniPlayer(Boolean(current) && !inPage);
+  const { mini, windowRef, handle } = useMiniPlayer(Boolean(current) && !inPage, minimised);
   const sheetOpen = open && hasMore && !inPage && !mini && Boolean(current);
   const minimiseRef = useRef<HTMLButtonElement>(null);
   const expandRef = useRef<HTMLButtonElement>(null);
@@ -100,6 +116,8 @@ export function PlayerDock() {
         className="od-dock"
         data-od="dock"
         data-status={status}
+        // Brought back after a page load, paused at the second the visitor had reached, waiting for play.
+        data-resumed={resumed || undefined}
         data-in-page={inPage || undefined}
         data-more={hasMore || undefined}
         data-sheet={sheetOpen || undefined}

@@ -6,7 +6,7 @@
 // so the concert keeps playing. PlayerProvider keeps the iframe over the bar's video box; here we
 // move that box and put the iframe over it at once instead of waiting for the provider's observer.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { fixedAnchor } from "@/lib/player/anchor";
 
 type Point = { x: number; y: number };
@@ -58,9 +58,9 @@ function syncFrame(element: HTMLElement) {
 /**
  * @param available false while the mini-player cannot be shown (nothing playing, or the video
  * is inside the concert page). The visitor's choice is kept and applies again afterwards.
+ * @param minimised the visitor's choice, kept by PlayerProvider so it survives a page load.
  */
-export function useMiniPlayer(available: boolean) {
-  const [minimised, setMinimised] = useState(false);
+export function useMiniPlayer(available: boolean, minimised: boolean) {
   const mini = minimised && available;
   const windowRef = useRef<HTMLElement>(null);
   /** Where the visitor left the window; null = never moved, it stays bottom right. */
@@ -155,5 +155,5 @@ export function useMiniPlayer(available: boolean) {
     },
   };
 
-  return { mini, setMinimised, windowRef, handle };
+  return { mini, windowRef, handle };
 }

@@ -1,17 +1,20 @@
 // A gig's YouTube picture, the way the zine is allowed to show it (design/DESIGN.md section 6): whole,
 // untouched, with only a play control on it and the "Picture: YouTube" credit under it.
 import type { ReactNode } from "react";
-import { PlayButton } from "@/components/player/PlayButton";
+import { PlayLink } from "@/components/player/PlayLink";
 import { PhotoFrame, PlayGlyph } from "@/components/zine";
 import { toTrack } from "@/lib/player-types";
 import type { ConcertView } from "@/lib/queries";
 
-/** A play control for a picture: the only thing allowed on a YouTube thumbnail. */
+/**
+ * The control on a picture, the only thing allowed on a YouTube thumbnail. It opens the concert's page
+ * (owner, 25 Nov 2026: a picture never interrupts the concert that is playing); the page plays it.
+ */
 export function PlayOnPicture({ concert }: { concert: ConcertView }) {
   return (
-    <PlayButton track={toTrack(concert)} className="zn-icon hm-playicon">
+    <PlayLink track={toTrack(concert)} className="zn-icon hm-playicon">
       <PlayGlyph />
-    </PlayButton>
+    </PlayLink>
   );
 }
 

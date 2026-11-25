@@ -5,10 +5,10 @@ import type { Track } from "@/lib/player-types";
 import { usePlayer } from "./PlayerProvider";
 
 /**
- * A concert's thumbnail (or its "Play concert" button) outside the concert page: opens the concert page. The visitor
- * starts the concert there with the page's own play button (owner decision, 16 Nov 2026: nothing starts
- * by itself, and the video never flashes in the bottom bar on the way to the page).
- * When this concert is already playing, the thumbnail shows it (data-current / data-status).
+ * A concert's picture outside the concert page: opens the concert page, in the page (next/link), so the
+ * concert that is playing keeps playing. The visitor switches there with the page's own play button
+ * (owner decisions, 16 and 25 Nov 2026: a picture opens the page; explicit play buttons still play).
+ * When this concert is the one in the player, the picture says so (data-current / data-status).
  */
 export function PlayLink({
   track,
@@ -25,7 +25,7 @@ export function PlayLink({
     <Link
       href={`/concerts/${track.slug}`}
       className={className}
-      data-od="play"
+      data-od="open-concert"
       data-current={isCurrent || undefined}
       data-status={isCurrent ? status : undefined}
       aria-label={`Open ${track.title}`}
