@@ -26,9 +26,9 @@ const ranked = [
 
 describe("the HD page's words", () => {
   it("leads with how many, what HD means, and the range of views", () => {
-    expect(HD_TITLE).toBe("Full Concerts in HD · Rock Concerts in High Definition");
+    expect(HD_TITLE).toBe("Full Concerts in HD · Pro-Shot Rock Concerts in 1080p and 720p");
     expect(hdLead(3, ranked)).toBe(
-      "3 full rock concerts in HD on STAGEDIVE: official concerts in high definition (720p or better), ranked by views on YouTube, " +
+      "3 full rock concerts in HD on STAGEDIVE: official, pro-shot concerts in high definition (720p, 1080p or better), ranked by views on YouTube, " +
         "from Metallica at L.C. Walker Arena 1991 (9,000,000 views on YouTube) to Pixies in 2004 (12,000 views on YouTube). Every concert plays in full on its own page, updated every night.",
     );
     expect(hdLead(250, ranked)).toContain("The 3 most watched are listed here.");

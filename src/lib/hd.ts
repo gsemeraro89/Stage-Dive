@@ -16,7 +16,7 @@ export const HD_PATH = "/hd";
 /** Concerts listed on the page at most (the most watched). */
 export const HD_SIZE = 100;
 export const HD_HEADING = "Full Concerts in HD";
-export const HD_TITLE = `${HD_HEADING} · Rock Concerts in High Definition`;
+export const HD_TITLE = `${HD_HEADING} · Pro-Shot Rock Concerts in 1080p and 720p`;
 /** The database filter on top of the visible, official concerts. */
 export const HD_WHERE = { definition: "hd" } as const;
 
@@ -39,7 +39,7 @@ export function hdLead(total: number, ranked: HdConcert[]): string {
   if (!total || !ranked.length) return `No full rock concert in HD is on ${SITE_NAME} right now.`;
   const top = ranked[0];
   return (
-    `${plural(total, "full rock concert")} in HD on ${SITE_NAME}: official concerts in high definition (720p or better), ` +
+    `${total.toLocaleString("en-GB")} full rock concert${total === 1 ? "" : "s"} in HD on ${SITE_NAME}: official, pro-shot concerts in high definition (720p, 1080p or better), ` +
     `ranked by views on YouTube, from ${rankedName(top)} (${views(top.viewCount)})` +
     `${ranked.length > 1 ? ` to ${rankedName(ranked[ranked.length - 1])} (${views(ranked[ranked.length - 1].viewCount)})` : ""}.` +
     `${total > ranked.length ? ` The ${ranked.length} most watched are listed here.` : ""} Every concert plays in full on its own page, updated every night.`

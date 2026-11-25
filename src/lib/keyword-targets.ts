@@ -11,7 +11,7 @@ import type { GenreName } from "./catalogue";
 
 /** The domain and the ways people type it: also the brand's alternate names (structured data). */
 export const LIVE_DOMAIN = "fullconcert.live";
-export const DOMAIN_BRAND_NAMES = ["fullconcert.live", "Full Concert Live"];
+export const DOMAIN_BRAND_NAMES = ["fullconcert.live", "Full Concert Live", "fullconcert", "FullConcert"];
 
 /**
  * The head terms around "full concert" (owner: mandatory, all of them). The page that should rank for
@@ -41,11 +41,11 @@ export const HEAD_TARGETS: { phrase: string; page: string }[] = [
   { phrase: "rock concerts full", page: "/" },
   { phrase: "full concerts online", page: "/concerts" },
   { phrase: "watch full concerts", page: "/concerts" },
-  { phrase: "full concert hd", page: "/concerts" },
-  { phrase: "live full concert hd", page: "/concerts" },
+  { phrase: "full concert hd", page: "/hd" },
+  { phrase: "live full concert hd", page: "/hd" },
   { phrase: "full concert 4k", page: "/concerts" },
-  { phrase: "full concert 1080p", page: "/concerts" },
-  { phrase: "pro shot full concert", page: "/concerts" },
+  { phrase: "full concert 1080p", page: "/hd" },
+  { phrase: "pro shot full concert", page: "/hd" },
   { phrase: "best full concerts", page: "/best" },
   { phrase: "best rock concerts of all time", page: "/best/most-watched-rock-concerts" },
   { phrase: "most watched concerts", page: "/best/most-watched-rock-concerts" },

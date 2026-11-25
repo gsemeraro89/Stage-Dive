@@ -74,6 +74,8 @@ describe("home page", () => {
     expect(HOME_TITLE).toContain("Full Concert");
     expect(hasTarget(HOME_DESCRIPTION, "full concert")).toBe(true);
     expect(hasTarget(HOME_DESCRIPTION, "full rock concert")).toBe(true);
+    // Added 25 Nov (owner: cover the phrases the 20 Nov study found on no page).
+    for (const phrase of ["whole show", "entire concert", "full festival show"]) expect(hasTarget(HOME_DESCRIPTION, phrase)).toBe(true);
     expect(HOME_DESCRIPTION.length).toBeLessThanOrEqual(160);
     expect(`${HOME_TITLE} ${HOME_DESCRIPTION}`).not.toMatch(BANNED);
   });
@@ -131,7 +133,7 @@ describe("other page types", () => {
 describe("the live domain fullconcert.live", () => {
   it("is one of the brand's names in structured data", () => {
     expect(SITE_ALTERNATE_NAMES).toEqual(expect.arrayContaining(["STAGEDIVE", "Stage Dive", "fullconcert.live", "Full Concert Live"]));
-    expect(DOMAIN_BRAND_NAMES).toEqual(["fullconcert.live", "Full Concert Live"]);
+    expect(DOMAIN_BRAND_NAMES).toEqual(["fullconcert.live", "Full Concert Live", "fullconcert", "FullConcert"]);
     expect(website().alternateName).toEqual(SITE_ALTERNATE_NAMES);
     expect(organization().alternateName).toEqual(SITE_ALTERNATE_NAMES);
   });

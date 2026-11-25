@@ -31,7 +31,7 @@ export interface BestList {
 
 /** Kinds of place with a ranking of their own, and how they are written. Livestreams and TV studios are too few. */
 export const PLACE_KINDS: Record<string, { slug: string; subject: string; label: string; heading: string }> = {
-  festival: { slug: "best-festival-rock-concerts", subject: "full rock concerts at festivals", label: "Festival shows", heading: "Best Festival Rock Concerts" },
+  festival: { slug: "best-festival-rock-concerts", subject: "full festival shows of rock bands", label: "Festival shows", heading: "Best Festival Rock Concerts" },
   room: {
     slug: "best-rock-concerts-in-clubs-and-arenas",
     subject: "full rock concerts in clubs, halls and arenas",

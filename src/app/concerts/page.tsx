@@ -22,7 +22,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       : filters.source === "bootleg"
         ? "Rock Concert Bootlegs · Pro-Shot Full Shows"
         : "Every Full Rock Concert · Search and Sort",
-    description: "Every full rock concert on STAGEDIVE in one list: search by band, venue or year, or sort by length and views.",
+    description:
+      "Every full rock concert on STAGEDIVE in one list, the entire concert each time, not clips: watch whole shows online, search by band, venue or year, or sort by length and views.",
     alternates: { canonical: "/concerts" },
     // Filtered views repeat content that has its own pages (band, venue, genre): noindex, follow.
     robots: robotsFor(!filtered),

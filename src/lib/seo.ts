@@ -84,7 +84,7 @@ export function robotsFor(worthIndexing: boolean): { index: boolean; follow: boo
 /** The home page (keyword targets: "full concert(s)", "full concert live", "full rock concerts"). */
 export const HOME_TITLE = `Full Concerts Live · Full Rock Concerts and Setlists · ${SITE_NAME}`;
 export const HOME_DESCRIPTION =
-  "Full concerts, the whole show, played here: full rock concerts live from festivals and rooms, by band, decade, genre and tour, with setlists you can click.";
+  "Full concerts, the whole show: full rock concerts live, entire concerts and full festival shows, by band, decade, genre and tour, with setlists you can click.";
 
 /**
  * The other ways people type the brand, so "stage dive" is read as this site, not as a phrase; and the
