@@ -8,8 +8,9 @@
 // never smaller than 200x200, nothing drawn on top of it, `origin` concert, playback starts
 // from a click, and auto-advance only happens in this always-visible player.
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fixedAnchor } from "@/lib/player/anchor";
+import { framePlacement } from "@/lib/player/placement";
 import { DOCK_PLAYER, type RecommendedArtist, type Track } from "@/lib/player-types";
 
 export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "error";
@@ -331,14 +332,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const target = inPage ? slot!.element : dock;
 
   // Keep the player exactly over its target: the concert page's player area, or the bottom bar.
-  // The iframe itself is never moved in the page (that would restart the video).
-  useEffect(() => {
+  // The iframe itself is never moved in the page (that would restart the video), and it is never
+  // hidden while a concert is current: leaving the concert page, the slot goes before the bar's video
+  // box arrives, and for that one render the player stays where it was (src/lib/player/placement.ts).
+  // A layout effect, so the hand-over from page to bar is done before the browser paints.
+  useLayoutEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
-    if (!current || !target) {
+    const action = framePlacement(Boolean(current), Boolean(target));
+    if (action === "hide") {
       frame.style.display = "none";
       return;
     }
+    if (action === "keep" || !target) return;
     let raf = 0;
     const place = () => {
       const rect = target.getBoundingClientRect();
