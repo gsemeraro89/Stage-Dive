@@ -25,8 +25,13 @@ export const AI_CRAWLERS = [
   "CCBot",
 ];
 
-/** Paths no crawler needs. */
-export const CLOSED_PATHS = ["/admin", "/api/"];
+/**
+ * Paths no crawler needs. "/map?" (owner's daily review, 25 Nov 2026): every map links to every band and
+ * genre combination, an endless set of addresses built fresh on the server; GPTBot and ClaudeBot spent
+ * ~37,000 visits a day there instead of reading concert and band pages. The plain /map stays open (it
+ * has a canonical); band pages hold the same links as real content. Same fix as OpenDecks.
+ */
+export const CLOSED_PATHS = ["/admin", "/api/", "/map?"];
 
 export function robotsRules(): MetadataRoute.Robots {
   if (!siteIsIndexable()) return { rules: { userAgent: "*", disallow: "/" } };

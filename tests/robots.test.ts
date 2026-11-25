@@ -20,7 +20,10 @@ describe("robots.txt", () => {
     process.env.SITE_URL = "https://stagedive.example";
     const r = robotsRules();
     const rules = r.rules as { userAgent: string | string[]; allow: string; disallow: string[] }[];
-    expect(rules[0]).toEqual({ userAgent: "*", allow: "/", disallow: ["/admin", "/api/"] });
+    expect(rules[0]).toEqual({ userAgent: "*", allow: "/", disallow: ["/admin", "/api/", "/map?"] });
+    // The map's endless band/genre addresses are closed to every bot; the plain /map stays open.
+    expect(rules[1].disallow).toContain("/map?");
+    expect(rules[1].disallow).not.toContain("/map");
     expect(rules[1].userAgent).toEqual(AI_CRAWLERS);
     expect(r.sitemap).toEqual(["https://stagedive.example/sitemap.xml", "https://stagedive.example/news-sitemap.xml"]);
   });
