@@ -297,7 +297,7 @@ Nothing here is built. Owner approval first.
 
 **Effort.** Small. CSS for the window width and height; `MiniRoom` measures it by itself.
 
-## 25 Nov 2026: after "a picture opens, a play button plays"
+## 2026-11-25 · after "a picture opens, a play button plays"
 
 ### 1. "Play it instead" on the gig page while another gig is on
 **Idea.** When a visitor opens a gig's page while another gig is playing, the page's big play button reads "Play this instead" and a typed line under it names what is on ("on now: Metallica, Slane 2019").
