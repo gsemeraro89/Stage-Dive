@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Analytics } from "@/components/analytics/Analytics";
 import { GoogleTag } from "@/components/analytics/GoogleTag";
 import { ConsentBanner, CookieSettingsButton } from "@/components/ui/ConsentBanner";
+import { MiniRoom } from "@/components/ui/MiniRoom";
 import { PlayerDock } from "@/components/player/PlayerDock";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { SiteHeader } from "@/components/zine/SiteHeader";
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <CookieSettingsButton />
           </footer>
           <PlayerDock />
+          <MiniRoom />
           <Analytics />
         </PlayerProvider>
       </body>

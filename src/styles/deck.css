@@ -751,9 +751,16 @@
   padding: 8px 12px;
 }
 
-/* The page no longer keeps room for a bar. */
+/* The page keeps room for the window instead of the bar, so its last links can always be
+   scrolled clear of the video. Measured by MiniRoom (src/components/ui/MiniRoom.tsx); until
+   then: the window where it first appears (strip + video + borders, 16px under and over). */
 .od-dock-spacer[data-mini]:not([data-in-page]) {
-  height: 0;
+  height: var(--mini-room, calc(var(--touch) + var(--deck-video-h) + 2px + 32px));
+}
+
+/* Keyboard: a focused link is not scrolled in under the window. */
+html:has(.od-dock-spacer[data-mini]:not([data-in-page])) {
+  scroll-padding-bottom: var(--mini-room, calc(var(--touch) + var(--deck-video-h) + 2px + 32px));
 }
 
 .od-mini-strip {
