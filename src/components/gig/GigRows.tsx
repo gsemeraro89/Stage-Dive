@@ -2,6 +2,7 @@
 // year or rank, the name, typed data, and the length on a play label. Styles: src/styles/pages.css.
 import Link from "next/link";
 import { PlayButton } from "@/components/player/PlayButton";
+import { PlayLink } from "@/components/player/PlayLink";
 import { PlayGlyph } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { toTrack } from "@/lib/player-types";
@@ -47,11 +48,11 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
           const line = [facts, views].filter(Boolean).join(" /// ");
           return (
             <li key={c.id} className="pg-row" data-od="concert-tile">
-              {/* The picture is a play button; nothing is drawn on it. */}
-              <PlayButton track={track} className="pg-row-pic">
+              {/* The picture opens the concert's page (the music playing goes on); nothing is drawn on it. */}
+              <PlayLink track={track} className="pg-row-pic">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={wideThumb(c.youtubeId)} width={320} height={180} alt="" loading="lazy" decoding="async" />
-              </PlayButton>
+              </PlayLink>
               {lead !== "none" && (
                 <span className="pg-row-lead" aria-hidden={lead === "rank" || undefined}>
                   {lead === "year" ? (c.performedYear ?? "?") : i + 1}

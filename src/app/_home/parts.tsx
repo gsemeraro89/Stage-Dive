@@ -10,6 +10,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { PlayOnPicture } from "@/components/gig/GigPicture";
 import { placeYear } from "@/components/gig/words";
 import { PlayButton } from "@/components/player/PlayButton";
+import { PlayLink } from "@/components/player/PlayLink";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PaperStrip, PhotoFrame, PlayableSetlist, PlayGlyph, SearchGlyph, Sheet, Staple } from "@/components/zine";
 import { BOOTLEG_LABEL, bootlegCredit } from "@/lib/bootlegs";
@@ -165,11 +166,11 @@ export function ChartRow({ concert, rank, picture, note }: { concert: ConcertVie
         </span>
       )}
       {picture && (
-        <PlayButton track={track} className="hx-row-pic">
-          {/* The picture is a play button; nothing is drawn on it. */}
+        <PlayLink track={track} className="hx-row-pic">
+          {/* The picture opens the concert's page (the music playing goes on); nothing is drawn on it. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={t.src} srcSet={t.srcSet} sizes="120px" width={t.width} height={t.height} alt="" loading="lazy" decoding="async" />
-        </PlayButton>
+        </PlayLink>
       )}
       <span className="hx-row-text">
         <Link href={`/concerts/${concert.slug}`} className="hx-row-link">
