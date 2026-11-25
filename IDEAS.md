@@ -272,7 +272,7 @@ Done from the list above: 2 (the shelves as crates; owner: "go ahead with the sh
 
 **Effort.** Small. One more shelf from `homepageData()` (engineering); the crate takes it as it is. Four crates would sit two by two on a desktop.
 
-## 25 Nov 2026 · after the mini-player room fix
+## 2026-11-25 · after the mini-player room fix
 
 Nothing here is built. Owner approval first.
 
