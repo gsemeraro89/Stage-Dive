@@ -38,8 +38,6 @@ export default async function VenuesPage() {
         data={total ? `${fields.length} ${fields.length === 1 ? "field" : "fields"} /// ${rooms.length} ${rooms.length === 1 ? "room" : "rooms"}` : undefined}
         note="where it happened"
       />
-      {/* Pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). */}
-      <RisingLinks />
       {total === 0 ? (
         <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
           <p>No fields or rooms on the wall yet.</p>
@@ -70,6 +68,8 @@ export default async function VenuesPage() {
           ))}
         </div>
       )}
+      {/* Pages climbing in search (src/lib/rising.ts). After the two piles (designer): the fields and rooms come first. */}
+      <RisingLinks />
     </main>
   );
 }

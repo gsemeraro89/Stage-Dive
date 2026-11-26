@@ -189,6 +189,8 @@ All in `src/components/zine/`, server components unless noted. See them at `/kit
 
 Utility classes: `zn-label`, `zn-data`, `zn-marker`, `zn-cutline`, `zn-band`, `zn-slap`, `zn-lift`, `zn-book` / `zn-leaf`.
 
+`zn-rising` ("Searched this week", `src/components/seo/RisingLinks.tsx`): a typed slip between two cut lines. One small black strip (15 px, tilted 1.5°), then up to eight plain typed links, each after a grey `///`, underlined, dead straight, 48 px tall; four columns on a desktop, one on a phone. No sheet, shadow, tape or pink: it must never look like an ad or outweigh the section above it. Home and `/artists`: between two sections. `/concerts` and `/venues`: after the list, so the gigs and places come first on a phone.
+
 ## 11. Voice
 
 Like the person who made the zine: **short, funny, on your side, slightly too loud.** We never explain a joke and we never use an exclamation mark we haven't earned.

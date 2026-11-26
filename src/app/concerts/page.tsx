@@ -59,9 +59,6 @@ export default async function ConcertsPage({ searchParams }: Props) {
         </p>
       </section>
 
-      {/* Pages climbing in search (src/lib/rising.ts), on the unfiltered list only. Unstyled for now (designer). */}
-      {!browsing && <RisingLinks />}
-
       <section className="pg-section pg-section--cut" aria-label="Gigs">
         {results.total === 0 ? (
           <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
@@ -81,6 +78,10 @@ export default async function ConcertsPage({ searchParams }: Props) {
           </>
         )}
       </section>
+
+      {/* Pages climbing in search (src/lib/rising.ts), on the unfiltered list only. After the gigs (designer):
+          on a phone it is eight rows tall, and the wall comes first. */}
+      {!browsing && <RisingLinks />}
     </main>
   );
 }

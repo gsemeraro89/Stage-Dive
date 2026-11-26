@@ -195,7 +195,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ---------- Searched this week: pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). ---------- */}
+      {/* ---------- Searched this week: pages climbing in search (src/lib/rising.ts) ---------- */}
       <RisingLinks />
 
       {/* ---------- The charts ---------- */}

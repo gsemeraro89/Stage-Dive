@@ -1872,3 +1872,68 @@ button.zn-cutout {
     margin-left: 4px;
   }
 }
+
+/* ---------- "Searched this week" (src/components/seo/RisingLinks.tsx) ----------
+   A typed slip between two cut lines: one small black strip, then plain typed links, the way a
+   classifieds column sits in a zine. Quiet on purpose: no sheet, no shadow, no tape, no pink, and the
+   links stay dead straight (things you press). The next section brings its own cut line underneath. */
+.zn-rising {
+  margin: 0 var(--margin);
+  padding: clamp(18px, 2vw, 26px) 0 clamp(22px, 2.4vw, 32px);
+  border-top: var(--cut);
+}
+
+.zn-rising-title {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: var(--strip-pad);
+  background: var(--toner);
+  color: var(--paper);
+  font-family: var(--font-strip);
+  font-size: var(--text-name-small);
+  font-weight: 400;
+  line-height: 1.05;
+  text-transform: uppercase;
+  rotate: -1.5deg;
+}
+
+.zn-rising-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  column-gap: var(--gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zn-rising-list a {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: var(--touch);
+  padding: 6px 0 2px;
+  font-family: var(--font-type);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+/* Typed triple slash, as in the data lines. Decoration: not part of the link's words. */
+.zn-rising-list a::before {
+  content: "///";
+  flex: none;
+  color: var(--label-grey);
+  letter-spacing: var(--track-data);
+}
+
+.zn-rising-list span {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* No fade: the words flip to a black strip, like every other typed link. */
+.zn-rising-list a:hover span {
+  background: var(--toner);
+  color: var(--paper);
+  text-decoration: none;
+}

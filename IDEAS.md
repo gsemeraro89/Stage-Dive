@@ -345,3 +345,28 @@ Nothing here is built. Owner approval first.
 
 **Effort.** Medium. A small table and one line in the refresh job (engineering), then one more black band here (design).
 
+
+---
+
+## 2026-11-26 · after "Searched this week"
+
+### 1. "Somebody asked for…" in marker
+**Idea.** One handwritten line next to the small black strip, changing with the first link ("somebody keeps asking for Radiohead").
+
+**Why it fits.** It turns a list of links into a note left on the page by another fan, which is the whole zine. One marker line, never a link.
+
+**Effort.** Small. A template line from the first entry; hidden on views that already carry a marker line.
+
+### 2. The slip on band and venue pages
+**Idea.** The same typed slip at the bottom of a band or venue page, holding only the entries that touch it (same band, same festival).
+
+**Why it fits.** A reader on the Pinkpop page is the one who wants "Limp Bizkit live at Pinkpop 2001"; the links get more relevant and the slip stays tiny (one to three rows).
+
+**Effort.** Small to medium. A filter on the list (engineering), the look is done.
+
+### 3. A struck-through line when a page makes it
+**Idea.** When an entry leaves the list because its page reached the top, it stays one more week struck by marker with "found" written after it.
+
+**Why it fits.** The marker strike is already how the setlist says "done"; it shows the list is alive and hand-kept.
+
+**Effort.** Medium. The list needs a "made it" date (engineering); the strike exists in the kit.

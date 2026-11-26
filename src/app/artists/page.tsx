@@ -97,7 +97,7 @@ export default async function ArtistsPage() {
             </section>
           )}
 
-          {/* Pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). */}
+          {/* Pages climbing in search (src/lib/rising.ts). */}
           <RisingLinks />
 
           <section className="pg-section pg-section--cut" aria-labelledby="a-to-z">
