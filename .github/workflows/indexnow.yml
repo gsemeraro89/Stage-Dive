@@ -1,0 +1,33 @@
+# Announce pages to IndexNow engines (Bing, and through it ChatGPT search and Copilot; Yandex, Seznam, Naver)
+# on demand (owner, 26 Nov 2026). collect.yml, refresh.yml and news.yml also announce after every run.
+# "all" announces every page in the sitemap; otherwise the pages new or changed in the last 30 hours.
+name: Announce pages (IndexNow)
+
+on:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Announce every page in the sitemap"
+        type: boolean
+        default: false
+
+concurrency:
+  group: database-jobs
+  cancel-in-progress: false
+
+jobs:
+  indexnow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL || 'https://fullconcert.live' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run indexnow -- ${{ inputs.all && '--all' || '' }}

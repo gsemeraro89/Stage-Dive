@@ -44,5 +44,5 @@ jobs:
       - name: Announce changed pages to search engines (IndexNow; skipped until the live site is open)
         continue-on-error: true
         env:
-          LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL }}
+          LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL || 'https://fullconcert.live' }}
         run: npm run indexnow
