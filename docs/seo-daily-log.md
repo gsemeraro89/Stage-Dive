@@ -54,3 +54,22 @@ Done: band-page videos now carry description, embedUrl, duration and the concert
 large image and video previews allowed in search (max-image-preview:large); 80 URLs to Bing; 5 Reddit answer
 drafts, profile bios and 3 directory listings in docs/outreach/2026-11-26.md. Yesterday evening: the missing
 keyword phrases (entire concert, whole show, pro-shot, 1080p, full festival shows, "fullconcert").
+
+### GEO check, 26 Nov (first; 20 questions, web search as AI assistants see it)
+
+fullconcert.live cited in 0 of 20 (the site is a week old; a search for "fullconcert.live" itself finds nothing).
+Questions: Metallica / Radiohead / Pearl Jam / Linkin Park / Green Day / Nirvana / Bon Jovi full concert (video);
+where to watch full rock concerts online; best live rock concerts on video; Metallica Slane Castle 2019 setlist;
+Pinkpop full concerts; Rockpalast full concerts; most watched rock concerts on YouTube; pro-shot full concert HD;
+Radiohead In Rainbows From the Basement setlist; full concerts with setlist timestamps website; best festival sets;
+Van Halen Montreal Forum 1984; Crossroads Festival Rockpalast; fullconcert.live.
+Cited instead: Loudwire, Blabbermouth, JamBase, Guitar World, BrooklynVegan, Far Out, Live For Live Music, Ultimate
+Classic Rock, Rolling Stone, Louder, Spin, uDiscover, NME, setlist.fm, Wikipedia, concertarchives.org, Qello/Stingray.
+Gaps where we hold the answer and the AI said it could not find one: the full Slane Castle 2019 setlist (we have 19
+songs with times), the From the Basement setlist ("sources disagree"; we have 14), Van Halen Montreal 1984 setlist
+(not found; we have 23), "a site with full concerts and setlist timestamps" ("I didn't find a dedicated site"), the
+Crossroads/Rockpalast concerts online (not found; we have 199 + Rockpalast), a ranking of the most watched rock
+concerts by views ("no definitive ranking"; /best is exactly that).
+Action: the 6 concert pages of those gaps sent to Bing (Slane 2019, From the Basement, Montreal 1984, Radiohead
+Pinkpop 1996 and 2001, Berlin 2016); owner asked to request them in Search Console; outreach to JamBase, Loudwire,
+Blabbermouth (the sites AI cites) goes into the press list.
