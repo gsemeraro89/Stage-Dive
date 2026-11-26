@@ -1,6 +1,7 @@
 // Bands: a few on the wall as pictures, then every band A to Z, typed like a contents page.
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { RisingLinks } from "@/components/seo/RisingLinks";
 import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import type { CSSProperties } from "react";
@@ -95,6 +96,9 @@ export default async function ArtistsPage() {
               </ul>
             </section>
           )}
+
+          {/* Pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). */}
+          <RisingLinks />
 
           <section className="pg-section pg-section--cut" aria-labelledby="a-to-z">
             <div className="pg-block-head">

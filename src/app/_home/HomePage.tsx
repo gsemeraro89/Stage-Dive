@@ -8,6 +8,7 @@ import { YouTubePicture } from "@/components/gig/GigPicture";
 import { bandName, cutName, placeYear, playedOn } from "@/components/gig/words";
 import { NewsList } from "@/components/news/NewsList";
 import { PlayButton } from "@/components/player/PlayButton";
+import { RisingLinks } from "@/components/seo/RisingLinks";
 import { PaperStrip, PhotoFrame, PlayGlyph, Sheet, StripHeading } from "@/components/zine";
 import { formatDuration } from "@/lib/format";
 import { homepageData, type HomePicture, type HomeTile } from "@/lib/home";
@@ -193,6 +194,9 @@ export default async function HomePage() {
           <PhotoNote show={legends.some((b) => b.picture && b.picture.kind !== "concert")} />
         </section>
       )}
+
+      {/* ---------- Searched this week: pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). ---------- */}
+      <RisingLinks />
 
       {/* ---------- The charts ---------- */}
       {bestOf.length > 0 && (

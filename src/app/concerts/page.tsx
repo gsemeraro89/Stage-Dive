@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GigFilters } from "@/components/gig/GigFilters";
 import { GigRows } from "@/components/gig/GigRows";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
+import { RisingLinks } from "@/components/seo/RisingLinks";
 import { gigs } from "@/components/gig/words";
 import { hasActiveFilters, parseFilters, SORT_LABELS } from "@/lib/filters";
 import { filterOptions, listConcerts } from "@/lib/queries";
@@ -57,6 +58,9 @@ export default async function ConcertsPage({ searchParams }: Props) {
           <Link href="/hd">Full concerts in HD</Link>
         </p>
       </section>
+
+      {/* Pages climbing in search (src/lib/rising.ts), on the unfiltered list only. Unstyled for now (designer). */}
+      {!browsing && <RisingLinks />}
 
       <section className="pg-section pg-section--cut" aria-label="Gigs">
         {results.total === 0 ? (

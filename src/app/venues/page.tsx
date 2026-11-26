@@ -1,6 +1,7 @@
 // Fields + Rooms: the festivals ("the fields") and everything with a roof ("the rooms").
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { RisingLinks } from "@/components/seo/RisingLinks";
 import { breadcrumbs, itemList } from "@/lib/structured-data";
 import Link from "next/link";
 import { EmptyNote, PageHead } from "@/components/gig/PageHead";
@@ -37,6 +38,8 @@ export default async function VenuesPage() {
         data={total ? `${fields.length} ${fields.length === 1 ? "field" : "fields"} /// ${rooms.length} ${rooms.length === 1 ? "room" : "rooms"}` : undefined}
         note="where it happened"
       />
+      {/* Pages climbing in search (src/lib/rising.ts). Unstyled for now (designer). */}
+      <RisingLinks />
       {total === 0 ? (
         <EmptyNote lines={["Nothing.", "Not even a bootleg."]}>
           <p>No fields or rooms on the wall yet.</p>
