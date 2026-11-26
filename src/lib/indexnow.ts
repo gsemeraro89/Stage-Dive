@@ -1,7 +1,8 @@
 // IndexNow (owner, 19 Nov 2026): tell Bing, Yandex, Seznam, Naver and the other IndexNow engines at
 // once which pages are new or changed, instead of waiting for them to crawl. ChatGPT search and
 // Microsoft Copilot answer from Bing's index, so this is how new concerts reach them quickly.
-// The key is public by design (it is served at /indexnow-key.txt to prove we own the site); it is
+// The key is public by design (it is served at /<key>.txt, the standard place, and at /indexnow-key.txt, to prove
+// we own the site; 26 Nov 2026: the engines answered 403 with the old location only); it is
 // STAGEDIVE's own, not OpenDecks'. Tested in tests/indexnow.test.ts.
 export const INDEXNOW_KEY = "1c2635d61c89971d20fbea2600b09891";
 export const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow";
@@ -14,7 +15,7 @@ export function indexNowBodies(siteUrl: string, urls: string[]) {
   const own = [...new Set(urls)].filter((u) => new URL(u).host === host);
   const bodies = [];
   for (let i = 0; i < own.length; i += INDEXNOW_MAX) {
-    bodies.push({ host, key: INDEXNOW_KEY, keyLocation: `${siteUrl.replace(/\/$/, "")}/indexnow-key.txt`, urlList: own.slice(i, i + INDEXNOW_MAX) });
+    bodies.push({ host, key: INDEXNOW_KEY, keyLocation: `${siteUrl.replace(/\/$/, "")}/${INDEXNOW_KEY}.txt`, urlList: own.slice(i, i + INDEXNOW_MAX) });
   }
   return bodies;
 }

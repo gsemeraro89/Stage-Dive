@@ -16,7 +16,7 @@ describe("IndexNow", () => {
     expect(body).toEqual({
       host: "stagedive.example",
       key: INDEXNOW_KEY,
-      keyLocation: "https://stagedive.example/indexnow-key.txt",
+      keyLocation: "https://stagedive.example/1c2635d61c89971d20fbea2600b09891.txt",
       urlList: ["https://stagedive.example/concerts/a"],
     });
   });

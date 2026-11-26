@@ -147,7 +147,7 @@ describe("the live domain fullconcert.live", () => {
     expect(r.host).toBe("https://fullconcert.live/");
     const [body] = indexNowBodies("https://fullconcert.live", ["https://fullconcert.live/concerts/x", "https://stagedive-test.onrender.com/concerts/y"]);
     expect(body.host).toBe("fullconcert.live");
-    expect(body.keyLocation).toBe("https://fullconcert.live/indexnow-key.txt");
+    expect(body.keyLocation).toBe("https://fullconcert.live/1c2635d61c89971d20fbea2600b09891.txt");
     expect(body.urlList).toEqual(["https://fullconcert.live/concerts/x"]);
   });
 });
