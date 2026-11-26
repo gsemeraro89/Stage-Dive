@@ -51,8 +51,8 @@ export const RISING: RisingTarget[] = [
   { path: "/artists/kvelertak", label: "Kvelertak full concerts", since: "2026-11-26" },
   // "killing joke band": the /artists list at 5.
   { path: "/artists/killing-joke", label: "Killing Joke full concerts", since: "2026-11-26" },
-  // "joe elliott def leppard wife": the /artists list at 16.
-  { path: "/artists/def-leppard", label: "Def Leppard full concerts", since: "2026-11-26" },
+  // "ypsigrock": the /concerts list at 13 and /venues at 12; the festival page is thin, its concert is not.
+  { path: "/concerts/the-national-ypsigrock-2019", label: "The National live at Ypsigrock 2019", since: "2026-11-26" },
   // "grandbrothers": the /artists list at 19; the band page is thin, its concert (with a setlist) is not.
   { path: "/concerts/grandbrothers-kolner-dom-2022", label: "Grandbrothers live at Kölner Dom 2022", since: "2026-11-26" },
   // "teksuo": the /artists list at 6; same as Grandbrothers.
