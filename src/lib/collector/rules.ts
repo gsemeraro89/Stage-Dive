@@ -588,3 +588,21 @@ export function sourceRank(kind: ChannelKindName): number {
 export function inReadingOrder<T extends { kind: ChannelKindName }>(channels: T[]): T[] {
   return channels.map((c, i) => ({ c, i })).sort((a, b) => sourceRank(a.c.kind) - sourceRank(b.c.kind) || a.i - b.i).map((x) => x.c);
 }
+
+/**
+ * ONLY_CHANNEL: one channel name of data/channels.json, or several separated by "|" (e.g. a dry run of newly
+ * added channels: "Wacken Open Air|Hellfest Open Air Festival"). Case and surrounding spaces are ignored.
+ * Returns null when no filter is set (every channel is read).
+ */
+export function onlyChannelNames(value: string | undefined): Set<string> | null {
+  const names = (value ?? "")
+    .split("|")
+    .map((n) => n.trim().toLowerCase())
+    .filter(Boolean);
+  return names.length ? new Set(names) : null;
+}
+
+/** A YouTube channel ID as the API returns it ("UC" and 22 more characters). */
+export function isYouTubeChannelId(id: string): boolean {
+  return /^UC[A-Za-z0-9_-]{22}$/.test(id);
+}

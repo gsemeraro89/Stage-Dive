@@ -64,7 +64,7 @@ on:
         type: boolean
         default: false
       only_channel:
-        description: "Read only this channel (name as in data/channels.json, e.g. Pinkpop Archive); no searches"
+        description: "Read only this channel (name as in data/channels.json, e.g. Pinkpop Archive; several: separate with |); no searches"
         default: ""
       similarity_only:
         description: "Only update similar artists (asks ListenBrainz; no YouTube quota, no Claude cost)"

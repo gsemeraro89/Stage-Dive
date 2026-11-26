@@ -19,6 +19,9 @@ import {
   DJ_NAMES,
   sourceRank,
   inReadingOrder,
+  isYouTubeChannelId,
+  onlyChannelNames,
+  channelMatches,
   readPerformed,
   type DecisionInput,
   type ConcertIdentity,
@@ -535,5 +538,57 @@ describe("region check (ES, IT, GB, US, DE)", () => {
       status: { embeddable: true, privacyStatus: "public", madeForKids: false, uploadStatus: "processed" },
     };
     expect(toVideo(item)?.blockedIn).toEqual(["IT"]);
+  });
+});
+
+describe("data/channels.json sources (26 Nov 2026: more festivals and band channels)", () => {
+  type Entry = { name: string; id?: string; handle?: string; search: string; expect: string; kind: string; skipIds?: string[] };
+  const load = async () => {
+    const { readFileSync } = await import("node:fs");
+    return {
+      channels: (JSON.parse(readFileSync("data/channels.json", "utf8")) as { channels: Entry[] }).channels,
+      fan: (JSON.parse(readFileSync("data/fan-channels.json", "utf8")) as { channels: { name: string }[] }).channels,
+    };
+  };
+  it("every entry has a name, a search, an expect and a known kind; names and IDs are unique; IDs are well formed", async () => {
+    const { channels } = await load();
+    for (const c of channels) {
+      expect(c.name.trim()).not.toBe("");
+      expect(c.search.trim()).not.toBe("");
+      expect(c.expect.trim()).not.toBe("");
+      expect(["ARCHIVE", "ARTIST", "MIXED"]).toContain(c.kind);
+      if (c.id !== undefined) expect(isYouTubeChannelId(c.id)).toBe(true);
+      // The channel's name, as the API gives it, must pass its own expect check.
+      if (c.id !== undefined) expect(channelMatches(c.name, c.expect)).toBe(true);
+    }
+    const names = channels.map((c) => c.name.toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+    const ids = channels.flatMap((c) => (c.id ? [c.id] : []));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+  it("never lists a fan channel as an official source", async () => {
+    const { channels, fan } = await load();
+    const fanNames = new Set(fan.map((f) => f.name.toLowerCase()));
+    expect(channels.filter((c) => fanNames.has(c.name.toLowerCase()))).toEqual([]);
+  });
+  it("finds Pol'and'Rock's channel by its Polish name, whatever the accents", async () => {
+    const { channels } = await load();
+    const krecio = channels.find((c) => c.name.startsWith("Kręcioła"))!;
+    expect(channelMatches("KręciołaTV", krecio.expect)).toBe(true);
+    expect(channelMatches("Kręcioła.TV", krecio.expect)).toBe(true);
+  });
+});
+
+describe("ONLY_CHANNEL with several channels", () => {
+  it("reads one name or several separated by |, ignoring case and spaces", () => {
+    expect(onlyChannelNames(undefined)).toBeNull();
+    expect(onlyChannelNames("  ")).toBeNull();
+    expect(onlyChannelNames("Pinkpop Archive")).toEqual(new Set(["pinkpop archive"]));
+    expect(onlyChannelNames(" Wacken Open Air | Hellfest Open Air Festival |")).toEqual(new Set(["wacken open air", "hellfest open air festival"]));
+  });
+  it("knows a YouTube channel ID", () => {
+    expect(isYouTubeChannelId("UCi7TehIHH5f6DxS8UP6qPhA")).toBe(true);
+    expect(isYouTubeChannelId("UCi7TehIHH5f6DxS8UP6qPh")).toBe(false);
+    expect(isYouTubeChannelId("@Hellfest")).toBe(false);
   });
 });

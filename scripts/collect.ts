@@ -31,6 +31,8 @@ import {
   isExcludedArtist,
   sourceRank,
   inReadingOrder,
+  isYouTubeChannelId,
+  onlyChannelNames,
   type ArtistExclusion,
   genresForApprovedArtist,
   expandGroups,
@@ -82,8 +84,10 @@ const recrawl = args.includes("--recrawl");
 const recheckLong = args.includes("--recheck-long");
 const longRecheckDays = Number(process.env.LONG_RECHECK_DAYS ?? 7);
 // ONLY_CHANNEL="Pinkpop Archive": read just this channel from data/channels.json (no artist channels, no searches).
+// Several names separated by "|" read just those (e.g. a dry run of newly added channels).
 // For a small test run, e.g. trying a lower view threshold on one channel.
-const onlyChannel = process.env.ONLY_CHANNEL?.trim().toLowerCase() || "";
+const onlyChannels = onlyChannelNames(process.env.ONLY_CHANNEL);
+const onlyChannel = onlyChannels !== null;
 // ONLY_VIDEOS="id1,id2": decide again on just these videos (e.g. after the owner approved their artists),
 // ignoring earlier verdicts. No channel reading, no searches, no long-video recheck. Stored classifier
 // answers are reused, so it costs 1 YouTube unit per 50 videos and nothing on Claude.
@@ -97,6 +101,8 @@ const config = configFromEnv();
 
 interface ChannelConfig {
   name: string;
+  /** The channel's YouTube ID (UC...), when known: looked up first (1 unit), still checked against `expect`. */
+  id?: string;
   handle?: string;
   search: string;
   expect: string;
@@ -176,7 +182,7 @@ async function resolveChannels() {
   let newThisRun = 0;
   const newLimit = Number(process.env.NEW_CHANNELS_PER_RUN || channelFile.newChannelsPerRun || 8);
   for (const cfg of inReadingOrder(channelFile.channels)) {
-    if (onlyChannel && cfg.name.toLowerCase() !== onlyChannel) continue;
+    if (onlyChannels && !onlyChannels.has(cfg.name.trim().toLowerCase())) continue;
     const skip = new Set(cfg.skipIds ?? []);
     const known = await db.channel.findFirst({
       where: { name: { equals: cfg.name, mode: "insensitive" }, youtubeChannelId: { not: null }, uploadsPlaylistId: { not: null } },
@@ -189,7 +195,11 @@ async function resolveChannels() {
       // New channel: resolving costs up to 100 units and the first read can be large, so only a few per run.
       if (newThisRun >= newLimit) continue;
       newThisRun++;
-      if (cfg.handle) {
+      if (cfg.id && isYouTubeChannelId(cfg.id) && !skip.has(cfg.id)) {
+        const found = await yt.channel({ id: cfg.id });
+        if (found && found.uploadsPlaylistId && channelMatches(found.title, cfg.expect)) ytChannel = found;
+      }
+      if (!ytChannel && cfg.handle) {
         const found = await yt.channel({ handle: cfg.handle });
         if (found && !skip.has(found.id) && found.uploadsPlaylistId && channelMatches(found.title, cfg.expect)) ytChannel = found;
       }
