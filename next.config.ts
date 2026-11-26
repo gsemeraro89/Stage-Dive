@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       { source: "/best/:slug([a-z0-9-]+)\\.md", destination: "/md/best/:slug" },
       // Full concerts in HD (src/lib/hd.ts).
       { source: "/hd.md", destination: "/md/hd" },
+      // "STAGEDIVE in numbers" (src/lib/stats.ts).
+      { source: "/stats.md", destination: "/md/stats" },
       // Songs played live (src/lib/songs.ts): a band's songs and one song.
       { source: "/songs/:band([a-z0-9-]+)\\.md", destination: "/md/songs/:band" },
       { source: "/songs/:band([a-z0-9-]+)/:song([a-z0-9-]+)\\.md", destination: "/md/songs/:band/:song" },

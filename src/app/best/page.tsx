@@ -81,6 +81,10 @@ export default async function BestIndexPage() {
       <p className="pg-thin" data-od="best-hd">
         <Link href="/hd">Full concerts in HD</Link>, most watched first.
       </p>
+      {/* Unstyled for now (designer): the site's figures and rankings (src/lib/stats.ts). */}
+      <p className="pg-thin" data-od="best-stats">
+        <Link href="/stats">{SITE_NAME} in numbers</Link>: the totals, the bands and places with the most concerts, the longest concerts and the most played songs live.
+      </p>
     </main>
   );
 }
