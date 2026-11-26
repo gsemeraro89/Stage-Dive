@@ -110,7 +110,7 @@ export default async function BandSongsPage({ params }: Props) {
 
       <p className="sgi-links" data-od="band-songs-links">
         <Link href={`/artists/${band.slug}`} className="hm-more">
-          THE BAND&rsquo;S PAGE &gt;&gt;
+          {`ALL ${band.name.toUpperCase()} SETLISTS`} &gt;&gt;
         </Link>
       </p>
     </main>

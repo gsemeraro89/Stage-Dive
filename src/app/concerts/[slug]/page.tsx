@@ -360,8 +360,9 @@ export default async function ConcertPage({ params }: Props) {
                 <div className="pg-block-head">
                   <SectionTitle id="more-from">More {band.name}</SectionTitle>
                   {band.hasPage && (
+                    // Descriptive words for the band page (search, 26 Nov 2026): "Radiohead setlists" is how people look.
                     <Link href={`/artists/${band.slug}`} className="hm-more">
-                      THE BAND&rsquo;S PAGE &gt;&gt;
+                      {`ALL ${band.name.toUpperCase()} FULL CONCERTS${concert.hasSetlist ? " + SETLISTS" : ""}`} &gt;&gt;
                     </Link>
                   )}
                 </div>

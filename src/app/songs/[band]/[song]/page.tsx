@@ -203,7 +203,7 @@ export default async function SongPage({ params }: Props) {
           EVERY {band.name.toUpperCase()} SONG ({songs.length}) &gt;&gt;
         </Link>{" "}
         <Link href={`/artists/${band.slug}`} className="hm-more">
-          THE BAND&rsquo;S PAGE &gt;&gt;
+          {`ALL ${band.name.toUpperCase()} SETLISTS`} &gt;&gt;
         </Link>
       </p>
     </main>
