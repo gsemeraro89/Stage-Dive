@@ -3490,3 +3490,773 @@
     line-height: 1.42;
   }
 }
+
+/* ================= STAGEDIVE in numbers (/stats, 26 Nov 2026) =================
+   The page people quote. Numbers first: the totals are a ransom note of figures, each cut from its
+   own strip at its own size (never a grid of equal tiles); the sentences to quote are typed on a
+   stapled sheet; every ranking is a real table ruled like a typed chart. One picture on the page:
+   number one of the most watched, whole and untouched. The page's one pink thing is the big total.
+   The decades are the page's black band. Rules: design/DESIGN.md section 14. */
+
+.pg-stats-totals {
+  padding-top: 4px;
+}
+
+.pg-stats-figures {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "con con con con con con off off off boo boo boo"
+    "con con con con con con ban ban ban ban ban ban"
+    "hou hou hou hou hou pla pla pla fes fes cou cou"
+    "tim tim tim tim tim tim set set set son son son"
+    "yea yea yea yea yea yea yea yea dec dec dec dec";
+  align-items: end;
+  gap: clamp(20px, 2.4vw, 34px) var(--gutter);
+  margin: clamp(22px, 2.6vw, 36px) 0 0;
+}
+
+.pg-stats-figure {
+  --fig: clamp(40px, 5.2vw, 76px);
+  --fig-tilt: -1.5deg;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The number: the heavy hand on a cut strip, shown above its typed label. */
+.pg-stats-figure dd {
+  order: -1;
+  margin: 0;
+  padding: 0.2em 0.3em 0.1em;
+  background: var(--sheet);
+  color: var(--toner);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  font-family: var(--font-strip);
+  font-size: var(--fig);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  rotate: var(--fig-tilt);
+}
+
+.pg-stats-figure dt {
+  display: flex;
+  align-items: flex-start;
+  min-height: var(--touch);
+  max-width: 24ch;
+  padding: 8px 0 0 4px;
+  font-size: 15.5px;
+  line-height: 1.3;
+  letter-spacing: var(--track-data);
+  text-transform: uppercase;
+}
+
+.pg-stats-figure dt a {
+  display: block;
+  min-height: var(--touch);
+  margin: -8px 0 0 -4px;
+  padding: 8px 4px 0;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.pg-stats-figure dt a::after {
+  content: " >>";
+  white-space: pre;
+}
+
+.pg-stats-figure dt a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.pg-stats-figure dt a:focus-visible,
+.pg-stats-table a:focus-visible,
+.pg-stats-method a:focus-visible,
+[data-od="stats-best"] a:focus-visible,
+[data-od="best-stats"] a:focus-visible {
+  outline: 3px dashed var(--toner);
+  outline-offset: 2px;
+}
+
+/* Black strips. */
+[data-od="stats-total-bootlegs"] dd,
+[data-od="stats-total-bands"] dd,
+[data-od="stats-total-places"] dd,
+[data-od="stats-total-countries"] dd,
+[data-od="stats-total-timed-songs"] dd,
+[data-od="stats-total-years"] dd {
+  background: var(--toner);
+  color: var(--paper);
+  outline: 0;
+}
+
+/* The big one: the page's one pink block, black figures on it, the only figure with a shadow. */
+[data-od="stats-total-concerts"] {
+  --fig: clamp(88px, 11.4vw, 168px);
+  --fig-tilt: -2deg;
+  grid-area: con;
+  align-self: center;
+}
+
+[data-od="stats-total-concerts"] dd {
+  background: var(--pink);
+  outline: var(--frame) solid var(--toner);
+  outline-offset: calc(-1 * var(--frame));
+  box-shadow: var(--shadow-sheet);
+}
+
+[data-od="stats-total-concerts"] dt {
+  padding-top: 16px;
+  font-size: 18px;
+}
+
+[data-od="stats-total-concerts"] dt a {
+  margin-top: -16px;
+  padding-top: 16px;
+}
+
+[data-od="stats-total-official"] {
+  --fig-tilt: 1.5deg;
+  grid-area: off;
+}
+
+[data-od="stats-total-bootlegs"] {
+  --fig-tilt: -1.2deg;
+  grid-area: boo;
+}
+
+[data-od="stats-total-bands"] {
+  --fig: clamp(54px, 8.4vw, 124px);
+  --fig-tilt: 1.2deg;
+  grid-area: ban;
+}
+
+[data-od="stats-total-hours"] {
+  --fig: clamp(54px, 8.4vw, 124px);
+  --fig-tilt: -1.6deg;
+  grid-area: hou;
+}
+
+[data-od="stats-total-places"] {
+  --fig-tilt: 1.4deg;
+  grid-area: pla;
+}
+
+[data-od="stats-total-festivals"] {
+  --fig: clamp(34px, 4.1vw, 60px);
+  --fig-tilt: -2deg;
+  grid-area: fes;
+}
+
+[data-od="stats-total-countries"] {
+  --fig: clamp(34px, 4.1vw, 60px);
+  --fig-tilt: 2deg;
+  grid-area: cou;
+}
+
+[data-od="stats-total-timed-songs"] {
+  --fig: clamp(54px, 8.4vw, 124px);
+  --fig-tilt: 1deg;
+  grid-area: tim;
+}
+
+[data-od="stats-total-setlists"] {
+  --fig-tilt: -1.4deg;
+  grid-area: set;
+}
+
+[data-od="stats-total-songs"] {
+  --fig-tilt: 1.6deg;
+  grid-area: son;
+}
+
+[data-od="stats-total-years"] {
+  --fig: clamp(46px, 8.4vw, 124px);
+  --fig-tilt: -1deg;
+  grid-area: yea;
+}
+
+[data-od="stats-total-decades"] {
+  --fig: clamp(54px, 8.4vw, 124px);
+  --fig-tilt: 2.4deg;
+  grid-area: dec;
+}
+
+/* The sentences to quote: one handwritten line, then a clean sheet, stapled, typed. */
+.pg-stats-quote {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+  align-items: start;
+  gap: 20px var(--gutter);
+  margin-top: clamp(34px, 4vw, 56px);
+  padding-top: clamp(26px, 2.8vw, 38px);
+  border-top: var(--cut);
+}
+
+.pg-stats-aside {
+  --tilt: -3deg;
+  justify-self: start;
+  margin: 26px 0 0;
+  font-size: clamp(24px, 2.6vw, 36px);
+}
+
+.pg .pg-stats-facts {
+  position: relative;
+  padding: 26px clamp(16px, 2.2vw, 30px) 14px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  rotate: 0.5deg;
+}
+
+/* The staple: two flat bands of grey, as in the kit. */
+.pg-stats-facts::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 30px;
+  height: 6px;
+  background: var(--staple-dark);
+  border-top: 3px solid var(--staple-light);
+  box-shadow: 0 1px 0 var(--toner);
+  rotate: 12deg;
+}
+
+.pg-stats-facts li {
+  padding: 13px 0 9px;
+  border-bottom: 2px dashed var(--toner);
+  font-size: clamp(16.5px, 1.3vw, 18px);
+  line-height: 1.55;
+}
+
+.pg-stats-facts li:last-child {
+  border-bottom: 0;
+}
+
+/* ---------- The rankings ---------- */
+
+.pg-stats-rankings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(40px, 4.6vw, 64px) clamp(30px, 4vw, 64px);
+  align-items: start;
+  padding-top: 0;
+}
+
+.pg-stats-ranking {
+  min-width: 0;
+}
+
+.pg-stats-ranking > .pg-title {
+  position: relative;
+  z-index: 1;
+  margin-left: -6px;
+}
+
+[data-od="stats-most-watched"],
+[data-od="stats-decades"],
+.pg-stats-rankings > [data-od="stats-best"] {
+  grid-column: 1 / -1;
+}
+
+.pg-stats-table {
+  width: 100%;
+  margin-top: -5px;
+  border-collapse: collapse;
+  border-top: var(--frame) solid var(--toner);
+  font-family: var(--font-type);
+}
+
+.pg-stats-table th {
+  padding: 12px 0 2px;
+  font-size: var(--text-label);
+  font-weight: 400;
+  letter-spacing: var(--track-label);
+  line-height: 1.3;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--label-grey);
+}
+
+.pg-stats-table th:last-child {
+  text-align: right;
+}
+
+.pg-stats-table tbody tr {
+  border-bottom: 2px dashed var(--toner);
+}
+
+.pg-stats-table td {
+  padding: 0;
+  vertical-align: baseline;
+}
+
+.pg-stats-table:not(.pg-stats-table--decades) th:first-child {
+  width: 46px;
+}
+
+.pg-stats-rank {
+  font-family: var(--font-strip);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pg-stats-name a {
+  display: block;
+  min-height: var(--touch);
+  padding: 15px 10px 5px 0;
+  font-family: var(--font-strip);
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.pg-stats-name a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+.pg-stats-value {
+  padding-left: 10px;
+  font-size: 17px;
+  letter-spacing: var(--track-data);
+  text-align: right;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Number one: a bigger name, its figure on a black strip. */
+.pg-stats-table tbody tr:first-child .pg-stats-rank {
+  font-size: clamp(26px, 2.4vw, 34px);
+}
+
+.pg-stats-table:not(.pg-stats-table--decades) tbody tr:first-child .pg-stats-name a {
+  padding-top: 16px;
+  font-size: clamp(20px, 1.9vw, 26px);
+}
+
+.pg-stats-table:not(.pg-stats-table--decades) tbody tr:first-child .pg-stats-value span {
+  display: inline-block;
+  padding: 0.42em 0.58em 0.2em;
+  background: var(--toner);
+  color: var(--paper);
+  rotate: -1.5deg;
+}
+
+/* The most watched: number one's picture glued on beside the chart. */
+.pg-stats-ranking[data-lead] {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 24px clamp(30px, 4vw, 64px);
+  align-items: start;
+}
+
+.pg-stats-ranking[data-lead] > .pg-title {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.pg-stats-top {
+  margin: 8px 0 0;
+}
+
+.pg-stats-ranking[data-lead] > .pg-stats-table {
+  margin-top: 0;
+}
+
+/* "The 50 most watched… and every ranking": a typed line, each link a finger tall. */
+[data-od="stats-best"],
+[data-od="best-stats"] {
+  font-size: 16px;
+  letter-spacing: var(--track-data);
+}
+
+.pg-stats-rankings > [data-od="stats-best"] {
+  margin: calc(-1 * clamp(22px, 2.6vw, 40px)) 0 0;
+  text-align: right;
+}
+
+[data-od="stats-best"] a,
+[data-od="best-stats"] a,
+.pg-stats-method a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+[data-od="stats-best"] a,
+[data-od="best-stats"] a {
+  text-transform: uppercase;
+}
+
+[data-od="stats-best"] a:hover,
+[data-od="best-stats"] a:hover,
+.pg-stats-method a:hover {
+  background: var(--toner);
+  color: var(--paper);
+}
+
+/* On /best: the line under "Full concerts in HD". */
+.pg > [data-od="best-stats"] {
+  margin: 0 var(--margin);
+}
+
+/* The decades: the page's black band, edge to edge. Paper on toner; the tally is a ruled bar. */
+[data-od="stats-decades"] {
+  margin: 0 calc(-1 * var(--margin));
+  padding: clamp(26px, 3vw, 42px) var(--margin) clamp(30px, 3.4vw, 48px);
+  background: var(--toner);
+  color: var(--paper);
+}
+
+[data-od="stats-decades"] > .pg-title {
+  background: var(--sheet);
+  color: var(--toner);
+}
+
+[data-od="stats-decades"] .pg-stats-table {
+  margin-top: 14px;
+  border-top-color: var(--paper);
+}
+
+[data-od="stats-decades"] th {
+  color: var(--toner-soft);
+}
+
+[data-od="stats-decades"] th:nth-child(2) {
+  width: 30%;
+}
+
+[data-od="stats-decades"] th:nth-child(3) {
+  padding-left: clamp(16px, 2.4vw, 34px);
+}
+
+[data-od="stats-decades"] tbody tr {
+  border-bottom-color: var(--paper);
+}
+
+[data-od="stats-decades"] a:hover {
+  background: var(--paper);
+  color: var(--toner);
+}
+
+[data-od="stats-decades"] a:focus-visible {
+  outline-color: var(--paper);
+}
+
+.pg-stats-decade {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pg-stats-decade a {
+  padding-top: 12px;
+  padding-right: clamp(16px, 2.4vw, 34px);
+  font-size: clamp(22px, 2.3vw, 32px);
+}
+
+[data-od="stats-decades"] td {
+  vertical-align: top;
+}
+
+.pg-stats-table .pg-stats-tally {
+  padding: 17px 0 13px;
+  text-align: left;
+  white-space: normal;
+}
+
+.pg-stats-table .pg-stats-views {
+  padding-top: 19px;
+}
+
+.pg-stats-count {
+  font-family: var(--font-strip);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pg-stats-bar {
+  display: block;
+  width: max(4px, calc(var(--share, 0) * 100%));
+  height: 12px;
+  margin-top: 7px;
+  background: var(--paper);
+}
+
+/* "Most covered": a small white sticker, crooked. */
+.pg-stats-flag {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 5px 8px 2px;
+  background: var(--sheet);
+  color: var(--toner);
+  font-family: var(--font-strip);
+  font-size: 15px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  rotate: -3deg;
+}
+
+.pg-stats-topgig a {
+  padding-top: 19px;
+  padding-left: clamp(16px, 2.4vw, 34px);
+}
+
+/* ---------- How these numbers are made: a clean sheet at the end, after the scissors ---------- */
+
+.pg-stats-method {
+  margin-top: clamp(10px, 1.6vw, 24px);
+  padding-top: 0;
+}
+
+.pg-stats-method::before {
+  content: "";
+  display: block;
+  margin-bottom: clamp(30px, 3.2vw, 44px);
+  border-top: var(--cut);
+}
+
+.pg-stats-method > .pg-title {
+  position: relative;
+  z-index: 1;
+  margin-left: 14px;
+}
+
+.pg-stats-sheet {
+  max-width: 94ch;
+  margin-top: -14px;
+  padding: 34px clamp(16px, 2.4vw, 34px) 16px;
+  background: var(--sheet);
+  outline: var(--keyline) solid var(--toner);
+  outline-offset: calc(-1 * var(--keyline));
+  box-shadow: var(--shadow-sheet);
+  rotate: -0.4deg;
+}
+
+.pg-stats-sheet p {
+  margin: 0 0 12px;
+  font-size: clamp(16.5px, 1.3vw, 18px);
+  line-height: 1.6;
+}
+
+.pg-stats-sheet a {
+  display: inline-block;
+  min-height: 0;
+  margin: -13px 0;
+  padding: 13px 2px;
+}
+
+.pg-stats-sheet p + p {
+  padding-top: 12px;
+  border-top: 2px dashed var(--toner);
+}
+
+/* ---------- Tablet ---------- */
+
+@media (max-width: 1100px) {
+  .pg-stats-figures {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-areas:
+      "con con con con con con"
+      "off off off boo boo boo"
+      "ban ban ban hou hou hou"
+      "pla pla fes fes cou cou"
+      "tim tim tim tim set set"
+      "son son son dec dec dec"
+      "yea yea yea yea yea yea";
+  }
+
+  [data-od="stats-total-concerts"] {
+    --fig: clamp(88px, 17vw, 168px);
+  }
+
+  .pg-stats-quote {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pg-stats-aside {
+    margin-top: 0;
+  }
+}
+
+/* ---------- Phones: the same figures two across, the tables one under the other ---------- */
+
+@media (max-width: 760px) {
+  .pg-stats-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "con con"
+      "off boo"
+      "ban hou"
+      "pla fes"
+      "cou dec"
+      "tim tim"
+      "set son"
+      "yea yea";
+    row-gap: 18px;
+  }
+
+  .pg-stats-figure {
+    --fig: 40px;
+  }
+
+  [data-od="stats-total-concerts"] {
+    --fig: clamp(84px, 25vw, 104px);
+  }
+
+  [data-od="stats-total-bands"],
+  [data-od="stats-total-hours"],
+  [data-od="stats-total-festivals"],
+  [data-od="stats-total-countries"],
+  [data-od="stats-total-decades"] {
+    --fig: 40px;
+  }
+
+  [data-od="stats-total-timed-songs"] {
+    --fig: clamp(58px, 17vw, 70px);
+  }
+
+  [data-od="stats-total-songs"] {
+    --fig: clamp(33px, 9.6vw, 40px);
+  }
+
+  [data-od="stats-total-years"] {
+    --fig: clamp(42px, 12.6vw, 52px);
+  }
+
+  .pg-stats-figure dt {
+    font-size: 15px;
+  }
+
+  .pg .pg-stats-facts {
+    rotate: 0deg;
+    box-shadow: var(--shadow-rest);
+  }
+
+  .pg-stats-rankings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pg-stats-ranking[data-lead] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pg-stats-top {
+    margin-right: 8px;
+  }
+
+  .pg-stats-rankings > [data-od="stats-best"] {
+    margin-top: -22px;
+    text-align: left;
+  }
+
+  .pg-stats-table:not(.pg-stats-table--decades) th:first-child {
+    width: 36px;
+  }
+
+  .pg-stats-value {
+    font-size: 15px;
+  }
+
+  /* "3 hours 33 minutes" breaks in two so the name keeps its room. */
+  [data-od="stats-longest"] .pg-stats-value {
+    width: 7.8em;
+    padding-bottom: 6px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  [data-od="stats-longest"] tbody tr:first-child .pg-stats-value span {
+    padding: 0.36em 0.4em 0.16em;
+  }
+
+  /* The decades stack: decade and count on one line, the tally, the gig, its views.
+     The heads stay for screen readers (the cells say their unit on the page instead). */
+  [data-od="stats-decades"] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  [data-od="stats-decades"] .pg-stats-table,
+  [data-od="stats-decades"] tbody {
+    display: block;
+  }
+
+  [data-od="stats-decades"] tbody tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    padding: 6px 0 12px;
+  }
+
+  .pg-stats-decade {
+    width: auto;
+  }
+
+  .pg-stats-decade a {
+    padding-right: 14px;
+    font-size: 26px;
+  }
+
+  .pg-stats-table .pg-stats-tally {
+    align-self: center;
+    padding: 0;
+  }
+
+  .pg-stats-table .pg-stats-views {
+    padding-top: 0;
+  }
+
+  .pg-stats-count {
+    font-family: var(--font-type);
+    font-size: 15px;
+  }
+
+  .pg-stats-count::after {
+    content: " official concerts";
+  }
+
+  .pg-stats-flag {
+    margin: 4px 0 0;
+  }
+
+  .pg-stats-topgig,
+  .pg-stats-table .pg-stats-views {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    text-align: left;
+  }
+
+  .pg-stats-topgig a {
+    min-height: var(--touch);
+    padding: 16px 0 4px;
+  }
+
+  .pg-stats-views span::after {
+    content: " views on YouTube";
+  }
+
+  .pg-stats-sheet {
+    rotate: 0deg;
+    box-shadow: var(--shadow-rest);
+  }
+}

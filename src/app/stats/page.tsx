@@ -2,11 +2,13 @@
 // from our database (src/lib/stats.ts, read in src/lib/stats-data.ts), with how they are made and when
 // they were last refreshed, so journalists and AI assistants can quote them with a source. Grows and
 // re-ranks by itself after every collector and refresh run. Indexed from ten official concerts.
-// Unstyled structure for now (designer): class names pg-stats-*, data-od="stats-*".
+// Look (design/DESIGN.md section 14, "In numbers"): class names pg-stats-*, styles at the end of pages.css.
 import type { Metadata } from "next";
-import { cache } from "react";
+import { cache, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
+import { YouTubePicture } from "@/components/gig/GigPicture";
 import { EmptyNote, PageHead, SectionTitle } from "@/components/gig/PageHead";
+import { PaperStrip } from "@/components/zine";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { formatDate } from "@/lib/format";
 import { clip, robotsFor, shareImages } from "@/lib/seo";
@@ -55,14 +57,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** One ranking: a caption, then numbered rows (rank, the linked item, its figure). */
-function Ranking({ id, title, unit, rows }: { id: string; title: string; unit: string; rows: { href: string; name: string; value: string }[] }) {
+/** One ranking: a caption, then numbered rows (rank, the linked item, its figure). `lead` is glued on beside the table. */
+function Ranking({ id, title, unit, rows, lead, tilt }: { id: string; title: string; unit: string; rows: { href: string; name: string; value: string }[]; lead?: ReactNode; tilt?: number }) {
   if (!rows.length) return null;
   return (
-    <section className="pg-stats-ranking" aria-labelledby={id} data-od={`stats-${id}`}>
-      <SectionTitle id={id} small>
+    <section className="pg-stats-ranking" aria-labelledby={id} data-od={`stats-${id}`} data-lead={lead ? true : undefined}>
+      <SectionTitle id={id} small tilt={tilt}>
         {title}
       </SectionTitle>
+      {lead}
       <table className="pg-stats-table">
         <thead>
           <tr>
@@ -78,7 +81,9 @@ function Ranking({ id, title, unit, rows }: { id: string; title: string; unit: s
               <td className="pg-stats-name">
                 <Link href={r.href}>{r.name}</Link>
               </td>
-              <td className="pg-stats-value">{r.value}</td>
+              <td className="pg-stats-value">
+                <span>{r.value}</span>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -93,6 +98,9 @@ export default async function StatsPage() {
   const facts = statsFacts(st);
   const date = statsDate(st);
   const covered = mostCoveredDecade(st.decades);
+  const top = st.mostWatched[0];
+  // The tally beside each decade: its share of the fullest decade, drawn as a ruled bar (decoration).
+  const fullest = Math.max(1, ...st.decades.map((d) => d.concerts));
   // The headline figures, each linked to where it can be browsed when there is such a page.
   const totals: { id: string; label: string; value: string; href?: string }[] = [
     { id: "concerts", label: "Full concerts", value: num(t.concerts), href: "/concerts" },
@@ -143,19 +151,24 @@ export default async function StatsPage() {
           <section className="pg-section pg-stats-totals" aria-labelledby="stats-totals" data-od="stats-totals">
             <SectionTitle id="stats-totals">The totals</SectionTitle>
             <dl className="pg-stats-figures">
-              {totals.map((x) => (
-                <div key={x.id} className="pg-stats-figure" data-od={`stats-total-${x.id}`}>
+              {totals.map((x, i) => (
+                <div key={x.id} className="pg-stats-figure zn-slap" data-from={i % 2 ? "right" : undefined} style={{ "--i": Math.min(i, 8) } as CSSProperties} data-od={`stats-total-${x.id}`}>
                   <dt>{x.href ? <Link href={x.href}>{x.label}</Link> : x.label}</dt>
                   <dd>{x.value}</dd>
                 </div>
               ))}
             </dl>
             {/* The same figures as sentences that can be quoted on their own (the lead is the first). */}
-            <ul className="pg-stats-facts" data-od="stats-facts">
-              {facts.slice(1).map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
+            <div className="pg-stats-quote">
+              <p className="zn-marker pg-stats-aside" data-size="big">
+                we counted. you quote.
+              </p>
+              <ul className="pg-stats-facts" data-od="stats-facts">
+                {facts.slice(1).map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </div>
           </section>
 
           {/* Rankings: official concerts only, as every "best of" list. */}
@@ -165,6 +178,19 @@ export default async function StatsPage() {
               title={RANKINGS.mostWatched}
               unit="Views on YouTube"
               rows={st.mostWatched.map((c) => ({ href: concertPath(c), name: concertName(c), value: num(c.viewCount) }))}
+              lead={
+                top && (
+                  // Number one's picture: whole and untouched on its black mount; the words sit on strips under it.
+                  <YouTubePicture concert={top} sizes="(min-width: 901px) 38vw, 92vw" tilt={-1.5} shadow className="pg-stats-top">
+                    <PaperStrip tone="white" size="name" tilt={1.2}>
+                      {top.credits}
+                    </PaperStrip>
+                    <PaperStrip hand="type" tone="black" keyline tilt={-0.8}>
+                      No.1 {"///"} {num(top.viewCount)} views on YouTube
+                    </PaperStrip>
+                  </YouTubePicture>
+                )
+              }
             />
             {st.mostWatched.length > 0 && (
               <p className="pg-thin" data-od="stats-best">
@@ -174,30 +200,33 @@ export default async function StatsPage() {
 
             {st.decades.length > 0 && (
               <section className="pg-stats-ranking" aria-labelledby="decades" data-od="stats-decades">
-                <SectionTitle id="decades" small>
+                <SectionTitle id="decades" small tilt={1}>
                   {RANKINGS.decades}
                 </SectionTitle>
-                <table className="pg-stats-table pg-stats-table--decades">
-                  <thead>
-                    <tr>
-                      <th scope="col">Decade</th>
-                      <th scope="col">Official concerts</th>
-                      <th scope="col">Most watched</th>
-                      <th scope="col">Views on YouTube</th>
+                {/* The roles are spelled out because a phone stacks each row (CSS changes the display of the
+                    rows and cells, which would otherwise make browsers forget this is a table). */}
+                <table className="pg-stats-table pg-stats-table--decades" role="table">
+                  <thead role="rowgroup">
+                    <tr role="row">
+                      <th scope="col" role="columnheader">Decade</th>
+                      <th scope="col" role="columnheader">Official concerts</th>
+                      <th scope="col" role="columnheader">Most watched</th>
+                      <th scope="col" role="columnheader">Views on YouTube</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody role="rowgroup">
                     {st.decades.map((d) => (
-                      <tr key={d.label} data-od={d === covered ? "stats-most-covered" : undefined}>
-                        <td className="pg-stats-name">
+                      <tr key={d.label} role="row" data-od={d === covered ? "stats-most-covered" : undefined}>
+                        <td className="pg-stats-name pg-stats-decade" role="cell">
                           <Link href={decadePath(d.label)}>The {d.label}</Link>
                         </td>
-                        <td className="pg-stats-value">
-                          {num(d.concerts)}
+                        <td className="pg-stats-value pg-stats-tally" role="cell">
+                          <span className="pg-stats-count">{num(d.concerts)}</span>
                           {d === covered && <span className="pg-stats-flag"> most covered</span>}
+                          <span className="pg-stats-bar" aria-hidden="true" style={{ "--share": (d.concerts / fullest).toFixed(3) } as CSSProperties} />
                         </td>
-                        <td>{d.top ? <Link href={concertPath(d.top)}>{concertName(d.top)}</Link> : null}</td>
-                        <td className="pg-stats-value">{d.top ? num(d.top.viewCount) : null}</td>
+                        <td className="pg-stats-name pg-stats-topgig" role="cell">{d.top ? <Link href={concertPath(d.top)}>{concertName(d.top)}</Link> : null}</td>
+                        <td className="pg-stats-value pg-stats-views" role="cell">{d.top ? <span>{num(d.top.viewCount)}</span> : null}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -207,24 +236,28 @@ export default async function StatsPage() {
 
             <Ranking
               id="bands"
+              tilt={-1}
               title={RANKINGS.bands}
               unit="Official concerts"
               rows={st.bands.map((b) => ({ href: bandPath(b), name: b.name, value: num(b.concerts) }))}
             />
             <Ranking
               id="places"
+              tilt={1.2}
               title={RANKINGS.places}
               unit="Official concerts"
               rows={st.places.map((p) => ({ href: placePath(p), name: p.name, value: num(p.concerts) }))}
             />
             <Ranking
               id="longest"
+              tilt={1}
               title={RANKINGS.longest}
               unit="Length"
               rows={st.longest.map((c) => ({ href: concertPath(c), name: concertName(c), value: lengthWords(c.durationSeconds) }))}
             />
             <Ranking
               id="songs"
+              tilt={-1.2}
               title={RANKINGS.songs}
               unit="Setlists"
               rows={st.songs.map((x) => ({ href: songRowPath(x), name: `${quoted(x.title)} by ${x.band.name}`, value: num(x.versions) }))}
@@ -235,11 +268,13 @@ export default async function StatsPage() {
 
       <section className="pg-section pg-stats-method" aria-labelledby="stats-method" data-od="stats-method">
         <SectionTitle id="stats-method">How these numbers are made</SectionTitle>
-        <p>{STATS_METHOD}</p>
-        <p>
-          You are welcome to quote these figures with a link to this page. Last updated <time dateTime={date}>{formatDate(st.updatedAt)}</time>; a plain-text copy is at{" "}
-          <a href={`${STATS_PATH}.md`}>{`${STATS_PATH}.md`}</a>.
-        </p>
+        <div className="pg-stats-sheet">
+          <p>{STATS_METHOD}</p>
+          <p>
+            You are welcome to quote these figures with a link to this page. Last updated <time dateTime={date}>{formatDate(st.updatedAt)}</time>; a plain-text copy is at{" "}
+            <a href={`${STATS_PATH}.md`}>{`${STATS_PATH}.md`}</a>.
+          </p>
+        </div>
       </section>
     </main>
   );

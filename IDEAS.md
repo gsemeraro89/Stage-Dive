@@ -319,3 +319,29 @@ Nothing here is built. Owner approval first.
 **Why it fits.** Zines get dog-eared. It tells a returning fan what is new to them without a "watched" badge, and nothing touches the YouTube picture.
 
 **Effort.** Medium. A list of opened gigs kept in the browser (engineering, no account), one small cut-paper corner in the kit.
+
+---
+
+## 2026-11-26 · after "STAGEDIVE in numbers"
+
+### 1. A "quote this" slip under every chart
+**Idea.** Under each ranking, one typed line a journalist can lift whole ("Source: STAGEDIVE in numbers, 23.11.26, stagedive…/stats#bands") with a "copy" press button, and an anchor per chart so a link lands on the right table.
+
+**Why it fits.** The page exists to be quoted; a tear-off slip is how a zine hands you its address. It also gives AI assistants a clean source line next to every figure.
+
+**Effort.** Small. Anchors exist already (the section ids); one typed line per chart and one small copy button (engineering: a few lines of script).
+
+### 2. The number of the week on the cover
+**Idea.** The homepage's "In this issue" list gets one figure from this page each week, cut on a strip ("28,123 songs you can jump to"), linking here.
+
+**Why it fits.** It makes the numbers part of the issue instead of a back page, and it changes by itself as the pile grows.
+
+**Effort.** Small. One figure picked by a rule (rotate through the totals by week number); the strip is in the kit.
+
+### 3. A tally you can watch grow
+**Idea.** Keep one row a week (date, concerts, bands, hours) and draw "the pile, week by week" as a row of ruled bars on this page, the way the decades are drawn.
+
+**Why it fits.** "How fast is it growing" is the next thing a journalist asks, and a hand-ruled tally is pure zine. Only facts we hold: the row is written when the collector runs.
+
+**Effort.** Medium. A small table and one line in the refresh job (engineering), then one more black band here (design).
+
