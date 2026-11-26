@@ -29,8 +29,13 @@ export const GENRES = [
 
 export type GenreName = (typeof GENRES)[number];
 
-/** Every genre that can appear on the site, in display order. */
-export const SITE_GENRES = GENRES;
+/**
+ * Every genre that can appear on the site, in display order. "reggae" (owner, 26 Nov 2026) is shown on the
+ * site for Bob Marley only and is deliberately NOT in GENRES: the classifier is never offered it, so the
+ * collector does not go looking for reggae acts. A later Bob Marley concert gets it from the artist's
+ * existing genres (genresWithFallback).
+ */
+export const SITE_GENRES = [...GENRES, "reggae"] as const;
 
 /** How genre labels found in source data (the seed CSV, Claude's answers) map onto GENRES. */
 export const GENRE_ALIASES: Record<string, GenreName> = {
