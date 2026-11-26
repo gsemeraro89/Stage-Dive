@@ -251,12 +251,18 @@ export function bandJsonLd(
     ...(extra.genres?.length ? { genre: extra.genres } : {}),
     ...(band.origin ? { foundingLocation: { "@type": "Place", name: band.origin } } : {}),
     ...(extra.sameAs?.length ? { sameAs: extra.sameAs } : {}),
+    // Each concert's video, the same one its page describes (Google, 26 Nov 2026: band-page videos lacked
+    // "description" and "embedUrl"); the description is a plain fact line built from our data.
     subjectOf: concerts.slice(0, 20).map((c) => ({
       "@type": "VideoObject",
+      "@id": `${concertUrl(c.slug)}#video`,
       name: c.title,
+      description: `${band.name} · full concert${[c.venue?.name ?? c.city, c.performedYear].some(Boolean) ? ` · ${[c.venue?.name ?? c.city, c.performedYear].filter(Boolean).join(" ")}` : ""} · ${Math.round(c.durationSeconds / 60)} minutes`,
       url: concertUrl(c.slug),
+      embedUrl: `https://www.youtube.com/embed/${c.youtubeId}`,
       thumbnailUrl: c.thumbnail.src,
       uploadDate: c.publishedAt.toISOString(),
+      duration: isoDuration(c.durationSeconds),
     })),
   };
 }

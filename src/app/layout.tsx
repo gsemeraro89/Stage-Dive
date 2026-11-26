@@ -34,7 +34,9 @@ export const metadata: Metadata = {
   description:
     "Full rock concerts, the whole set, by band, festival, room, decade, genre and tour, with setlists. Press play once and keep listening.",
   // Pages are indexed only on the live site (SITE_INDEXABLE=true, src/lib/seo.ts); a page can still opt out.
-  robots: robotsFor(true),
+  // Large image and full video previews in search results (FullDJSet plan, 26 Nov 2026); a page that is
+  // not worth indexing still says noindex through robotsFor().
+  robots: robotsFor(true) ?? { index: true, follow: true, "max-image-preview": "large", "max-video-preview": -1, "max-snippet": -1 },
   applicationName: SITE_NAME,
   openGraph: { siteName: SITE_NAME, type: "website", locale: "en_GB", images: shareImages() },
   twitter: { card: "summary_large_image" },

@@ -117,6 +117,10 @@ describe("structured data", () => {
       image: "https://stagedive.example/photos/bands/metallica?v=1",
     });
     expect((ld.subjectOf as unknown[]).length).toBe(1);
+    // Google wants a description and an embed URL on every video (26 Nov 2026).
+    const v = (ld.subjectOf as Record<string, string>[])[0];
+    expect(v.description).toBeTruthy();
+    expect(v.embedUrl).toMatch(/^https:\/\/www\.youtube\.com\/embed\//);
     expect(bandJsonLd({ slug: "x", name: "X" }, [])).not.toHaveProperty("sameAs");
   });
 
