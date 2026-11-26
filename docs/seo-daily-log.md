@@ -73,3 +73,16 @@ concerts by views ("no definitive ranking"; /best is exactly that).
 Action: the 6 concert pages of those gaps sent to Bing (Slane 2019, From the Basement, Montreal 1984, Radiohead
 Pinkpop 1996 and 2001, Berlin 2016); owner asked to request them in Search Console; outreach to JamBase, Loudwire,
 Blabbermouth (the sites AI cites) goes into the press list.
+
+### 26 Nov, afternoon: internal links to pages near page one
+
+Search Console (18-26 Nov) showed Google sending band searches to our list pages (/artists, /concerts, /venues)
+at positions 4-19, and /artists/radiohead at 16.75 for "radiohead setlist". Live today: "Searched this week"
+(src/lib/rising.ts, 8 links, entries expire after 28 days) on home, /artists, /concerts, /venues; band-page links
+now say "All <band> full concerts + setlists"; robotsFor() now emits index + large previews on strong pages (they
+had no robots tag before); 404 pages say only noindex. Reggae added as a site-only genre (Bob Marley; not offered
+to the classifier). Smashing Pumpkins Shoreline 1997 hidden (channel "SmashingPumpkins on MV" not verifiably official).
+Bing, 6 URLs: /concerts/limp-bizkit-pinkpop-2001, /artists/kvelertak, /artists/killing-joke,
+/concerts/the-national-ypsigrock-2019, /concerts/grandbrothers-kolner-dom-2022,
+/concerts/teksuo-resurrection-fest-estrella-galicia-2024.
+Owner, 26 Nov: no bios for thin pages with search demand for now (grandbrothers, teksuo, yonderboi, lucas-hamming).
