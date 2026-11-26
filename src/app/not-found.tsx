@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { PressButton, StripHeading } from "@/components/zine";
+import { NOT_FOUND_METADATA } from "@/lib/seo";
+
+// Only Next.js's own "noindex" on a 404, never the layout's "index, follow" as well (src/lib/seo.ts).
+export const metadata: Metadata = NOT_FOUND_METADATA;
 
 export default function NotFound() {
   return (

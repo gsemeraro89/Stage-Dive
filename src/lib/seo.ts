@@ -71,13 +71,27 @@ export function songIndexIsStrong(s: { songs: number; setlists: number }): boole
 }
 
 /**
- * Robots value for a page: never index anything but the live site; there, index the page when it is
- * worth it, else keep it out of the index but let its links be followed.
+ * An indexable page: indexed, links followed, with large image and full video previews in search results
+ * (26 Nov 2026). Written out on every indexable page, not left to the layout: a page whose metadata says
+ * `robots: undefined` replaces the layout's value with nothing, so the previews were lost on those pages.
  */
-export function robotsFor(worthIndexing: boolean): { index: boolean; follow: boolean } | undefined {
+export const INDEX_ROBOTS = { index: true, follow: true, "max-image-preview": "large", "max-video-preview": -1, "max-snippet": -1 } as const;
+
+/**
+ * Robots value for a page: never index anything but the live site; there, index the page when it is
+ * worth it (INDEX_ROBOTS), else keep it out of the index but let its links be followed.
+ */
+export function robotsFor(worthIndexing: boolean): typeof INDEX_ROBOTS | { index: false; follow: boolean } {
   if (!siteIsIndexable()) return { index: false, follow: false };
-  return worthIndexing ? undefined : { index: false, follow: true };
+  return worthIndexing ? INDEX_ROBOTS : { index: false, follow: true };
 }
+
+/**
+ * A page that is not found (src/app/not-found.tsx). Next.js already writes <meta name="robots" content="noindex">
+ * on every 404; without this the root layout's default ("index, follow, max-video-preview...") was written
+ * too, so a 404 carried two contradicting robots tags. `robots: null` drops the inherited one.
+ */
+export const NOT_FOUND_METADATA = { title: "Page Not Found", robots: null } as const;
 
 // ---- Titles and descriptions ----
 

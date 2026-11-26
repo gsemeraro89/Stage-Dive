@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { daySpan, venueYearAnswers } from "../src/lib/answers";
 import { concertMarkdown, llmsFullTxt, llmsTxt, venueYearMarkdown } from "../src/lib/llms";
-import { robotsFor, venueYearIsStrong, venueYearName, venueYearSearchTitle } from "../src/lib/seo";
+import { INDEX_ROBOTS, robotsFor, venueYearIsStrong, venueYearName, venueYearSearchTitle } from "../src/lib/seo";
 import { buildSitemap, type SitemapConcert } from "../src/lib/sitemap";
 import { venueYearJsonLd } from "../src/lib/structured-data";
 import { isFestival, parseYear, strongYearsInDecade, venueYearLinks, venueYearPath, yearCounts } from "../src/lib/venue-years";
@@ -85,7 +85,7 @@ describe("festival and venue years: indexing", () => {
     expect(venueYearIsStrong(1)).toBe(false);
     process.env.SITE_INDEXABLE = "true";
     expect(robotsFor(venueYearIsStrong(1))).toEqual({ index: false, follow: true });
-    expect(robotsFor(venueYearIsStrong(2))).toBeUndefined();
+    expect(robotsFor(venueYearIsStrong(2))).toEqual(INDEX_ROBOTS);
   });
   it("writes the title the way people search", () => {
     expect(venueYearSearchTitle("Pinkpop", 1995, true)).toBe("Pinkpop 1995 · Full Concerts and Setlists");

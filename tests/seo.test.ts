@@ -1,4 +1,5 @@
 // Search engines: which pages may be indexed, search titles and descriptions, share images.
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   abs,
@@ -10,6 +11,8 @@ import {
   decadeSearchTitle,
   genreSearchTitle,
   hubIsStrong,
+  INDEX_ROBOTS,
+  NOT_FOUND_METADATA,
   robotsFor,
   shareImages,
   siteIsIndexable,
@@ -37,8 +40,18 @@ describe("indexing", () => {
   });
   it("on the live site, indexes strong pages and keeps thin ones followed but out of the index", () => {
     process.env.SITE_INDEXABLE = "true";
-    expect(robotsFor(true)).toBeUndefined();
+    expect(robotsFor(true)).toEqual(INDEX_ROBOTS);
     expect(robotsFor(false)).toEqual({ index: false, follow: true });
+  });
+  it("writes the large previews on every indexable page, not only where the layout's default survives", () => {
+    process.env.SITE_INDEXABLE = "true";
+    expect(robotsFor(true)).toMatchObject({ index: true, follow: true, "max-image-preview": "large", "max-video-preview": -1, "max-snippet": -1 });
+  });
+  it("leaves a not-found page with Next.js's own noindex only (no inherited 'index, follow')", () => {
+    process.env.SITE_INDEXABLE = "true";
+    expect(NOT_FOUND_METADATA.robots).toBeNull();
+    // The 404 page uses it (src/app/not-found.tsx).
+    expect(readFileSync("src/app/not-found.tsx", "utf8")).toMatch(/export const metadata: Metadata = NOT_FOUND_METADATA/);
   });
   it("counts a concert as strong with a setlist, a hand-pick or a write-up of 400+ characters", () => {
     expect(concertIsStrong({ hasSetlist: true, curated: false, writeUp: null })).toBe(true);

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { bandSongsAnswers, concertAnswers, songAnswers } from "../src/lib/answers";
 import { concertNotes, noteText } from "../src/lib/concert-notes";
 import { bandMarkdown, bandSongsMarkdown, concertMarkdown, llmsFullTxt, llmsTxt, songMarkdown } from "../src/lib/llms";
-import { bandSongsSearchTitle, robotsFor, songIndexIsStrong, songIsStrong, songSearchTitle } from "../src/lib/seo";
+import { bandSongsSearchTitle, INDEX_ROBOTS, robotsFor, songIndexIsStrong, songIsStrong, songSearchTitle } from "../src/lib/seo";
 import { buildSitemap } from "../src/lib/sitemap";
 import { bandSongs, songLinker, type SongConcert, type SongTrack } from "../src/lib/songs";
 import { bandSongsJsonLd, concertEventJsonLd, songJsonLd } from "../src/lib/structured-data";
@@ -67,7 +67,7 @@ describe("strong pages", () => {
     delete process.env.SITE_INDEXABLE;
     expect(robotsFor(songIsStrong(4))).toEqual({ index: false, follow: false });
     process.env.SITE_INDEXABLE = "true";
-    expect(robotsFor(songIsStrong(4))).toBeUndefined();
+    expect(robotsFor(songIsStrong(4))).toEqual(INDEX_ROBOTS);
     expect(robotsFor(songIsStrong(1))).toEqual({ index: false, follow: true });
   });
 });

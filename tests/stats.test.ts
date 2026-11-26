@@ -2,7 +2,7 @@
 // Markdown copy, the llms files, the sitemap rule and the copy rules.
 import { afterEach, describe, expect, it } from "vitest";
 import { llmsFullTxt, llmsTxt, statsMarkdown } from "../src/lib/llms";
-import { robotsFor } from "../src/lib/seo";
+import { INDEX_ROBOTS, robotsFor } from "../src/lib/seo";
 import { buildSitemap, type SitemapConcert } from "../src/lib/sitemap";
 import {
   concertName,
@@ -260,7 +260,7 @@ describe("stats: indexing", () => {
   });
   it("is indexed on the live site from ten official concerts, noindex,follow below", () => {
     process.env.SITE_INDEXABLE = "true";
-    expect(robotsFor(statsIsStrong(10))).toBeUndefined();
+    expect(robotsFor(statsIsStrong(10))).toEqual(INDEX_ROBOTS);
     expect(robotsFor(statsIsStrong(9))).toEqual({ index: false, follow: true });
   });
 });
