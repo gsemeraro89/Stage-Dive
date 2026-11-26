@@ -4,7 +4,7 @@
 //   where, when), linked to each other, + BreadcrumbList.
 // - Band pages: MusicGroup (sameAs MusicBrainz / Wikidata / the band's channel when we hold them) +
 //   BreadcrumbList + FAQPage for the questions shown on the page.
-// - Lists: ItemList. Home: WebSite (with its search) + Organization, + ItemLists for its bands, places and rankings.
+// - Lists: ItemList. /stats: Dataset + a ranked ItemList per ranking. Home: WebSite (with its search) + Organization, + ItemLists for its bands, places and rankings.
 // Only facts that are visible on the page or held in the database; nothing is invented.
 // Tested in tests/structured-data.test.ts.
 import { concertAnswers } from "./answers";
@@ -15,6 +15,7 @@ import { startAtPath, START_PARAM } from "./player/start-time";
 import type { SetlistView } from "./setlist/view";
 import { songPath, type Song } from "./songs";
 import { SITE_NAME } from "./site";
+import { RANKINGS, rankingItems, STATS_HEADING, STATS_METHOD, STATS_PATH, statsDate, statsFacts, type SiteStats } from "./stats";
 
 type Json = Record<string, unknown>;
 
@@ -408,4 +409,32 @@ export function homeRankingLists(
   return rankings
     .filter((r) => r.concerts.length)
     .map((r) => itemList(r.heading, r.concerts.map((c) => ({ path: `/concerts/${c.slug}`, name: rankedName(c) })), true));
+}
+
+// ---- "STAGEDIVE in numbers" (src/lib/stats.ts) ----
+
+/**
+ * The /stats page: a schema.org Dataset (the figures, who made them, when, how, and the Markdown copy as
+ * its download) and one ItemList per ranking shown. No licence is claimed: none is set.
+ */
+export function statsJsonLd(st: SiteStats): Json[] {
+  const facts = statsFacts(st);
+  const range = st.totals.firstYear && st.totals.lastYear ? `${st.totals.firstYear}/${st.totals.lastYear}` : null;
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Dataset",
+      name: STATS_HEADING,
+      description: facts.join(" "),
+      url: abs(STATS_PATH),
+      creator: { "@type": "Organization", "@id": `${abs("/")}#organization`, name: SITE_NAME, url: abs("/") },
+      dateModified: statsDate(st),
+      ...(range ? { temporalCoverage: range } : {}),
+      measurementTechnique: STATS_METHOD,
+      variableMeasured: ["Full concerts", "Official concerts", "Bootlegs", "Bands", "Festivals and venues", "Concerts with a setlist", "Timed songs", "Hours of music", "Countries", "Views on YouTube"],
+      distribution: { "@type": "DataDownload", encodingFormat: "text/markdown", contentUrl: abs(`${STATS_PATH}.md`) },
+    },
+    // Every ranking is best first, except the decades (oldest first).
+    ...rankingItems(st).map(([name, items]) => itemList(name, items, name !== RANKINGS.decades)),
+  ];
 }

@@ -1145,6 +1145,8 @@ export async function llmsData() {
     venueYears,
     hd,
     best: best.filter(bestIsStrong).map((l) => ({ slug: l.slug, title: bestHeading(l), count: shownIn(l) })),
+    // Official concerts ("STAGEDIVE in numbers", src/lib/stats.ts): the overall ranking counts them all.
+    stats: best.find((l) => l.kind === "all")?.count ?? 0,
     bands: bands.map((b) => ({ slug: b.slug, name: b.name, concerts: b.concerts })),
     venues: options.venues.map((v) => ({ slug: v.slug, name: v.name, concerts: v.count })),
     genres: genres.map((g) => ({ slug: g.slug, name: g.name, count: g.count })),

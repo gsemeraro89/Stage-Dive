@@ -20,6 +20,26 @@ import { plural } from "./text";
 import type { LiveAlbumView } from "./live-albums";
 import { HD_HEADING, HD_PATH, hdIsStrong, hdLead, hdQuestions } from "./hd";
 import { bandNewsPath, NEWS_HUBS, newsHubIsStrong, newsHubPath } from "./news/hubs";
+import {
+  bandPath,
+  concertName,
+  concertPath,
+  decadePath,
+  lengthWords,
+  mostCoveredDecade,
+  num,
+  placePath,
+  RANKINGS,
+  songRowPath,
+  STATS_HEADING,
+  STATS_METHOD,
+  STATS_PATH,
+  statsDate,
+  statsFacts,
+  statsIsStrong,
+  statsQuestions,
+  type SiteStats,
+} from "./stats";
 import { BOOTLEG_EXPLAINED, bootlegCredit, bootlegNote, FAN_SECTION_TITLE, type BootlegMark } from "./bootlegs";
 
 export const SITE_SUMMARY =
@@ -53,6 +73,8 @@ export interface LlmsData {
   best?: { slug: string; title: string; count: number }[];
   /** Official concerts in HD (src/lib/hd.ts); the page is listed from ten. */
   hd?: number;
+  /** Official concerts, for "STAGEDIVE in numbers" (src/lib/stats.ts); the page is listed from ten. */
+  stats?: number;
   /** The newest published news articles (src/lib/news), newest first. */
   news?: { slug: string; title: string; publishedAt: Date }[];
   /** Published articles per news topic page (hub slug -> count); strong ones are listed. */
@@ -86,6 +108,11 @@ export function llmsTxt(data: LlmsData): string {
       ? [`- [Most watched](${abs("/best")}): rankings of the most watched concerts, overall, by decade, by genre and by kind of place, by views on YouTube`]
       : []),
     ...(hdIsStrong(data.hd ?? 0) ? [`- [Full concerts in HD](${abs(HD_PATH)}): the ${data.hd} official concerts in high definition, most watched first`] : []),
+    ...(statsIsStrong(data.stats ?? 0)
+      ? [
+          `- [${STATS_HEADING}](${abs(STATS_PATH)}): figures to quote with a source: how many concerts, bands, festivals, setlists and hours of music, the most watched concerts, the bands and places with the most concerts, the longest concerts and the most played songs live (Markdown copy at ${abs(`${STATS_PATH}.md`)})`,
+        ]
+      : []),
     ...(data.news?.length
       ? [
           `- [News](${abs("/news")}): short news about the bands and festivals on the site (tours, festival line-ups, live albums, reunions, anniversaries), written by ${SITE_NAME} from the music press, each naming and linking its source; RSS at ${abs("/news/feed.xml")}; a Markdown copy of an article is at its address with \`.md\` added`,
@@ -211,6 +238,9 @@ export function llmsFullTxt(data: LlmsData & { songs?: SongCatalogueBand[]; most
       : []),
     ...bestSection(data.best ?? []),
     ...(hdIsStrong(data.hd ?? 0) ? ["## Full concerts in HD", "", `- [${HD_HEADING}](${abs(HD_PATH)}): ${count(data.hd!)} in high definition, most watched first`, ""] : []),
+    ...(statsIsStrong(data.stats ?? 0)
+      ? ["## In numbers", "", `- [${STATS_HEADING}](${abs(STATS_PATH)}): the site's figures and rankings, with how they are made (Markdown copy at ${abs(`${STATS_PATH}.md`)})`, ""]
+      : []),
     ...venueYearSection(data.venueYears ?? []),
     ...songSections(data.songs ?? []),
     ...(strongHubs(data.newsHubs).length
@@ -547,6 +577,43 @@ export function hdMarkdown(total: number, concerts: (ConcertLine & { viewCount: 
     `Rankings by views: ${abs("/best")}`,
     "",
     `Source: ${SITE_NAME}, ${abs(HD_PATH)}`,
+    "",
+  ].join("\n");
+}
+
+// ---- "STAGEDIVE in numbers" (src/lib/stats.ts) ----
+
+/** /stats.md: the figures, every ranking with links, how they are made, and questions. */
+export function statsMarkdown(st: SiteStats): string {
+  const views = (n: number) => `${num(n)} views on YouTube`;
+  const ranked = (title: string, lines: string[]) => (lines.length ? [`## ${title}`, "", ...lines, ""] : []);
+  const covered = mostCoveredDecade(st.decades);
+  return [
+    `# ${STATS_HEADING}`,
+    "",
+    `Last updated ${statsDate(st)}. Source: ${abs(STATS_PATH)}. You are welcome to quote these figures with a link to that page.`,
+    "",
+    ...statsFacts(st).map((f) => `- ${f}`),
+    "",
+    ...ranked(RANKINGS.mostWatched, st.mostWatched.map((c, i) => `${i + 1}. [${concertName(c)}](${abs(concertPath(c))}): ${views(c.viewCount)}`)),
+    ...ranked(
+      RANKINGS.decades,
+      st.decades.map(
+        (d) =>
+          `- [The ${d.label}](${abs(decadePath(d.label))}): ${num(d.concerts)} official concerts${d === covered ? " (the most covered decade)" : ""}` +
+          (d.top ? `; most watched: [${concertName(d.top)}](${abs(concertPath(d.top))}), ${views(d.top.viewCount)}` : ""),
+      ),
+    ),
+    ...ranked(RANKINGS.bands, st.bands.map((b, i) => `${i + 1}. [${b.name}](${abs(bandPath(b))}): ${num(b.concerts)} official concerts`)),
+    ...ranked(RANKINGS.places, st.places.map((p, i) => `${i + 1}. [${p.name}](${abs(placePath(p))}): ${num(p.concerts)} official concerts`)),
+    ...ranked(RANKINGS.longest, st.longest.map((c, i) => `${i + 1}. [${concertName(c)}](${abs(concertPath(c))}): ${lengthWords(c.durationSeconds)}`)),
+    ...ranked(RANKINGS.songs, st.songs.map((x, i) => `${i + 1}. [${x.title} by ${x.band.name}](${abs(songRowPath(x))}): in ${plural(x.versions, "setlist")}`)),
+    "## How these numbers are made",
+    "",
+    STATS_METHOD,
+    "",
+    ...qaMarkdown(statsQuestions(st)),
+    `Source: ${SITE_NAME}, ${abs(STATS_PATH)}`,
     "",
   ].join("\n");
 }

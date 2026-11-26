@@ -13,6 +13,7 @@ import { bandIsStrong, concertIsStrong, hubIsStrong, songIndexIsStrong, songIsSt
 import { bandSongsPath, songPath } from "./songs";
 import { bestIsStrong, bestPath, bestSlugsFor } from "./best";
 import { HD_PATH, hdIsStrong } from "./hd";
+import { STATS_PATH, statsIsStrong } from "./stats";
 import { newsIsStrong } from "./news/seo";
 import { bandNewsIsStrong, bandNewsPath, NEWS_HUBS, newsHubIsStrong, newsHubPath } from "./news/hubs";
 
@@ -115,6 +116,11 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
   if (hdIsStrong(hd.length)) {
     best.push({ path: HD_PATH, lastModified: hd.reduce<Date | undefined>((d, c) => later(d, c.updatedAt), undefined), priority: 0.6, changeFrequency: "daily" });
   }
+  // "STAGEDIVE in numbers" (src/lib/stats.ts): from ten official concerts, as on the page; figures change every night.
+  const official = concerts.filter((c) => !c.bootleg);
+  const stats: SitemapEntry[] = statsIsStrong(official.length)
+    ? [{ path: STATS_PATH, lastModified: official.reduce<Date | undefined>((d, c) => later(d, c.updatedAt), undefined), priority: 0.7, changeFrequency: "daily" }]
+    : [];
   if (best.length) best.unshift({ path: "/best", lastModified: best.reduce<Date | undefined>((d, e) => later(d, e.lastModified!), undefined), priority: 0.7, changeFrequency: "daily" });
   return [
     ...FIXED_PAGES,
@@ -129,6 +135,7 @@ export function buildSitemap(concerts: SitemapConcert[], bands: SitemapBand[], s
     ...hubs((c) => [c.tourSlug], (k) => `/tours/${k}`, 0.6, "monthly"),
     // "Best of" rankings from ten concerts (src/lib/best.ts); views change every night.
     ...best,
+    ...stats,
     ...concerts
       .filter(concertIsStrong)
       .map((c): SitemapEntry => ({ path: `/concerts/${c.slug}`, lastModified: c.updatedAt, priority: 0.7, changeFrequency: "monthly" })),

@@ -77,6 +77,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/hd" data-od="footer-hd">
               IN HD &gt;&gt;
             </Link>
+            {/* Unstyled for now (designer): "STAGEDIVE in numbers" (src/lib/stats.ts). */}
+            <Link href="/stats" data-od="footer-stats">
+              IN NUMBERS &gt;&gt;
+            </Link>
             <Link href="/news" data-od="footer-news">
               NEWS &gt;&gt;
             </Link>
