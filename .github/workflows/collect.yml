@@ -1,16 +1,14 @@
 # Collector: a manual button ("Run workflow") with a dry-run option.
-# The daily schedule is PAUSED (owner, 18 Nov 2026) until step 6 of the brief (dry run for the approved bands,
-# report, owner's OK). To switch it back on, restore under "on:":
-#   schedule:
-#     - cron: "47 8 * * *"   # 08:47 UTC, just after YouTube's daily quota resets
-# A scheduled run publishes only when the repository variable COLLECTOR_PUBLISH is true.
+# Runs every day at 08:47 UTC, just after YouTube's daily quota resets, and publishes (owner, 26 Nov 2026:
+# "run the collection every day automatically"). To make the daily run a dry run again, set the repository
+# variable COLLECTOR_PUBLISH to "false".
 # Secrets (repository Settings -> Secrets and variables -> Actions):
 #   DATABASE_URL (Render "External Database URL"), YOUTUBE_API_KEY, ANTHROPIC_API_KEY
 # bootleg_check: a measuring dry run over the fan uploads the per-artist lane finds (never publishes).
 # bootleg_publish: bootlegs for real, following dry_run (on = report only). Both read data/fan-channels.json in full.
 # Optional variables: MAX_CLASSIFY_PER_RUN (default 1500), YOUTUBE_UNIT_BUDGET. Claude has no cap (owner, 19 Nov 2026).
 # Classifier (owner, 20 Nov 2026): Claude Haiku via the half-price Batch API, Opus only for unsure answers.
-# Switch: COLLECTOR_PUBLISH = true lets the daily run publish; anything else = dry run (report only).
+# Switch: COLLECTOR_PUBLISH = false makes the daily run a dry run (report only); unset or anything else publishes.
 # No view threshold (brief section 2). Archives are read first (data/channels.json).
 # News (owner, 21 Nov 2026): after the collector, the news job reads the press feeds (data/news-feeds.json) and
 # writes articles about our bands and festivals with Claude Haiku, within NEWS_BUDGET_USD a month (repository
@@ -19,6 +17,8 @@
 name: Collect concerts
 
 on:
+  schedule:
+    - cron: "47 8 * * *" # every day, 08:47 UTC, after YouTube's daily quota resets
   workflow_dispatch:
     inputs:
       dry_run:
@@ -170,15 +170,14 @@ jobs:
           fi
       - name: Collect
         if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test || inputs.bootleg_check || inputs.bootleg_publish) || (inputs.admin_ops)) }}
-        # Scheduled runs only publish once the owner sets the repository variable COLLECTOR_PUBLISH to "true"
-        # (Settings -> Secrets and variables -> Actions -> Variables). Until then they are dry runs.
+        # Scheduled runs publish unless the repository variable COLLECTOR_PUBLISH is "false" (owner, 26 Nov 2026).
         run: |
           NO_BATCH=""
           if [ "${{ inputs.no_batch }}" = "true" ]; then NO_BATCH="--no-batch"; fi
           if [ "${{ inputs.reconsider }}" = "true" ]; then NO_BATCH="$NO_BATCH --reconsider"; fi
           if [ "${{ inputs.recrawl }}" = "true" ]; then NO_BATCH="$NO_BATCH --recrawl"; fi
           if [ "${{ inputs.recheck_long }}" = "true" ]; then NO_BATCH="$NO_BATCH --recheck-long"; fi
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.COLLECTOR_PUBLISH }}" != "true" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.COLLECTOR_PUBLISH }}" = "false" ]; then
             npm run collect -- --dry-run
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
             npm run collect -- --dry-run --limit "${{ inputs.limit }}" $NO_BATCH
@@ -188,17 +187,17 @@ jobs:
             npm run collect
           fi
       - name: Artist profiles (short bios for new artists)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH == 'false') }}
         run: npm run profiles
       - name: Entity links (MusicBrainz, Wikidata and Wikipedia for band pages; open data, no quota)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH == 'false') }}
         continue-on-error: true
         run: npm run entity-links
       - name: Artist pictures (official YouTube channel avatars)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH == 'false') }}
         run: npm run artist-images
       - name: Similar artists (recompute with the new sets)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH == 'false') }}
         run: npm run similarity -- --no-fetch
       - name: News (press items about our bands and festivals; Claude Haiku within NEWS_BUDGET_USD a month, default $5)
         if: ${{ vars.NEWS_ENABLED != 'false' && !(github.event_name == 'workflow_dispatch' && (inputs.similarity_only || inputs.artist_search || inputs.haiku_test || inputs.bootleg_check || inputs.bootleg_publish || (inputs.admin_ops))) }}
@@ -208,13 +207,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
             npm run news -- --dry-run
-          elif [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.COLLECTOR_PUBLISH }}" != "true" ]; then
+          elif [ "${{ github.event_name }}" = "schedule" ] && [ "${{ vars.COLLECTOR_PUBLISH }}" = "false" ]; then
             npm run news -- --dry-run
           else
             npm run news
           fi
       - name: Announce new pages to search engines (IndexNow; skipped until the live site is open)
-        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH != 'true') }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.similarity_only || inputs.haiku_test || inputs.bootleg_check || (inputs.admin_ops))) && !(github.event_name == 'schedule' && vars.COLLECTOR_PUBLISH == 'false') }}
         continue-on-error: true
         env:
           LIVE_SITE_URL: ${{ vars.LIVE_SITE_URL || 'https://fullconcert.live' }}
