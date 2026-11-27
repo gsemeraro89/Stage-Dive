@@ -3,10 +3,12 @@
 // - "/artists/<slug>?sort=length" is rewritten to /artists/<slug>/sorted/length (the address stays).
 // - Password protection for the admin pages (HTTP Basic auth). Any user name, password = ADMIN_PASSWORD.
 //   Without ADMIN_PASSWORD set, the admin pages do not exist (404).
+// - Versioned band and festival photos (/photos/bands/<slug>?v=...) are sent with a one-year immutable cache.
 // - AI and search crawlers are counted (src/lib/crawler-hits.ts): in memory, written at most every 5 minutes.
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { countCrawlerHit } from "@/lib/crawler-hits";
 import { crawlerOf } from "@/lib/crawlers";
+import { photoCacheControl } from "@/lib/photos/cache";
 
 function safeEqual(a: string, b: string): boolean {
   // Compare in constant time so the password cannot be guessed from response times.
@@ -30,6 +32,13 @@ export function proxy(request: NextRequest, event?: NextFetchEvent) {
   if (bot) {
     const write = countCrawlerHit(bot, url.pathname);
     if (write) event?.waitUntil(write);
+  }
+  // A versioned photo address never changes: kept a year by browsers (src/lib/photos/cache.ts).
+  const photoCache = photoCacheControl(url.pathname, url.searchParams);
+  if (photoCache) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", photoCache);
+    return response;
   }
   if (url.pathname === "/") {
     if (!LIST_PARAMS.some((k) => url.searchParams.has(k))) return NextResponse.next();
