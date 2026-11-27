@@ -1,6 +1,9 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // The same "@/..." imports as the app (tsconfig.json), for tests of components.
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     include: ["tests/**/*.test.ts"],
     // Database tests share one test database, so run files one after another.
