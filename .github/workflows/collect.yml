@@ -18,7 +18,7 @@ name: Collect concerts
 
 on:
   schedule:
-    - cron: "47 8 * * *" # every day, 08:47 UTC, after YouTube's daily quota resets
+    - cron: "31 4 * * *" # every day, 04:31 UTC (05:31 Rome in winter), before the morning review (owner, 27 Nov 2026). Same YouTube quota day as the 03:43 refresh and any manual run since 08:00 UTC the day before
   workflow_dispatch:
     inputs:
       dry_run:
