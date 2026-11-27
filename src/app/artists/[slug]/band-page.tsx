@@ -234,7 +234,7 @@ export async function BandPage({ slug, sort }: { slug: string; sort: Sort }) {
                   {[artist.label ? `Label: ${artist.label}` : null, artist.aka ? `Also written: ${artist.aka}` : null].filter(Boolean).join(" /// ")}
                 </p>
               )}
-              <PlayButton track={toTrack(best)} className="zn-btn bp-play">
+              <PlayButton track={toTrack(best)} className="zn-btn bp-play" visibleText={`Play it loud /// ${formatDuration(best.durationSeconds)}`}>
                 <PlayGlyph />
                 Play it loud /// {formatDuration(best.durationSeconds)}
               </PlayButton>

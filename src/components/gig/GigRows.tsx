@@ -78,7 +78,7 @@ export function GigRows({ concerts, label, lead = "none", name = "band", compact
                   )}
                 </span>
               </Link>
-              <PlayButton track={track} className="pg-row-play">
+              <PlayButton track={track} className="pg-row-play" visibleText={formatDuration(c.durationSeconds)}>
                 <PlayGlyph />
                 <span>{formatDuration(c.durationSeconds)}</span>
               </PlayButton>

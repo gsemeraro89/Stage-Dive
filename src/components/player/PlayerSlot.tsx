@@ -25,7 +25,7 @@ export function PlayerSlot({ track, srcSet, alt }: { track: Track; srcSet?: stri
 
   return (
     <div className="od-slot" data-od="player-slot" data-state="poster">
-      <PlayButton track={track} className="od-poster">
+      <PlayButton track={track} className="od-poster" visibleText={`Play concert — ${formatDuration(track.durationSeconds)}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={track.thumbnail} srcSet={srcSet} sizes="(min-width: 1001px) 72vw, 100vw" alt={alt} fetchPriority="high" />
         <span className="od-poster-play">

@@ -180,7 +180,7 @@ export function ChartRow({ concert, rank, picture, note }: { concert: ConcertVie
         </Link>
         <Bootleg concert={concert} />
       </span>
-      <PlayButton track={track} className="hm-row-play">
+      <PlayButton track={track} className="hm-row-play" visibleText={formatDuration(concert.durationSeconds)}>
         <PlayGlyph />
         <span>{formatDuration(concert.durationSeconds)}</span>
       </PlayButton>

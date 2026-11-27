@@ -22,6 +22,14 @@ export function toTrack(concert: ConcertView): Track {
   };
 }
 
+/** What a screen reader says for a play button: "Play <title>", or the button's visible words first. */
+export function playLabel(title: string, visible?: string): string {
+  // Accessibility (WCAG 2.5.3, "label in name"): a button that shows words is named starting with them,
+  // so a voice-control user can say what they see ("Play it loud", "1:11:01").
+  if (!visible) return `Play ${title}`;
+  return /^play\b/i.test(visible) ? `${visible}: ${title}` : `${visible}: play ${title}`;
+}
+
 /**
  * Smallest size the YouTube player may be shown at (YouTube API policy: at least 200x200).
  * The docked player is 356x200, the smallest 16:9 box that respects it.

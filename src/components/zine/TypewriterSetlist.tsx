@@ -88,7 +88,7 @@ export function TypewriterSetlist({
             </button>
             {song.href && (
               // The song's own page, beside the button that plays it: a narrow typed tab, two short lines.
-              <Link href={song.href} className="zn-setlist-page" data-od="song-page-link" aria-label={`${song.title}: every live version`}>
+              <Link href={song.href} className="zn-setlist-page" data-od="song-page-link" aria-label={`Every version of ${song.title}, live`}>
                 <span aria-hidden="true">every</span> <span aria-hidden="true">version</span>
               </Link>
             )}

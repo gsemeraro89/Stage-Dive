@@ -140,7 +140,7 @@ export default async function HomePage() {
                 );
               })()}
               <div className="hm-hero-actions zn-slap">
-                <PlayButton track={toTrack(gig.concert)} className="zn-btn hm-play">
+                <PlayButton track={toTrack(gig.concert)} className="zn-btn hm-play" visibleText="Play it loud">
                   <PlayGlyph />
                   Play it loud
                 </PlayButton>
