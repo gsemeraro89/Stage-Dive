@@ -86,3 +86,39 @@ Bing, 6 URLs: /concerts/limp-bizkit-pinkpop-2001, /artists/kvelertak, /artists/k
 /concerts/the-national-ypsigrock-2019, /concerts/grandbrothers-kolner-dom-2022,
 /concerts/teksuo-resurrection-fest-estrella-galicia-2024.
 Owner, 26 Nov: no bios for thin pages with search demand for now (grandbrothers, teksuo, yonderboi, lucas-hamming).
+
+## 27 Nov 2026 (week 1, day 3)
+
+| Measure | 26 Nov | 27 Nov |
+| --- | --- | --- |
+| Google impressions / clicks | 41 / 0 (25 Nov) | 60 / 1 (26 Nov, average position 13.6): the first click, "lucas hamming" -> /venues/pinkpop (pos. 3) |
+| Google searches seen | radiohead setlist, grandbrothers, pinkpop... | + metallica setlist (pos. 7), how many songs does metallica play (7), crippled black phoenix (12, Crossroads page), philip sayce (15), blahalouisiana (15) |
+| Bing impressions / clicks | 0 / 0 | 0 / 0 (data to 25 Nov) |
+| GA4 sessions | 4 | 26 Nov: 2 (1 organic search, 1 unassigned); AI-assistant visits 0 |
+| Key pages indexed by Google | 11 of 12 | 12 of 12 (/hd indexed, crawled 26 Nov) |
+| AI crawler visits | 26 Nov to 10:15: Meta 874, ClaudeBot 377 | 26 Nov full day: ClaudeBot 5,904 (2,841 Markdown copies, 2,390 song pages), Meta 1,325, Yandex 252, Applebot 102, Googlebot 34, GPTBot 2; 27 Nov to 10:15: ClaudeBot 3,346 |
+| Concerts live | 2,244 | 2,686 (+442 on 26 Nov evening from 11 new official channels; 22 off-genre or session videos hidden; 7 ex-bootlegs relabelled official) |
+
+Finding: GPTBot fell from 50,841 (25 Nov) to 2 after its big crawl; robots.txt still allows it (checked), so it is a pause,
+not a block. ClaudeBot now reads mostly Markdown copies and song pages, as hoped. Google's concert-page check shows the
+MusicEvent warnings (endDate, description, eventStatus, organizer, offers): warnings only, and past events are not eligible
+for event rich results, so no change. The scheduled 08:47 UTC collector run has not appeared yet: GitHub runs this
+repository's schedules hours late (the 02:29 backup ran at 11:08 yesterday); it is the first day of the schedule.
+
+Done: "Searched this week" updated (commit 630880d): Crossroads concerts of Crippled Black Phoenix and Philip Sayce in,
+Pinkpop and Killing Joke out (top 5). Hellfest and Wacken duplicate venue records merged (admin_ops: hellfest-open-air
+and three Hellfest stage records into /venues/hellfest; two Wacken stage records into /venues/wacken-open-air; old
+addresses redirect). Outreach: 5 Reddit answer drafts, the press list of sites AI cites and a /stats pitch email in
+docs/outreach/2026-11-27.md. Festival-year pages (Fri 28 Nov row) already exist at /venues/<place>/<year>.
+Bing, 20 URLs: /venues/wacken-open-air, /venues/hellfest, /venues/przystanek-woodstock, /venues/polandrock-festival,
+/venues/pitchfork-music-festival, /concerts/steel-panther-wacken-open-air-2016, /concerts/uriah-heep-wacken-open-air-2019,
+/concerts/ska-p-woodstock-festival-poland-przystanek-woodstock-2014, /concerts/kwiat-jab-oni-polandrock-festival-2022,
+/concerts/brujeria-wacken-open-air-2017, /concerts/fleet-foxes-pitchfork-music-festival-2018,
+/concerts/mayhem-wacken-open-air-2017, /concerts/the-warning-polandrock-festival-2024, /concerts/clutch-wacken-open-air-2016,
+/concerts/shaka-ponk-przystanek-woodstock-2015, /concerts/khruangbin-villain-2018, /concerts/beach-house-kings-theatre-2018,
+/concerts/sigur-ros-walt-disney-concert-hall-2017, /concerts/happysad-przystanek-woodstock-2012,
+/concerts/mac-demarco-pitchfork-music-festival-paris-grande-halle-de-la-villette-2013.
+Search Console requests for the owner: /stats (unknown to Google), /artists/kvelertak, /concerts/limp-bizkit-pinkpop-2001
+(discovered, not indexed), /venues/wacken-open-air, /artists/killing-joke, /venues/polandrock-festival, /venues/hellfest,
+/concerts/uriah-heep-wacken-open-air-2019, /concerts/type-o-negative-polandrock-festival-przystanek-woodstock-2007,
+/concerts/crippled-black-phoenix-crossroads-2012.
