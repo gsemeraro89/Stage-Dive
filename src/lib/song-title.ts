@@ -14,6 +14,23 @@
 // Pure functions, tested in tests/songs.test.ts.
 import { slugify } from "./slug";
 
+// Speed (27 Nov 2026): the same few thousand setlist lines are cleaned again on every song list (the home
+// page, the sitemap, llms-full.txt, song pages), and the cleaning was most of the home page's rebuild time
+// (about 1.7 s of CPU, much longer on the small server). The functions are pure, so each result is kept,
+// capped: past SONG_TITLE_MEMO_MAX entries a store starts again from empty (about 8 MB for today's setlists).
+export const SONG_TITLE_MEMO_MAX = 60_000;
+function memoize<R>(fn: (s: string) => R): (s: string) => R {
+  const store = new Map<string, R>();
+  return (s: string) => {
+    const hit = store.get(s);
+    if (hit !== undefined || store.has(s)) return hit as R;
+    const value = fn(s);
+    if (store.size >= SONG_TITLE_MEMO_MAX) store.clear();
+    store.set(s, value);
+    return value;
+  };
+}
+
 /** Words in a closing bracket that make it a note about the performance, not part of the song's name. */
 const NOTE_WORDS =
   /\b(?:live|acoustic|unplugged|electric|remaster(?:ed)?|cover|covers|version|edit|remix|intro|outro|riff|jams?|jamming|solo|tease|snippet|reprise|encore|instrumental|extended|shortened|short|long|half|partial|incomplete|unfinished|unreleased|debut|highlight|missing|footage|accident|breakdown|commentary|dedicat\w*|until|while|may have|played|kick|song|feat\.?|ft\.?|featuring|w\/)(?=$|[^\p{L}\p{N}])/iu;
@@ -53,7 +70,8 @@ const BRACKETED_TIME = /\s*[([]\s*\d{1,2}(?::\d{2}){1,2}[^)\]]*[)\]]/g;
  * "A Ton of Love - *12:43*" -> "A Ton of Love", "Good Riddance (Time of Your Life) (Slightly shortened
  * version while Tré fixed his kick drum pedal)" -> "Good Riddance (Time of Your Life)".
  */
-export function songTitleBase(title: string): string {
+export const songTitleBase = memoize(songTitleBaseUncached);
+function songTitleBaseUncached(title: string): string {
   let t = title.normalize("NFC").replace(PICTOGRAPHS, " ").replace(/\s+/g, " ").trim();
   let before = "";
   while (t !== before) {
@@ -102,7 +120,8 @@ const NOT_A_SONG_NAME = [
 const count = (s: string, ch: RegExp) => (s.match(ch) ?? []).length;
 
 /** True for a setlist line (one part of it) that is not a song. Such lines get no page and count in no figure. */
-export function isNotASong(part: string): boolean {
+export const isNotASong = isNotASongUncached;
+function isNotASongUncached(part: string): boolean {
   const raw = part.normalize("NFC").replace(PICTOGRAPHS, " ").replace(/\s+/g, " ").trim();
   if (!raw) return true;
   // Broken fragments: a bracket or quote that does not close, a line starting mid-sentence.
@@ -157,6 +176,11 @@ export function splitMedley(line: string): string[] {
 
 /** The songs in one setlist line, each cleaned: none for a line that is not a song. */
 export function songParts(line: string): string[] {
+  // A copy, so a caller changing the list never changes the kept one.
+  return [...songPartsCached(line)];
+}
+const songPartsCached = memoize(songPartsUncached);
+function songPartsUncached(line: string): string[] {
   if (isNotASong(line) && !/\//.test(line)) return [];
   return splitMedley(line)
     .filter((p) => !isNotASong(p))
@@ -165,7 +189,8 @@ export function songParts(line: string): string[] {
 }
 
 /** The song's address under its band: "Creep (Live)" -> "creep", "Seek & Destroy" -> "seek-and-destroy". Empty when nothing is left. */
-export function songSlug(title: string): string {
+export const songSlug = memoize(songSlugUncached);
+function songSlugUncached(title: string): string {
   // Letters slugify cannot take apart: "BECØME" -> "become", "Ærosol" -> "aerosol", "Straße" -> "strasse".
   const t = songTitleBase(title).replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").replace(/ß/g, "ss").replace(/[łŁ]/g, "l").replace(/[đĐ]/g, "d");
   return slugify(t);

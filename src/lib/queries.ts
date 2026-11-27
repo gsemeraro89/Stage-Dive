@@ -520,28 +520,33 @@ async function songCatalogueUncached() {
     select: { ...songConcertSelect, credits: { where: { role: "MAIN" }, select: { artist: { select: { slug: true, name: true, aka: true } } } } },
     orderBy: [{ performedYear: "asc" }, { id: "asc" }],
   });
-  const byBand = new Map<string, { band: { slug: string; name: string; aka: string | null }; concerts: SongConcert[] }>();
+  const byBand = new Map<string, { band: { slug: string; name: string; aka: string | null }; rows: Omit<(typeof rows)[number], "credits">[] }>();
   for (const { credits, ...row } of rows)
     for (const { artist } of credits) {
-      const e = byBand.get(artist.slug) ?? { band: artist, concerts: [] };
-      e.concerts.push(toSongConcert(row));
+      const e = byBand.get(artist.slug) ?? { band: artist, rows: [] };
+      e.rows.push(row);
       byBand.set(artist.slug, e);
     }
-  return [...byBand.values()]
-    .map(({ band, concerts }) => ({
-      slug: band.slug,
-      name: band.name,
-      setlists: setlistCount(concerts),
-      songs: bandSongs({ names: [band.name, band.aka].filter((n): n is string => Boolean(n)) }, concerts).map((s) => ({
-        slug: s.slug,
-        title: s.title,
-        versions: s.versions.length,
-        updatedAt: s.updatedAt,
-      })),
-    }))
-    .filter((b) => b.songs.length > 0)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const out: { slug: string; name: string; setlists: number; songs: { slug: string; title: string; versions: number; updatedAt: Date }[] }[] = [];
+  for (const { band, rows: bandRows } of byBand.values()) {
+    // Speed (27 Nov 2026): one band at a time (setlists read, songs counted), letting other requests through
+    // in between. This runs while a page is rebuilt in the background; on the small server (0.15 CPU) one
+    // long stretch of work held up every visitor, even those served a ready-made page, for several seconds.
+    await yieldToRequests();
+    const concerts = bandRows.map(toSongConcert);
+    const songs = bandSongs({ names: [band.name, band.aka].filter((n): n is string => Boolean(n)) }, concerts).map((s) => ({
+      slug: s.slug,
+      title: s.title,
+      versions: s.versions.length,
+      updatedAt: s.updatedAt,
+    }));
+    if (songs.length > 0) out.push({ slug: band.slug, name: band.name, setlists: setlistCount(concerts), songs });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/** Lets waiting requests run before the next piece of a long computation (see songCatalogueUncached). */
+export const yieldToRequests = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 /** The play queue after a concert, by YouTube ID. Used by the player. */
 export async function getQueue(youtubeId: string): Promise<ConcertView[] | null> {
