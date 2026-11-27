@@ -1,5 +1,5 @@
 {
- "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. id (the channel's YouTube ID, UC...) is tried first, then handle (1 unit each, the channel's name must still contain 'expect'); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel (The Current: @TheCurrent, Minnesota Public Radio, confirmed by the owner 20 Nov 2026). A channel whose uploads playlist YouTube does not return (404: no public uploads, closed channel or wrong ID) is skipped with a line under skippedChannels in the run report; if it stays like that, put its ID in skipIds. Added 20 Nov 2026 (owner): official festival, broadcaster, venue and band channels found by the fan-video check. Added 26 Nov 2026 (owner: more festivals and band channels): festival, broadcaster, label and promoter channels, and band channels that already gave us official concerts but were not read in full (kept only where the full read found more: Suede HQ, Papa Roach; the dry run of 26 Nov 2026 found nothing new on Radiohead, Jimi Hendrix, The National, Scorpions, Placebo, Van Halen and Jimmy Eat World, and only online sessions on Machine Head's; the label [PIAS] gave nothing new either); entries with an id use the ID YouTube already reported for the channel (stored in our channels table), and their name is the channel's name in that table so the stored row is reused. Added 27 Nov 2026 (owner: more official sources, round 2): metal and indie festivals, Songkick's Live From The Vault, labels and band channels known to post full shows; channels the dry run found nothing new on were removed again.",
+ "_note": "Channels the collector reads, archives first (owner, 18 Nov 2026; docs/SUPPLY-CHECK.md). kind: ARCHIVE (festival or broadcaster archive: official, read first), ARTIST (a band's official channel), MIXED (official, several kinds of music: a label, a broadcaster). The collector reads ARCHIVE entries first, then ARTIST, then MIXED, keeping this file's order within each kind. id (the channel's YouTube ID, UC...) is tried first, then handle (1 unit each, the channel's name must still contain 'expect'); otherwise the collector searches YouTube for 'search' (100 units, once: the result is stored) and takes the first channel whose name contains 'expect' (accents and punctuation ignored). skipIds: channels never to use. Handles are left out until checked against the live channel (The Current: @TheCurrent, Minnesota Public Radio, confirmed by the owner 20 Nov 2026). A channel whose uploads playlist YouTube does not return (404: no public uploads, closed channel or wrong ID) is skipped with a line under skippedChannels in the run report; if it stays like that, put its ID in skipIds. Added 20 Nov 2026 (owner): official festival, broadcaster, venue and band channels found by the fan-video check. Added 26 Nov 2026 (owner: more festivals and band channels): festival, broadcaster, label and promoter channels, and band channels that already gave us official concerts but were not read in full (kept only where the full read found more: Suede HQ, Papa Roach; the dry run of 26 Nov 2026 found nothing new on Radiohead, Jimi Hendrix, The National, Scorpions, Placebo, Van Halen and Jimmy Eat World, and only online sessions on Machine Head's; the label [PIAS] gave nothing new either); entries with an id use the ID YouTube already reported for the channel (stored in our channels table), and their name is the channel's name in that table so the stored row is reused. Added 27 Nov 2026 (owner: more official sources, round 2), kept after a dry run: Bloodstock Open Air (@Bloodstockfestivals, full sets), Knotfest (@knotfest, licensed festival streams), The Hives (thehivestv) and Echo & The Bunnymen (band channels). The dry run found nothing new on Linkin Park, Gojira, Turnstile, The Jesus and Mary Chain, IDLES, Parkway Drive and Songkick (one show, plus office sessions and online shows); @kinggizzard is a channel without public uploads.",
  "channels": [
   {
    "name": "Pinkpop Archive",
@@ -174,136 +174,11 @@
    "kind": "ARCHIVE"
   },
   {
-   "name": "Summer Breeze Open Air",
-   "search": "Summer Breeze Open Air",
-   "expect": "summer breeze",
-   "kind": "ARCHIVE"
-  },
-  {
    "name": "Knotfest",
    "handle": "@knotfest",
    "search": "Knotfest",
    "expect": "knotfest",
    "kind": "ARCHIVE"
-  },
-  {
-   "name": "Roadburn Festival",
-   "handle": "@RoadburnFestival",
-   "search": "Roadburn Festival",
-   "expect": "roadburn",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Lollapalooza",
-   "handle": "@lollapalooza",
-   "search": "Lollapalooza",
-   "expect": "lollapalooza",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Graspop Metal Meeting",
-   "handle": "@GraspopMetalMeeting",
-   "search": "Graspop Metal Meeting",
-   "expect": "graspop",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Roskilde Festival",
-   "handle": "@roskildefestival",
-   "search": "Roskilde Festival",
-   "expect": "roskilde",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Paléo Festival Nyon",
-   "handle": "@PaleoFestival",
-   "search": "Paleo Festival Nyon",
-   "expect": "paleo",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Vive Latino",
-   "handle": "@VLOficial",
-   "search": "Vive Latino festival",
-   "expect": "vive latino",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "FESTIVALDEVINACHILE",
-   "id": "UCTqDzPyS7dDBxjywNROdAUg",
-   "search": "Festival de Viña del Mar",
-   "expect": "festival de vina",
-   "kind": "ARCHIVE"
-  },
-  {
-   "name": "Songkick",
-   "id": "UCTUPsBBQA4Am8k23BYETRJg",
-   "search": "Songkick Live From The Vault",
-   "expect": "songkick",
-   "kind": "MIXED"
-  },
-  {
-   "name": "Moshcam",
-   "handle": "@moshcam",
-   "search": "Moshcam",
-   "expect": "moshcam",
-   "kind": "MIXED"
-  },
-  {
-   "name": "Napalm Records",
-   "handle": "@NapalmRecords",
-   "search": "Napalm Records",
-   "expect": "napalm records",
-   "kind": "MIXED"
-  },
-  {
-   "name": "Nuclear Blast Records",
-   "handle": "@nuclearblastrecords",
-   "search": "Nuclear Blast Records",
-   "expect": "nuclear blast",
-   "kind": "MIXED"
-  },
-  {
-   "name": "earMUSIC",
-   "handle": "@earMUSICofficial",
-   "search": "earMUSIC",
-   "expect": "earmusic",
-   "kind": "MIXED"
-  },
-  {
-   "name": "Live from the Artists Den",
-   "handle": "@ArtistsDen",
-   "search": "Live from the Artists Den",
-   "expect": "artists den",
-   "kind": "MIXED"
-  },
-  {
-   "name": "Linkin Park",
-   "id": "UCZU9T1ceaOgwfLRq7OKFU4Q",
-   "search": "Linkin Park",
-   "expect": "linkin park",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Gojira",
-   "id": "UC34wpCgr3l9cG0RtFdTTS-Q",
-   "search": "Gojira",
-   "expect": "gojira",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Turnstile",
-   "id": "UCP5O_Y-RbtVJUEv4uLP-O8A",
-   "search": "Turnstile",
-   "expect": "turnstile",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "The Jesus and Mary Chain Official",
-   "id": "UCAlP0LcJ_RVqLvNr78w8MmA",
-   "search": "The Jesus and Mary Chain Official",
-   "expect": "jesus and mary chain",
-   "kind": "ARTIST"
   },
   {
    "name": "thehivestv",
@@ -317,62 +192,6 @@
    "id": "UCQT26ytfOGcHyt7NZXSt3qw",
    "search": "Official Echo & The Bunnymen",
    "expect": "bunnymen",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "IDLES",
-   "id": "UCVm7tYTZONPLVujGX0rAJdw",
-   "search": "IDLES",
-   "expect": "idles",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Parkway Drive",
-   "id": "UCP0efewXEcuCddMFLjlCDJQ",
-   "search": "Parkway Drive",
-   "expect": "parkway drive",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "King Gizzard & The Lizard Wizard",
-   "handle": "@kinggizzard",
-   "search": "King Gizzard & The Lizard Wizard",
-   "expect": "king gizzard",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Grateful Dead",
-   "handle": "@gratefuldead",
-   "search": "Grateful Dead",
-   "expect": "grateful dead",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Phish",
-   "handle": "@phish",
-   "search": "Phish",
-   "expect": "phish",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Pearl Jam",
-   "handle": "@PearlJam",
-   "search": "Pearl Jam",
-   "expect": "pearl jam",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Sabaton",
-   "handle": "@Sabaton",
-   "search": "Sabaton",
-   "expect": "sabaton",
-   "kind": "ARTIST"
-  },
-  {
-   "name": "Nightwish",
-   "handle": "@nightwish",
-   "search": "Nightwish",
-   "expect": "nightwish",
    "kind": "ARTIST"
   }
  ],
