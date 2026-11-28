@@ -34,6 +34,21 @@ export function playedDate(c: { performedOn: Date | null; performedYear: number 
 }
 
 const concertUrl = (slug: string) => abs(`/concerts/${slug}`);
+/** The player's address for a video (src/components/player/PlayerProvider.tsx loads www.youtube.com). */
+export const embedUrl = (youtubeId: string) => `https://www.youtube.com/embed/${youtubeId}`;
+/** "Metallica · full concert · Rose Bowl 2017 · 137 minutes": a plain fact line from our data (band lists). */
+export function videoFacts(band: string, c: { venue: { name: string } | null; city: string | null; performedYear: number | null; durationSeconds: number }): string {
+  const gig = [c.venue?.name ?? c.city, c.performedYear].filter(Boolean).join(" ");
+  return `${band} · full concert${gig ? ` · ${gig}` : ""} · ${Math.round(c.durationSeconds / 60)} minutes`;
+}
+/** schema.org PostalAddress from the concert's own city/country, else its venue's; null when we hold neither. */
+function postalAddress(...sources: ({ city?: string | null; country?: string | null } | null | undefined)[]): Json | null {
+  const from = sources.find((x) => x && (x.city || x.country));
+  if (!from) return null;
+  return { "@type": "PostalAddress", ...(from.city ? { addressLocality: from.city } : {}), ...(from.country ? { addressCountry: from.country } : {}) };
+}
+/** Every concert we list was played: as scheduled (schema.org has no "took place" status). */
+const SCHEDULED = "https://schema.org/EventScheduled";
 const performers = (c: ConcertView) =>
   c.artists.map((a) => ({ "@type": "MusicGroup", name: a.name, ...(a.hasPage ? { url: abs(`/artists/${a.slug}`) } : {}) }));
 
@@ -67,7 +82,7 @@ export function concertJsonLd(c: ConcertView, setlist: SetlistView | null = null
     thumbnailUrl: [c.thumbnail.src],
     uploadDate: c.publishedAt.toISOString(),
     duration: isoDuration(c.durationSeconds),
-    embedUrl: `https://www.youtube.com/embed/${c.youtubeId}`,
+    embedUrl: embedUrl(c.youtubeId),
     url,
     ...(c.genres.length ? { genre: c.genres.map((g) => g.name) } : {}),
     interactionStatistic: {
@@ -94,7 +109,11 @@ export function concertJsonLd(c: ConcertView, setlist: SetlistView | null = null
 /**
  * schema.org MusicEvent for the night the concert was played: performers, place, date and the songs
  * of the setlist. Only when we know both a date (at least the year) and a place; null otherwise.
- * No eventStatus: schema.org has no value for "it happened", and the event is in the past.
+ * Google (28 Nov 2026) asks for description, eventStatus, endDate and an address: the description is the
+ * page's visible lead, the status "scheduled" (it was played as planned), the end the same day (we hold
+ * no start or end times), the address the concert's city/country or else its venue's. No organizer (we
+ * do not hold who organised a show; a broadcaster or channel is not the organiser) and no offers (there
+ * are no tickets to sell).
  */
 export function concertEventJsonLd(
   c: ConcertView,
@@ -114,9 +133,7 @@ export function concertEventJsonLd(
         .map((t) => t.title),
     ),
   ];
-  const address = [c.city, c.country].some(Boolean)
-    ? { address: { "@type": "PostalAddress", ...(c.city ? { addressLocality: c.city } : {}), ...(c.country ? { addressCountry: c.country } : {}) } }
-    : {};
+  const address = postalAddress(c, c.venue);
   const inPerson = c.venueKind?.slug === "festival" || c.venueKind?.slug === "room";
   return {
     "@context": "https://schema.org",
@@ -124,13 +141,16 @@ export function concertEventJsonLd(
     "@id": `${url}#event`,
     name: `${c.credits} live${c.venue ? ` at ${c.venue.name}` : c.city ? ` in ${c.city}` : ""} ${c.performedYear ?? ""}`.trim(),
     url,
+    description: concertAnswers(c, setlist).lead,
     startDate: date,
+    endDate: date,
+    eventStatus: SCHEDULED,
     ...(inPerson ? { eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode" } : {}),
     location: {
       "@type": "Place",
       name: c.venue?.name ?? c.city,
       ...(c.venue ? { url: abs(`/venues/${c.venue.slug}`) } : {}),
-      ...address,
+      ...(address ? { address } : {}),
     },
     performer: performers(c),
     image: [c.thumbnail.src],
@@ -172,32 +192,45 @@ export function venueYearJsonLd(
   path: string,
   concerts: ConcertView[],
   festival: boolean,
+  /** The page's visible lead (src/lib/venue-years.ts), as the festival's description. */
+  lead?: string,
 ): Json {
   const url = abs(path);
-  const address = [venue.city, venue.country].some(Boolean)
-    ? { address: { "@type": "PostalAddress", ...(venue.city ? { addressLocality: venue.city } : {}), ...(venue.country ? { addressCountry: venue.country } : {}) } }
-    : {};
-  const place = { "@type": "Place", name: venue.name, url: abs(`/venues/${venue.slug}`), ...address };
-  const events = concerts.map((c) => ({
-    "@type": "MusicEvent",
-    "@id": `${concertUrl(c.slug)}#event`,
-    name: `${c.credits} live at ${venue.name} ${year}`,
-    url: concertUrl(c.slug),
-    startDate: playedDate(c) ?? String(year),
-    location: { "@type": "Place", name: venue.name },
-    performer: performers(c),
-  }));
+  const address = postalAddress(venue);
+  const place = { "@type": "Place", name: venue.name, url: abs(`/venues/${venue.slug}`), ...(address ? { address } : {}) };
+  const events = concerts.map((c) => {
+    const day = playedDate(c) ?? String(year);
+    const at = postalAddress(c, venue);
+    return {
+      "@type": "MusicEvent",
+      "@id": `${concertUrl(c.slug)}#event`,
+      name: `${c.credits} live at ${venue.name} ${year}`,
+      url: concertUrl(c.slug),
+      description: videoFacts(c.credits, c),
+      startDate: day,
+      endDate: day,
+      eventStatus: SCHEDULED,
+      location: { "@type": "Place", name: venue.name, url: abs(`/venues/${venue.slug}`), ...(at ? { address: at } : {}) },
+      performer: performers(c),
+      image: [c.thumbnail.src],
+    };
+  });
   if (!festival) {
     return { "@context": "https://schema.org", ...place, "@id": `${url}#place`, event: events };
   }
   const bands = [...new Map(concerts.flatMap((c) => performers(c)).map((p) => [p.name, p])).values()];
+  const span = dateSpan(concerts, year);
   return {
     "@context": "https://schema.org",
     "@type": "Festival",
     "@id": `${url}#event`,
     name,
     url,
-    ...dateSpan(concerts, year),
+    ...(lead ? { description: lead } : {}),
+    ...(concerts.length ? { image: concerts.slice(0, 3).map((c) => c.thumbnail.src) } : {}),
+    startDate: span.startDate,
+    endDate: span.endDate ?? span.startDate,
+    eventStatus: SCHEDULED,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: place,
     superEvent: { "@type": "EventSeries", name: venue.name, url: abs(`/venues/${venue.slug}`) },
@@ -258,9 +291,9 @@ export function bandJsonLd(
       "@type": "VideoObject",
       "@id": `${concertUrl(c.slug)}#video`,
       name: c.title,
-      description: `${band.name} · full concert${[c.venue?.name ?? c.city, c.performedYear].some(Boolean) ? ` · ${[c.venue?.name ?? c.city, c.performedYear].filter(Boolean).join(" ")}` : ""} · ${Math.round(c.durationSeconds / 60)} minutes`,
+      description: videoFacts(band.name, c),
       url: concertUrl(c.slug),
-      embedUrl: `https://www.youtube.com/embed/${c.youtubeId}`,
+      embedUrl: embedUrl(c.youtubeId),
       thumbnailUrl: c.thumbnail.src,
       uploadDate: c.publishedAt.toISOString(),
       duration: isoDuration(c.durationSeconds),
@@ -302,7 +335,9 @@ export function songJsonLd(band: { slug: string; name: string }, song: Song): Js
           recordingOf: { "@id": `${url}#song` },
           ...(v.lengthSeconds !== null ? { duration: isoDuration(v.lengthSeconds) } : {}),
           ...(playedDate(v.concert) ? { dateCreated: playedDate(v.concert) } : {}),
-          isPartOf: { "@type": "VideoObject", "@id": `${concertUrl(v.concert.slug)}#video`, url: concertUrl(v.concert.slug) },
+          // A reference to the concert video described on its own page (no @type here: an untyped node is
+          // not read as a second, incomplete VideoObject on the song page).
+          isPartOf: { "@id": `${concertUrl(v.concert.slug)}#video`, url: concertUrl(v.concert.slug) },
         },
       })),
     },
@@ -383,7 +418,11 @@ export function organization(sameAs: string[] = []): Json {
   };
 }
 
-/** JSON for a <script type="application/ld+json"> tag, safe against "</script>" in titles. */
+/**
+ * JSON for a <script type="application/ld+json"> tag, safe against "</script>" in titles. Text stays raw
+ * (Pol'and'Rock, AC/DC & co): a script's content is never HTML-decoded, so entities would be read
+ * literally; only "<" is written as \u003c, which JSON reads back as "<".
+ */
 export function jsonLd(data: Json | Json[]): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }

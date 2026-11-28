@@ -148,10 +148,23 @@ describe("festival and venue years: answers and structured data", () => {
     const sub = ld.subEvent as Record<string, unknown>[];
     expect(sub).toHaveLength(2);
     expect(sub[0]["@id"]).toBe("https://stagedive.example/concerts/bush-pinkpop-1995#event");
+    // Google's recommended event fields, from data we hold (28 Nov 2026); never offers.
+    expect(ld.eventStatus).toBe("https://schema.org/EventScheduled");
+    for (const e of sub) {
+      expect(e).toMatchObject({ eventStatus: "https://schema.org/EventScheduled", description: expect.stringContaining("full concert") });
+      expect(e.endDate).toBe(e.startDate);
+      expect(e).not.toHaveProperty("offers");
+    }
+    expect(ld).not.toHaveProperty("offers");
+    const described = venueYearJsonLd(pinkpop, "Pinkpop 1995", 1995, "/venues/pinkpop/1995", two, true, "Two full concerts from Pinkpop 1995.") as Record<string, unknown>;
+    expect(described.description).toBe("Two full concerts from Pinkpop 1995.");
+    expect((described.image as string[]).length).toBe(2);
   });
   it("keeps only the year when a day is missing, and describes a room as a place with events", () => {
     const partial = [two[0], gig(3, "Blur")];
-    expect((venueYearJsonLd(pinkpop, "Pinkpop 1995", 1995, "/venues/pinkpop/1995", partial, true) as Record<string, unknown>).startDate).toBe("1995");
+    const yearOnly = venueYearJsonLd(pinkpop, "Pinkpop 1995", 1995, "/venues/pinkpop/1995", partial, true) as Record<string, unknown>;
+    expect(yearOnly.startDate).toBe("1995");
+    expect(yearOnly.endDate).toBe("1995");
     const room = venueYearJsonLd(pinkpop, "Pinkpop 1995", 1995, "/venues/pinkpop/1995", two, false) as Record<string, unknown>;
     expect(room["@type"]).toBe("Place");
     expect((room.event as unknown[]).length).toBe(2);

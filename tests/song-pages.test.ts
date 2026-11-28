@@ -120,8 +120,10 @@ describe("structured data", () => {
       recordingOf: { "@id": "https://stagedive.example/songs/radiohead/creep#song" },
       duration: "PT4M20S",
       dateCreated: "1997",
-      isPartOf: { "@type": "VideoObject", "@id": "https://stagedive.example/concerts/radiohead-2#video" },
+      isPartOf: { "@id": "https://stagedive.example/concerts/radiohead-2#video" },
     });
+    // A reference to the concert page's video, not a second (incomplete) VideoObject.
+    expect(first.isPartOf).not.toHaveProperty("@type");
   });
   it("lists a band's song pages", () => {
     const l = bandSongsJsonLd(band, songs) as Record<string, any>;

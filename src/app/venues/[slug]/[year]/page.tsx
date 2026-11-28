@@ -78,7 +78,7 @@ export default async function VenueYearPage({ params }: Props) {
             [venue.name, `/venues/${venue.slug}`],
             [String(page.year), path],
           ]),
-          venueYearJsonLd(venue, name, page.year, path, concerts, festival),
+          venueYearJsonLd(venue, name, page.year, path, concerts, festival, answers.lead),
           itemList(`Full concerts from ${name}`, concerts.map((c) => ({ path: `/concerts/${c.slug}`, name: c.credits }))),
           answers.questions.length ? faqPage(answers.questions) : null,
         ]}

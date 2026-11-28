@@ -61,7 +61,7 @@ const concertSelect = {
     },
     orderBy: { position: "asc" as const },
   },
-  venue: { select: { slug: true, name: true } },
+  venue: { select: { slug: true, name: true, city: true, country: true } },
   venueKind: { select: { slug: true, name: true } },
   tour: { select: { slug: true, name: true } },
   channel: { select: { name: true, isOfficial: true } },
@@ -87,7 +87,8 @@ export interface ConcertView {
   credits: string;
   /** hasPage false: a guest shown as plain text, without a link (owner rule, 13 Nov 2026). */
   artists: { slug: string; name: string; role: "MAIN" | "WITH"; creditNote: string | null; hasPage: boolean }[];
-  venue: { slug: string; name: string } | null;
+  /** city/country: where the venue is (structured data falls back on it when the concert has neither). */
+  venue: { slug: string; name: string; city?: string | null; country?: string | null } | null;
   city: string | null;
   country: string | null;
   venueKind: { slug: string; name: string } | null;
@@ -125,7 +126,9 @@ export function toConcertView(concert: ConcertRow): ConcertView {
       creditNote: c.creditNote,
       hasPage: c.role === "MAIN" || c.artist._count.credits > 0,
     })),
-    venue: concert.venue ? { slug: concert.venue.slug, name: concert.venue.name } : null,
+    venue: concert.venue
+      ? { slug: concert.venue.slug, name: concert.venue.name, city: concert.venue.city, country: countryName(concert.venue.country) }
+      : null,
     city: concert.city,
     // One form per country ("NL" -> "Netherlands"), also before the admin op has fixed old rows.
     country: countryName(concert.country),

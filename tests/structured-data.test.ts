@@ -18,6 +18,7 @@ import {
   songClips,
   website,
 } from "../src/lib/structured-data";
+import { concertAnswers } from "../src/lib/answers";
 import { BANNED, concertView, setlist } from "./fixtures/concert-view";
 
 process.env.SITE_URL = "https://stagedive.example";
@@ -95,7 +96,40 @@ describe("structured data", () => {
       recordedIn: { "@id": `${page}#video` },
     });
     expect((ev.workPerformed as { name: string }[]).map((w) => w.name)).toEqual(["Enter Sandman", "Creeping Death", "Seek & Destroy"]);
-    expect(ev).not.toHaveProperty("eventStatus");
+    // Google's recommended fields (28 Nov 2026), only from what we hold: the visible lead as the
+    // description, scheduled, ends the day it started; no organizer (not held) and never offers.
+    expect(ev.description).toBe(concertAnswers(concert, setlist as never).lead);
+    expect(ev).toMatchObject({ eventStatus: "https://schema.org/EventScheduled", endDate: "1991-11-01" });
+    expect(ev).not.toHaveProperty("offers");
+    expect(ev).not.toHaveProperty("organizer");
+    expect(String(ev.description)).not.toMatch(BANNED);
+  });
+
+  it("gives a MusicEvent the venue's address when the concert has no city or country", () => {
+    const ev = concertEventJsonLd(
+      concertView({ city: null, country: null, venue: { slug: "crossroads-festival", name: "Crossroads Festival", city: "Bonn", country: "Germany" } }),
+    )!;
+    expect((ev.location as Record<string, unknown>).address).toEqual({ "@type": "PostalAddress", addressLocality: "Bonn", addressCountry: "Germany" });
+    expect(ev).toMatchObject({ startDate: "1991-11-01", endDate: "1991-11-01" });
+    const bare = concertEventJsonLd(concertView({ city: null, country: null, venue: { slug: "x", name: "X" } }))!;
+    expect(bare.location).not.toHaveProperty("address");
+  });
+
+  it("gives every VideoObject an embed URL and a description", () => {
+    const videos = [
+      concertJsonLd(concert, setlist as never),
+      concertJsonLd(concertView({ writeUp: null }), null),
+      ...(bandJsonLd({ slug: "metallica", name: "Metallica" }, [concert, concertView({ slug: "b", venue: null, city: null, performedYear: null })]).subjectOf as Record<string, unknown>[]),
+    ];
+    for (const v of videos) {
+      expect(v["@type"]).toBe("VideoObject");
+      expect(v.embedUrl).toBe("https://www.youtube.com/embed/IA9xKr_Dmek");
+      expect(String(v.description).length).toBeGreaterThan(10);
+      expect(String(v.description)).not.toMatch(BANNED);
+    }
+    expect((bandJsonLd({ slug: "metallica", name: "Metallica" }, [concert]).subjectOf as Record<string, string>[])[0].description).toBe(
+      "Metallica · full concert · L.C. Walker Arena 1991 · 142 minutes",
+    );
   });
 
   it("gives no MusicEvent without a date or a place", () => {
@@ -142,6 +176,17 @@ describe("structured data", () => {
     const out = jsonLd({ name: "</script><b>" });
     expect(out).not.toContain("<");
     expect(JSON.parse(out)).toEqual({ name: "</script><b>" });
+  });
+
+  it("carries raw characters, never HTML entities (Google read Pol&#39;and&#39;Rock, 28 Nov 2026)", () => {
+    const venue = { slug: "polandrock-festival", name: "Pol'and'Rock Festival (Przystanek Woodstock)", city: "Kostrzyn nad Odrą", country: "Poland" };
+    const c = concertView({ credits: "Guns N' Roses & Friends", venue, city: null, country: null, performedYear: 2007, performedOn: null });
+    const out = jsonLd([concertJsonLd(c), concertEventJsonLd(c)!]);
+    expect(out).toContain("Pol'and'Rock Festival (Przystanek Woodstock)");
+    expect(out).toContain("Guns N' Roses & Friends");
+    expect(out).toContain("Kostrzyn nad Odrą");
+    expect(out).not.toMatch(/&(#\d+|#x[0-9a-f]+|amp|apos|quot|lt|gt);/i);
+    expect(out).not.toMatch(/\\u0026|\\u0027/);
   });
 });
 
