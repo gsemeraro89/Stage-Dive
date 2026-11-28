@@ -122,3 +122,42 @@ Search Console requests for the owner: /stats (unknown to Google), /artists/kvel
 (discovered, not indexed), /venues/wacken-open-air, /artists/killing-joke, /venues/polandrock-festival, /venues/hellfest,
 /concerts/uriah-heep-wacken-open-air-2019, /concerts/type-o-negative-polandrock-festival-przystanek-woodstock-2007,
 /concerts/crippled-black-phoenix-crossroads-2012.
+
+## 28 Nov 2026 (week 1, day 4)
+
+| Measure | 27 Nov | 28 Nov |
+| --- | --- | --- |
+| Concerts live | 2,686 (morning) | 2,852 (+166: Bloodstock 156, Knotfest 4, Echo & The Bunnymen 4, The Hives 2) |
+| Concerts with a setlist | 2,356 | 2,489 |
+| Bands with a live concert | 1,579 | 1,777 |
+| Google impressions / clicks / position (day) | 60 / 1 / 13.6 (26 Nov) | 63 / 0 / 13.0 (27 Nov, incomplete) |
+| Bing impressions / clicks | 0 / 0 | 0 / 0 (data to 26 Nov) |
+| GA sessions | 2 (26 Nov: 1 Google) | 2 (27 Nov, direct) |
+| AI crawlers (27 Nov) | ClaudeBot 5,904 (26 Nov) | ClaudeBot 35,397 (17,720 concert pages, 9,624 Markdown copies), Applebot 1,453, YandexBot 96, Googlebot 34, GPTBot 3 |
+| Sitemaps | news: 1 error | both 0 errors (read 27 Nov 11:15); sitemap 8,054 URLs |
+| /stats | not known to Google | indexed (crawled 27 Nov 11:59); Dataset warning: no "license" |
+
+Collector: the 04:31 UTC schedule had not fired by 07:30 UTC. collect.yml has never run on its schedule (0 scheduled
+runs since the cron went live on 26 Nov); the other workflows run 9-10 hours late (refresh 03:43 -> ~13:07, backup
+02:29 -> ~11:01). Expect today's run around 13:00-14:00 UTC; checked again tomorrow.
+Fix: Echo & The Bunnymen Zeche Bochum 1983 was still labelled a bootleg from the band's own (now official) channel:
+relabelled official (owner rule of 26 Nov).
+Index check: Wacken, Pol'and'Rock, Hellfest, Killing Joke, Limp Bizkit Pinkpop, Uriah Heep Wacken, Type O Negative,
+Crippled Black Phoenix, Metallica indexed; Kvelertak "Crawled, not indexed"; Bloodstock page and its concerts,
+Slipknot Download 2019, Kings of Leon not yet known.
+Rising links (f2e72b2, live): + /artists/metallica ("metallica setlist" at 6-10), + /artists/kings-of-leon ("kings of
+leon pinkpop 2013 setlist" at 10; that concert has no setlist); - Teksuo (6), - Grandbrothers.
+Bing, 20 URLs (Bing month quota left: 280): /venues/bloodstock-open-air, /concerts/slipknot-download-festival-2019,
+megadeth-bloodstock-open-air-2017, gojira-bloodstock-open-air-2016, nightwish-bloodstock-open-air-2018,
+sabaton-bloodstock-open-air-ronnie-james-dio-stage-2019, cannibal-corpse-bloodstock-open-air-2018,
+meshuggah-bloodstock-open-air-ronnie-james-dio-stage-2023, obituary-bloodstock-open-air-metal-festival-2017,
+behemoth-bloodstock-open-air-2016, kks-priest-bloodstock-open-air-ronnie-james-dio-stage-2023,
+lamb-of-god-bloodstock-open-air-2022, kreator-bloodstock-open-air-2017, children-of-bodom-bloodstock-open-air-2019,
+devin-townsend-bloodstock-open-air-2021, cradle-of-filth-bloodstock-open-air-metal-festival-ronnie-james-dio-stage-2019,
+emperor-bloodstock-open-air-2018, killswitch-engage-bloodstock-open-air-2023, opeth-bloodstock-open-air-2024,
+amon-amarth-bloodstock-open-air-metal-festival-ronnie-james-dio-stage-2017.
+Outreach: docs/outreach/2026-11-28.md (5 Reddit drafts: Bloodstock, Slipknot Download 2019, Gojira, Megadeth, The Hives;
+3 festival contacts).
+Plan row "bands with searches but thin pages": Philip Sayce, Yonderboi, Crippled Black Phoenix, Lucas Hamming,
+Teksuo, Grandbrothers, Blahalouisiana, Bagossy Brothers Company have searches and one concert, no bio. Proposed to the
+owner: a per-band dry run to find more official concerts (no bios, owner 26 Nov).
