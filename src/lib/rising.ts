@@ -39,7 +39,7 @@ export const MAX_RISING = 8;
 /** An entry is dropped this many days after it was added (the review re-adds it if it is still climbing). */
 export const RISING_MAX_DAYS = 28;
 
-/** Search Console, 18-26 Nov 2026 (reviewed 27 Nov). */
+/** Search Console, 18-27 Nov 2026 (reviewed 28 Nov). */
 export const RISING: RisingTarget[] = [
   // "radiohead setlist": the band page at 16.75.
   { path: "/artists/radiohead", label: "Radiohead setlists", since: "2026-11-26" },
@@ -52,10 +52,10 @@ export const RISING: RisingTarget[] = [
   { path: "/concerts/philip-sayce-crossroads-festival-2009", label: "Philip Sayce live at Crossroads 2009", since: "2026-11-27" },
   // "ypsigrock": the /concerts list at 13 and /venues at 12; the festival page is thin, its concert is not.
   { path: "/concerts/the-national-ypsigrock-2019", label: "The National live at Ypsigrock 2019", since: "2026-11-26" },
-  // "grandbrothers": the /artists list at 19; the band page is thin, its concert (with a setlist) is not.
-  { path: "/concerts/grandbrothers-kolner-dom-2022", label: "Grandbrothers live at Kölner Dom 2022", since: "2026-11-26" },
-  // "teksuo": the /artists list at 6; same as Grandbrothers.
-  { path: "/concerts/teksuo-resurrection-fest-estrella-galicia-2024", label: "Teksuo live at Resurrection Fest 2024", since: "2026-11-26" },
+  // "metallica setlist" / "metallica live setlist" / "setlists metallica": the band page at 6-10.
+  { path: "/artists/metallica", label: "Metallica setlists", since: "2026-11-28" },
+  // "kings of leon pinkpop 2013 setlist": /venues/pinkpop at 10; that concert has no setlist (noindex), the band page is strong.
+  { path: "/artists/kings-of-leon", label: "Kings of Leon full concerts", since: "2026-11-28" },
 ];
 
 /** Words the copy rules ban from visible text (CLAUDE.md). */
