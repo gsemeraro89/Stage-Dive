@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   abs,
   bandIsStrong,
+  bandSearchDescription,
   bandSearchTitle,
   clip,
   concertIsStrong,
@@ -93,6 +94,21 @@ describe("search titles", () => {
     expect(tourSearchTitle("Wherever We May Roam", "Metallica")).toBe("Metallica · Wherever We May Roam Tour · Full Concerts");
     expect(tourSearchTitle("The Joshua Tree Tour", null)).toBe("The Joshua Tree Tour · Full Concerts");
     expect(titleCase("emo / post-hardcore")).toBe("Emo / Post-Hardcore");
+  });
+  it("opens a band description with its setlists, the way people search", () => {
+    const lead = "STAGEDIVE has 70 full concerts by Metallica, from Los Angeles.";
+    const bio = "Metallica are an American heavy metal band.";
+    expect(bandSearchDescription({ name: "Metallica", bio }, { concerts: 70, setlists: 70 }, lead)).toBe(
+      "Metallica setlists and full concerts: 70 full concerts on STAGEDIVE, each with its setlist. Metallica are an American heavy metal band.",
+    );
+    expect(bandSearchDescription({ name: "Radiohead" }, { concerts: 43, setlists: 40 }, "Lead.")).toBe(
+      "Radiohead setlists and full concerts: 43 full concerts on STAGEDIVE, 40 with the setlist. Lead.",
+    );
+    expect(bandSearchDescription({ name: "X", bio }, { concerts: 2, setlists: 0 }, lead)).toBe(`${lead} ${bio}`);
+    const long = bandSearchDescription({ name: "Metallica", bio: "word ".repeat(200) }, { concerts: 1, setlists: 1 }, lead);
+    expect(long.length).toBeLessThanOrEqual(300);
+    expect(long).toMatch(/^Metallica setlists and full concerts: 1 full concert on STAGEDIVE, with its setlist\./);
+    expect(long).not.toMatch(BANNED);
   });
   it("never uses the banned words", () => {
     const all = [concertSearchTitle(base), bandSearchTitle("X", true), decadeSearchTitle("1970s", true), tourSearchTitle("A", "B")].join(" ");

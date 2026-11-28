@@ -27,7 +27,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { bandAnswers, bandStatLines, bandStatsFor } from "@/lib/answers";
 import { bandSongsPath, songPath, songTally } from "@/lib/songs";
 import { artistUrl, LIVE_ALBUMS_SHOWN } from "@/lib/live-albums";
-import { bandIsStrong, bandSearchTitle, clip, robotsFor, shareImages } from "@/lib/seo";
+import { bandIsStrong, bandSearchDescription, bandSearchTitle, robotsFor, shareImages } from "@/lib/seo";
 import { bandJsonLd, bandSameAs, breadcrumbs, elsewhereLinks, faqPage } from "@/lib/structured-data";
 
 // One database read per request, shared by the page and its title/description.
@@ -47,7 +47,7 @@ export async function bandMetadata(slug: string, sort: Sort): Promise<Metadata> 
   if (!page) return {};
   const { artist, concerts, setlists, liveAlbums } = page;
   const answers = bandAnswers(artist, concerts, setlists, liveAlbums);
-  const description = clip([answers.lead, artist.bio].filter(Boolean).join(" "), 300);
+  const description = bandSearchDescription(artist, { concerts: concerts.length, setlists: concerts.filter((c) => c.hasSetlist).length }, answers.lead);
   const title = bandSearchTitle(artist.name, concerts.some((c) => c.hasSetlist));
   const path = `/artists/${artist.slug}`;
   const still = concerts.find((c) => c.youtubeId === artist.coverYoutubeId) ?? concerts[0];

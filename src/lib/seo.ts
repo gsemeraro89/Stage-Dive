@@ -144,6 +144,23 @@ export function bandSearchTitle(name: string, anySetlist: boolean): string {
   return `${name} · Full Concerts${anySetlist ? " and Setlists" : ""}`;
 }
 
+/**
+ * A band page's meta description. People search "<band> setlist(s)" (Search Console, 28 Nov 2026), so
+ * when the band has setlists the description opens with them: "Metallica setlists and full concerts: 70
+ * full concerts on STAGEDIVE, each with its setlist." and goes on with the bio (or else the page's
+ * lead). Without setlists: the lead and the bio, as before. At most 300 characters.
+ */
+export function bandSearchDescription(
+  band: { name: string; bio?: string | null },
+  counts: { concerts: number; setlists: number },
+  lead: string,
+): string {
+  if (!counts.setlists || !counts.concerts) return clip([lead, band.bio].filter(Boolean).join(" "), 300);
+  const n = `${counts.concerts} full concert${counts.concerts === 1 ? "" : "s"}`;
+  const which = counts.setlists === counts.concerts ? (counts.concerts === 1 ? "with its setlist" : "each with its setlist") : `${counts.setlists} with the setlist`;
+  return clip(`${band.name} setlists and full concerts: ${n} on ${SITE_NAME}, ${which}. ${band.bio || lead}`, 300);
+}
+
 /** "Pinkpop · Full Concerts and Setlists" */
 export function venueSearchTitle(name: string, anySetlist: boolean): string {
   return `${name} · Full Concerts${anySetlist ? " and Setlists" : ""}`;
